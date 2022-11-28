@@ -1,0 +1,107 @@
+#include "resource.h"
+
+#include <winres.h>
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_ACCEL ACCELERATORS MOVEABLE PURE 
+BEGIN
+    "/",            IDM_APP_ABOUT,          ASCII,  ALT
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lower ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_PLAYER              ICON    DISCARDABLE     "Player.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_FULLSCREEN_SETUP DIALOGEX 0, 0, 400, 200
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "FullScreen Setup"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",1,100,144,80,16
+    LTEXT           "Driver",-1,10,10,24,8
+    LTEXT           "Screen Mode",-1,270,10,48,8
+    LISTBOX         IDC_LB_DRIVER,10,20,250,120,LBS_SORT |
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_LB_SCREEN_MODE,270,20,120,160,LBS_SORT |
+                    LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Cancel",2,100,164,80,16
+END
+
+IDD_ABOUT DIALOGEX 0, 0, 150, 60
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CTEXT           "The Brand New Ballance Player",-1,0,10,150,8
+    CTEXT           "By Kakuty",-1,0,20,150,8
+    DEFPUSHBUTTON   "OK",IDOK,60,35,30,15,WS_GROUP
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${PROJECT_VERSION_TWEAK}
+ PRODUCTVERSION ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},${PROJECT_VERSION_PATCH},${PROJECT_VERSION_TWEAK}
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Kakuty\0"
+            VALUE "FileDescription", "Ballance Player\0"
+            VALUE "FileVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}\0"
+            VALUE "InternalName", "Player\0"
+            VALUE "LegalCopyright", "Copyright (C) 2022\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "Player.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "Ballance Player\0"
+            VALUE "ProductVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_MAIN_WND_NAME         "Ballance"
+    IDS_RENDER_WND_NAME       "Ballance Render"
+    IDS_MAIN_WND_CLASS_NAME   "Ballance"
+    IDS_RENDER_WND_CLASS_NAME "Ballance Render"
+END

@@ -1,0 +1,12 @@
+#define VS_VERSION_INFO                 1
+#define IDS_MAIN_WND_NAME               102
+#define IDS_RENDER_WND_NAME             103
+#define IDS_MAIN_WND_CLASS_NAME         104
+#define IDS_RENDER_WND_CLASS_NAME       105
+#define IDI_PLAYER                      106
+#define IDR_ACCEL                       128
+#define IDM_APP_ABOUT                   129
+#define IDD_FULLSCREEN_SETUP            130
+#define IDD_ABOUT                       131
+#define IDC_LB_DRIVER                   1007
+#define IDC_LB_SCREEN_MODE              1008
