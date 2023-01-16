@@ -58,36 +58,53 @@ static bool SetLanguage(CKBehavior *setLanguage, int langId)
     return true;
 }
 
-static bool FillDriverList(CKDataArray *drivers)
+static int ListDriver(const CKBehaviorContext &behcontext)
 {
-    if (!drivers)
-        return false;
+    CKBehavior *beh = behcontext.Behavior;
+    CKContext *context = behcontext.Context;
 
+    CKDataArray *drivers = (CKDataArray *)beh->GetInputParameterObject(0);
+    if (!drivers)
+    {
+        context->OutputToConsoleExBeep("ListDriver: No DataArray Object is found.");
+        beh->ActivateOutput(1);
+        return CKBR_OK;
+    }
+
+    drivers->GetColumnCount();
     drivers->Clear();
     while (drivers->GetColumnCount() > 0)
         drivers->RemoveColumn(0);
+
+    InterfaceManager *man = InterfaceManager::GetManager(context);
+    if (!man)
+    {
+        context->OutputToConsoleExBeep("ListDriver: im == NULL");
+        beh->ActivateOutput(1);
+        return CKBR_OK;
+    }
 
     drivers->InsertColumn(-1, CKARRAYTYPE_STRING, "DriverDesc");
     drivers->InsertColumn(0, CKARRAYTYPE_STRING, "DriverName");
     drivers->InsertColumn(1, CKARRAYTYPE_INT, "DriverID");
 
-    CNeMoContext *context = CNeMoContext::GetInstance();
-    CKRenderManager *rm = context->GetRenderManager();
-
-    const int driverCount = rm->GetRenderDriverCount();
+    const int driverCount = context->GetRenderManager()->GetRenderDriverCount();
     for (int i = 0; i < driverCount; ++i)
     {
-        VxDriverDesc *drDesc = rm->GetRenderDriverDescription(i);
+        VxDriverDesc *drDesc = context->GetRenderManager()->GetRenderDriverDescription(i);
         drivers->InsertRow();
         drivers->SetElementStringValue(i, 0, drDesc->DriverName);
         drivers->SetElementValue(i, 1, &i, sizeof(int));
         drivers->SetElementStringValue(i, 2, drDesc->DriverDesc);
     }
 
-    return true;
+    int driver = man->GetDriver();
+    beh->SetOutputParameterValue(0, &driver, sizeof(int));
+    beh->ActivateOutput(0);
+    return CKBR_OK;
 }
 
-static bool SetDriver(CKBehavior *screenModes, int driver)
+static bool ReplaceListDriver(CKBehavior *screenModes)
 {
     if (!screenModes)
         return false;
@@ -96,47 +113,25 @@ static bool SetDriver(CKBehavior *screenModes, int driver)
     if (!ld)
         return false;
 
-    CKParameter *paramDriver = ld->GetOutputParameter(0)->GetDestination(0);
-    CKParameter *paramDriverList = ld->GetInputParameter(0)->GetDirectSource();
-    CKDataArray *driverList = (CKDataArray *)paramDriverList->GetValueObject();
-
-    CNeMoContext *context = CNeMoContext::GetInstance();
-    FillDriverList(driverList);
-
-    CKPathManager *pathManager = context->GetPathManager();
-    XString path = pathManager->GetVirtoolsTemporaryFolder() + "\\drivers.cache";
-    driverList->WriteElements(path.Str(), 0, driverList->GetColumnCount());
-
-    CKBehavior *ca = scriptutils::CreateBehavior(screenModes, CKGUID(0x35c9352f, 0x7b1a193b), true); // Clear Array
-    ca->GetTargetParameter()->SetDirectSource(paramDriverList);
-
-    CKBehavior *al = scriptutils::CreateBehavior(screenModes, CKGUID(0x13bd2c64, 0x62db38e1), true); // Array Load
-    al->GetTargetParameter()->SetDirectSource(paramDriverList);
-    scriptutils::GenerateInputParameter(screenModes, al, 0, path.CStr());
-    scriptutils::GenerateInputParameter(screenModes, al, 1, TRUE);
-    scriptutils::GenerateInputParameter(screenModes, al, 2, 0);
-
-    CKBehavior *identity = scriptutils::CreateBehavior(screenModes, CKGUID(0x15151652, 0xaeefffd5)); // Identity
-    scriptutils::GenerateInputParameter(screenModes, identity, 0, driver);
-    identity->GetOutputParameter(0)->AddDestination(paramDriver);
-
-    CKBehaviorLink *linkLdSc = scriptutils::GetBehaviorLink(screenModes, ld, "Set Cell", 0, 0);
-    if (!linkLdSc)
-        return false;
-
-    CKBehavior *sc = linkLdSc->GetOutBehaviorIO()->GetOwner();
-    linkLdSc->SetOutBehaviorIO(ca->GetInput(0));
-    scriptutils::CreateBehaviorLink(screenModes, ca, al, 0, 0);
-    scriptutils::CreateBehaviorLink(screenModes, al, identity, 0, 0);
-    scriptutils::CreateBehaviorLink(screenModes, identity, sc, 0, 0);
-
+    ld->SetFunction(ListDriver);
     return true;
 }
 
-static bool FillScreenModeList(int driver, CKDataArray *screenModes)
+static int ListScreenModes(const CKBehaviorContext &behcontext)
 {
+    CKBehavior *beh = behcontext.Behavior;
+    CKContext *context = behcontext.Context;
+
+    int driverId = 0;
+    beh->GetInputParameterValue(0, &driverId);
+
+    CKDataArray *screenModes = (CKDataArray *)beh->GetInputParameterObject(1);
     if (!screenModes)
-        return false;
+    {
+        context->OutputToConsoleExBeep("ListScreenModes: No DataArray Object is found.");
+        beh->ActivateOutput(1);
+        return CKBR_OK;
+    }
 
     screenModes->Clear();
     while (screenModes->GetColumnCount() > 0)
@@ -147,12 +142,13 @@ static bool FillScreenModeList(int driver, CKDataArray *screenModes)
     screenModes->InsertColumn(1, CKARRAYTYPE_INT, "Width");
     screenModes->InsertColumn(2, CKARRAYTYPE_INT, "Height");
 
-    CNeMoContext *context = CNeMoContext::GetInstance();
-    CKRenderManager *rm = context->GetRenderManager();
-
-    VxDriverDesc *drDesc = rm->GetRenderDriverDescription(driver);
+    VxDriverDesc *drDesc = context->GetRenderManager()->GetRenderDriverDescription(driverId);
     if (!drDesc)
-        return false;
+    {
+        context->OutputToConsoleExBeep("ListScreenModes: No Driver Description for Driver-ID '%d' is found", driverId);
+        beh->ActivateOutput(1);
+        return CKBR_OK;
+    }
 
     VxDisplayMode *dm = drDesc->DisplayModes;
     const int dmCount = drDesc->DisplayModeCount;
@@ -184,10 +180,21 @@ static bool FillScreenModeList(int driver, CKDataArray *screenModes)
         }
     }
 
-    return true;
+    InterfaceManager *man = InterfaceManager::GetManager(context);
+    if (!man)
+    {
+        context->OutputToConsoleExBeep("ListScreenModes: im == NULL");
+        beh->ActivateOutput(1);
+        return CKBR_OK;
+    }
+
+    int screenMode = man->GetScreenMode();
+    beh->SetOutputParameterValue(0, &screenMode, sizeof(int));
+    beh->ActivateOutput(0);
+    return CKBR_OK;
 }
 
-static bool SetScreenMode(CKBehavior *screenModes, int screenMode)
+static bool ReplaceListScreenModes(CKBehavior *screenModes)
 {
     if (!screenModes)
         return false;
@@ -196,40 +203,7 @@ static bool SetScreenMode(CKBehavior *screenModes, int screenMode)
     if (!ls)
         return false;
 
-    CKParameter *paramScreenMode = ls->GetOutputParameter(0)->GetDestination(0);
-    CKParameter *paramScreenModeList = ls->GetInputParameter(1)->GetDirectSource();
-    CKDataArray *screenModeList = (CKDataArray *)paramScreenModeList->GetValueObject();
-
-    CNeMoContext *context = CNeMoContext::GetInstance();
-    FillScreenModeList(context->GetDriver(), screenModeList);
-
-    CKPathManager *pathManager = context->GetPathManager();
-    XString path = pathManager->GetVirtoolsTemporaryFolder() + "\\screenModes.cache";
-    screenModeList->WriteElements(path.Str(), 0, screenModeList->GetColumnCount());
-
-    CKBehavior *ca = scriptutils::CreateBehavior(screenModes, CKGUID(0x35c9352f, 0x7b1a193b), true); // Clear Array
-    ca->GetTargetParameter()->SetDirectSource(paramScreenModeList);
-
-    CKBehavior *al = scriptutils::CreateBehavior(screenModes, CKGUID(0x13bd2c64, 0x62db38e1), true); // Array Load
-    al->GetTargetParameter()->SetDirectSource(paramScreenModeList);
-    scriptutils::GenerateInputParameter(screenModes, al, 0, path.CStr());
-    scriptutils::GenerateInputParameter(screenModes, al, 1, TRUE);
-    scriptutils::GenerateInputParameter(screenModes, al, 2, 0);
-
-    CKBehavior *identity = scriptutils::CreateBehavior(screenModes, CKGUID(0x15151652, 0xaeefffd5)); // Identity
-    scriptutils::GenerateInputParameter(screenModes, identity, 0, screenMode);
-    identity->GetOutputParameter(0)->AddDestination(paramScreenMode);
-
-    CKBehaviorLink *linkLsSc = scriptutils::GetBehaviorLink(screenModes, ls, "Set Cell", 0, 0);
-    if (!linkLsSc)
-        return false;
-
-    CKBehavior *sc = linkLsSc->GetOutBehaviorIO()->GetOwner();
-    linkLsSc->SetOutBehaviorIO(ca->GetInput(0));
-    scriptutils::CreateBehaviorLink(screenModes, ca, al, 0, 0);
-    scriptutils::CreateBehaviorLink(screenModes, al, identity, 0, 0);
-    scriptutils::CreateBehaviorLink(screenModes, identity, sc, 0, 0);
-
+    ls->SetFunction(ListScreenModes);
     return true;
 }
 
@@ -381,13 +355,13 @@ static void EditScriptDefaultLevel(CKBehavior *defaultLevel)
         return;
     }
 
-    if (!SetDriver(sm, context->GetDriver()))
+    if (!ReplaceListDriver(sm))
     {
         CLogger::Get().Error("Failed to set driver");
         return;
     }
 
-    if (!SetScreenMode(sm, context->GetScreenMode()))
+    if (!ReplaceListScreenModes(sm))
     {
         CLogger::Get().Error("Failed to set screen mode");
         return;
