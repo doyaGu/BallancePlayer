@@ -43,11 +43,6 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.loadAllManagers = true;
             continue;
         }
-        if (parser.Next(arg, "--adaptive-camera", '\0'))
-        {
-            config.adaptiveCamera = true;
-            continue;
-        }
         if (parser.Next(arg, "--unlock-widescreen", '\0'))
         {
             config.unlockWidescreen = true;
@@ -225,7 +220,6 @@ CGameConfig::CGameConfig()
       loadAllManagers(true),
       loadAllBuildingBlocks(true),
       loadAllPlugins(true),
-      adaptiveCamera(false),
       unlockWidescreen(false),
       unlockHighResolution(false),
       skipOpening(false),
@@ -377,7 +371,6 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniGetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
     IniGetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
-    IniGetBoolean("Startup", "AdaptiveCamera", adaptiveCamera, filename);
     IniGetBoolean("Startup", "UnlockWidescreen", unlockWidescreen, filename);
     IniGetBoolean("Startup", "UnlockHighResolution", unlockHighResolution, filename);
     IniGetBoolean("Startup", "SkipOpening", skipOpening, filename);
@@ -445,7 +438,6 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniSetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
     IniSetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
-    IniSetBoolean("Startup", "AdaptiveCamera", adaptiveCamera, filename);
     IniSetBoolean("Startup", "UnlockWidescreen", unlockWidescreen, filename);
     IniSetBoolean("Startup", "UnlockHighResolution", unlockHighResolution, filename);
     IniSetBoolean("Startup", "SkipOpening", skipOpening, filename);

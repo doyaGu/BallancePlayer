@@ -476,7 +476,6 @@ void CGamePlayer::OnSized()
         m_WinContext->GetMainSize(w, h);
         m_WinContext->SetRenderSize(w, h);
         rc->Resize();
-        m_Game->ShouldResize();
     }
 }
 

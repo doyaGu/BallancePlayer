@@ -528,11 +528,6 @@ void CGame::UnpauseLevel()
     SendMessageToLevel("Unpause Level");
 }
 
-void CGame::ShouldResize()
-{
-    SyncCamerasWithScreen();
-}
-
 void CGame::ShowCursor(bool show)
 {
     if (show && !m_ShowCursor)
@@ -726,11 +721,6 @@ public:
     {
         const char *loaded = (const char *)((CKMessage *)arg)->GetParameter(0)->GetReadDataPtr();
         CLogger::Get().Debug(loaded);
-
-        if (strcmp(loaded, "MainLoading_Loaded") == 0)
-        {
-            game->SyncCamerasWithScreen();
-        }
     }
 
     static void OnMouseOn(CGame *game, void *arg)
@@ -950,27 +940,4 @@ void CGame::AddPostEventCallback(GAMEEVENT_CALLBACK callback)
 {
     if (!m_PostEventCallbacks.IsHere(callback))
         m_PostEventCallbacks.PushBack(callback);
-}
-
-void CGame::SyncCamerasWithScreen()
-{
-    if (CGameConfig::Get().adaptiveCamera && m_NeMoContext)
-    {
-        CKRenderContext *dev = m_NeMoContext->GetRenderContext();
-        if (!dev)
-            return;
-
-        CKCamera *cams[2] = {
-            (CKCamera *)m_NeMoContext->GetObjectByNameAndClass("Cam_MenuLevel", CKCID_TARGETCAMERA),
-            (CKCamera *)m_NeMoContext->GetObjectByNameAndClass("InGameCam", CKCID_TARGETCAMERA)};
-
-        for (int i = 0; i < 2; ++i)
-        {
-            if (cams[i])
-            {
-                cams[i]->SetAspectRatio(dev->GetWidth(), dev->GetHeight());
-                cams[i]->SetFov((float)(0.75 * dev->GetWidth() / dev->GetHeight()));
-            }
-        }
-    }
 }

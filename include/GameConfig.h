@@ -31,7 +31,6 @@ public:
     bool loadAllManagers;
     bool loadAllBuildingBlocks;
     bool loadAllPlugins;
-    bool adaptiveCamera;
     bool unlockWidescreen;
     bool unlockHighResolution;
     bool skipOpening;

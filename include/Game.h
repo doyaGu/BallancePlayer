@@ -28,7 +28,6 @@ public:
     void PauseLevel();
     void UnpauseLevel();
 
-    void ShouldResize();
     void ShowCursor(bool show);
     bool GetCursorVisibility() const;
 
@@ -48,7 +47,6 @@ private:
     void SendMessageToLevel(const char *msg);
     void SendMessageToGameplay(const char *msg);
     void AddPostEventCallback(GAMEEVENT_CALLBACK callback);
-    void SyncCamerasWithScreen();
 
     CNeMoContext *m_NeMoContext;
     CGameInfo *m_GameInfo;
