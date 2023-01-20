@@ -114,10 +114,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     InitLogger();
 
+    CGameConfig &config = CGameConfig::Get();
+    config.SetDefault();
+
+    // Load paths from command line
     LoadPaths(parser);
 
     // Load settings
-    CGameConfig &config = CGameConfig::Get();
     config.LoadFromIni();
     config.LoadFromCmdline(parser);
 
@@ -147,6 +150,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     player.Run();
     player.Exit();
+
+    // Save settings
+    if (config.HasPath(eConfigPath))
+        config.SaveToIni();
 
     return 0;
 }

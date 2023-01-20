@@ -215,42 +215,42 @@ static bool IniSetBoolean(const char *section, const char *name, bool value, con
     return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
 }
 
-CGameConfig::CGameConfig()
-    : langId(1),
-      loadAllManagers(true),
-      loadAllBuildingBlocks(true),
-      loadAllPlugins(true),
-      unlockWidescreen(false),
-      unlockHighResolution(false),
-      skipOpening(false),
-      driver(0),
-      bpp(PLAYER_DEFAULT_BPP),
-      width(PLAYER_DEFAULT_WIDTH),
-      height(PLAYER_DEFAULT_HEIGHT),
-      fullscreen(false),
-      unlockFramerate(false),
-      antialias(0),
-      disableFilter(false),
-      disableDithering(false),
-      disableMipmap(false),
-      disableSpecular(false),
-      borderless(false),
-      resizable(false),
-      clipMouse(false),
-      alwaysHandleInput(false),
-      pauseOnDeactivated(false),
-      posX(2147483647),
-      posY(2147483647),
-      debug(false),
-      rookie(false)
+void CGameConfig::Set(const CGameConfig *config)
 {
-    memset(m_Paths, 0, sizeof(m_Paths));
+    if (config)
+        memcpy(this, &config, sizeof(CGameConfig));
 }
 
-CGameConfig::~CGameConfig()
+void CGameConfig::SetDefault()
 {
-    if (HasPath(eConfigPath))
-        SaveToIni();
+    langId = 1;
+    loadAllManagers = true;
+    loadAllBuildingBlocks = true;
+    loadAllPlugins = true;
+    unlockWidescreen = false;
+    unlockHighResolution = false;
+    skipOpening = false;
+    driver = 0;
+    bpp = PLAYER_DEFAULT_BPP;
+    width = PLAYER_DEFAULT_WIDTH;
+    height = PLAYER_DEFAULT_HEIGHT;
+    fullscreen = false;
+    unlockFramerate = false;
+    antialias = 0;
+    disableFilter = false;
+    disableDithering = false;
+    disableMipmap = false;
+    disableSpecular = false;
+    borderless = false;
+    resizable = false;
+    clipMouse = false;
+    alwaysHandleInput = false;
+    pauseOnDeactivated = false;
+    posX = 2147483647;
+    posY = 2147483647;
+    debug = false;
+    rookie = false;
+    memset(m_Paths, 0, sizeof(m_Paths));
 }
 
 void CGameConfig::SetPath(PathCategory category, const char *path)

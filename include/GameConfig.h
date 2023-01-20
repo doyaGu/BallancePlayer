@@ -62,8 +62,8 @@ public:
     bool debug;
     bool rookie;
 
-    CGameConfig();
-    ~CGameConfig();
+    void Set(const CGameConfig *config);
+    void SetDefault();
 
     void SetPath(PathCategory category, const char *path);
     const char *GetPath(PathCategory category) const;
