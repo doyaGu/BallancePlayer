@@ -228,10 +228,10 @@ void CGameConfig::Set(const CGameConfig *config)
 
 void CGameConfig::SetDefault()
 {
+    manualSetup = false;
     loadAllManagers = true;
     loadAllBuildingBlocks = true;
     loadAllPlugins = true;
-    manualSetup = false;
 
     driver = 0;
     bpp = PLAYER_DEFAULT_BPP;
