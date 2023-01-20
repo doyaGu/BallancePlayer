@@ -732,7 +732,7 @@ public:
     static void OnMouseOff(CGame *game, void *arg)
     {
         CLogger::Get().Debug("Mouse Off");
-        game->m_InGame = false;
+        game->m_ShowCursor = false;
     }
 
     static void OnFadeIn(CGame *game, void *arg)
