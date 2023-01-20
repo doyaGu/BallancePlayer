@@ -27,7 +27,6 @@ class CGameConfig
 {
 public:
     // Startup Settings
-    int langId;
     bool manualSetup;
     bool loadAllManagers;
     bool loadAllBuildingBlocks;
@@ -59,6 +58,7 @@ public:
     int posY;
 
     // Game Settings
+    int langId;
     bool skipOpening;
     bool debug;
     bool rookie;

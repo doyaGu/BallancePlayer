@@ -17,12 +17,6 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
 
     while (!parser.Done())
     {
-        if (parser.Next(arg, "--lang", 'l'))
-        {
-            if (arg.GetValue(0, value))
-                config.langId = value;
-            continue;
-        }
         if (parser.Next(arg, "--manual-setup", 'm'))
         {
             config.manualSetup = false;
@@ -155,6 +149,12 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
                 config.posY = value;
             continue;
         }
+        if (parser.Next(arg, "--lang", 'l'))
+        {
+            if (arg.GetValue(0, value))
+                config.langId = value;
+            continue;
+        }
         if (parser.Next(arg, "--skip-opening", '\0'))
         {
             config.skipOpening = true;
@@ -228,7 +228,6 @@ void CGameConfig::Set(const CGameConfig *config)
 
 void CGameConfig::SetDefault()
 {
-    langId = 1;
     loadAllManagers = true;
     loadAllBuildingBlocks = true;
     loadAllPlugins = true;
@@ -257,6 +256,7 @@ void CGameConfig::SetDefault()
     posX = 2147483647;
     posY = 2147483647;
 
+    langId = 1;
     skipOpening = false;
     debug = false;
     rookie = false;
@@ -372,7 +372,6 @@ void CGameConfig::LoadFromIni(const char *filename)
         filename = m_Paths[eConfigPath];
     }
 
-    IniGetInteger("Startup", "Language", langId, filename);
     IniGetBoolean("Startup", "ManualSetup", manualSetup, filename);
     IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniGetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
@@ -401,6 +400,7 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetInteger("Window", "X", posX, filename);
     IniGetInteger("Window", "Y", posY, filename);
 
+    IniGetInteger("Game", "Language", langId, filename);
     IniGetBoolean("Game", "SkipOpening", skipOpening, filename);
     IniGetBoolean("Game", "Debug", debug, filename);
     IniGetBoolean("Game", "Rookie", rookie, filename);
@@ -418,7 +418,6 @@ void CGameConfig::SaveToIni(const char *filename)
         filename = m_Paths[eConfigPath];
     }
 
-    IniSetInteger("Startup", "Language", langId, filename);
     IniSetBoolean("Startup", "ManualSetup", manualSetup, filename);
     IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniSetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
@@ -447,6 +446,7 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetInteger("Window", "X", posX, filename);
     IniSetInteger("Window", "Y", posY, filename);
 
+    IniSetInteger("Game", "Language", langId, filename);
     IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
 }
 
