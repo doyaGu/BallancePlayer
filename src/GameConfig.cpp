@@ -302,12 +302,6 @@ void CGameConfig::LoadPathsFromCmdline(CmdlineParser &parser)
     std::string path;
     while (!parser.Done())
     {
-        if (parser.Next(arg, "--root-path", '\0', 1))
-        {
-            if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[eRootPath], sizeof(m_Paths[eRootPath]), path.c_str());
-            continue;
-        }
         if (parser.Next(arg, "--plugin-path", '\0', 1))
         {
             if (arg.GetValue(0, path))
@@ -400,28 +394,6 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetBoolean("Game", "Debug", debug, filename);
 }
 
-void CGameConfig::LoadPathsFromIni(const char *filename)
-{
-    if (!filename)
-        return;
-
-    if (strcmp(filename, "") == 0)
-    {
-        if (strcmp(m_Paths[eConfigPath], "") == 0 || !utils::FileOrDirectoryExists(m_Paths[eConfigPath]))
-            return;
-        filename = m_Paths[eConfigPath];
-    }
-
-    IniGetString("Path", "RootPath", m_Paths[eRootPath], MAX_PATH, filename);
-    IniGetString("Path", "PluginPath", m_Paths[ePluginPath], MAX_PATH, filename);
-    IniGetString("Path", "RenderEnginePath", m_Paths[eRenderEnginePath], MAX_PATH, filename);
-    IniGetString("Path", "ManagerPath", m_Paths[eManagerPath], MAX_PATH, filename);
-    IniGetString("Path", "BuildingBlockPath", m_Paths[eBuildingBlockPath], MAX_PATH, filename);
-    IniGetString("Path", "SoundPath", m_Paths[eSoundPath], MAX_PATH, filename);
-    IniGetString("Path", "BitmapPath", m_Paths[eBitmapPath], MAX_PATH, filename);
-    IniGetString("Path", "DataPath", m_Paths[eDataPath], MAX_PATH, filename);
-}
-
 void CGameConfig::SaveToIni(const char *filename)
 {
     if (!filename)
@@ -462,23 +434,6 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
     IniSetInteger("Window", "X", posX, filename);
     IniSetInteger("Window", "Y", posY, filename);
-
-    if (HasPath(eRootPath))
-        IniSetString("Path", "RootPath", m_Paths[eRootPath], filename);
-    if (HasPath(ePluginPath))
-        IniSetString("Path", "PluginPath", m_Paths[ePluginPath], filename);
-    if (HasPath(eRenderEnginePath))
-        IniSetString("Path", "RenderEnginePath", m_Paths[eRenderEnginePath], filename);
-    if (HasPath(eManagerPath))
-        IniSetString("Path", "ManagerPath", m_Paths[eManagerPath], filename);
-    if (HasPath(eBuildingBlockPath))
-        IniSetString("Path", "BuildingBlockPath", m_Paths[eBuildingBlockPath], filename);
-    if (HasPath(eSoundPath))
-        IniSetString("Path", "SoundPath", m_Paths[eSoundPath], filename);
-    if (HasPath(eBitmapPath))
-        IniSetString("Path", "BitmapPath", m_Paths[eBitmapPath], filename);
-    if (HasPath(eDataPath))
-        IniSetString("Path", "DataPath", m_Paths[eDataPath], filename);
 }
 
 CGameConfig &CGameConfig::Get()

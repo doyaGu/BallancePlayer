@@ -73,7 +73,6 @@ public:
     void LoadIniPathFromCmdline(CmdlineParser &parser);
     void LoadPathsFromCmdline(CmdlineParser &parser);
     void LoadFromIni(const char *filename = "");
-    void LoadPathsFromIni(const char *filename = "");
     void SaveToIni(const char *filename = "");
 
     static CGameConfig &Get();

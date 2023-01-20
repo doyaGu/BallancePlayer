@@ -45,7 +45,6 @@ static void LoadPaths(CmdlineParser &parser)
     }
 
     // Load paths
-    config.LoadPathsFromIni();
     config.LoadPathsFromCmdline(parser);
 }
 
