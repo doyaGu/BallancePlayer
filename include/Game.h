@@ -19,6 +19,7 @@ public:
     ~CGame();
 
     bool Load();
+    void Reset();
 
     bool IsInGame() const;
     bool IsPaused() const;
@@ -39,7 +40,8 @@ public:
     void HandlePostGameEvent();
 
 private:
-    bool FinishLoad();
+    bool Init();
+    void Cleanup();
     void InitEventHandler();
     bool GetGameplay();
     void HandleLevelEvent();

@@ -442,6 +442,16 @@ static void EditScriptDefaultLevel(CKBehavior *defaultLevel)
     }
 }
 
+static void HandleGameEvent(CNeMoContext *context, void *argument)
+{
+    ((CGame *)argument)->HandleGameEvent();
+}
+
+static void HandlePostGameEvent(CNeMoContext *context, void *argument)
+{
+    ((CGame *)argument)->HandlePostGameEvent();
+}
+
 CGame::CGame()
     : m_NeMoContext(NULL),
       m_GameInfo(NULL),
@@ -506,7 +516,15 @@ bool CGame::Load()
 
     DeleteCKObjectArray(array);
 
-    return FinishLoad();
+    return Init();
+}
+
+void CGame::Reset()
+{
+    m_NeMoContext->RemovePreProcessCallBack(::HandleGameEvent, this);
+    m_NeMoContext->RemovePostProcessCallBack(::HandlePostGameEvent, this);
+    Cleanup();
+    Init();
 }
 
 bool CGame::IsInGame() const { return m_InGame; }
@@ -565,23 +583,8 @@ void CGame::HandlePostGameEvent()
     m_PostEventCallbacks.Clear();
 }
 
-static void HandleGameEvent(CNeMoContext *context, void *argument)
+bool CGame::Init()
 {
-    ((CGame *)argument)->HandleGameEvent();
-}
-
-static void HandlePostGameEvent(CNeMoContext *context, void *argument)
-{
-    ((CGame *)argument)->HandlePostGameEvent();
-}
-
-bool CGame::FinishLoad()
-{
-    const CGameConfig &config = CGameConfig::Get();
-
-    m_NeMoContext->AddPreProcessCallBack(::HandleGameEvent, this);
-    m_NeMoContext->AddPostProcessCallBack(::HandlePostGameEvent, this);
-
     // Retrieve the level
     m_Level = m_NeMoContext->GetCurrentLevel();
     if (!m_Level)
@@ -599,6 +602,9 @@ bool CGame::FinishLoad()
 
     EditScriptDefaultLevel(defaultLevel);
 
+    m_NeMoContext->AddPreProcessCallBack(::HandleGameEvent, this);
+    m_NeMoContext->AddPostProcessCallBack(::HandlePostGameEvent, this);
+
     // Add the render context to the level
     CKRenderContext *dev = m_NeMoContext->GetRenderContext();
     m_Level->AddRenderContext(dev, TRUE);
@@ -611,6 +617,18 @@ bool CGame::FinishLoad()
     m_NeMoContext->Render();
 
     return true;
+}
+
+void CGame::Cleanup()
+{
+    m_Level = NULL;
+    m_Gameplay = NULL;
+    m_InGame = false;
+    m_Paused = false;
+    m_ShowCursor = false;
+    m_LevelEventHandlers.Clear();
+    m_GameplayEventHandlers.Clear();
+    m_PostEventCallbacks.Clear();
 }
 
 class CGameEventHandler
