@@ -135,12 +135,7 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
 
 target_include_directories(${PLAYER_NAME} PRIVATE ${PLAYER_INCLUDE_DIR})
 
-target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath delayimp.lib)
-
-target_link_options(${PLAYER_NAME} PRIVATE
-        /DELAYLOAD:CK2.dll
-        /DELAYLOAD:VxMath.dll
-        )
+target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
 
 # Disable msvc unsafe warnings
 target_compile_definitions(${PLAYER_NAME} PRIVATE

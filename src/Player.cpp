@@ -1,4 +1,3 @@
-#define _WIN32_WINNT 0x0502
 #include <windows.h>
 
 #include "CmdlineParser.h"
@@ -50,23 +49,7 @@ static void LoadPaths(CmdlineParser &parser)
     config.LoadPathsFromCmdline(parser);
 }
 
-static bool DetectVirtoolsDlls(const char *path)
-{
-    if (!path || strcmp(path, "") == 0)
-        return false;
-
-    static const char *dlls[3] = {"CK2.dll", "CKZlib.dll", "VxMath.dll"};
-    char szPath[MAX_PATH];
-    for (int i = 0; i < 3; ++i)
-    {
-        utils::ConcatPath(szPath, MAX_PATH, path, dlls[i]);
-        if (!utils::FileOrDirectoryExists(szPath))
-            return false;
-    }
-    return true;
-}
-
-static bool GetDefaultRootPath(char *path, size_t size)
+static bool SetupGameDirectories()
 {
     char szPath[MAX_PATH];
     char drive[4];
@@ -74,65 +57,13 @@ static bool GetDefaultRootPath(char *path, size_t size)
     char filename[MAX_PATH];
     ::GetModuleFileNameA(NULL, szPath, MAX_PATH);
     _splitpath(szPath, drive, dir, filename, NULL);
+    _snprintf(szPath, MAX_PATH, "%s%s..\\", drive, dir);
+    if (!utils::DirectoryExists(szPath))
+        CLogger::Get().Error("The root directory is not valid!");
 
-    _snprintf(szPath, size, "%s%s", drive, dir);
-    if (DetectVirtoolsDlls(szPath))
-    {
-        _snprintf(path, size, "%s%s..\\", drive, dir);
-        return true;
-    }
-
-    _snprintf(szPath, size, "%s%sBin", drive, dir);
-    if (DetectVirtoolsDlls(szPath))
-    {
-        _snprintf(path, size, "%s%s", drive, dir);
-        return true;
-    }
-
-    return false;
-}
-
-static bool DetectGameDirectory()
-{
     CGameConfig &config = CGameConfig::Get();
-    char szPath[MAX_PATH];
-    bool valid = false;
-
-    // If the root path is specified, check it first
-    if (config.HasPath(eRootPath))
-    {
-        utils::ConcatPath(szPath, MAX_PATH, config.GetPath(eRootPath), "Bin");
-        if (DetectVirtoolsDlls(szPath))
-            valid = true;
-    }
-
-    // Try the default root path
-    if (!valid && GetDefaultRootPath(szPath, MAX_PATH))
-    {
-        config.SetPath(eRootPath, szPath);
-        valid = true;
-    }
-
-    if (!valid && utils::BrowsePath("Please specify the game root directory", szPath))
-    {
-        config.SetPath(eRootPath, szPath);
-        utils::ConcatPath(szPath, MAX_PATH, config.GetPath(eRootPath), "Bin");
-        if (DetectVirtoolsDlls(szPath))
-            valid = true;
-    }
-
-    return valid;
-}
-
-static bool SetupGameDirectories()
-{
-    CGameConfig &config = CGameConfig::Get();
-
-    if (!config.HasPath(eRootPath))
-    {
-        CLogger::Get().Error("Game root path is not specified");
-        return false;
-    }
+    config.SetPath(eRootPath, szPath);
+    config.SetPath(eDataPath, szPath);
 
     const char *const dirs[] = {
         "Plugins",
@@ -141,11 +72,7 @@ static bool SetupGameDirectories()
         "BuildingBlocks",
         "Sounds",
         "Textures"};
-    const char *rootPath = config.GetPath(eRootPath);
 
-    config.SetPath(eDataPath, rootPath);
-
-    char szPath[MAX_PATH];
     bool useDefaultDir = false;
     for (int p = ePluginPath; p < ePathCategoryCount; ++p)
     {
@@ -162,7 +89,7 @@ static bool SetupGameDirectories()
 
         if (useDefaultDir)
         {
-            utils::ConcatPath(szPath, MAX_PATH, rootPath, dirs[p - ePluginPath]);
+            utils::ConcatPath(szPath, MAX_PATH, config.GetPath(eRootPath), dirs[p - ePluginPath]);
             strcat(szPath, "\\");
             config.SetPath((PathCategory)p, szPath);
             useDefaultDir = false;
@@ -178,18 +105,6 @@ static bool SetupGameDirectories()
     return true;
 }
 
-static void SetupCurrentDirectory()
-{
-    CGameConfig &config = CGameConfig::Get();
-    char szPath[MAX_PATH];
-
-    utils::ConcatPath(szPath, MAX_PATH, config.GetPath(eRootPath), "Bin");
-    // Some game scripts rely on the relative path, the current directory should keep the same with original player
-    ::SetCurrentDirectoryA(szPath);
-    // Add the path to delay-loaded DLLs
-    ::SetDllDirectoryA(szPath);
-}
-
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     HANDLE hMutex = ::CreateMutex(NULL, FALSE, TEXT("Ballance"));
@@ -202,14 +117,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     LoadPaths(parser);
 
-    // Check that the game root path is valid
-    // The game directory should have the Bin directory which contains the Virtools Engine dlls
-    if (!DetectGameDirectory())
-    {
-        ::MessageBox(NULL, TEXT("Unable to locate CK2.dll!"), TEXT("Error"), MB_OK);
-        return -1;
-    }
-
     // Load settings
     CGameConfig &config = CGameConfig::Get();
     config.LoadFromIni();
@@ -219,10 +126,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     {
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
     }
-
-    SetupCurrentDirectory();
-
-    // Virtools SDK is available from here
 
     if (!SetupGameDirectories())
     {
