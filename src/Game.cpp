@@ -447,7 +447,9 @@ CGame::CGame()
       m_GameInfo(NULL),
       m_Level(NULL),
       m_Gameplay(NULL),
-      m_InGame(false)
+      m_InGame(false),
+      m_Paused(false),
+      m_ShowCursor(false)
 {
     InitEventHandler();
 }
