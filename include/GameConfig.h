@@ -31,9 +31,6 @@ public:
     bool loadAllManagers;
     bool loadAllBuildingBlocks;
     bool loadAllPlugins;
-    bool unlockWidescreen;
-    bool unlockHighResolution;
-    bool skipOpening;
 
     // Graphics
     int driver;
@@ -42,6 +39,8 @@ public:
     int height;
     bool fullscreen;
     bool unlockFramerate;
+    bool unlockWidescreen;
+    bool unlockHighResolution;
 
     int antialias;
     bool disableFilter;
@@ -59,6 +58,7 @@ public:
     int posY;
 
     // Game Settings
+    bool skipOpening;
     bool debug;
     bool rookie;
 

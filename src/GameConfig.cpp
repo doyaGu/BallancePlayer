@@ -43,21 +43,6 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.loadAllManagers = true;
             continue;
         }
-        if (parser.Next(arg, "--unlock-widescreen", '\0'))
-        {
-            config.unlockWidescreen = true;
-            continue;
-        }
-        if (parser.Next(arg, "--unlock-high-resolution", '\0'))
-        {
-            config.unlockHighResolution = true;
-            continue;
-        }
-        if (parser.Next(arg, "--skip-opening", '\0'))
-        {
-            config.skipOpening = true;
-            continue;
-        }
         if (parser.Next(arg, "--video-driver", 'v', 1))
         {
             if (arg.GetValue(0, value))
@@ -90,6 +75,16 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
         if (parser.Next(arg, "--unlock-framerate", 'u'))
         {
             config.unlockFramerate = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-widescreen", '\0'))
+        {
+            config.unlockWidescreen = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-high-resolution", '\0'))
+        {
+            config.unlockHighResolution = true;
             continue;
         }
         if (parser.Next(arg, "--antialias", '\0', 1))
@@ -153,6 +148,11 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
         {
             if (arg.GetValue(0, value))
                 config.posY = value;
+            continue;
+        }
+        if (parser.Next(arg, "--skip-opening", '\0'))
+        {
+            config.skipOpening = true;
             continue;
         }
         if (parser.Next(arg, "--debug", 'd'))
@@ -227,20 +227,22 @@ void CGameConfig::SetDefault()
     loadAllManagers = true;
     loadAllBuildingBlocks = true;
     loadAllPlugins = true;
-    unlockWidescreen = false;
-    unlockHighResolution = false;
-    skipOpening = false;
+
     driver = 0;
     bpp = PLAYER_DEFAULT_BPP;
     width = PLAYER_DEFAULT_WIDTH;
     height = PLAYER_DEFAULT_HEIGHT;
     fullscreen = false;
     unlockFramerate = false;
+    unlockWidescreen = false;
+    unlockHighResolution = false;
+
     antialias = 0;
     disableFilter = false;
     disableDithering = false;
     disableMipmap = false;
     disableSpecular = false;
+
     borderless = false;
     resizable = false;
     clipMouse = false;
@@ -248,8 +250,11 @@ void CGameConfig::SetDefault()
     pauseOnDeactivated = false;
     posX = 2147483647;
     posY = 2147483647;
+
+    skipOpening = false;
     debug = false;
     rookie = false;
+
     memset(m_Paths, 0, sizeof(m_Paths));
 }
 
@@ -365,9 +370,6 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniGetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
     IniGetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
-    IniGetBoolean("Startup", "UnlockWidescreen", unlockWidescreen, filename);
-    IniGetBoolean("Startup", "UnlockHighResolution", unlockHighResolution, filename);
-    IniGetBoolean("Startup", "SkipOpening", skipOpening, filename);
 
     IniGetInteger("Graphics", "Driver", driver, filename);
     IniGetInteger("Graphics", "BitsPerPixel", bpp, filename);
@@ -375,6 +377,8 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetInteger("Graphics", "Height", height, filename);
     IniGetBoolean("Graphics", "FullScreen", fullscreen, filename);
     IniGetBoolean("Graphics", "UnlockFramerate", unlockFramerate, filename);
+    IniGetBoolean("Graphics", "UnlockWidescreen", unlockWidescreen, filename);
+    IniGetBoolean("Graphics", "UnlockHighResolution", unlockHighResolution, filename);
 
     IniGetInteger("Graphics", "Antialias", antialias, filename);
     IniGetBoolean("Graphics", "DisableFilter", disableFilter, filename);
@@ -390,8 +394,9 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetInteger("Window", "X", posX, filename);
     IniGetInteger("Window", "Y", posY, filename);
 
-    IniGetBoolean("Game", "Rookie", rookie, filename);
+    IniGetBoolean("Game", "SkipOpening", skipOpening, filename);
     IniGetBoolean("Game", "Debug", debug, filename);
+    IniGetBoolean("Game", "Rookie", rookie, filename);
 }
 
 void CGameConfig::SaveToIni(const char *filename)
@@ -410,9 +415,6 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniSetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
     IniSetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
-    IniSetBoolean("Startup", "UnlockWidescreen", unlockWidescreen, filename);
-    IniSetBoolean("Startup", "UnlockHighResolution", unlockHighResolution, filename);
-    IniSetBoolean("Startup", "SkipOpening", skipOpening, filename);
 
     IniSetInteger("Graphics", "Driver", driver, filename);
     IniSetInteger("Graphics", "BitsPerPixel", bpp, filename);
@@ -420,6 +422,8 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetInteger("Graphics", "Height", height, filename);
     IniSetBoolean("Graphics", "FullScreen", fullscreen, filename);
     IniSetBoolean("Graphics", "UnlockFramerate", unlockFramerate, filename);
+    IniSetBoolean("Graphics", "UnlockWidescreen", unlockWidescreen, filename);
+    IniSetBoolean("Graphics", "UnlockHighResolution", unlockHighResolution, filename);
 
     IniSetInteger("Graphics", "Antialias", antialias, filename);
     IniSetBoolean("Graphics", "DisableFilter", disableFilter, filename);
@@ -434,6 +438,8 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
     IniSetInteger("Window", "X", posX, filename);
     IniSetInteger("Window", "Y", posY, filename);
+
+    IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
 }
 
 CGameConfig &CGameConfig::Get()
