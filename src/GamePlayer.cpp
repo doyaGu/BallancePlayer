@@ -143,6 +143,7 @@ static BOOL CALLBACK FullscreenSetupProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
             int index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETCURSEL, 0, 0);
             int screenMode = SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0);
             context->SetScreenMode(screenMode);
+            context->ApplyScreenMode();
 
             ::EndDialog(hWnd, wID);
             return TRUE;
@@ -306,10 +307,13 @@ bool CGamePlayer::Init(HINSTANCE hInstance, HANDLE hMutex)
         return false;
     }
 
-    m_WinContext->SetMainSize(config.width, config.height);
-    m_WinContext->SetRenderSize(config.width, config.height);
     if (!config.fullscreen && x != 2147483647 && y != 2147483647)
         m_WinContext->SetPosition(x, y);
+
+    {
+        CSplash splash(m_WinContext->GetAppInstance());
+        splash.Show();
+    }
 
     switch (InitEngine())
     {
@@ -771,11 +775,6 @@ CGamePlayer *CGamePlayer::GetInstance()
 
 int CGamePlayer::InitEngine()
 {
-    {
-        CSplash splash(m_WinContext->GetAppInstance());
-        splash.Show();
-    }
-
     if (!m_NeMoContext->StartUp())
         return CKERR_INVALIDPARAMETER;
 
@@ -791,17 +790,14 @@ int CGamePlayer::InitEngine()
     if (!LoadPlugins())
         return CKERR_INVALIDPARAMETER;
 
-    CGameConfig &config = CGameConfig::Get();
-
-    if (!(config.manualSetup && ::DialogBoxParam(m_WinContext->GetAppInstance(), MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, FullscreenSetupProc, 0) == IDOK))
-        m_NeMoContext->SetScreen(config.fullscreen, config.driver, config.width, config.height, config.bpp);
-
     CKERROR err = m_NeMoContext->CreateContext(m_WinContext->GetMainWindow());
     if (err != CK_OK)
     {
         CLogger::Get().Error("Failed to create virtools context");
         return err;
     }
+
+    CGameConfig &config = CGameConfig::Get();
 
     CKRenderManager *rm = m_NeMoContext->GetRenderManager();
     rm->SetRenderOptions("DisableFilter", config.disableFilter);
@@ -810,10 +806,14 @@ int CGamePlayer::InitEngine()
     rm->SetRenderOptions("DisableMipmap", config.disableMipmap);
     rm->SetRenderOptions("DisableSpecular", config.disableSpecular);
 
-    if (!m_NeMoContext->FindScreenMode())
+    if (!(config.manualSetup && OpenSetupDialogBox()))
     {
-        CLogger::Get().Error("Found no capable screen mode");
-        return CKERR_INVALIDPARAMETER;
+        m_NeMoContext->SetScreen(config.fullscreen, config.driver, config.width, config.height, config.bpp);
+        if (!m_NeMoContext->FindScreenMode())
+        {
+            CLogger::Get().Error("Found no capable screen mode");
+            return CKERR_INVALIDPARAMETER;
+        }
     }
 
     err = m_NeMoContext->CreateRenderContext(m_WinContext->GetRenderWindow());
@@ -841,21 +841,8 @@ bool CGamePlayer::ReInitEngine()
     if (!m_NeMoContext->GetCKContext())
         return false;
 
-    if (::DialogBoxParam(m_WinContext->GetAppInstance(), MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, FullscreenSetupProc, 0) != IDOK)
+    if (!OpenSetupDialogBox())
         return false;
-
-    if (!m_NeMoContext->ApplyScreenMode())
-        return false;
-
-    CGameConfig &config = CGameConfig::Get();
-    config.driver = m_NeMoContext->GetDriver();
-    m_NeMoContext->GetResolution(config.width, config.height);
-    config.bpp = m_NeMoContext->GetBPP();
-
-    m_WinContext->SetMainSize(config.width, config.height);
-    m_WinContext->SetRenderSize(config.width, config.height);
-    if (!config.fullscreen)
-        m_WinContext->SetPosition(config.posX, config.posY);
 
     CKERROR err = m_NeMoContext->CreateRenderContext(m_WinContext->GetRenderWindow());
     if (err != CK_OK)
@@ -863,6 +850,8 @@ bool CGamePlayer::ReInitEngine()
         CLogger::Get().Error("Cannot recreate render context");
         return false;
     }
+
+    CGameConfig &config = CGameConfig::Get();
 
     if (config.fullscreen)
         OnGoFullscreen();
@@ -1039,6 +1028,24 @@ bool CGamePlayer::LoadPlugins()
             }
         }
     }
+
+    return true;
+}
+
+bool CGamePlayer::OpenSetupDialogBox()
+{
+    if (::DialogBoxParam(m_WinContext->GetAppInstance(), MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, FullscreenSetupProc, 0) != IDOK)
+        return false;
+
+    CGameConfig &config = CGameConfig::Get();
+    config.driver = m_NeMoContext->GetDriver();
+    m_NeMoContext->GetResolution(config.width, config.height);
+    config.bpp = m_NeMoContext->GetBPP();
+
+    m_WinContext->SetMainSize(config.width, config.height);
+    m_WinContext->SetRenderSize(config.width, config.height);
+    if (!config.fullscreen)
+        m_WinContext->SetPosition(config.posX, config.posY);
 
     return true;
 }

@@ -65,6 +65,7 @@ private:
     bool LoadManagers();
     bool LoadBuildingBlocks();
     bool LoadPlugins();
+    bool OpenSetupDialogBox();
     void RedirectLog();
 
     int m_State;
