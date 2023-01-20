@@ -793,7 +793,8 @@ int CGamePlayer::InitEngine()
 
     CGameConfig &config = CGameConfig::Get();
 
-    m_NeMoContext->SetScreen(config.fullscreen, config.driver, config.width, config.height, config.bpp);
+    if (!(config.manualSetup && ::DialogBoxParam(m_WinContext->GetAppInstance(), MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, FullscreenSetupProc, 0) == IDOK))
+        m_NeMoContext->SetScreen(config.fullscreen, config.driver, config.width, config.height, config.bpp);
 
     CKERROR err = m_NeMoContext->CreateContext(m_WinContext->GetMainWindow());
     if (err != CK_OK)

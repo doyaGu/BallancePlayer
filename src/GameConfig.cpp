@@ -23,6 +23,11 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
                 config.langId = value;
             continue;
         }
+        if (parser.Next(arg, "--manual-setup", 'm'))
+        {
+            config.manualSetup = false;
+            continue;
+        }
         if (parser.Next(arg, "--load-all-managers", '\0'))
         {
             config.loadAllManagers = true;
@@ -227,6 +232,7 @@ void CGameConfig::SetDefault()
     loadAllManagers = true;
     loadAllBuildingBlocks = true;
     loadAllPlugins = true;
+    manualSetup = false;
 
     driver = 0;
     bpp = PLAYER_DEFAULT_BPP;
@@ -367,6 +373,7 @@ void CGameConfig::LoadFromIni(const char *filename)
     }
 
     IniGetInteger("Startup", "Language", langId, filename);
+    IniGetBoolean("Startup", "ManualSetup", manualSetup, filename);
     IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniGetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
     IniGetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
@@ -412,6 +419,7 @@ void CGameConfig::SaveToIni(const char *filename)
     }
 
     IniSetInteger("Startup", "Language", langId, filename);
+    IniSetBoolean("Startup", "ManualSetup", manualSetup, filename);
     IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniSetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
     IniSetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);

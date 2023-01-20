@@ -28,6 +28,7 @@ class CGameConfig
 public:
     // Startup Settings
     int langId;
+    bool manualSetup;
     bool loadAllManagers;
     bool loadAllBuildingBlocks;
     bool loadAllPlugins;
