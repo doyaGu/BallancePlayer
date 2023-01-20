@@ -1,14 +1,12 @@
 #include "Utils.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-#include <ShlObj.h>
 
 namespace utils
 {
@@ -75,50 +73,6 @@ namespace utils
         {
             buffer[len - 1] = '\0';
         }
-        return true;
-    }
-
-    bool BrowsePath(const char *title, char *path)
-    {
-        BROWSEINFOA bInfo;
-        memset(&bInfo, 0, sizeof(BROWSEINFOA));
-        bInfo.hwndOwner = ::GetForegroundWindow();
-        bInfo.lpszTitle = title;
-        bInfo.ulFlags = BIF_RETURNONLYFSDIRS | BIF_USENEWUI | BIF_UAHINT | BIF_NONEWFOLDERBUTTON;
-
-        LPITEMIDLIST lpDlist;
-        lpDlist = ::SHBrowseForFolderA(&bInfo);
-        if (!lpDlist)
-            return false;
-
-        ::SHGetPathFromIDListA(lpDlist, path);
-        return true;
-    }
-
-    bool CreatePathTree(const char *path)
-    {
-        if (!path || strcmp(path, "") == 0)
-            return false;
-
-        const size_t sz = strlen(path);
-        if (sz <= 2)
-            return false;
-
-        char *pt = new char[sz + 1];
-        memcpy(pt, path, sz + 1);
-
-        for (char *pch = &pt[3]; *pch != '\0'; ++pch)
-        {
-            if (*pch != '/' && *pch != '\\')
-                continue;
-            *pch = '\0';
-            if (::GetFileAttributesA(pt) == -1)
-                if (!::CreateDirectoryA(pt, NULL))
-                    break;
-            *pch = '\\';
-        }
-
-        delete[] pt;
         return true;
     }
 

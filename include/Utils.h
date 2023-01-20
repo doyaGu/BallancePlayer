@@ -1,23 +1,18 @@
 #ifndef PLAYER_UTILS_H
 #define PLAYER_UTILS_H
 
-#include "wchar.h"
+#include <wchar.h>
 
 namespace utils
 {
     bool FileOrDirectoryExists(const char *file);
-
     bool DirectoryExists(const char *dir);
 
     bool IsAbsolutePath(const char *path);
-
     bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing = false);
 
-    bool BrowsePath(const char *title, char *path);
-
-    bool CreatePathTree(const char *path);
-
     char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2);
+
     const char *FindLastPathSeparator(const char *path);
     bool HasTrailingPathSeparator(const char *path);
     bool RemoveTrailingPathSeparator(char *path);
