@@ -8,6 +8,10 @@
 #endif
 #include <windows.h>
 
+#ifndef INVALID_FILE_ATTRIBUTES
+#define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#endif
+
 namespace utils
 {
     bool FileOrDirectoryExists(const char *file)
