@@ -19,7 +19,7 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
     {
         if (parser.Next(arg, "--manual-setup", 'm'))
         {
-            config.manualSetup = false;
+            config.manualSetup = true;
             continue;
         }
         if (parser.Next(arg, "--load-all-managers", '\0'))
