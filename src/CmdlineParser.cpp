@@ -125,7 +125,7 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
     bool match = false;
 
     size_t optLen = 2;
-    if (opt != '\0' && !isalnum(opt) &&
+    if (opt != '\0' && isalnum(opt) &&
         s[0] == '-' && s[1] == opt)
         match = true;
 
