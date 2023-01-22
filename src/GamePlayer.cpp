@@ -808,6 +808,8 @@ int CGamePlayer::InitEngine()
 
     if (!(config.manualSetup && OpenSetupDialogBox()))
     {
+        config.manualSetup = false;
+
         m_NeMoContext->SetScreen(config.fullscreen, config.driver, config.width, config.height, config.bpp);
         if (!m_NeMoContext->FindScreenMode())
         {
