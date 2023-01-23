@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(BallancePlayer
-        VERSION 0.2.1.0
+        VERSION 0.2.2.0
         DESCRIPTION "The brand-new player for Ballance"
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
         )
@@ -129,7 +129,6 @@ add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
 
 set_target_properties(${PLAYER_NAME} PROPERTIES
         OUTPUT_NAME ${PLAYER_NAME}
-        VERSION ${PLAYER_VERSION}
         WIN32_EXECUTABLE TRUE
         )
 

@@ -3,9 +3,9 @@
 
 #define PLAYER_VERSION_MAJOR 0
 #define PLAYER_VERSION_MINOR 2
-#define PLAYER_VERSION_PATCH 1
+#define PLAYER_VERSION_PATCH 2
 #define PLAYER_VERSION_TWEAK 0
-#define PLAYER_VERSION "0.2.1.0"
+#define PLAYER_VERSION "0.2.2.0"
 #define PLAYER_DESCRIPTION "The brand-new player for Ballance"
 
 #define PLAYER_DEFAULT_WIDTH 640
