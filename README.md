@@ -1,14 +1,14 @@
 # BallancePlayer
-# Overview
 
-This repository contains the source files of the brand-new player for Ballance. 
+## Overview
 
-The new player is an enhanced version created on the decompilation of the original version.
+The package contains the brand-new player for Ballance.
+The new player is created based on the decompilation of the original version.
 
 ## Features
 
 - Out-of-the-box and portable, zero-configuration to start game
-- Support `.ini` file configurations
+- Support .ini file configurations
 - Support command-line options
 - Support 32-bit color mode
 - Support the monitor without 640x480 resolution
@@ -16,22 +16,20 @@ The new player is an enhanced version created on the decompilation of the origin
 - Support OpenGL renderer
 - Support in-game resolution switching
 - Support in-game resizing in windowed mode
-- Support off-site startup
-- Support game path customization
 - Add hotkeys for switching fullscreen and closing game
 - No registry operation
 - No dependency on `Dsetup.dll`
-- Merge `ResDll.dll` into the player
+- Integrated `ResDll.dll`
 - Fix some bugs that exist in the original player
-- Improve performance
+- Performance improvement
 
 ## Environment
 
-Supports Windows XP, Vista, 7, 8, 10, 11.
+Supports Windows XP, Vista, 7, 8, 8.1, 10, 11.
 
 ## Instructions
 
-1. Extract the latest build package into your game folder.
+1. Extract the package into `Bin` directory of your game folder.
 2. Start the game by clicking on `Player.exe`.
 
 ## Hotkeys
@@ -44,145 +42,149 @@ Supports Windows XP, Vista, 7, 8, 10, 11.
 
 There are several settings in `Player.ini`.
 
+### Startup
+
+- `ManualSetup`:
+  - Disable: `0`
+  - Enable: `1`
+
+- `LoadAllManagers`:
+  - Disable: `0`
+  - Enable: `1`
+- `LoadAllBuildingBlocks`:
+  - Disable: `0`
+  - Enable: `1`
+- `LoadAllPlugins`:
+  - Disable: `0`
+  - Enable: `1`
+
+### Graphics
+
+- `Driver`:
+  - Driver ID: `The id of the graphics card driver to display`
+- `BitsPerPixel`:
+  - 32-bit: `32`
+  - 16-bit: `16`
+- `Width`:
+  - Screen Width: `The screen width which can be found in your monitor resolutions`
+- `Height`:
+  - Screen Height: `The screen height which can be found in your monitor resolutions`
+- `FullScreen`:
+  - Windowed Mode: `0`
+  - Fullscreen Mode: `1`
+- `UnlockFramerate`:
+  - Lock: `0`
+  - Unlock: `1`
+- `UnlockWidescreen`:
+  - Lock: `0`
+  - Unlock: `1`
+- `UnlockHighResolution`:
+  - Lock: `0`
+  - Unlock: `1`
+- `Antialias`:
+  - Anti-aliasing Level: `The number of multi-sample for anti-aliasing (minimum: 2)`
+- `DisableFilter`:
+  - OFF: `0`
+  - ON: `1`
+- `DisableDithering`:
+  - OFF: `0`
+  - ON: `1`
+- `DisableMipmap`:
+  - OFF: `0`
+  - ON: `1`
+- `DisableSpecular`:
+  - OFF: `0`
+  - ON: `1`
+
+### Window
+
+- `Borderless`:
+  - Disable: `0`
+  - Enable: `1`
+- `Resizable`:
+  - Disable: `0`
+  - Enable: `1`
+- `ClipMouse`:
+  - Disable: `0`
+  - Enable: `1`
+- `AlwaysHandleInput`
+  - Disable: `0`
+  - Enable: `1`
+- `PauseOnDeactivated`
+  - Disable: `0`
+  - Enable: `1`
+- `X`:
+  - Window Horizontal Coordinate: `Any integer between negative window width and screen width`
+- `Y`:
+  - Window Vertical Coordinate: `Any integer between negative window height and screen height`
+
+### Game
+
 - `Language`:
   - German: `0`
   - English: `1`
   - Spanish: `2`
   - Italian: `3`
   - French: `4`
-
-- `LoadAllManagers`:
-  - Disable: `0`
-  - Enable: `1`
-
-- `LoadAllBuildingBlocks`:
-  - Disable: `0`
-  - Enable: `1`
-
-- `LoadAllPlugins`:
-  - Disable: `0`
-  - Enable: `1`
-
-- `AdaptiveCamera`:
-  - Disable: `0`
-  - Enable: `1`
-
-- `UnlockWidescreen`:
-  - Lock: `0`
-  - Unlock: `1`
-
-- `UnlockHighResolution`:
-  - Lock: `0`
-  - Unlock: `1`
-
 - `SkipOpening`:
   - Disable: `0`
   - Enable: `1`
 
-- `Driver`:
-  - Driver ID: `The id of the graphics card driver to display`
-
-- `BitsPerPixel`:
-  - 32-bit: `32`
-  - 16-bit: `16`
-
-- `Width`:
-  - Screen Width: `The screen width which can be found in your monitor resolutions`
-
-- `Height`:
-  - Screen Height: `The screen height which can be found in your monitor resolutions`
-
-- `FullScreen`:
-  - Windowed Mode: `0`
-  - Fullscreen Mode: `1`
-
-- `UnlockFramerate`:
-  - Lock: `0`
-  - Unlock: `1`
-
-- `Antialias`:
-  - Anti-aliasing Level: `The number of multi-sample for anti-aliasing (minimum: 2)`
-
-- `DisableFilter`:
-  - OFF: `0`
-  - ON: `1`
-
-- `DisableDithering`:
-  - OFF: `0`
-  - ON: `1`
-
-- `DisableMipmap`:
-  - OFF: `0`
-  - ON: `1`
-
-- `DisableSpecular`:
-  - OFF: `0`
-  - ON: `1`
-
-- `Borderless`:
-  - Disable: `0`
-  - Enable: `1`
-
-- `Resizable`:
-  - Disable: `0`
-  - Enable: `1`
-
-- `ClipMouse`:
-  - Disable: `0`
-  - Enable: `1`
-
-- `AlwaysHandleInput`
-  - Disable: `0`
-  - Enable: `1`
-
-- `PauseOnDeactivated`
-  - Disable: `0`
-  - Enable: `1`
-
-- `X`:
-  - Window Horizontal Coordinate: `Any integer between negative window width and screen width`
-
-- `Y`:
-  - Window Vertical Coordinate: `Any integer between negative window height and screen height`
-
 ## Command-line Options
 
 ```bash
-Player.exe [-f] [-c] [-s] [-u] [-e] [-p] [-x <X>] [-y <Y>] [-w <width>] [-h <height>] [-b <bbp>] [-v <driver>] [-l <lang>] 
+Player.exe [OPTIONS]
 ```
 
-- `-l <lang>` or `--lang <lang>`: Set the language id
+- `-m`, `--manual-setup`: Always show setup dialog box at startup
 - `--load-all-managers`: Control whether player loads all managers
 - `--load-all-building-blocks`: Control whether player loads all building blocks
 - `--load-all-plugins`: Control whether player loads all plugins
-- `--adaptive-camera`: Enable camera correction
+- `-v <driver>`, `--video-driver <driver>`: Set the id of the graphics card driver to display
+- `-b <bpp>`, `--bpp <bpp>`: Set the bit per pixel of the screen (32 or 16)
+- `-w <width>`, `--width <width>`: Set the screen width
+- `-h <height>`, `--height <height>`: Set the screen height
+- `-f`, `--fullscreen`: Startup in fullscreen mode
+- `-u`, `--unlock-framerate`: Unlock the frame rate limitation
 - `--unlock-widescreen`: Unlock non-4:3 resolutions
 - `--unlock-high-resolution`: Unlock resolutions higher than 1600x1200
-- `--skip-opening`: Skip the opening animation
-- `-v <driver>` or `--video-driver <driver>`: Set the id of the graphics card driver to display
-- `-b <bpp>` or `--bpp <bpp>`: Set the bit per pixel of the screen (32 or 16)
-- `-w <width>` or `--width <width>`: Set the screen width
-- `-h <height>` or `--height <height>`: Set the screen height
-- `-f` or `--fullscreen`: Startup in fullscreen mode
-- `-u` or `--unlock-framerate`: Unlock the frame rate limitation
 - `--antialias <level>`: Enable image antialiasing (minimum: 2)
 - `--disable-filter`: Disable texture filtering
 - `--disable-dithering`: Disable image dithering
 - `--disable-mipmap`: Disable mipmap
 - `--disable-specular`: Disable specular highlights
-- `-c` or `--borderless`: Startup in borderless mode
-- `-s` or `--resizable`: Make window resizable
+- `-c`, `--borderless`: Startup in borderless mode
+- `-s`, `--resizable`: Make window resizable
 - `--clip-mouse`: Clip mouse in window
 - `--always-handle-input`: Allow player handle input while window is in background
-- `-p` or `--pause-on-deactivated`: Pause the game once the window is deactivated
-- `-x <X>` or `--position-x <X>`: Set the position x of the window
-- `-y <Y>` or `--position-y <Y>`: Set the position y of the window
+- `-p`, `--pause-on-deactivated`: Pause the game once the window is deactivated
+- `-x <X>`, `--position-x <X>`: Set the position x of the window
+- `-y <Y>`, `--position-y <Y>`: Set the position y of the window
+- `-l <lang>`, `--lang <lang>`: Set the language id
+- `--skip-opening`: Skip the opening animation
 
 ## Contact
 
 If you have any bugs or requests, please open an issue in this repository: [BallancePlayer](https://github.com/doyaGu/BallancePlayer).
 
 ## ChangeLog
+
+### v0.2.2 (2023-01-23)
+
+**News**
+
+- Add a new setting `ManualSetup` and corresponding command-line option `--manual-setup` to control whether to show setup dialog box at startup.
+
+**Bug Fixes**
+
+- Fix broken command line short option parsing.
+
+**Changed**
+
+- Deprecate `AdaptiveCamera`.
+- Deprecate delay-loaded DLL.
+- Deprecate path customization.
+- Simplify the workaround for enumeration of driver and screen mode.
 
 ### v0.2.1 (2022-11-24)
 
