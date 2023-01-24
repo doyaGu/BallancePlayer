@@ -183,10 +183,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     switch (uMsg)
     {
-    case WM_DESTROY:
-        player->OnDestroy();
-        break;
-
     case WM_MOVE:
         player->OnMove();
         break;
@@ -459,11 +455,6 @@ void CGamePlayer::Reset()
     m_NeMoContext->Play();
 }
 
-void CGamePlayer::OnDestroy()
-{
-    ::PostQuitMessage(0);
-}
-
 void CGamePlayer::OnMove()
 {
     CGameConfig &config = CGameConfig::Get();
@@ -495,7 +486,7 @@ void CGamePlayer::OnClose()
     m_NeMoContext->RefreshScreen();
     m_NeMoContext->Shutdown();
 
-    m_WinContext->DestroyWindows();
+    ::PostQuitMessage(0);
 }
 
 void CGamePlayer::OnActivateApp(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -640,7 +631,7 @@ void CGamePlayer::OnReturn(WPARAM wParam, LPARAM lParam)
 
     if (!m_Game->Load())
     {
-        OnDestroy();
+        OnClose();
         return;
     }
     Play();

@@ -23,7 +23,7 @@ class CWinContext
 {
 public:
     CWinContext();
-    ~CWinContext() {}
+    ~CWinContext();
 
     bool Init(HINSTANCE hInstance, LPFNWNDPROC lpfnWndProc);
 

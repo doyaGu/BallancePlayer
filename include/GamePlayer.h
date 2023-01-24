@@ -32,7 +32,6 @@ public:
     void Pause();
     void Reset();
 
-    void OnDestroy();
     void OnMove();
     void OnSized();
     void OnPaint();

@@ -23,6 +23,11 @@ CWinContext::CWinContext()
     memset(m_RenderWndClassName, 0, sizeof(m_RenderWndClassName));
 }
 
+CWinContext::~CWinContext()
+{
+    DestroyWindows();
+}
+
 bool CWinContext::Init(HINSTANCE hInstance, LPFNWNDPROC lpfnWndProc)
 {
     m_hInstance = hInstance;
@@ -45,7 +50,11 @@ void CWinContext::UpdateWindows()
 
 void CWinContext::DestroyWindows()
 {
-    ::DestroyWindow(m_MainWindow);
+    if (m_RenderWindow)
+        ::DestroyWindow(m_RenderWindow);
+
+    if (m_MainWindow)
+        ::DestroyWindow(m_MainWindow);
 }
 
 void CWinContext::ShowMainWindow(bool show)
