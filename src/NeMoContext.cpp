@@ -246,14 +246,12 @@ void CNeMoContext::Pause()
 {
     XASSERT(m_CKContext);
     m_CKContext->Pause();
-    m_ProcessFunc = &CNeMoContext::ProcessIdle;
 }
 
 void CNeMoContext::Reset()
 {
     XASSERT(m_CKContext);
     m_CKContext->Reset();
-    m_ProcessFunc = &CNeMoContext::ProcessIdle;
 }
 
 bool CNeMoContext::IsPlaying() const
