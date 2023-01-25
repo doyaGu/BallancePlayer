@@ -7,6 +7,7 @@
 #include "NeMoContext.h"
 #include "ScriptUtils.h"
 #include "Logger.h"
+#include "Utils.h"
 #include "InterfaceManager.h"
 
 static bool SetDebugMode(CKBehavior *setDebugMode)
@@ -490,13 +491,11 @@ bool CGame::Load()
 
     char cmoPath[MAX_PATH];
     _snprintf(cmoPath, MAX_PATH, "%s%s\\%s", config.GetPath(eRootPath), m_GameInfo->path, m_GameInfo->fileName);
-    FILE *fp = fopen(cmoPath, "r");
-    if (!fp)
+    if (!utils::FileOrDirectoryExists(cmoPath))
     {
         CLogger::Get().Error("Failed to open the cmo file");
         return false;
     }
-    fclose(fp);
 
     m_NeMoContext->Cleanup();
 
