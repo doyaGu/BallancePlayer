@@ -467,6 +467,8 @@ CGame::CGame()
 
 CGame::~CGame()
 {
+    Cleanup();
+
     if (m_GameInfo)
         delete m_GameInfo;
     m_GameInfo = NULL;
@@ -520,8 +522,6 @@ bool CGame::Load()
 
 void CGame::Reset()
 {
-    m_NeMoContext->RemovePreProcessCallBack(::HandleGameEvent, this);
-    m_NeMoContext->RemovePostProcessCallBack(::HandlePostGameEvent, this);
     Cleanup();
     Init();
 }
@@ -620,6 +620,9 @@ bool CGame::Init()
 
 void CGame::Cleanup()
 {
+    m_NeMoContext->RemovePreProcessCallBack(::HandleGameEvent, this);
+    m_NeMoContext->RemovePostProcessCallBack(::HandlePostGameEvent, this);
+
     m_Level = NULL;
     m_Gameplay = NULL;
     m_InGame = false;
