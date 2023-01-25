@@ -499,6 +499,7 @@ bool CGame::Load()
         return false;
     }
 
+    m_NeMoContext->Reset();
     m_NeMoContext->Cleanup();
 
     CKObjectArray *array = CreateCKObjectArray();

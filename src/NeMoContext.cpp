@@ -202,14 +202,14 @@ void CNeMoContext::Shutdown()
     if (!m_CKContext)
         return;
 
+    Reset();
     Cleanup();
 
     if (m_RenderManager && m_RenderContext)
         m_RenderManager->DestroyRenderContext(m_RenderContext);
     m_RenderContext = NULL;
 
-    if (m_CKContext)
-        CKCloseContext(m_CKContext);
+    CKCloseContext(m_CKContext);
     CKShutdown();
     m_CKContext = NULL;
 }
@@ -217,7 +217,6 @@ void CNeMoContext::Shutdown()
 void CNeMoContext::Cleanup()
 {
     XASSERT(m_CKContext);
-    Reset();
     m_CKContext->ClearAll();
     ClearCallbacks();
 }
