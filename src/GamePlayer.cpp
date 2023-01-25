@@ -275,9 +275,9 @@ bool CGamePlayer::Init(HINSTANCE hInstance, HANDLE hMutex)
     Register(this);
     m_hMutex = hMutex;
 
-    m_NeMoContext = new CNeMoContext;
     m_WinContext = new CWinContext;
-    m_Game = new CGame;
+    m_NeMoContext = new CNeMoContext;
+
 
     CGameConfig &config = CGameConfig::Get();
 
@@ -371,7 +371,7 @@ bool CGamePlayer::Update()
     return true;
 }
 
-void CGamePlayer::Exit()
+void CGamePlayer::Shutdown()
 {
     if (m_State == eInitial)
         return;
@@ -379,18 +379,22 @@ void CGamePlayer::Exit()
     delete m_Game;
     m_Game = NULL;
 
-    delete m_WinContext;
-    m_WinContext = NULL;
-
     m_NeMoContext->Shutdown();
+
+    m_State = eInitial;
+}
+
+void CGamePlayer::Exit()
+{
     delete m_NeMoContext;
     m_NeMoContext = NULL;
+
+    delete m_WinContext;
+    m_WinContext = NULL;
 
     if (m_hMutex)
         ::CloseHandle(m_hMutex);
     m_hMutex = NULL;
-
-    m_State = eInitial;
 }
 
 bool CGamePlayer::Load(const char *filename)
@@ -398,23 +402,7 @@ bool CGamePlayer::Load(const char *filename)
     if (m_State == eInitial)
         return false;
 
-    CGameConfig &config = CGameConfig::Get();
-
-    m_NeMoContext->AddDataPath(config.GetPath(eDataPath));
-
-    if (!utils::DirectoryExists(config.GetPath(eSoundPath)))
-    {
-        CLogger::Get().Error("No Sounds directory");
-        return false;
-    }
-    m_NeMoContext->AddSoundPath(config.GetPath(eSoundPath));
-
-    if (!utils::DirectoryExists(config.GetPath(eBitmapPath)))
-    {
-        CLogger::Get().Error("No Textures directory");
-        return false;
-    }
-    m_NeMoContext->AddBitmapPath(config.GetPath(eBitmapPath));
+    m_Game = new CGame;
 
     CGameInfo *gameInfo = m_Game->NewGameInfo();
     strcpy(gameInfo->path, ".");
@@ -423,12 +411,8 @@ bool CGamePlayer::Load(const char *filename)
     InterfaceManager *im = m_NeMoContext->GetInterfaceManager();
     im->SetGameInfo(m_Game->GetGameInfo());
 
-    Pause();
-
     if (!m_Game->Load())
         return false;
-
-    Play();
 
     return true;
 }
@@ -482,10 +466,7 @@ void CGamePlayer::OnPaint()
 
 void CGamePlayer::OnClose()
 {
-    m_NeMoContext->Cleanup();
-    m_NeMoContext->RefreshScreen();
-    m_NeMoContext->Shutdown();
-
+    Shutdown();
     ::PostQuitMessage(0);
 }
 
@@ -789,6 +770,21 @@ int CGamePlayer::InitEngine()
     }
 
     CGameConfig &config = CGameConfig::Get();
+    m_NeMoContext->AddDataPath(config.GetPath(eDataPath));
+
+    if (!utils::DirectoryExists(config.GetPath(eSoundPath)))
+    {
+        CLogger::Get().Error("No Sounds directory");
+        return false;
+    }
+    m_NeMoContext->AddSoundPath(config.GetPath(eSoundPath));
+
+    if (!utils::DirectoryExists(config.GetPath(eBitmapPath)))
+    {
+        CLogger::Get().Error("No Textures directory");
+        return false;
+    }
+    m_NeMoContext->AddBitmapPath(config.GetPath(eBitmapPath));
 
     CKRenderManager *rm = m_NeMoContext->GetRenderManager();
     rm->SetRenderOptions("DisableFilter", config.disableFilter);

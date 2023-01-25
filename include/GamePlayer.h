@@ -24,6 +24,7 @@ public:
 
     void Run();
     bool Update();
+    void Shutdown();
     void Exit();
 
     bool Load(const char *filename);
