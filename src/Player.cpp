@@ -77,7 +77,6 @@ static bool SetupGameDirectories()
     {
         if (!config.HasPath((PathCategory)p))
         {
-            CLogger::Get().Debug("%s directory is not set, use default directory instead.", dirs[p - ePluginPath]);
             useDefaultDir = true;
         }
         else if (!utils::DirectoryExists(config.GetPath((PathCategory)p)))
