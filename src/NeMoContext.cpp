@@ -481,10 +481,7 @@ bool CNeMoContext::FindScreenMode()
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(m_Driver);
     if (!drDesc)
     {
-        if (m_CKContext)
-            CKCloseContext(m_CKContext);
-        m_CKContext = NULL;
-        CLogger::Get().Error("Unable to find the specified ScreenMode");
+        CLogger::Get().Error("Unable to find specified driver");
         return false;
     }
 
