@@ -52,7 +52,7 @@ public:
     void ClearScreen();
     void RefreshScreen();
 
-    void SetScreen(bool fullscreen, int driver, int width, int height, int bpp, int refreshRate = 0);
+    void SetScreen(int driver, int width, int height, int bpp, int refreshRate = 0);
 
     void GetResolution(int &width, int &height);
 

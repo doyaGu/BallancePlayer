@@ -60,8 +60,7 @@ private:
     CGamePlayer(const CGamePlayer &);
     CGamePlayer &operator=(const CGamePlayer &);
 
-    int InitEngine();
-    bool ReInitEngine();
+    bool InitEngine();
     bool LoadRenderEngine();
     bool LoadManagers();
     bool LoadBuildingBlocks();

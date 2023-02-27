@@ -55,7 +55,7 @@ static bool ClipMouse(bool enable)
     return ::ClipCursor(&rect) == TRUE;
 }
 
-static BOOL FillScreenModeList(HWND hWnd)
+static BOOL FillScreenModeList(HWND hWnd, int driver)
 {
     char buffer[256];
 
@@ -64,7 +64,7 @@ static BOOL FillScreenModeList(HWND hWnd)
     if (!rm)
         return FALSE;
 
-    VxDriverDesc *drDesc = rm->GetRenderDriverDescription(context->GetDriver());
+    VxDriverDesc *drDesc = rm->GetRenderDriverDescription(driver);
     VxDisplayMode *dm = drDesc->DisplayModes;
     const int dmCount = drDesc->DisplayModeCount;
     int i = 0;
@@ -94,9 +94,6 @@ static BOOL FillScreenModeList(HWND hWnd)
 
 static BOOL OnInitDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    if (!FillScreenModeList(hWnd))
-        EndDialog(hWnd, IDCANCEL);
-
     CNeMoContext *context = CNeMoContext::GetInstance();
     CKRenderManager *rm = context->GetRenderManager();
     if (!rm)
@@ -111,6 +108,14 @@ static BOOL OnInitDialog(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (i == context->GetDriver())
             ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETCURSEL, index, 0);
     }
+
+    int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
+    int driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
+    if (driver == -1)
+        driver = 0;
+
+    if (!FillScreenModeList(hWnd, driver))
+        EndDialog(hWnd, IDCANCEL);
 
     return TRUE;
 }
@@ -131,11 +136,11 @@ static BOOL CALLBACK FullscreenSetupProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
         {
             int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
             int driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
-            context->SetDriver(driver);
 
             ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_RESETCONTENT, 0, 0);
-            if (!FillScreenModeList(hWnd))
+            if (!FillScreenModeList(hWnd, driver))
                 ::EndDialog(hWnd, FALSE);
+
             return TRUE;
         }
         else if (wID == IDOK || wID == IDCANCEL)
@@ -282,7 +287,6 @@ bool CGamePlayer::Init(HINSTANCE hInstance, HANDLE hMutex)
     m_WinContext = new CWinContext;
     m_NeMoContext = new CNeMoContext;
 
-
     CGameConfig &config = CGameConfig::Get();
 
     m_WinContext->SetMainSize(config.width, config.height);
@@ -303,7 +307,7 @@ bool CGamePlayer::Init(HINSTANCE hInstance, HANDLE hMutex)
 
     if (!m_WinContext->Init(hInstance, WndProc))
     {
-        CLogger::Get().Error("WinContext Initialization Failed!");
+        ::MessageBox(NULL, TEXT("WinContext Initialization Failed!"), TEXT("Error"), MB_OK);
         return false;
     }
 
@@ -315,25 +319,9 @@ bool CGamePlayer::Init(HINSTANCE hInstance, HANDLE hMutex)
         splash.Show();
     }
 
-    switch (InitEngine())
+    if (!InitEngine())
     {
-    case CK_OK:
-        RedirectLog();
-        break;
-    case CKERR_NODLLFOUND:
-        ::MessageBox(NULL, TEXT("Some required plugin dlls are not found!"), TEXT("Error"), MB_OK);
-        return false;
-    case CKERR_NORENDERENGINE:
-        ::MessageBox(NULL, TEXT("No Render Engine Found!"), TEXT("Error"), MB_OK);
-        return false;
-    case CKERR_INVALIDPARAMETER:
-        if (!ReInitEngine())
-        {
-            CLogger::Get().Error("Failed to reinitialize engine!");
-            return false;
-        }
-        break;
-    default:
+        ::MessageBox(NULL, TEXT("Virtools Engine Initialization Failed!"), TEXT("Error"), MB_OK);
         return false;
     }
 
@@ -754,48 +742,70 @@ CGamePlayer *CGamePlayer::GetInstance()
     return s_Instance;
 }
 
-int CGamePlayer::InitEngine()
+bool CGamePlayer::InitEngine()
 {
     if (!m_NeMoContext->StartUp())
-        return CKERR_INVALIDPARAMETER;
+    {
+        ::MessageBox(NULL, TEXT("Failed to startup engine!"), TEXT("Error"), MB_OK);
+        return false;
+    }
 
     if (!LoadRenderEngine())
-        return CKERR_INVALIDPARAMETER;
+    {
+        ::MessageBox(NULL, TEXT("Failed to load render engine!"), TEXT("Error"), MB_OK);
+        return false;
+    }
 
     if (!LoadManagers())
-        return CKERR_INVALIDPARAMETER;
+    {
+        ::MessageBox(NULL, TEXT("Failed to load managers!"), TEXT("Error"), MB_OK);
+        return false;
+    }
 
     if (!LoadBuildingBlocks())
-        return CKERR_INVALIDPARAMETER;
+    {
+        ::MessageBox(NULL, TEXT("Failed to load building blocks!"), TEXT("Error"), MB_OK);
+        return false;
+    }
 
     if (!LoadPlugins())
-        return CKERR_INVALIDPARAMETER;
+    {
+        ::MessageBox(NULL, TEXT("Failed to load plugins!"), TEXT("Error"), MB_OK);
+        return false;
+    }
 
-    CKERROR err = m_NeMoContext->CreateContext(m_WinContext->GetMainWindow());
-    if (err != CK_OK)
+    if (m_NeMoContext->CreateContext(m_WinContext->GetMainWindow()) != CK_OK)
     {
         CLogger::Get().Error("Failed to create virtools context");
-        return err;
+        return false;
     }
+
+    RedirectLog();
 
     CGameConfig &config = CGameConfig::Get();
     m_NeMoContext->AddDataPath(config.GetPath(eDataPath));
 
     if (!utils::DirectoryExists(config.GetPath(eSoundPath)))
     {
-        CLogger::Get().Error("No Sounds directory");
+        CLogger::Get().Error("Sounds directory is not found");
         return false;
     }
     m_NeMoContext->AddSoundPath(config.GetPath(eSoundPath));
 
     if (!utils::DirectoryExists(config.GetPath(eBitmapPath)))
     {
-        CLogger::Get().Error("No Textures directory");
+        CLogger::Get().Error("Textures directory is not found");
         return false;
     }
     m_NeMoContext->AddBitmapPath(config.GetPath(eBitmapPath));
 
     CKRenderManager *rm = m_NeMoContext->GetRenderManager();
+    if (rm->GetRenderDriverCount() == 0)
+    {
+        CLogger::Get().Error("Redner driver is not found");
+        return false;
+    }
+
     rm->SetRenderOptions("DisableFilter", config.disableFilter);
     rm->SetRenderOptions("DisableDithering", config.disableDithering);
     rm->SetRenderOptions("Antialias", config.antialias);
@@ -806,51 +816,30 @@ int CGamePlayer::InitEngine()
     {
         config.manualSetup = false;
 
-        m_NeMoContext->SetScreen(config.fullscreen, config.driver, config.width, config.height, config.bpp);
+        VxDriverDesc *drDesc = rm->GetRenderDriverDescription(config.driver);
+        if (!drDesc)
+        {
+            CLogger::Get().Error("Unable to find driver %d", config.driver);
+            if (!OpenSetupDialogBox())
+                m_NeMoContext->SetScreen(0, PLAYER_DEFAULT_WIDTH, PLAYER_DEFAULT_HEIGHT, PLAYER_DEFAULT_BPP);
+        }
+
+        m_NeMoContext->SetScreen(config.driver, config.width, config.height, config.bpp);
         if (!m_NeMoContext->FindScreenMode())
         {
-            CLogger::Get().Error("Found no capable screen mode");
-            return CKERR_INVALIDPARAMETER;
+            CLogger::Get().Error("Unable to find screen mode: %d x %d x %d", config.width, config.height, config.bpp);
+            if (!OpenSetupDialogBox())
+                m_NeMoContext->SetScreen(0, PLAYER_DEFAULT_WIDTH, PLAYER_DEFAULT_HEIGHT, PLAYER_DEFAULT_BPP);
         }
     }
 
-    err = m_NeMoContext->CreateRenderContext(m_WinContext->GetRenderWindow());
-    if (err != CK_OK)
+    if (m_NeMoContext->CreateRenderContext(m_WinContext->GetRenderWindow()) != CK_OK)
     {
         CLogger::Get().Error("Failed to create render context");
-        return err;
-    }
-
-    if (config.fullscreen)
-        OnGoFullscreen();
-    else
-        OnStopFullscreen();
-
-    m_NeMoContext->ClearScreen();
-    m_NeMoContext->RefreshScreen();
-
-    return CK_OK;
-}
-
-bool CGamePlayer::ReInitEngine()
-{
-    CLogger::Get().Warn("Failed to initialize engine, retrying");
-
-    if (!m_NeMoContext->GetCKContext())
-        return false;
-
-    if (!OpenSetupDialogBox())
-        return false;
-
-    CKERROR err = m_NeMoContext->CreateRenderContext(m_WinContext->GetRenderWindow());
-    if (err != CK_OK)
-    {
-        CLogger::Get().Error("Cannot recreate render context");
         return false;
     }
 
-    CGameConfig &config = CGameConfig::Get();
-
+    m_NeMoContext->SetFullscreen(config.fullscreen);
     if (config.fullscreen)
         OnGoFullscreen();
     else

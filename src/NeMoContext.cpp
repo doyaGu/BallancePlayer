@@ -394,9 +394,8 @@ void CNeMoContext::RefreshScreen()
     }
 }
 
-void CNeMoContext::SetScreen(bool fullscreen, int driver, int width, int height, int bpp, int refreshRate)
+void CNeMoContext::SetScreen(int driver, int width, int height, int bpp, int refreshRate)
 {
-    m_Fullscreen = fullscreen;
     m_Driver = driver;
     m_DisplayMode.Width = width;
     m_DisplayMode.Height = height;
