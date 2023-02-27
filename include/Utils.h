@@ -19,6 +19,8 @@ namespace utils
 
     int CharToWchar(const char *charStr, wchar_t *wcharStr, int size);
     int WcharToChar(const wchar_t *wcharStr, char *charStr, int size);
+
+    void CRC32(const void *key, size_t len, size_t seed, void *out);
 }
 
 #endif // PLAYER_UTILS_H
