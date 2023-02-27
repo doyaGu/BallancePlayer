@@ -18,7 +18,7 @@ public:
     CGame();
     ~CGame();
 
-    bool Load();
+    bool Init();
     void Reset();
 
     bool IsInGame() const;
@@ -40,7 +40,6 @@ public:
     void HandlePostGameEvent();
 
 private:
-    bool Init();
     void Cleanup();
     void InitEventHandler();
     bool GetGameplay();

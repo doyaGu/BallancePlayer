@@ -474,51 +474,65 @@ CGame::~CGame()
     m_GameInfo = NULL;
 }
 
-bool CGame::Load()
+bool CGame::Init()
 {
-    m_NeMoContext = CNeMoContext::GetInstance();
-    if (!m_NeMoContext)
+    CNeMoContext *context = CNeMoContext::GetInstance();
+    if (!context)
     {
-        CLogger::Get().Error("NeMoContext is NULL: CMO is not loaded");
+        CLogger::Get().Error("NeMoContext is NULL");
+        return false;
+    }
+    m_NeMoContext = context;
+
+    // Retrieve the level
+    m_Level = m_NeMoContext->GetCurrentLevel();
+    if (!m_Level)
+    {
+        CLogger::Get().Error("GetCurrentLevel() Failed");
         return false;
     }
 
-    if (!m_GameInfo)
+    CKRenderContext *dev = m_NeMoContext->GetRenderContext();
+
+    // Add the render context to the level
+    m_Level->AddRenderContext(dev, TRUE);
+
+    // Take the first camera we found and attach the viewpoint to it.
+    // (in case it is not set by the composition later)
+    const XObjectPointerArray cams = m_NeMoContext->GetObjectListByType(CKCID_CAMERA, TRUE);
+    if (cams.Size() != 0)
+        dev->AttachViewpointToCamera((CKCamera *)cams[0]);
+
+    // Hide curves ?
+    int curveCount = m_NeMoContext->GetObjectsCountByClassID(CKCID_CURVE);
+    CK_ID *curve_ids = m_NeMoContext->GetObjectsListByClassID(CKCID_CURVE);
+    for (int i = 0; i < curveCount; ++i)
     {
-        CLogger::Get().Error("gameInfo is NULL: CMO is not loaded");
+        CKMesh *mesh = ((CKCurve *)m_NeMoContext->GetObject(curve_ids[i]))->GetCurrentMesh();
+        if (mesh)
+            mesh->Show(CKHIDE);
+    }
+
+    CKBehavior *defaultLevel = scriptutils::GetBehavior(m_Level->ComputeObjectList(CKCID_BEHAVIOR), "Default Level");
+    if (!defaultLevel)
+    {
+        CLogger::Get().Error("Unable to find script Default Level");
         return false;
     }
 
-    CGameConfig &config = CGameConfig::Get();
+    EditScriptDefaultLevel(defaultLevel);
 
-    char cmoPath[MAX_PATH];
-    _snprintf(cmoPath, MAX_PATH, "%s%s\\%s", config.GetPath(eRootPath), m_GameInfo->path, m_GameInfo->fileName);
-    if (!utils::FileOrDirectoryExists(cmoPath))
-    {
-        CLogger::Get().Error("Failed to open the cmo file");
-        return false;
-    }
+    m_NeMoContext->AddPreProcessCallBack(::HandleGameEvent, this);
+    m_NeMoContext->AddPostProcessCallBack(::HandlePostGameEvent, this);
 
-    m_NeMoContext->Reset();
-    m_NeMoContext->Cleanup();
+    // Set the initial conditions for the level
+    m_Level->LaunchScene(NULL);
 
-    CKObjectArray *array = CreateCKObjectArray();
-    if (!array)
-    {
-        CLogger::Get().Error("CreateCKObjectArray() Failed");
-        return false;
-    }
+    // Render the first frame
+    m_NeMoContext->RefreshScreen();
+    m_NeMoContext->Render();
 
-    // Load the file and fills the array with loaded objects
-    if (m_NeMoContext->Load(cmoPath, array) != CK_OK)
-    {
-        CLogger::Get().Error("LoadFile() Failed");
-        return false;
-    }
-
-    DeleteCKObjectArray(array);
-
-    return Init();
+    return true;
 }
 
 void CGame::Reset()
@@ -581,42 +595,6 @@ void CGame::HandlePostGameEvent()
     while (it != m_PostEventCallbacks.End())
         (*it++)(this, NULL);
     m_PostEventCallbacks.Clear();
-}
-
-bool CGame::Init()
-{
-    // Retrieve the level
-    m_Level = m_NeMoContext->GetCurrentLevel();
-    if (!m_Level)
-    {
-        CLogger::Get().Error("GetCurrentLevel() Failed");
-        return false;
-    }
-
-    CKBehavior *defaultLevel = scriptutils::GetBehavior(m_Level->ComputeObjectList(CKCID_BEHAVIOR), "Default Level");
-    if (!defaultLevel)
-    {
-        CLogger::Get().Error("Unable to find script Default Level");
-        return false;
-    }
-
-    EditScriptDefaultLevel(defaultLevel);
-
-    m_NeMoContext->AddPreProcessCallBack(::HandleGameEvent, this);
-    m_NeMoContext->AddPostProcessCallBack(::HandlePostGameEvent, this);
-
-    // Add the render context to the level
-    CKRenderContext *dev = m_NeMoContext->GetRenderContext();
-    m_Level->AddRenderContext(dev, TRUE);
-
-    // Set the initial conditions for the level
-    m_Level->LaunchScene(NULL);
-
-    // Render the first frame
-    m_NeMoContext->RefreshScreen();
-    m_NeMoContext->Render();
-
-    return true;
 }
 
 void CGame::Cleanup()

@@ -528,6 +528,22 @@ bool CNeMoContext::ApplyScreenMode()
     return true;
 }
 
+bool CNeMoContext::IsFullscreen() const
+{
+    return m_Fullscreen;
+}
+
+void CNeMoContext::SetFullscreen(bool fullscreen)
+{
+    m_Fullscreen = fullscreen;
+}
+
+bool CNeMoContext::IsRenderFullscreen() const
+{
+    XASSERT(m_RenderContext);
+    return m_RenderContext->IsFullScreen() == TRUE;
+}
+
 bool CNeMoContext::GoFullscreen()
 {
     if (!m_RenderContext || IsRenderFullscreen())
@@ -549,26 +565,6 @@ bool CNeMoContext::StopFullscreen()
 
     m_Fullscreen = false;
     return true;
-}
-
-bool CNeMoContext::IsRenderFullscreen() const
-{
-    return m_RenderContext->IsFullScreen() == TRUE;
-}
-
-bool CNeMoContext::IsFullscreen() const
-{
-    return m_Fullscreen;
-}
-
-void CNeMoContext::SetFullscreen(bool fullscreen)
-{
-    m_Fullscreen = fullscreen;
-}
-
-void CNeMoContext::SetRenderContext(CKRenderContext *renderContext)
-{
-    m_RenderContext = renderContext;
 }
 
 CKContext *CNeMoContext::GetCKContext() const
@@ -653,11 +649,13 @@ InterfaceManager *CNeMoContext::GetInterfaceManager() const
 
 void CNeMoContext::SetInterfaceMode(bool mode, CKUICALLBACKFCT callback, void *data)
 {
+    XASSERT(m_CKContext);
     m_CKContext->SetInterfaceMode(mode, callback, data);
 }
 
 bool CNeMoContext::IsInInterfaceMode()
 {
+    XASSERT(m_CKContext);
     return m_CKContext->IsInInterfaceMode() == TRUE;
 }
 
@@ -728,184 +726,231 @@ void CNeMoContext::AddDataPath(const char *path)
     m_CKContext->GetPathManager()->AddPath(DATA_PATH_IDX, str);
 }
 
+CKFile *CNeMoContext::CreateCKFile()
+{
+    XASSERT(m_CKContext);
+    return m_CKContext->CreateCKFile();
+}
+
+CKERROR CNeMoContext::DeleteCKFile(CKFile *file)
+{
+    XASSERT(m_CKContext);
+    return m_CKContext->DeleteCKFile(file);
+}
+
 CKERROR CNeMoContext::GetFileInfo(const char *filename, CKFileInfo *fileinfo)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetFileInfo((CKSTRING)filename, fileinfo);
 }
 
 CKERROR CNeMoContext::Load(const char *filename, CKObjectArray *liste, CK_LOAD_FLAGS loadFlags, CKGUID *readerGuid)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->Load((CKSTRING)filename, liste, loadFlags, readerGuid);
 }
 
 CKERROR CNeMoContext::Save(const char *filename, CKObjectArray *liste, CKDWORD saveFlags, CKDependencies *dependencies, CKGUID *readerGuid)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->Save((CKSTRING)filename, liste, saveFlags, dependencies, readerGuid);
 }
 
 CKObject *CNeMoContext::CreateObject(CK_CLASSID cid, const char *name, CK_OBJECTCREATION_OPTIONS options, CK_CREATIONMODE *res)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->CreateObject(cid, (CKSTRING)name, options, res);
 }
 
 CKObject *CNeMoContext::CopyObject(CKObject *src, CKDependencies *dependencies, const char *appendName, CK_OBJECTCREATION_OPTIONS options)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->CopyObject(src, dependencies, (CKSTRING)appendName, options);
 }
 
-const XObjectArray &
-CNeMoContext::CopyObjects(const XObjectArray &srcObjects, CKDependencies *dependencies, CK_OBJECTCREATION_OPTIONS options, const char *appendName)
+const XObjectArray &CNeMoContext::CopyObjects(const XObjectArray &srcObjects, CKDependencies *dependencies, CK_OBJECTCREATION_OPTIONS options, const char *appendName)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->CopyObjects(srcObjects, dependencies, options, (CKSTRING)appendName);
 }
 
 CKObject *CNeMoContext::GetObject(CK_ID objID)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObject(objID);
 }
 
 int CNeMoContext::GetObjectCount()
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObjectCount();
 }
 
 int CNeMoContext::GetObjectSize(CKObject *obj)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObjectSize(obj);
 }
 
 CKERROR CNeMoContext::DestroyObject(CKObject *obj, CKDWORD flags, CKDependencies *depoptions)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->DestroyObject(obj, flags, depoptions);
 }
 
 CKERROR CNeMoContext::DestroyObject(CK_ID id, CKDWORD flags, CKDependencies *depoptions)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->DestroyObject(id, flags, depoptions);
 }
 
 CKERROR CNeMoContext::DestroyObjects(CK_ID *objIds, int count, CKDWORD flags, CKDependencies *depoptions)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->DestroyObjects(objIds, count, flags, depoptions);
 }
 
 CKObject *CNeMoContext::GetObjectByName(const char *name, CKObject *previous)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObjectByName((CKSTRING)name, previous);
 }
 
 CKObject *CNeMoContext::GetObjectByNameAndClass(const char *name, CK_CLASSID cid, CKObject *previous)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObjectByNameAndClass((CKSTRING)name, cid, previous);
 }
 
 CKObject *CNeMoContext::GetObjectByNameAndParentClass(const char *name, CK_CLASSID pcid, CKObject *previous)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObjectByNameAndClass((CKSTRING)name, pcid, previous);
 }
 
 const XObjectPointerArray &CNeMoContext::GetObjectListByType(CK_CLASSID cid, bool derived)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObjectListByType(cid, derived);
 }
 
 CK_ID *CNeMoContext::GetObjectsListByClassID(CK_CLASSID cid)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObjectsListByClassID(cid);
 }
 
 int CNeMoContext::GetObjectsCountByClassID(CK_CLASSID cid)
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetObjectsCountByClassID(cid);
 }
 
 CKDataArray *CNeMoContext::GetArrayByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKDataArray *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_DATAARRAY);
 }
 
 CKGroup *CNeMoContext::GetGroupByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKGroup *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_GROUP);
 }
 
 CKMaterial *CNeMoContext::GetMaterialByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKMaterial *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_MATERIAL);
 }
 
 CKMesh *CNeMoContext::GetMeshByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKMesh *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_MESH);
 }
 
 CK2dEntity *CNeMoContext::Get2dEntityByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CK2dEntity *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_2DENTITY);
 }
 
 CK3dEntity *CNeMoContext::Get3dEntityByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CK3dEntity *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_3DENTITY);
 }
 
 CK3dObject *CNeMoContext::Get3dObjectByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CK3dObject *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_3DOBJECT);
 }
 
 CKCamera *CNeMoContext::GetCameraByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKCamera *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_CAMERA);
 }
 
 CKTargetCamera *CNeMoContext::GetTargetCameraByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKTargetCamera *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_TARGETCAMERA);
 }
 
 CKLight *CNeMoContext::GetLightByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKLight *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_LIGHT);
 }
 
 CKTargetLight *CNeMoContext::GetTargetLightByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKTargetLight *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_TARGETLIGHT);
 }
 
 CKSound *CNeMoContext::GetSoundByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKSound *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_SOUND);
 }
 
 CKTexture *CNeMoContext::GetTextureByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKTexture *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_TEXTURE);
 }
 
 CKBehavior *CNeMoContext::GetScriptByName(const char *name)
 {
+    XASSERT(m_CKContext);
     return (CKBehavior *)m_CKContext->GetObjectByNameAndClass((CKSTRING)name, CKCID_BEHAVIOR);
 }
 
 CKLevel *CNeMoContext::GetCurrentLevel()
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetCurrentLevel();
 }
 
 CKScene *CNeMoContext::GetCurrentScene()
 {
+    XASSERT(m_CKContext);
     return m_CKContext->GetCurrentScene();
 }
 
 CKMessageType CNeMoContext::AddMessageType(const char *msg)
 {
+    XASSERT(m_MessageManager);
     return m_MessageManager->AddMessageType((CKSTRING)msg);
 }
 
 CKMessageType CNeMoContext::GetMessageByString(const char *msg)
 {
+    XASSERT(m_MessageManager);
     for (int i = 0; i < m_MessageManager->GetMessageTypeCount(); i++)
         if (!strcmp(m_MessageManager->GetMessageTypeName(i), msg))
             return i;
@@ -914,23 +959,27 @@ CKMessageType CNeMoContext::GetMessageByString(const char *msg)
 
 const char *CNeMoContext::GetMessageTypeName(CKMessageType msgType)
 {
+    XASSERT(m_MessageManager);
     return m_MessageManager->GetMessageTypeName(msgType);
 }
 
 CKMessage *CNeMoContext::SendMessageSingle(const char *msg, CKBeObject *dest, CKBeObject *sender)
 {
+    XASSERT(m_MessageManager);
     CKMessageType msgType = GetMessageByString(msg);
     return m_MessageManager->SendMessageSingle(msgType, dest, sender);
 }
 
 CKMessage *CNeMoContext::SendMessageGroup(const char *msg, CKGroup *group, CKBeObject *sender)
 {
+    XASSERT(m_MessageManager);
     CKMessageType msgType = GetMessageByString(msg);
     return m_MessageManager->SendMessageSingle(msgType, group, sender);
 }
 
 CKMessage *CNeMoContext::SendMessageBroadcast(const char *msg, CK_CLASSID id, CKBeObject *sender)
 {
+    XASSERT(m_MessageManager);
     CKMessageType msgType = GetMessageByString(msg);
     return m_MessageManager->SendMessageBroadcast(msgType, id, sender);
 }

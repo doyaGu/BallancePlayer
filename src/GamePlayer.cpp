@@ -335,6 +335,31 @@ bool CGamePlayer::Init(HINSTANCE hInstance, HANDLE hMutex)
     return true;
 }
 
+bool CGamePlayer::Launch(CGame *game, const char *filename)
+{
+    if (!game || !filename)
+        return false;
+
+    if (m_State == eInitial)
+        return false;
+
+    if (!Load(filename))
+        return false;
+
+    m_Game = game;
+    CGameInfo *gameInfo = m_Game->NewGameInfo();
+    strcpy(gameInfo->path, ".");
+    strcpy(gameInfo->fileName, filename);
+
+    InterfaceManager *im = m_NeMoContext->GetInterfaceManager();
+    im->SetGameInfo(m_Game->GetGameInfo());
+
+    if (!m_Game->Init())
+        return false;
+
+    return true;
+}
+
 void CGamePlayer::Run()
 {
     while (Update())
@@ -368,9 +393,7 @@ void CGamePlayer::Shutdown()
     if (m_State == eInitial)
         return;
 
-    delete m_Game;
     m_Game = NULL;
-
     m_NeMoContext->Shutdown();
 
     m_State = eInitial;
@@ -387,26 +410,6 @@ void CGamePlayer::Exit()
     if (m_hMutex)
         ::CloseHandle(m_hMutex);
     m_hMutex = NULL;
-}
-
-bool CGamePlayer::Load(const char *filename)
-{
-    if (m_State == eInitial)
-        return false;
-
-    m_Game = new CGame;
-
-    CGameInfo *gameInfo = m_Game->NewGameInfo();
-    strcpy(gameInfo->path, ".");
-    strcpy(gameInfo->fileName, filename);
-
-    InterfaceManager *im = m_NeMoContext->GetInterfaceManager();
-    im->SetGameInfo(m_Game->GetGameInfo());
-
-    if (!m_Game->Load())
-        return false;
-
-    return true;
 }
 
 void CGamePlayer::Play()
@@ -604,14 +607,14 @@ void CGamePlayer::OnExceptionCMO(WPARAM wParam, LPARAM lParam)
 
 void CGamePlayer::OnReturn(WPARAM wParam, LPARAM lParam)
 {
-    InterfaceManager *im = m_NeMoContext->GetInterfaceManager();
-    im->SetGameInfo(m_Game->GetGameInfo());
-
-    if (!m_Game->Load())
+    XString filename = m_Game->GetGameInfo()->fileName;
+    if (!Load(filename.CStr()))
     {
         OnClose();
         return;
     }
+    m_Game->Reset();
+
     Play();
 }
 
@@ -1040,4 +1043,77 @@ bool CGamePlayer::OpenSetupDialogBox()
 void CGamePlayer::RedirectLog()
 {
     m_NeMoContext->SetInterfaceMode(FALSE, LogRedirect, NULL);
+}
+
+bool CGamePlayer::Load(const char *filename)
+{
+    if (m_State == eInitial)
+        return false;
+
+    m_NeMoContext->Reset();
+    m_NeMoContext->Cleanup();
+
+    XString resolvedFile = filename;
+    // Resolve the filename using the CKPathManager
+    {
+        CKPathManager *pm = m_NeMoContext->GetPathManager();
+        if (pm)
+            pm->ResolveFileName(resolvedFile, DATA_PATH_IDX);
+    }
+
+    if (!utils::FileOrDirectoryExists(resolvedFile.CStr()))
+    {
+        CLogger::Get().Error("File: %s is not found", resolvedFile.CStr());
+        return false;
+    }
+
+    // Load the file and fills the array with loaded objects
+    CKFile *f = m_NeMoContext->CreateCKFile();
+    CKERROR res = f->OpenFile(resolvedFile.Str(), (CK_LOAD_FLAGS)(CK_LOAD_DEFAULT | CK_LOAD_CHECKDEPENDENCIES));
+    if (res != CK_OK)
+    {
+        // something failed
+        if (res == CKERR_PLUGINSMISSING)
+        {
+            // log the missing guids
+            ReportMissingGuids(f, resolvedFile.CStr());
+        }
+        m_NeMoContext->DeleteCKFile(f);
+
+        CLogger::Get().Error("Failed to open file: %s", resolvedFile.CStr());
+        return false;
+    }
+
+    CKObjectArray *array = CreateCKObjectArray();
+    res = f->LoadFileData(array);
+    if (res != CK_OK)
+    {
+        m_NeMoContext->DeleteCKFile(f);
+        return false;
+    }
+
+    m_NeMoContext->DeleteCKFile(f);
+
+    DeleteCKObjectArray(array);
+
+    return true;
+}
+
+void CGamePlayer::ReportMissingGuids(CKFile *file, const char *resolvedFile)
+{
+    // retrieve the list of missing plugins/guids
+    XClassArray<CKFilePluginDependencies> *p = file->GetMissingPlugins();
+    for (CKFilePluginDependencies *it = p->Begin(); it != p->End(); it++)
+    {
+        int count = (*it).m_Guids.Size();
+        for (int i = 0; i < count; i++)
+        {
+            if (!((*it).ValidGuids[i]))
+            {
+                if (resolvedFile)
+                    CLogger::Get().Error("File Name : %s\nMissing GUIDS:\n", resolvedFile);
+                CLogger::Get().Error("%x,%x\n", (*it).m_Guids[i].d1, (*it).m_Guids[i].d2);
+            }
+        }
+    }
 }

@@ -55,45 +55,34 @@ public:
     void SetScreen(int driver, int width, int height, int bpp, int refreshRate = 0);
 
     void GetResolution(int &width, int &height);
-
     void SetResolution(int width, int height);
 
     int GetWidth() const;
-
     void SetWidth(int width);
 
     int GetHeight() const;
-
     void SetHeight(int height);
 
     int GetBPP() const;
-
     void SetBPP(int bpp);
 
     int GetRefreshRate() const;
-
     void SetRefreshRate(int refreshRate);
 
     int GetDriver() const;
-
     void SetDriver(int driver);
 
     int GetScreenMode() const;
-
     void SetScreenMode(int screenMode);
-
     bool FindScreenMode();
     bool ApplyScreenMode();
 
-    bool GoFullscreen();
-    bool StopFullscreen();
-    bool IsRenderFullscreen() const;
-
     bool IsFullscreen() const;
-
     void SetFullscreen(bool fullscreen);
 
-    void SetRenderContext(CKRenderContext *renderContext);
+    bool IsRenderFullscreen() const;
+    bool GoFullscreen();
+    bool StopFullscreen();
 
     CKContext *GetCKContext() const;
     CKRenderContext *GetRenderContext() const;
@@ -124,6 +113,8 @@ public:
     void AddBitmapPath(const char *path);
     void AddDataPath(const char *path);
 
+    CKFile *CreateCKFile();
+    CKERROR DeleteCKFile(CKFile *file);
     CKERROR GetFileInfo(const char *filename, CKFileInfo *fileinfo);
     CKERROR Load(const char *filename, CKObjectArray *liste, CK_LOAD_FLAGS loadFlags = CK_LOAD_DEFAULT, CKGUID *readerGuid = NULL);
     CKERROR Save(const char *filename, CKObjectArray *liste, CKDWORD saveFlags, CKDependencies *dependencies = NULL, CKGUID *readerGuid = NULL);

@@ -21,13 +21,12 @@ public:
     ~CGamePlayer();
 
     bool Init(HINSTANCE hInstance, HANDLE hMutex);
+    bool Launch(CGame *game, const char *filename);
 
     void Run();
     bool Update();
     void Shutdown();
     void Exit();
-
-    bool Load(const char *filename);
 
     void Play();
     void Pause();
@@ -67,6 +66,8 @@ private:
     bool LoadPlugins();
     bool OpenSetupDialogBox();
     void RedirectLog();
+    bool Load(const char *filename);
+    void ReportMissingGuids(CKFile* file, const char *resolvedFile);
 
     int m_State;
     CNeMoContext *m_NeMoContext;

@@ -3,6 +3,7 @@
 #include "CmdlineParser.h"
 #include "GameConfig.h"
 #include "GamePlayer.h"
+#include "Game.h"
 #include "Logger.h"
 #include "Utils.h"
 
@@ -100,7 +101,7 @@ static bool SetupGameDirectories()
         }
         else if (!utils::DirectoryExists(config.GetPath((PathCategory)p)))
         {
-            CLogger::Get().Warn("%s does not exist, use default directory instead.", config.GetPath((PathCategory)p), dirs[p - ePluginPath]);
+            CLogger::Get().Warn("%s does not exist, use default directory instead", config.GetPath((PathCategory)p), dirs[p - ePluginPath]);
             useDefaultDir = true;
         }
 
@@ -114,7 +115,7 @@ static bool SetupGameDirectories()
 
         if (!utils::DirectoryExists(config.GetPath((PathCategory)p)))
         {
-            CLogger::Get().Error("%s directory is not found!", dirs[p - ePluginPath]);
+            CLogger::Get().Error("Directory [%s] is not found", dirs[p - ePluginPath]);
             return false;
         }
     }
@@ -149,20 +150,21 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     if (!SetupGameDirectories())
     {
-        ::MessageBox(NULL, TEXT("Failed to setup all directories!"), TEXT("Error"), MB_OK);
+        CLogger::Get().Error("Failed to setup game directories");
         return -1;
     }
 
     CGamePlayer player;
     if (!player.Init(hInstance, hMutex))
     {
-        ::MessageBox(NULL, TEXT("Initialization failed!"), TEXT("Error"), MB_OK);
+        ::MessageBox(NULL, TEXT("Player Initialization Failed!"), TEXT("Error"), MB_OK);
         return -1;
     }
 
-    if (!player.Load("base.cmo"))
+    CGame game;
+    if (!player.Launch(&game, "base.cmo"))
     {
-        ::MessageBox(NULL, TEXT("Unable to find base.cmo!"), TEXT("Error"), MB_OK);
+        ::MessageBox(NULL, TEXT("Game Load Failed!"), TEXT("Error"), MB_OK);
         return -1;
     }
 
