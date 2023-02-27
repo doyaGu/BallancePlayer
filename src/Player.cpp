@@ -48,6 +48,25 @@ static void LoadPaths(CmdlineParser &parser)
     config.LoadPathsFromCmdline(parser);
 }
 
+static HANDLE CreatNamedMutex()
+{
+    char buf[MAX_PATH];
+    char drive[4];
+    char dir[MAX_PATH];
+    char filename[MAX_PATH];
+    ::GetModuleFileNameA(NULL, buf, MAX_PATH);
+    _splitpath(buf, drive, dir, filename, NULL);
+    _snprintf(buf, MAX_PATH, "%s%s", drive, dir);
+
+    size_t crc = 0;
+    utils::CRC32(buf, strlen(buf), 0, &crc);
+    _snprintf(buf, MAX_PATH, "Ballance-%X", crc);
+    HANDLE hMutex = ::CreateMutexA(NULL, FALSE, buf);
+    if (::GetLastError() == ERROR_ALREADY_EXISTS)
+        return NULL;
+    return hMutex;
+}
+
 static bool SetupGameDirectories()
 {
     char szPath[MAX_PATH];
@@ -105,8 +124,8 @@ static bool SetupGameDirectories()
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    HANDLE hMutex = ::CreateMutex(NULL, FALSE, TEXT("Ballance"));
-    if (::GetLastError() == ERROR_ALREADY_EXISTS)
+    HANDLE hMutex = CreatNamedMutex();
+    if (!hMutex)
         return -1;
 
     CmdlineParser parser(__argc, __argv);
