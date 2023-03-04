@@ -967,6 +967,8 @@ CKMessage *CNeMoContext::SendMessageSingle(const char *msg, CKBeObject *dest, CK
 {
     XASSERT(m_MessageManager);
     CKMessageType msgType = GetMessageByString(msg);
+    if (msgType == -1)
+        return NULL;
     return m_MessageManager->SendMessageSingle(msgType, dest, sender);
 }
 
@@ -974,6 +976,8 @@ CKMessage *CNeMoContext::SendMessageGroup(const char *msg, CKGroup *group, CKBeO
 {
     XASSERT(m_MessageManager);
     CKMessageType msgType = GetMessageByString(msg);
+    if (msgType == -1)
+        return NULL;
     return m_MessageManager->SendMessageSingle(msgType, group, sender);
 }
 
@@ -981,6 +985,8 @@ CKMessage *CNeMoContext::SendMessageBroadcast(const char *msg, CK_CLASSID id, CK
 {
     XASSERT(m_MessageManager);
     CKMessageType msgType = GetMessageByString(msg);
+    if (msgType == -1)
+        return NULL;
     return m_MessageManager->SendMessageBroadcast(msgType, id, sender);
 }
 
