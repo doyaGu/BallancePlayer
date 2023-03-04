@@ -338,6 +338,7 @@ bool CGamePlayer::Init(HINSTANCE hInstance, HANDLE hMutex)
     // Register messages
     m_OnClickMsg = m_NeMoContext->AddMessageType("OnClick");
     m_OnDblClickMsg = m_NeMoContext->AddMessageType("OnDblClick");
+    m_NeMoContext->AddMessageType("WM_CLOSE");
 
     InterfaceManager *im = m_NeMoContext->GetInterfaceManager();
     im->SetDriver(m_NeMoContext->GetDriver());
@@ -481,6 +482,7 @@ void CGamePlayer::OnPaint()
 
 void CGamePlayer::OnClose()
 {
+    m_NeMoContext->SendMessageBroadcast("WM_CLOSE", CKCID_BEOBJECT);
     m_WinContext->DestroyWindows();
 }
 
