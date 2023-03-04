@@ -41,6 +41,7 @@ public:
     void OnSetCursor();
     void OnGetMinMaxInfo(LPMINMAXINFO lpmmi);
     int OnSysKeyDown(UINT uKey);
+    void OnClick(bool dblClk = false);
     int OnCommand(UINT id, UINT code);
     void OnExceptionCMO(WPARAM wParam, LPARAM lParam);
     void OnReturn(WPARAM wParam, LPARAM lParam);
@@ -74,6 +75,8 @@ private:
     CWinContext *m_WinContext;
     CGame *m_Game;
     HANDLE m_hMutex;
+    CKMessageType m_OnClickMsg;
+    CKMessageType m_OnDblClickMsg;
 
     static CGamePlayer *s_Instance;
 };

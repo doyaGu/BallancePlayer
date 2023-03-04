@@ -223,6 +223,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_SYSKEYDOWN:
         return player->OnSysKeyDown(wParam);
 
+    case WM_LBUTTONDOWN:
+        player->OnClick();
+        break;
+
+    case WM_LBUTTONDBLCLK:
+        player->OnClick(true);
+        break;
+
     case WM_COMMAND:
         return player->OnCommand(LOWORD(wParam), HIWORD(wParam));
 
@@ -269,7 +277,9 @@ CGamePlayer::CGamePlayer()
       m_NeMoContext(NULL),
       m_WinContext(NULL),
       m_Game(NULL),
-      m_hMutex(NULL) {}
+      m_hMutex(NULL),
+      m_OnClickMsg(-1),
+      m_OnDblClickMsg(-1) {}
 
 CGamePlayer::~CGamePlayer()
 {
@@ -324,6 +334,10 @@ bool CGamePlayer::Init(HINSTANCE hInstance, HANDLE hMutex)
         ::MessageBox(NULL, TEXT("Virtools Engine Initialization Failed!"), TEXT("Error"), MB_OK);
         return false;
     }
+
+    // Register messages
+    m_OnClickMsg = m_NeMoContext->AddMessageType("OnClick");
+    m_OnDblClickMsg = m_NeMoContext->AddMessageType("OnDblClick");
 
     InterfaceManager *im = m_NeMoContext->GetInterfaceManager();
     im->SetDriver(m_NeMoContext->GetDriver());
@@ -581,6 +595,35 @@ int CGamePlayer::OnSysKeyDown(UINT uKey)
         break;
     }
     return 0;
+}
+
+void CGamePlayer::OnClick(bool dblClk)
+{
+    CKRenderContext *dev = m_NeMoContext->GetRenderContext();
+    if (!dev)
+        return;
+
+    POINT pt;
+    ::GetCursorPos(&pt);
+    if (!dev->IsFullScreen())
+        ::ScreenToClient(m_WinContext->GetRenderWindow(), &pt);
+
+    CKMessageManager *mm = m_NeMoContext->GetMessageManager();
+    if (!mm)
+        return;
+    CKMessageType msgType = (!dblClk) ? m_OnClickMsg : m_OnDblClickMsg;
+
+    CKPOINT ckpt = {pt.x, pt.y};
+    CKPICKRESULT res;
+    CKObject *obj = dev->Pick(ckpt, &res, FALSE);
+    if (obj && CKIsChildClassOf(obj, CKCID_BEOBJECT))
+        mm->SendMessageSingle(msgType, (CKBeObject *)obj, NULL);
+    if (res.Sprite)
+    {
+        CKObject *sprite = m_NeMoContext->GetObject(res.Sprite);
+        if (sprite)
+            mm->SendMessageSingle(msgType, (CKBeObject *)sprite, NULL);
+    }
 }
 
 int CGamePlayer::OnCommand(UINT id, UINT code)
