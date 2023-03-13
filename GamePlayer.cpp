@@ -1078,19 +1078,13 @@ void CGamePlayer::OnClick(bool dblClk)
 
     POINT pt;
     ::GetCursorPos(&pt);
-
-    CKRenderContext *dev = m_RenderManager->GetRenderContextFromPoint(*(CKPOINT *)&pt);
-    if (!dev)
-        return;
-
-    if (!dev->IsFullScreen())
-        ::ScreenToClient((HWND)dev->GetWindowHandle(), &pt);
+    m_RenderWindow.ScreenToClient(&pt);
 
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
     CKPOINT ckpt = {pt.x, pt.y};
     CKPICKRESULT res;
-    CKObject *obj = dev->Pick(ckpt, &res, FALSE);
+    CKObject *obj = m_RenderContext->Pick(ckpt, &res, FALSE);
     if (obj && CKIsChildClassOf(obj, CKCID_BEOBJECT))
         m_MessageManager->SendMessageSingle(msgType, (CKBeObject *)obj, NULL);
     if (res.Sprite)
