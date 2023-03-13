@@ -13,7 +13,6 @@ The new player is created based on the decompilation of the original version.
 - Support 32-bit color mode
 - Support the monitor without 640x480 resolution
 - Support high refresh rate monitor
-- Support OpenGL renderer
 - Support in-game resolution switching
 - Support in-game resizing in windowed mode
 - Add hotkeys for switching fullscreen and closing game
@@ -71,7 +70,7 @@ There are several settings in `Player.ini`.
   - Screen Height: `The screen height which can be found in your monitor resolutions`
 - `FullScreen`:
   - Windowed Mode: `0`
-  - Fullscreen Mode: `1`
+  - FullScreen Mode: `1`
 - `UnlockFramerate`:
   - Lock: `0`
   - Unlock: `1`
@@ -99,9 +98,6 @@ There are several settings in `Player.ini`.
 ### Window
 
 - `Borderless`:
-  - Disable: `0`
-  - Enable: `1`
-- `Resizable`:
   - Disable: `0`
   - Enable: `1`
 - `ClipMouse`:
@@ -154,7 +150,6 @@ Player.exe [OPTIONS]
 - `--disable-mipmap`: Disable mipmap
 - `--disable-specular`: Disable specular highlights
 - `-c`, `--borderless`: Startup in borderless mode
-- `-s`, `--resizable`: Make window resizable
 - `--clip-mouse`: Clip mouse in window
 - `--always-handle-input`: Allow player handle input while window is in background
 - `-p`, `--pause-on-deactivated`: Pause the game once the window is deactivated
@@ -168,6 +163,22 @@ Player.exe [OPTIONS]
 If you have any bugs or requests, please open an issue in this repository: [BallancePlayer](https://github.com/doyaGu/BallancePlayer).
 
 ## ChangeLog
+
+### v0.2.3 (2023-03-13)
+
+**News**
+
+- Allow to run multiple instance.
+
+**Bug Fixes**
+
+- Fix the bug that the game crashes upon exit.
+
+**Changed**
+
+- Deprecate `Resizable`.
+- Improve error messages.
+- Refactor codebase to simplify implementation.
 
 ### v0.2.2 (2023-01-23)
 
