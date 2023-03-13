@@ -87,8 +87,6 @@ private:
     bool GoFullscreen();
     bool StopFullscreen();
 
-    bool ClipMouse(bool enable);
-
     bool RegisterMainWindowClass(HINSTANCE hInstance);
     bool RegisterRenderWindowClass(HINSTANCE hInstance);
 

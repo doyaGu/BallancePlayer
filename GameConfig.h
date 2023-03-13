@@ -51,7 +51,6 @@ public:
 
     // Window Settings
     bool borderless;
-    bool clipMouse;
     bool alwaysHandleInput;
     bool pauseOnDeactivated;
     int posX;

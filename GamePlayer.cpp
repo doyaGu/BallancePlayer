@@ -889,19 +889,6 @@ bool CGamePlayer::StopFullscreen()
     return true;
 }
 
-bool CGamePlayer::ClipMouse(bool enable)
-{
-    if (!enable)
-        return ::ClipCursor(NULL) == TRUE; // Disable the clipping
-
-    // Retrieve the main window rectangle
-    RECT rect;
-    ::GetClientRect(m_MainWindow.GetHandle(), &rect);
-
-    // To clip the mouse in it.
-    return ::ClipCursor(&rect) == TRUE;
-}
-
 bool CGamePlayer::RegisterMainWindowClass(HINSTANCE hInstance)
 {
     WNDCLASSEX mainWndClass;
@@ -994,9 +981,6 @@ void CGamePlayer::OnActivateApp(bool active)
             else if (!m_Config.alwaysHandleInput)
                 m_InputManager->Pause(TRUE);
 
-            if (m_Config.clipMouse)
-                ClipMouse(false);
-
             if (m_RenderContext && IsRenderFullscreen())
             {
                 if (firstDeActivate)
@@ -1020,9 +1004,6 @@ void CGamePlayer::OnActivateApp(bool active)
     {
         if (wasFullscreen && !firstDeActivate)
             OnGoFullscreen();
-
-        if (m_Config.clipMouse)
-            ClipMouse(true);
 
         if (!m_Config.alwaysHandleInput)
             m_InputManager->Pause(FALSE);
@@ -1176,17 +1157,11 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
     if (fullscreen)
         GoFullscreen();
 
-    if (m_Config.clipMouse)
-        ClipMouse(true);
-
     return 1;
 }
 
 void CGamePlayer::OnGoFullscreen()
 {
-    if (m_Config.clipMouse)
-        ClipMouse(false);
-
     Pause();
 
     GoFullscreen();
@@ -1229,9 +1204,6 @@ void CGamePlayer::OnStopFullscreen()
     m_RenderWindow.Update();
 
     Play();
-
-    if (m_Config.clipMouse)
-        ClipMouse(true);
 }
 
 void CGamePlayer::OnSwitchFullscreen()

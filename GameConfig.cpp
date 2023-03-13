@@ -117,11 +117,6 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.borderless = true;
             continue;
         }
-        if (parser.Next(arg, "--clip-mouse", '\0'))
-        {
-            config.clipMouse = true;
-            continue;
-        }
         if (parser.Next(arg, "--always-handle-input", '\0'))
         {
             config.alwaysHandleInput = true;
@@ -239,7 +234,6 @@ CGameConfig::CGameConfig()
     disableSpecular = false;
 
     borderless = false;
-    clipMouse = false;
     alwaysHandleInput = false;
     pauseOnDeactivated = false;
     posX = 2147483647;
@@ -389,7 +383,6 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
 
     IniGetBoolean("Window", "Borderless", borderless, filename);
-    IniGetBoolean("Window", "ClipMouse", clipMouse, filename);
     IniGetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
     IniGetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
     IniGetInteger("Window", "X", posX, filename);
@@ -434,7 +427,6 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
 
     IniSetBoolean("Window", "Borderless", borderless, filename);
-    IniSetBoolean("Window", "ClipMouse", clipMouse, filename);
     IniSetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
     IniSetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
     IniSetInteger("Window", "X", posX, filename);
