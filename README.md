@@ -14,7 +14,6 @@ The new player is created based on the decompilation of the original version.
 - Support the monitor without 640x480 resolution
 - Support high refresh rate monitor
 - Support in-game resolution switching
-- Support in-game resizing in windowed mode
 - Add hotkeys for switching fullscreen and closing game
 - No registry operation
 - No dependency on `Dsetup.dll`
@@ -100,9 +99,6 @@ There are several settings in `Player.ini`.
 - `Borderless`:
   - Disable: `0`
   - Enable: `1`
-- `ClipMouse`:
-  - Disable: `0`
-  - Enable: `1`
 - `AlwaysHandleInput`
   - Disable: `0`
   - Enable: `1`
@@ -150,7 +146,6 @@ Player.exe [OPTIONS]
 - `--disable-mipmap`: Disable mipmap
 - `--disable-specular`: Disable specular highlights
 - `-c`, `--borderless`: Startup in borderless mode
-- `--clip-mouse`: Clip mouse in window
 - `--always-handle-input`: Allow player handle input while window is in background
 - `-p`, `--pause-on-deactivated`: Pause the game once the window is deactivated
 - `-x <X>`, `--position-x <X>`: Set the position x of the window
@@ -177,6 +172,7 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 **Changed**
 
 - Deprecate `Resizable`.
+- Deprecate `ClipMouse`.
 - Improve error messages.
 - Refactor codebase to simplify implementation.
 
