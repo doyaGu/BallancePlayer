@@ -92,16 +92,3 @@ BEGIN
         VALUE "Translation", 0x409, 1200
     END
 END
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    IDS_MAIN_WND_NAME         "Ballance"
-    IDS_RENDER_WND_NAME       "Ballance Render"
-    IDS_MAIN_WND_CLASS_NAME   "Ballance"
-    IDS_RENDER_WND_CLASS_NAME "Ballance Render"
-END

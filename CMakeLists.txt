@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(BallancePlayer
-        VERSION 0.2.2.0
+        VERSION 0.2.3.0
         DESCRIPTION "The brand-new player for Ballance"
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
         )
@@ -92,37 +92,31 @@ set(PLAYER_SCREEN_WIDTH 640 CACHE STRING "Player screen width default value" FOR
 set(PLAYER_SCREEN_HEIGHT 480 CACHE STRING "Player screen height default value" FORCE)
 set(PLAYER_SCREEN_BPP 32 CACHE STRING "Player screen bpp default value" FORCE)
 
-set(PLAYER_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-set(PLAYER_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-configure_file(${PLAYER_SOURCE_DIR}/config.h.in ${PLAYER_SOURCE_DIR}/config.h)
-configure_file(${PLAYER_SOURCE_DIR}/Player.rc.in ${PLAYER_SOURCE_DIR}/Player.rc)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/Player.rc)
 
 set(PLAYER_HEADERS
-        ${PLAYER_INCLUDE_DIR}/Game.h
-        ${PLAYER_INCLUDE_DIR}/GamePlayer.h
-        ${PLAYER_INCLUDE_DIR}/GameConfig.h
-        ${PLAYER_INCLUDE_DIR}/NeMoContext.h
-        ${PLAYER_INCLUDE_DIR}/WinContext.h
-        ${PLAYER_INCLUDE_DIR}/Splash.h
-        ${PLAYER_INCLUDE_DIR}/ScriptUtils.h
-        ${PLAYER_INCLUDE_DIR}/CmdlineParser.h
-        ${PLAYER_INCLUDE_DIR}/Logger.h
-        ${PLAYER_INCLUDE_DIR}/Utils.h
+        GamePlayer.h
+        GameConfig.h
+        Window.h
+        Splash.h
+        ScriptUtils.h
+        CmdlineParser.h
+        Logger.h
+        Utils.h
         )
 
 set(PLAYER_SOURCES
-        ${PLAYER_SOURCE_DIR}/Player.cpp
-        ${PLAYER_SOURCE_DIR}/Game.cpp
-        ${PLAYER_SOURCE_DIR}/GamePlayer.cpp
-        ${PLAYER_SOURCE_DIR}/GameConfig.cpp
-        ${PLAYER_SOURCE_DIR}/NeMoContext.cpp
-        ${PLAYER_SOURCE_DIR}/WinContext.cpp
-        ${PLAYER_SOURCE_DIR}/Splash.cpp
-        ${PLAYER_SOURCE_DIR}/CmdlineParser.cpp
-        ${PLAYER_SOURCE_DIR}/Logger.cpp
-        ${PLAYER_SOURCE_DIR}/Utils.cpp
-        ${PLAYER_SOURCE_DIR}/Player.rc
+        Player.cpp
+        GamePlayer.cpp
+        GameConfig.cpp
+        Hotfix.cpp
+        Splash.cpp
+        CmdlineParser.cpp
+        Logger.cpp
+        Utils.cpp
+        Player.rc
         )
 
 add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})

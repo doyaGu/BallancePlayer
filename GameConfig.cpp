@@ -117,11 +117,6 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.borderless = true;
             continue;
         }
-        if (parser.Next(arg, "--resizable", 's'))
-        {
-            config.resizable = true;
-            continue;
-        }
         if (parser.Next(arg, "--clip-mouse", '\0'))
         {
             config.clipMouse = true;
@@ -220,13 +215,7 @@ static bool IniSetBoolean(const char *section, const char *name, bool value, con
     return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
 }
 
-void CGameConfig::Set(const CGameConfig *config)
-{
-    if (config)
-        memcpy(this, &config, sizeof(CGameConfig));
-}
-
-void CGameConfig::SetDefault()
+CGameConfig::CGameConfig()
 {
     manualSetup = false;
     loadAllManagers = true;
@@ -234,6 +223,7 @@ void CGameConfig::SetDefault()
     loadAllPlugins = true;
 
     driver = 0;
+    screenMode = -1;
     bpp = PLAYER_DEFAULT_BPP;
     width = PLAYER_DEFAULT_WIDTH;
     height = PLAYER_DEFAULT_HEIGHT;
@@ -249,7 +239,6 @@ void CGameConfig::SetDefault()
     disableSpecular = false;
 
     borderless = false;
-    resizable = false;
     clipMouse = false;
     alwaysHandleInput = false;
     pauseOnDeactivated = false;
@@ -262,6 +251,13 @@ void CGameConfig::SetDefault()
     rookie = false;
 
     memset(m_Paths, 0, sizeof(m_Paths));
+}
+
+CGameConfig &CGameConfig::operator=(const CGameConfig &config)
+{
+    if (this != &config)
+        memcpy(this, &config, sizeof(CGameConfig));
+    return *this;
 }
 
 void CGameConfig::SetPath(PathCategory category, const char *path)
@@ -393,7 +389,6 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
 
     IniGetBoolean("Window", "Borderless", borderless, filename);
-    IniGetBoolean("Window", "Resizable", resizable, filename);
     IniGetBoolean("Window", "ClipMouse", clipMouse, filename);
     IniGetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
     IniGetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
@@ -439,7 +434,6 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
 
     IniSetBoolean("Window", "Borderless", borderless, filename);
-    IniSetBoolean("Window", "Resizable", resizable, filename);
     IniSetBoolean("Window", "ClipMouse", clipMouse, filename);
     IniSetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
     IniSetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
@@ -448,10 +442,4 @@ void CGameConfig::SaveToIni(const char *filename)
 
     IniSetInteger("Game", "Language", langId, filename);
     IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
-}
-
-CGameConfig &CGameConfig::Get()
-{
-    static CGameConfig config;
-    return config;
 }

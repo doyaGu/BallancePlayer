@@ -34,6 +34,7 @@ public:
 
     // Graphics
     int driver;
+    int screenMode;
     int bpp;
     int width;
     int height;
@@ -50,7 +51,6 @@ public:
 
     // Window Settings
     bool borderless;
-    bool resizable;
     bool clipMouse;
     bool alwaysHandleInput;
     bool pauseOnDeactivated;
@@ -63,8 +63,8 @@ public:
     bool debug;
     bool rookie;
 
-    void Set(const CGameConfig *config);
-    void SetDefault();
+    CGameConfig();
+    CGameConfig &operator=(const CGameConfig &config);
 
     void SetPath(PathCategory category, const char *path);
     const char *GetPath(PathCategory category) const;
@@ -75,8 +75,6 @@ public:
     void LoadPathsFromCmdline(CmdlineParser &parser);
     void LoadFromIni(const char *filename = "");
     void SaveToIni(const char *filename = "");
-
-    static CGameConfig &Get();
 
 private:
     char m_Paths[ePathCategoryCount][MAX_PATH];

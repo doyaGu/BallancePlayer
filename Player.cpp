@@ -3,7 +3,6 @@
 #include "CmdlineParser.h"
 #include "GameConfig.h"
 #include "GamePlayer.h"
-#include "Game.h"
 #include "Logger.h"
 #include "Utils.h"
 
@@ -23,10 +22,8 @@ static void InitLogger()
 #endif
 }
 
-static void LoadPaths(CmdlineParser &parser)
+static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
 {
-    CGameConfig &config = CGameConfig::Get();
-
     // First check whether the config file is specified in command line
     config.LoadIniPathFromCmdline(parser);
 
@@ -68,7 +65,7 @@ static HANDLE CreatNamedMutex()
     return hMutex;
 }
 
-static bool SetupGameDirectories()
+static bool SetupGameDirectories(CGameConfig &config)
 {
     char szPath[MAX_PATH];
     char drive[4];
@@ -80,7 +77,6 @@ static bool SetupGameDirectories()
     if (!utils::DirectoryExists(szPath))
         CLogger::Get().Error("The root directory is not valid!");
 
-    CGameConfig &config = CGameConfig::Get();
     config.SetPath(eRootPath, szPath);
     config.SetPath(eDataPath, szPath);
 
@@ -123,21 +119,45 @@ static bool SetupGameDirectories()
     return true;
 }
 
+class LockGuard
+{
+public:
+    explicit LockGuard(HANDLE mutex) : m_Mutex(mutex) {}
+
+    ~LockGuard()
+    {
+        Release();
+    }
+
+    void Release()
+    {
+        ::CloseHandle(m_Mutex);
+        m_Mutex = NULL;
+    }
+
+private:
+    LockGuard(const LockGuard &);
+    LockGuard &operator=(const LockGuard &);
+
+    HANDLE m_Mutex;
+};
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     HANDLE hMutex = CreatNamedMutex();
     if (!hMutex)
         return -1;
 
+    LockGuard guard(hMutex);
+
     CmdlineParser parser(__argc, __argv);
 
     InitLogger();
 
-    CGameConfig &config = CGameConfig::Get();
-    config.SetDefault();
+    CGameConfig config;
 
     // Load paths from command line
-    LoadPaths(parser);
+    LoadPaths(config, parser);
 
     // Load settings
     config.LoadFromIni();
@@ -148,21 +168,20 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
     }
 
-    if (!SetupGameDirectories())
+    if (!SetupGameDirectories(config))
     {
         CLogger::Get().Error("Failed to setup game directories");
         return -1;
     }
 
-    CGamePlayer player;
-    if (!player.Init(hInstance, hMutex))
+    CGamePlayer &player = CGamePlayer::GetInstance();
+    if (!player.Init(hInstance, config))
     {
         ::MessageBox(NULL, TEXT("Player Initialization Failed!"), TEXT("Error"), MB_OK);
         return -1;
     }
 
-    CGame game;
-    if (!player.Launch(&game, "base.cmo"))
+    if (!player.Load("base.cmo"))
     {
         ::MessageBox(NULL, TEXT("Game Load Failed!"), TEXT("Error"), MB_OK);
         return -1;
@@ -171,10 +190,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     player.Play();
     player.Run();
     player.Exit();
-
-    // Save settings
-    if (config.HasPath(eConfigPath))
-        config.SaveToIni();
 
     return 0;
 }
