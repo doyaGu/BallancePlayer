@@ -60,6 +60,8 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
         return false;
     }
 
+    ResizeWindow();
+
     CKRECT rect = {0, 0, m_Config.width, m_Config.height};
     m_RenderContext = m_RenderManager->CreateRenderContext(m_RenderWindow.GetHandle(), m_Config.driver, &rect, FALSE, m_Config.bpp);
     if (!m_RenderContext)
@@ -449,28 +451,36 @@ bool CGamePlayer::InitDriver()
         return false;
     }
 
-    if (!(m_Config.manualSetup && OpenSetupDialog()))
+    if (m_Config.manualSetup)
+        OpenSetupDialog();
+
+    m_Config.manualSetup = false;
+    bool useDefault = false;
+
+    VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(m_Config.driver);
+    if (!drDesc)
     {
-        m_Config.manualSetup = false;
-
-        VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(m_Config.driver);
-        if (!drDesc)
+        CLogger::Get().Error("Unable to find driver %d", m_Config.driver);
+        m_Config.driver = 0;
+        if (!OpenSetupDialog())
         {
-            CLogger::Get().Error("Unable to find driver %d", m_Config.driver);
-            if (!OpenSetupDialog() || !SetDefaultValuesForDriver())
-                return false;
-        }
-
-        m_Config.screenMode = FindScreenMode(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver);
-        if (m_Config.screenMode == -1)
-        {
-            CLogger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
-            if (!OpenSetupDialog() || !SetDefaultValuesForDriver())
-                return false;
+            SetDefaultValuesForDriver();
+            useDefault = true;
         }
     }
 
-    ResizeWindow();
+    m_Config.screenMode = FindScreenMode(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver);
+    if (m_Config.screenMode == -1)
+    {
+        CLogger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
+        if (!useDefault && !OpenSetupDialog())
+        {
+            SetDefaultValuesForDriver();
+            m_Config.screenMode = FindScreenMode(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver);
+            if (m_Config.screenMode == -1)
+                return false;
+        }
+    }
 
     return true;
 }
@@ -845,18 +855,12 @@ bool CGamePlayer::GetDisplayMode(int &width, int &height, int &bpp, int driver, 
     return true;
 }
 
-bool CGamePlayer::SetDefaultValuesForDriver()
+void CGamePlayer::SetDefaultValuesForDriver()
 {
-    m_Config.screenMode = FindScreenMode(PLAYER_DEFAULT_WIDTH, PLAYER_DEFAULT_HEIGHT, PLAYER_DEFAULT_BPP, 0);
-    if (m_Config.screenMode == -1)
-        return false;
-
     m_Config.width = PLAYER_DEFAULT_WIDTH;
     m_Config.height = PLAYER_DEFAULT_HEIGHT;
     m_Config.bpp = PLAYER_DEFAULT_BPP;
     m_Config.driver = 0;
-
-    return true;
 }
 
 bool CGamePlayer::IsRenderFullscreen() const

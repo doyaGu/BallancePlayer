@@ -81,7 +81,7 @@ private:
 
     int FindScreenMode(int width, int height, int bpp, int driver);
     bool GetDisplayMode(int &width, int &height, int &bpp, int driver, int screenMode);
-    bool SetDefaultValuesForDriver();
+    void SetDefaultValuesForDriver();
 
     bool IsRenderFullscreen() const;
     bool GoFullscreen();
