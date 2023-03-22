@@ -113,8 +113,8 @@ private:
     void OnStopFullscreen();
     void OnSwitchFullscreen();
 
-    void FillDriverList(HWND hWnd);
-    void FillScreenModeList(HWND hWnd, int driver);
+    bool FillDriverList(HWND hWnd);
+    bool FillScreenModeList(HWND hWnd, int driver);
 
     static LRESULT CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static BOOL CALLBACK FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

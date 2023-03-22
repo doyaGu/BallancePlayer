@@ -1217,9 +1217,12 @@ void CGamePlayer::OnSwitchFullscreen()
         OnStopFullscreen();
 }
 
-void CGamePlayer::FillDriverList(HWND hWnd)
+bool CGamePlayer::FillDriverList(HWND hWnd)
 {
     const int drCount = m_RenderManager->GetRenderDriverCount();
+    if (drCount == 0)
+        return false;
+
     for (int i = 0; i < drCount; ++i)
     {
         VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(i);
@@ -1228,15 +1231,26 @@ void CGamePlayer::FillDriverList(HWND hWnd)
         if (i == m_Config.driver)
             ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETCURSEL, index, 0);
     }
+
+    return true;
 }
 
-void CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
+bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
 {
     char buffer[256];
 
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(driver);
+    if (!drDesc)
+        return false;
+
     VxDisplayMode *dm = drDesc->DisplayModes;
+    if (!dm)
+        return false;
+
     const int dmCount = drDesc->DisplayModeCount;
+    if (dmCount == 0)
+        return false;
+
     int i = 0;
     while (i < dmCount)
     {
@@ -1258,6 +1272,8 @@ void CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
             ++i;
         }
     }
+
+    return true;
 }
 
 LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -1358,8 +1374,10 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
     {
     case WM_INITDIALOG:
     {
-        player.FillDriverList(hWnd);
-        player.FillScreenModeList(hWnd, config.driver);
+        if (!player.FillDriverList(hWnd))
+            ::EndDialog(hWnd, IDCANCEL);
+        if (!player.FillScreenModeList(hWnd, config.driver))
+            ::EndDialog(hWnd, IDCANCEL);
         return TRUE;
     }
 
@@ -1381,9 +1399,19 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
             if (wID == IDOK)
             {
                 int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
+                if (index == LB_ERR)
+                {
+                    ::EndDialog(hWnd, IDCANCEL);
+                    return TRUE;
+                }
                 config.driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
 
                 index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETCURSEL, 0, 0);
+                if (index == LB_ERR)
+                {
+                    ::EndDialog(hWnd, IDCANCEL);
+                    return TRUE;
+                }
                 config.screenMode = SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0);
 
                 VxDriverDesc *drDesc = player.GetRenderManager()->GetRenderDriverDescription(config.driver);
