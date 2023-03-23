@@ -45,7 +45,6 @@ There are several settings in `Player.ini`.
 - `ManualSetup`:
   - Disable: `0`
   - Enable: `1`
-
 - `LoadAllManagers`:
   - Disable: `0`
   - Enable: `1`
@@ -159,6 +158,13 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
+### v0.2.4 (2023-03-23)
+
+**Bug Fixes**
+
+- Fix game initialization failure when no screen mode is selected in setup dialog.
+- Fix improper render driver initialization process.
+
 ### v0.2.3 (2023-03-13)
 
 **News**
@@ -204,7 +210,7 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 **Bug Fixes**
 
-- Fix the problem that player change screen mode incorrectly.
+- Fix the problem that player changes screen mode incorrectly.
 - Fix the problem that player can not startup if a wrong path setting exists.
 
 **Changed**
@@ -221,7 +227,7 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 **Bug Fixes**
 
-- Fix possible crash problem if BML+ enabled when upon exit.
+- Fix possible crash problem upon exit.
 
 **Changed**
 
@@ -278,7 +284,7 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 - Support more resolutions.
 - Support skipping the opening animation.
 - Support mouse clip.
-- Support off-site startup. Now you can run the player outside the game folder.
+- Support off-site startup.
 - Support game path customization.
 - Support Virtools console output.
 - Add many new settings and corresponding command-line options.
