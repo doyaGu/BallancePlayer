@@ -1215,7 +1215,7 @@ void CGamePlayer::OnSwitchFullscreen()
     if (m_State == eInitial)
         return;
 
-    if (!m_Config.fullscreen)
+    if (!IsRenderFullscreen())
         OnGoFullscreen();
     else
         OnStopFullscreen();
