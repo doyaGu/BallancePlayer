@@ -794,8 +794,8 @@ void CGamePlayer::ResizeWindow()
 {
     RECT rc = {0, 0, m_Config.width, m_Config.height};
     ::AdjustWindowRect(&rc, m_MainWindow.GetStyle(), FALSE);
-    m_MainWindow.SetPos(HWND_TOPMOST, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
-    m_RenderWindow.SetPos(HWND_TOPMOST, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+    m_MainWindow.SetPos(NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
+    m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
 }
 
 int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
