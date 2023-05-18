@@ -1030,8 +1030,8 @@ void CGamePlayer::OnGetMinMaxInfo(LPMINMAXINFO lpmmi)
 {
     if (lpmmi)
     {
-        lpmmi->ptMinTrackSize.x = 400;
-        lpmmi->ptMinTrackSize.y = 200;
+        lpmmi->ptMinTrackSize.x = PLAYER_DEFAULT_WIDTH;
+        lpmmi->ptMinTrackSize.y = PLAYER_DEFAULT_HEIGHT;
     }
 }
 
