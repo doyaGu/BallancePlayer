@@ -1197,12 +1197,12 @@ void CGamePlayer::OnStopFullscreen()
     ::AdjustWindowRect(&rc, style, FALSE);
 
     m_MainWindow.SetStyle(style);
-    m_MainWindow.SetPos(HWND_TOPMOST, m_Config.posX, m_Config.posY, rc.right - rc.left, rc.bottom - rc.top, SWP_NOZORDER | SWP_FRAMECHANGED);
+    m_MainWindow.SetPos(HWND_NOTOPMOST, m_Config.posX, m_Config.posY, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED);
 
     m_MainWindow.Show();
     m_MainWindow.SetFocus();
 
-    m_RenderWindow.Show();
+    m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
     m_RenderWindow.SetFocus();
 
     m_MainWindow.Update();
