@@ -887,7 +887,8 @@ bool CGamePlayer::StopFullscreen()
     if (!m_RenderContext || !IsRenderFullscreen())
         return false;
 
-    m_RenderContext->StopFullScreen();
+    if (m_RenderContext->StopFullScreen() != CK_OK)
+        return false;
 
     m_Config.fullscreen = false;
     return true;
