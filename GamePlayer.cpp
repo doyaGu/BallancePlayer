@@ -62,8 +62,9 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
 
     ResizeWindow();
 
+    HWND handle = (m_Config.noRenderWindow) ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
     CKRECT rect = {0, 0, m_Config.width, m_Config.height};
-    m_RenderContext = m_RenderManager->CreateRenderContext(m_RenderWindow.GetHandle(), m_Config.driver, &rect, FALSE, m_Config.bpp);
+    m_RenderContext = m_RenderManager->CreateRenderContext(handle, m_Config.driver, &rect, FALSE, m_Config.bpp);
     if (!m_RenderContext)
     {
         CLogger::Get().Error("Failed to create Render Context!");
@@ -295,10 +296,13 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
-    if (!RegisterRenderWindowClass(hInstance))
+    if (!m_Config.noRenderWindow)
     {
-        CLogger::Get().Error("Failed to register render window class!");
-        return false;
+        if (!RegisterRenderWindowClass(hInstance))
+        {
+            CLogger::Get().Error("Failed to register render window class!");
+            return false;
+        }
     }
 
     DWORD mainWindowStyle = (m_Config.fullscreen | m_Config.borderless) ? WS_POPUP : WS_OVERLAPPED | WS_CAPTION;
@@ -323,11 +327,14 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
-    if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
-                                 0, 0, m_Config.width, m_Config.height, m_MainWindow.GetHandle(), NULL, hInstance, NULL))
+    if (!m_Config.noRenderWindow)
     {
-        CLogger::Get().Error("Failed to create render window!");
-        return false;
+        if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
+                                     0, 0, m_Config.width, m_Config.height, m_MainWindow.GetHandle(), NULL, hInstance, NULL))
+        {
+            CLogger::Get().Error("Failed to create render window!");
+            return false;
+        }
     }
 
     m_hAccelTable = ::LoadAccelerators(m_hInstance, MAKEINTRESOURCE(IDR_ACCEL));
@@ -795,7 +802,8 @@ void CGamePlayer::ResizeWindow()
     RECT rc = {0, 0, m_Config.width, m_Config.height};
     ::AdjustWindowRect(&rc, m_MainWindow.GetStyle(), FALSE);
     m_MainWindow.SetPos(NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
-    m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+    if (!m_Config.noRenderWindow)
+        m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
 }
 
 int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
@@ -1064,7 +1072,10 @@ void CGamePlayer::OnClick(bool dblClk)
 
     POINT pt;
     ::GetCursorPos(&pt);
-    m_RenderWindow.ScreenToClient(&pt);
+    if (m_Config.noRenderWindow)
+        m_MainWindow.ScreenToClient(&pt);
+    else
+        m_RenderWindow.ScreenToClient(&pt);
 
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
@@ -1177,11 +1188,15 @@ void CGamePlayer::OnGoFullscreen()
     m_MainWindow.Show();
     m_MainWindow.SetFocus();
 
-    m_RenderWindow.Show();
-    m_RenderWindow.SetFocus();
+    if (!m_Config.noRenderWindow)
+    {
+        m_RenderWindow.Show();
+        m_RenderWindow.SetFocus();
+    }
 
     m_MainWindow.Update();
-    m_RenderWindow.Update();
+    if (!m_Config.noRenderWindow)
+        m_RenderWindow.Update();
 
     Play();
 }
@@ -1202,11 +1217,15 @@ void CGamePlayer::OnStopFullscreen()
     m_MainWindow.Show();
     m_MainWindow.SetFocus();
 
-    m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
-    m_RenderWindow.SetFocus();
+    if (!m_Config.noRenderWindow)
+    {
+        m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+        m_RenderWindow.SetFocus();
+    }
 
     m_MainWindow.Update();
-    m_RenderWindow.Update();
+    if (!m_Config.noRenderWindow)
+        m_RenderWindow.Update();
 
     Play();
 }
