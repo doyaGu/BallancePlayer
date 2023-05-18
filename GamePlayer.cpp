@@ -883,10 +883,14 @@ bool CGamePlayer::GoFullscreen()
     if (!m_RenderContext || IsRenderFullscreen())
         return false;
 
-    if (m_RenderContext->GoFullScreen(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver) != CK_OK)
-        return false;
-
     m_Config.fullscreen = true;
+    if (m_RenderContext->GoFullScreen(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver) != CK_OK)
+    {
+        m_Config.fullscreen = false;
+        CLogger::Get().Debug("GoFullScreen Failed");
+        return false;
+    }
+
     return true;
 }
 
@@ -896,7 +900,10 @@ bool CGamePlayer::StopFullscreen()
         return false;
 
     if (m_RenderContext->StopFullScreen() != CK_OK)
+    {
+        CLogger::Get().Debug("StopFullscreen Failed");
         return false;
+    }
 
     m_Config.fullscreen = false;
     return true;
@@ -1180,23 +1187,24 @@ void CGamePlayer::OnGoFullscreen()
 {
     Pause();
 
-    GoFullscreen();
-
-    m_MainWindow.SetStyle(WS_POPUP);
-    m_MainWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
-
-    m_MainWindow.Show();
-    m_MainWindow.SetFocus();
-
-    if (!m_Config.noRenderWindow)
+    if (GoFullscreen())
     {
-        m_RenderWindow.Show();
-        m_RenderWindow.SetFocus();
-    }
+        m_MainWindow.SetStyle(WS_POPUP);
+        m_MainWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
-    m_MainWindow.Update();
-    if (!m_Config.noRenderWindow)
-        m_RenderWindow.Update();
+        m_MainWindow.Show();
+        m_MainWindow.SetFocus();
+
+        if (!m_Config.noRenderWindow)
+        {
+            m_RenderWindow.Show();
+            m_RenderWindow.SetFocus();
+        }
+
+        m_MainWindow.Update();
+        if (!m_Config.noRenderWindow)
+            m_RenderWindow.Update();
+    }
 
     Play();
 }
@@ -1205,27 +1213,28 @@ void CGamePlayer::OnStopFullscreen()
 {
     Pause();
 
-    StopFullscreen();
-
-    LONG style = (m_Config.fullscreen | m_Config.borderless) ? WS_POPUP : WS_OVERLAPPED | WS_CAPTION;
-    RECT rc = {0, 0, m_Config.width, m_Config.height};
-    ::AdjustWindowRect(&rc, style, FALSE);
-
-    m_MainWindow.SetStyle(style);
-    m_MainWindow.SetPos(HWND_NOTOPMOST, m_Config.posX, m_Config.posY, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED);
-
-    m_MainWindow.Show();
-    m_MainWindow.SetFocus();
-
-    if (!m_Config.noRenderWindow)
+    if (StopFullscreen())
     {
-        m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
-        m_RenderWindow.SetFocus();
-    }
+        LONG style = (m_Config.borderless) ? WS_POPUP : WS_OVERLAPPED | WS_CAPTION;
+        RECT rc = {0, 0, m_Config.width, m_Config.height};
+        ::AdjustWindowRect(&rc, style, FALSE);
 
-    m_MainWindow.Update();
-    if (!m_Config.noRenderWindow)
-        m_RenderWindow.Update();
+        m_MainWindow.SetStyle(style);
+        m_MainWindow.SetPos(HWND_NOTOPMOST, m_Config.posX, m_Config.posY, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED);
+
+        m_MainWindow.Show();
+        m_MainWindow.SetFocus();
+
+        if (!m_Config.noRenderWindow)
+        {
+            m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+            m_RenderWindow.SetFocus();
+        }
+
+        m_MainWindow.Update();
+        if (!m_Config.noRenderWindow)
+            m_RenderWindow.Update();
+    }
 
     Play();
 }
