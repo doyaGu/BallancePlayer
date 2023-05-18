@@ -1172,7 +1172,7 @@ void CGamePlayer::OnGoFullscreen()
     GoFullscreen();
 
     m_MainWindow.SetStyle(WS_POPUP);
-    m_MainWindow.SetPos(HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    m_MainWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
     m_MainWindow.Show();
     m_MainWindow.SetFocus();
