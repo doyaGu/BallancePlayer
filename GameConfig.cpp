@@ -112,9 +112,9 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.disableSpecular = true;
             continue;
         }
-        if (parser.Next(arg, "--no-render-window", 'n'))
+        if (parser.Next(arg, "--child-window-rendering", 's'))
         {
-            config.noRenderWindow = true;
+            config.childWindowRendering = true;
             continue;
         }
         if (parser.Next(arg, "--borderless", 'c'))
@@ -238,7 +238,7 @@ CGameConfig::CGameConfig()
     disableMipmap = false;
     disableSpecular = false;
 
-    noRenderWindow = false;
+    childWindowRendering = false;
     borderless = false;
     alwaysHandleInput = false;
     pauseOnDeactivated = false;
@@ -388,7 +388,7 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetBoolean("Graphics", "DisableMipmap", disableMipmap, filename);
     IniGetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
 
-    IniGetBoolean("Window", "NoRenderWindow", noRenderWindow, filename);
+    IniGetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
     IniGetBoolean("Window", "Borderless", borderless, filename);
     IniGetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
     IniGetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
@@ -433,7 +433,7 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetBoolean("Graphics", "DisableMipmap", disableMipmap, filename);
     IniSetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
 
-    IniSetBoolean("Window", "NoRenderWindow", noRenderWindow, filename);
+    IniSetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
     IniSetBoolean("Window", "Borderless", borderless, filename);
     IniSetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
     IniSetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);

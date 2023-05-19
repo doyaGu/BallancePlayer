@@ -50,7 +50,7 @@ public:
     bool disableSpecular;
 
     // Window Settings
-    bool noRenderWindow;
+    bool childWindowRendering;
     bool borderless;
     bool alwaysHandleInput;
     bool pauseOnDeactivated;

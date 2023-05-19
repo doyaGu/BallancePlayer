@@ -62,7 +62,7 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
 
     ResizeWindow();
 
-    HWND handle = (m_Config.noRenderWindow) ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
+    HWND handle = (!m_Config.childWindowRendering) ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
     CKRECT rect = {0, 0, m_Config.width, m_Config.height};
     m_RenderContext = m_RenderManager->CreateRenderContext(handle, m_Config.driver, &rect, FALSE, m_Config.bpp);
     if (!m_RenderContext)
@@ -296,7 +296,7 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
-    if (!m_Config.noRenderWindow)
+    if (m_Config.childWindowRendering)
     {
         if (!RegisterRenderWindowClass(hInstance))
         {
@@ -327,7 +327,7 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
-    if (!m_Config.noRenderWindow)
+    if (m_Config.childWindowRendering)
     {
         if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
                                      0, 0, m_Config.width, m_Config.height, m_MainWindow.GetHandle(), NULL, hInstance, NULL))
@@ -802,7 +802,7 @@ void CGamePlayer::ResizeWindow()
     RECT rc = {0, 0, m_Config.width, m_Config.height};
     ::AdjustWindowRect(&rc, m_MainWindow.GetStyle(), FALSE);
     m_MainWindow.SetPos(NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
-    if (!m_Config.noRenderWindow)
+    if (m_Config.childWindowRendering)
         m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
 }
 
@@ -1079,10 +1079,10 @@ void CGamePlayer::OnClick(bool dblClk)
 
     POINT pt;
     ::GetCursorPos(&pt);
-    if (m_Config.noRenderWindow)
-        m_MainWindow.ScreenToClient(&pt);
-    else
+    if (m_Config.childWindowRendering)
         m_RenderWindow.ScreenToClient(&pt);
+    else
+        m_MainWindow.ScreenToClient(&pt);
 
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
@@ -1195,14 +1195,14 @@ void CGamePlayer::OnGoFullscreen()
         m_MainWindow.Show();
         m_MainWindow.SetFocus();
 
-        if (!m_Config.noRenderWindow)
+        if (m_Config.childWindowRendering)
         {
             m_RenderWindow.Show();
             m_RenderWindow.SetFocus();
         }
 
         m_MainWindow.Update();
-        if (!m_Config.noRenderWindow)
+        if (m_Config.childWindowRendering)
             m_RenderWindow.Update();
     }
 
@@ -1225,14 +1225,14 @@ void CGamePlayer::OnStopFullscreen()
         m_MainWindow.Show();
         m_MainWindow.SetFocus();
 
-        if (!m_Config.noRenderWindow)
+        if (m_Config.childWindowRendering)
         {
             m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
             m_RenderWindow.SetFocus();
         }
 
         m_MainWindow.Update();
-        if (!m_Config.noRenderWindow)
+        if (m_Config.childWindowRendering)
             m_RenderWindow.Update();
     }
 
