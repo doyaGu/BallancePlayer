@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(BallancePlayer
-        VERSION 0.2.4.0
+        VERSION 0.3.0.0
         DESCRIPTION "The brand-new player for Ballance"
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
         )
@@ -91,7 +91,6 @@ set(PLAYER_VERSION ${CMAKE_PROJECT_VERSION})
 set(PLAYER_SCREEN_WIDTH 640 CACHE STRING "Player screen width default value" FORCE)
 set(PLAYER_SCREEN_HEIGHT 480 CACHE STRING "Player screen height default value" FORCE)
 set(PLAYER_SCREEN_BPP 32 CACHE STRING "Player screen bpp default value" FORCE)
-
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/Player.rc)
