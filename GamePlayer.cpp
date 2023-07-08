@@ -86,11 +86,8 @@ bool CGamePlayer::Load(const char *filename)
     if (m_State == eInitial)
         return false;
 
-    // validate the filename
-    if (!filename || !(*filename) || strlen(filename) <= 0)
-    {
+    if (!filename || (*filename) == '\0')
         return false;
-    }
 
     if (!m_CKContext)
         return false;
