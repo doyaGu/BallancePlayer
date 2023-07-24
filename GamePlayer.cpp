@@ -957,7 +957,7 @@ void CGamePlayer::OnDestroy()
 
 void CGamePlayer::OnMove()
 {
-    if (!m_Config.fullscreen)
+    if (!m_Config.fullscreen && !m_Config.borderless)
     {
         RECT rect;
         m_MainWindow.GetWindowRect(&rect);
