@@ -24,9 +24,6 @@ enum TT_MSG
 class InterfaceManager : public CKBaseManager
 {
 public:
-    InterfaceManager(CKContext *ctx);
-    ~InterfaceManager();
-
     int GetScreenMode() const
     {
         return m_ScreenMode;
