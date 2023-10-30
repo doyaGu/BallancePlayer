@@ -5,7 +5,7 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include "windows.h"
+#include <Windows.h>
 
 #include "CmdlineParser.h"
 #include "Utils.h"
@@ -277,7 +277,7 @@ const char *CGameConfig::GetPath(PathCategory category) const
 bool CGameConfig::HasPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
-        return NULL;
+        return false;
     return strcmp(m_Paths[category], "") != 0;
 }
 
