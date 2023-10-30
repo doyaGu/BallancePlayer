@@ -11,7 +11,7 @@
 class CmdlineArg
 {
 public:
-    CmdlineArg() {}
+    CmdlineArg() : m_Values(NULL), m_Size(0), m_Jointed(false) {}
     CmdlineArg(const std::string *values, int size, bool jointed = false) : m_Values(values), m_Size(size), m_Jointed(jointed) {}
 
     bool GetValue(int i, std::string &value) const;
