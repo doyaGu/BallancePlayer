@@ -33,9 +33,9 @@ Supports Windows XP, Vista, 7, 8, 8.1, 10, 11.
 
 This project uses CMake as the build tool, and Visual Studio 6.0 is also supported separately.
 
-If you use CMake, run the command `cmake -B build -G "Visual Studio 16 2022" -A Win32` to generate Visual Studio projects and solutions. Then open the solution file under the `build` directory and compile the projects.
+If you use CMake, run the command `cmake -B build -G "Visual Studio 16 2022" -A Win32` to generate Visual Studio projects and solutions. Then open `BallancePlayer.sln` under the `build` directory and build solution.
 
-If you use Visual Studio 6.0, open `Ballance.dsw`, and compile the projects.
+If you use Visual Studio 6.0, open `Player.dsw`, and build the project.
 
 The release package is built with Visual Studio 6.0 for maximum compatibility.
 
