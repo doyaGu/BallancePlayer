@@ -31,11 +31,27 @@ Supports Windows XP, Vista, 7, 8, 8.1, 10, 11.
 
 ## Building from Source
 
-This project uses CMake as the build tool, and Visual Studio 6.0 is also supported separately.
+### Pre-requisites
 
-If you use CMake, run the command `cmake -B build -G "Visual Studio 16 2022" -A Win32` to generate Visual Studio projects and solutions. Then open `BallancePlayer.sln` under the `build` directory and build solution.
+Virtools SDK: Required for building the project. Obtainable from [Virtools-SDK-2.1](https://github.com/doyaGu/Virtools-SDK-2.1).
 
-If you use Visual Studio 6.0, open `Player.dsw`, and build the project.
+Please set the environment variable VIRTOOLS_SDK_PATH to the path of the Virtools SDK before building the project.
+
+### Building with CMake
+
+- Install CMake: Ensure CMake is installed on your system.
+- Navigate to Project Directory: Change to the directory where the BallancePlayer source code resides.
+- Run the Command in Console: `cmake -B build -G "Visual Studio 16 2022" -A Win32`. This command generates Visual Studio project files and solutions tailored for 32-bit architecture.
+- Open Solution in Visual Studio: Navigate to the `build` directory, then open `BallancePlayer.sln`.
+- Build the Solution: Use Visual Studio's build tools to compile the project.
+
+### Building with Visual Studio 6.0
+
+- Install Visual Studio 6.0: Ensure it's installed on your system.
+- Open the Project: Locate `Player.dsw` in the project directory and open it with Visual Studio 6.0.
+- Build the Project: Use the build tools in Visual Studio 6.0 to compile the project.
+
+### Notes
 
 The release package is built with Visual Studio 6.0 for maximum compatibility.
 
