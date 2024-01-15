@@ -35,7 +35,7 @@ Supports Windows XP, Vista, 7, 8, 8.1, 10, 11.
 
 Virtools SDK: Required for building the project. Obtainable from [Virtools-SDK-2.1](https://github.com/doyaGu/Virtools-SDK-2.1).
 
-Please set the environment variable VIRTOOLS_SDK_PATH to the path of the Virtools SDK before building the project.
+Please set the environment variable `VIRTOOLS_SDK_PATH` to the path of the Virtools SDK before building the project.
 
 ### Building with CMake
 
