@@ -2,8 +2,7 @@
 
 ## Overview
 
-The package contains the brand-new player for Ballance.
-The new player is created based on the decompilation of the original version.
+BallancePlayer is a new player for the game "Ballance" created by decompiling and improving the original version. It enhances the gaming experience with several modern features and optimizations.
 
 ## Features
 
@@ -28,7 +27,17 @@ Supports Windows XP, Vista, 7, 8, 8.1, 10, 11.
 ## Instructions
 
 1. Extract the package into `Bin` directory of your game folder.
-2. Start the game by clicking on `Player.exe`.
+2. Start the game by clicking on `Player.exe` without setting compatibility mode.
+
+## Building from Source
+
+This project uses CMake as the build tool, and Visual Studio 6.0 is also supported separately.
+
+If you use CMake, run the command `cmake -B build -G "Visual Studio 16 2022" -A Win32` to generate Visual Studio projects and solutions. Then open the solution file under the `build` directory and compile the projects.
+
+If you use Visual Studio 6.0, open `Ballance.dsw`, and compile the projects.
+
+The release package is built with Visual Studio 6.0 for maximum compatibility.
 
 ## Hotkeys
 
@@ -157,6 +166,20 @@ Player.exe [OPTIONS]
 If you have any bugs or requests, please open an issue in this repository: [BallancePlayer](https://github.com/doyaGu/BallancePlayer).
 
 ## ChangeLog
+
+### v0.3.0 (2023-05-20)
+
+**News**
+
+- Add a new setting `ChildWindowRendering` and corresponding command-line option `--child-window-rendering` to control whether to render in a child window.
+
+**Bug Fixes**
+
+- Fix a possible black screen problem during full-screen switching.
+
+**Changed**
+
+- No longer to rendering in a separate window by default.
 
 ### v0.2.4 (2023-03-23)
 
