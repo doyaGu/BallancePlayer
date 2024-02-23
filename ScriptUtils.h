@@ -243,7 +243,7 @@ namespace scriptutils
         assert(outBeh != NULL);
 
         link->SetInBehaviorIO(inBeh->GetOutput(inPos));
-        link->SetOutBehaviorIO(outBeh->GetInput(inPos));
+        link->SetOutBehaviorIO(outBeh->GetInput(outPos));
     }
 
     inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehaviorIO *out, bool destroy = false)
