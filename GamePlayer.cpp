@@ -302,23 +302,26 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         }
     }
 
-    DWORD mainWindowStyle = (m_Config.fullscreen | m_Config.borderless) ? WS_POPUP : WS_OVERLAPPED | WS_CAPTION;
+    DWORD style = (m_Config.fullscreen || m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
 
-    RECT mainWindowRect = {0, 0, m_Config.width, m_Config.height};
-    ::AdjustWindowRect(&mainWindowRect, mainWindowStyle, FALSE);
+    RECT rect = {0, 0, m_Config.width, m_Config.height};
+    ::AdjustWindowRect(&rect, style, FALSE);
 
-    int mainWindowWidth = mainWindowRect.right - mainWindowRect.left;
-    int mainWindowHeight = mainWindowRect.bottom - mainWindowRect.top;
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
+
+    int screenWidth = ::GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = ::GetSystemMetrics(SM_CYSCREEN);
 
     int x = m_Config.posX;
-    if (x == 2147483647)
-        x = (m_Config.fullscreen) ? CW_USEDEFAULT : (::GetSystemMetrics(SM_CXSCREEN) - mainWindowWidth) / 2;
+    if (x <= -width || x >= screenWidth)
+        x = CW_USEDEFAULT;
     int y = m_Config.posY;
-    if (y == 2147483647)
-        y = (m_Config.fullscreen) ? CW_USEDEFAULT : (::GetSystemMetrics(SM_CYSCREEN) - mainWindowHeight) / 2;
+    if (y <= -height || y >= screenHeight)
+        y = CW_USEDEFAULT;
 
-    if (!m_MainWindow.CreateEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), mainWindowStyle,
-                               x, y, mainWindowWidth, mainWindowHeight, NULL, NULL, hInstance, NULL))
+    if (!m_MainWindow.CreateEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
+                               x, y, width, height, NULL, NULL, hInstance, NULL))
     {
         CLogger::Get().Error("Failed to create main window!");
         return false;
@@ -957,7 +960,7 @@ void CGamePlayer::OnDestroy()
 
 void CGamePlayer::OnMove()
 {
-    if (!m_Config.fullscreen && !m_Config.borderless)
+    if (m_State == ePlaying && !m_Config.fullscreen)
     {
         RECT rect;
         m_MainWindow.GetWindowRect(&rect);
@@ -1212,7 +1215,7 @@ void CGamePlayer::OnStopFullscreen()
 
     if (StopFullscreen())
     {
-        LONG style = (m_Config.borderless) ? WS_POPUP : WS_OVERLAPPED | WS_CAPTION;
+        LONG style = (m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
         RECT rc = {0, 0, m_Config.width, m_Config.height};
         ::AdjustWindowRect(&rc, style, FALSE);
 
