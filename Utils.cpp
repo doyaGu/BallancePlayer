@@ -6,7 +6,7 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>
+#include <Windows.h>
 
 #ifndef INVALID_FILE_ATTRIBUTES
 #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
@@ -16,7 +16,7 @@ namespace utils
 {
     bool FileOrDirectoryExists(const char *file)
     {
-        if (!file || strcmp(file, "") == 0)
+        if (!file || file[0] == '\0')
             return false;
         const DWORD attributes = ::GetFileAttributesA(file);
         return attributes != INVALID_FILE_ATTRIBUTES;
@@ -24,7 +24,7 @@ namespace utils
 
     bool DirectoryExists(const char *dir)
     {
-        if (!dir || strcmp(dir, "") == 0)
+        if (!dir || dir[0] == '\0')
             return false;
         const DWORD attributes = ::GetFileAttributesA(dir);
         return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
@@ -32,7 +32,7 @@ namespace utils
 
     bool IsAbsolutePath(const char *path)
     {
-        if (!path || strcmp(path, "") == 0)
+        if (!path || path[0] == '\0')
             return false;
 
         if (strlen(path) < 2 || !isalpha(path[0]) || path[1] != ':')
@@ -43,7 +43,7 @@ namespace utils
 
     bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing)
     {
-        if (!path || strcmp(path, "") == 0)
+        if (!path || path[0] == '\0')
             return false;
 
         if (!buffer)
@@ -85,7 +85,7 @@ namespace utils
         if (!buffer)
             return NULL;
 
-        if (!path1 || strcmp(path1, "") == 0)
+        if (!path1 || path1[0] == '\0')
         {
             strncpy(buffer, path2, size);
         }
@@ -105,7 +105,7 @@ namespace utils
 
     const char *FindLastPathSeparator(const char *path)
     {
-        if (!path || strcmp(path, "") == 0)
+        if (!path || path[0] == '\0')
             return NULL;
 
         const char *const lastSep = strrchr(path, '\\');
@@ -115,7 +115,7 @@ namespace utils
 
     bool HasTrailingPathSeparator(const char *path)
     {
-        if (!path || strcmp(path, "") == 0)
+        if (!path || path[0] == '\0')
             return false;
 
         if (path[strlen(path) - 1] == '\\')

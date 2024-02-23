@@ -278,7 +278,7 @@ bool CGameConfig::HasPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
         return false;
-    return strcmp(m_Paths[category], "") != 0;
+    return m_Paths[category][0] != '\0';
 }
 
 void CGameConfig::LoadFromCmdline(CmdlineParser &parser)
@@ -361,9 +361,9 @@ void CGameConfig::LoadFromIni(const char *filename)
     if (!filename)
         return;
 
-    if (strcmp(filename, "") == 0)
+    if (filename[0] == '\0')
     {
-        if (strcmp(m_Paths[eConfigPath], "") == 0 || !utils::FileOrDirectoryExists(m_Paths[eConfigPath]))
+        if (m_Paths[eConfigPath][0] == '\0' || !utils::FileOrDirectoryExists(m_Paths[eConfigPath]))
             return;
         filename = m_Paths[eConfigPath];
     }
@@ -406,9 +406,9 @@ void CGameConfig::SaveToIni(const char *filename)
     if (!filename)
         return;
 
-    if (strcmp(filename, "") == 0)
+    if (filename[0] == '\0')
     {
-        if (strcmp(m_Paths[eConfigPath], "") == 0)
+        if (m_Paths[eConfigPath][0] == '\0')
             return;
         filename = m_Paths[eConfigPath];
     }
