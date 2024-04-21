@@ -602,7 +602,7 @@ bool CGamePlayer::LoadRenderEngines(CKPluginManager *pluginManager)
         return false;
 
     const char *path = m_Config.GetPath(eRenderEnginePath);
-    if (!utils::DirectoryExists(path) || !pluginManager->ParsePlugins((CKSTRING)(path)))
+    if (!utils::DirectoryExists(path) || pluginManager->ParsePlugins((CKSTRING)(path)) == 0)
     {
         CLogger::Get().Error("Render engine parse error.");
         return false;
@@ -631,7 +631,7 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
 
     if (m_Config.loadAllManagers)
     {
-        if (!pluginManager->ParsePlugins((CKSTRING)path))
+        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
         {
             CLogger::Get().Error("Managers parse error.");
             return false;
@@ -643,7 +643,7 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
         for (int i = 0; i < ARRAY_NUM(VirtoolsManagers); ++i)
         {
             utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsManagers[i]);
-            if (!pluginManager->RegisterPlugin(szPath))
+            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
             {
                 CLogger::Get().Error("Unable to register manager: %s", VirtoolsManagers[i]);
                 return false;
@@ -693,7 +693,7 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
 
     if (m_Config.loadAllBuildingBlocks)
     {
-        if (!pluginManager->ParsePlugins((CKSTRING)path))
+        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
         {
             CLogger::Get().Error("Behaviors parse error.");
             return false;
@@ -707,7 +707,7 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
         for (i = 0; i < ARRAY_NUM(VirtoolsBuildingBlocks); ++i)
         {
             utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsBuildingBlocks[i]);
-            if (!pluginManager->RegisterPlugin(szPath))
+            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
             {
                 CLogger::Get().Error("Unable to register building blocks: %s", VirtoolsBuildingBlocks[i]);
                 return false;
@@ -717,7 +717,7 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
         for (i = 0; i < ARRAY_NUM(CustomBuildingBlocks); ++i)
         {
             utils::ConcatPath(szPath, MAX_PATH, path, CustomBuildingBlocks[i]);
-            if (!pluginManager->RegisterPlugin(szPath))
+            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
             {
                 CLogger::Get().Error("Unable to register building blocks: %s", CustomBuildingBlocks[i]);
                 return false;
@@ -749,7 +749,7 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
 
     if (m_Config.loadAllPlugins)
     {
-        if (!pluginManager->ParsePlugins((CKSTRING)path))
+        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
         {
             CLogger::Get().Error("Plugins parse error.");
             return false;
@@ -761,7 +761,7 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
         for (int i = 0; i < ARRAY_NUM(VirtoolsPlugins); ++i)
         {
             utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsPlugins[i]);
-            if (!pluginManager->RegisterPlugin(szPath))
+            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
             {
                 CLogger::Get().Error("Unable to register plugin: %s", VirtoolsPlugins[i]);
                 return false;
