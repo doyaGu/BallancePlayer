@@ -183,6 +183,12 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
+### v0.3.1 (2024-03-04)
+
+**Bug Fixes**
+
+- Fix possible abnormal resolution problem.
+
 ### v0.3.0 (2023-05-20)
 
 **News**
