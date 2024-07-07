@@ -315,10 +315,10 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
 
     int x = m_Config.posX;
     if (x <= -width || x >= screenWidth)
-        x = CW_USEDEFAULT;
+        x = (screenWidth - width) / 2;
     int y = m_Config.posY;
     if (y <= -height || y >= screenHeight)
-        y = CW_USEDEFAULT;
+        y = (screenHeight - height) / 2;
 
     if (!m_MainWindow.CreateEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
                                x, y, width, height, NULL, NULL, hInstance, NULL))
