@@ -344,6 +344,9 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
+    m_Config.posX = x;
+    m_Config.posY = y;
+
     return true;
 }
 
