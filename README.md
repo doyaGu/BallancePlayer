@@ -183,6 +183,16 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
+### v0.3.2 (2024-07-16)
+
+**Bug Fixes**
+
+- Fix broken plugin registration.
+
+**Changed**
+
+- Create window in the center of the screen by default.
+
 ### v0.3.1 (2024-03-04)
 
 **Bug Fixes**
