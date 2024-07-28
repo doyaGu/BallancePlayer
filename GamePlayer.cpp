@@ -60,7 +60,12 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
         return false;
     }
 
-    ResizeWindow();
+    RECT rc;
+    m_MainWindow.GetClientRect(&rc);
+    if (rc.right - rc.left != m_Config.width || rc.bottom - rc.top != m_Config.height)
+    {
+        ResizeWindow();
+    }
 
     HWND handle = (!m_Config.childWindowRendering) ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
     CKRECT rect = {0, 0, m_Config.width, m_Config.height};
