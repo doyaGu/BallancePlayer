@@ -17,6 +17,11 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
 
     while (!parser.Done())
     {
+        if (parser.Next(arg, "--verbose", '\0'))
+        {
+            config.verbose = true;
+            continue;
+        }
         if (parser.Next(arg, "--manual-setup", 'm'))
         {
             config.manualSetup = true;
@@ -155,6 +160,11 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.skipOpening = true;
             continue;
         }
+        if (parser.Next(arg, "--no-hotfix", '\0'))
+        {
+            config.noHotfix = true;
+            continue;
+        }
         if (parser.Next(arg, "--debug", 'd'))
         {
             config.debug = true;
@@ -217,6 +227,7 @@ static bool IniSetBoolean(const char *section, const char *name, bool value, con
 
 CGameConfig::CGameConfig()
 {
+    verbose = false;
     manualSetup = false;
     loadAllManagers = true;
     loadAllBuildingBlocks = true;
@@ -247,16 +258,57 @@ CGameConfig::CGameConfig()
 
     langId = 1;
     skipOpening = false;
+    noHotfix = false;
     debug = false;
     rookie = false;
-
-    memset(m_Paths, 0, sizeof(m_Paths));
 }
 
 CGameConfig &CGameConfig::operator=(const CGameConfig &config)
 {
-    if (this != &config)
-        memcpy(this, &config, sizeof(CGameConfig));
+    if (this == &config)
+        return *this;
+
+    verbose = config.verbose;
+    manualSetup =  config.manualSetup;
+    loadAllManagers = config.loadAllManagers;
+    loadAllBuildingBlocks = config.loadAllPlugins;
+    loadAllPlugins = config.loadAllPlugins;
+
+    driver = config.driver;
+    screenMode = config.screenMode;
+    bpp = config.bpp;
+    width = config.width;
+    height = config.height;
+    fullscreen = config.fullscreen;
+    unlockFramerate = config.unlockFramerate;
+    unlockWidescreen = config.unlockWidescreen;
+    unlockHighResolution = config.unlockHighResolution;
+
+    antialias = config.antialias;
+    disableFilter = config.disableFilter;
+    disableDithering = config.disableDithering;
+    disableMipmap = config.disableMipmap;
+    disableSpecular = config.disableSpecular;
+
+    childWindowRendering = config.childWindowRendering;
+    borderless = config.borderless;
+    alwaysHandleInput = config.alwaysHandleInput;
+    pauseOnDeactivated = config.pauseOnDeactivated;
+    posX = config.posX;
+    posY = config.posY;
+
+    langId = config.langId;
+    skipOpening = config.skipOpening;
+    noHotfix = config.noHotfix;
+    debug = config.debug;
+    rookie = config.rookie;
+
+    int i;
+    for (i = 0; i < ePathCategoryCount; ++i)
+    {
+        m_Paths[i] = config.m_Paths[i];
+    }
+
     return *this;
 }
 
@@ -264,21 +316,21 @@ void CGameConfig::SetPath(PathCategory category, const char *path)
 {
     if (category < 0 || category >= ePathCategoryCount || !path)
         return;
-    strncpy(m_Paths[category], path, MAX_PATH);
+    m_Paths[category] = path;
 }
 
 const char *CGameConfig::GetPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
         return NULL;
-    return m_Paths[category];
+    return m_Paths[category].CStr();
 }
 
 bool CGameConfig::HasPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
         return false;
-    return m_Paths[category][0] != '\0';
+    return !m_Paths[category].Empty();
 }
 
 void CGameConfig::LoadFromCmdline(CmdlineParser &parser)
@@ -286,69 +338,76 @@ void CGameConfig::LoadFromCmdline(CmdlineParser &parser)
     ParseConfigsFromCmdline(parser, *this);
 }
 
-void CGameConfig::LoadIniPathFromCmdline(CmdlineParser &parser)
+void CGameConfig::LoadPathsFromCmdline(CmdlineParser &parser)
 {
     CmdlineArg arg;
-    std::string path;
+    XString path;
     while (!parser.Done())
     {
         if (parser.Next(arg, "--config", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[eConfigPath], sizeof(m_Paths[eConfigPath]), path.c_str());
+                m_Paths[eConfigPath] = path;
             break;
         }
-        parser.Skip();
-    }
-    parser.Reset();
-}
-
-void CGameConfig::LoadPathsFromCmdline(CmdlineParser &parser)
-{
-    CmdlineArg arg;
-    std::string path;
-    while (!parser.Done())
-    {
+        if (parser.Next(arg, "--log", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                m_Paths[eLogPath] = path;
+            continue;
+        }
+        if (parser.Next(arg, "--cmo", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                m_Paths[eCmoPath] = path;
+            continue;
+        }
+        if (parser.Next(arg, "--root-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                m_Paths[eRootPath] = path;
+            continue;
+        }
         if (parser.Next(arg, "--plugin-path", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[ePluginPath], sizeof(m_Paths[ePluginPath]), path.c_str());
+                m_Paths[ePluginPath] = path;
             continue;
         }
         if (parser.Next(arg, "--render-engine-path", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[eRenderEnginePath], sizeof(m_Paths[eRenderEnginePath]), path.c_str());
+                m_Paths[eRenderEnginePath] = path;
             continue;
         }
         if (parser.Next(arg, "--manager-path", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[eManagerPath], sizeof(m_Paths[eManagerPath]), path.c_str());
+                m_Paths[eManagerPath] = path;
             continue;
         }
         if (parser.Next(arg, "--building-block-path", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[eBuildingBlockPath], sizeof(m_Paths[eBuildingBlockPath]), path.c_str());
+                m_Paths[eBuildingBlockPath] = path;
             continue;
         }
         if (parser.Next(arg, "--sound-path", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[eSoundPath], sizeof(m_Paths[eSoundPath]), path.c_str());
+                m_Paths[eSoundPath] = path;
             continue;
         }
         if (parser.Next(arg, "--bitmap-path", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[eBitmapPath], sizeof(m_Paths[eBitmapPath]), path.c_str());
+                m_Paths[eBitmapPath] = path;
             continue;
         }
         if (parser.Next(arg, "--data-path", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                utils::GetAbsolutePath(m_Paths[eDataPath], sizeof(m_Paths[eDataPath]), path.c_str());
+                m_Paths[eDataPath] = path;
             continue;
         }
         parser.Skip();
@@ -363,11 +422,20 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     if (filename[0] == '\0')
     {
-        if (m_Paths[eConfigPath][0] == '\0' || !utils::FileOrDirectoryExists(m_Paths[eConfigPath]))
+        if (m_Paths[eConfigPath].Empty() || !utils::FileOrDirectoryExists(m_Paths[eConfigPath].CStr()))
             return;
-        filename = m_Paths[eConfigPath];
+        filename = m_Paths[eConfigPath].CStr();
     }
 
+    char path[MAX_PATH];
+    if (!utils::IsAbsolutePath(filename))
+    {
+        ::GetCurrentDirectoryA(MAX_PATH, path);
+        utils::ConcatPath(path, MAX_PATH, path, filename);
+        filename = path;
+    }
+
+    IniGetBoolean("Startup", "Verbose", verbose, filename);
     IniGetBoolean("Startup", "ManualSetup", manualSetup, filename);
     IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniGetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
@@ -397,6 +465,7 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     IniGetInteger("Game", "Language", langId, filename);
     IniGetBoolean("Game", "SkipOpening", skipOpening, filename);
+    IniGetBoolean("Game", "NoHotfix", noHotfix, filename);
     IniGetBoolean("Game", "Debug", debug, filename);
     IniGetBoolean("Game", "Rookie", rookie, filename);
 }
@@ -408,11 +477,20 @@ void CGameConfig::SaveToIni(const char *filename)
 
     if (filename[0] == '\0')
     {
-        if (m_Paths[eConfigPath][0] == '\0')
+        if (m_Paths[eConfigPath].Empty())
             return;
-        filename = m_Paths[eConfigPath];
+        filename = m_Paths[eConfigPath].CStr();
     }
 
+    char path[MAX_PATH];
+    if (!utils::IsAbsolutePath(filename))
+    {
+        ::GetCurrentDirectoryA(MAX_PATH, path);
+        utils::ConcatPath(path, MAX_PATH, path, filename);
+        filename = path;
+    }
+
+    IniSetBoolean("Startup", "Verbose", verbose, filename);
     IniSetBoolean("Startup", "ManualSetup", manualSetup, filename);
     IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
     IniSetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
@@ -442,4 +520,5 @@ void CGameConfig::SaveToIni(const char *filename)
 
     IniSetInteger("Game", "Language", langId, filename);
     IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
+    IniSetBoolean("Game", "NoHotfix", noHotfix, filename);
 }

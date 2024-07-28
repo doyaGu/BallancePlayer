@@ -3,6 +3,8 @@
 
 #include "config.h"
 
+#include "XString.h"
+
 #ifndef MAX_PATH
 #define MAX_PATH 260
 #endif
@@ -12,21 +14,24 @@ class CmdlineParser;
 enum PathCategory
 {
     eConfigPath = 0,
-    eRootPath = 1,
-    ePluginPath = 2,
-    eRenderEnginePath = 3,
-    eManagerPath = 4,
-    eBuildingBlockPath = 5,
-    eSoundPath = 6,
-    eBitmapPath = 7,
-    eDataPath = 8,
-    ePathCategoryCount = 9
+    eLogPath,
+    eCmoPath,
+    eRootPath,
+    ePluginPath,
+    eRenderEnginePath,
+    eManagerPath,
+    eBuildingBlockPath,
+    eSoundPath,
+    eBitmapPath,
+    eDataPath,
+    ePathCategoryCount
 };
 
 class CGameConfig
 {
 public:
     // Startup Settings
+    bool verbose;
     bool manualSetup;
     bool loadAllManagers;
     bool loadAllBuildingBlocks;
@@ -60,6 +65,7 @@ public:
     // Game Settings
     int langId;
     bool skipOpening;
+    bool noHotfix;
     bool debug;
     bool rookie;
 
@@ -71,13 +77,12 @@ public:
     bool HasPath(PathCategory category) const;
 
     void LoadFromCmdline(CmdlineParser &parser);
-    void LoadIniPathFromCmdline(CmdlineParser &parser);
     void LoadPathsFromCmdline(CmdlineParser &parser);
     void LoadFromIni(const char *filename = "");
     void SaveToIni(const char *filename = "");
 
 private:
-    char m_Paths[ePathCategoryCount][MAX_PATH];
+    XString m_Paths[ePathCategoryCount];
 };
 
 #endif // PLAYER_GAMECONFIG_H
