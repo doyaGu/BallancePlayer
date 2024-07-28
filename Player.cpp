@@ -18,7 +18,7 @@ static void InitLogger()
     ::GetModuleFileNameA(NULL, szPath, MAX_PATH);
     _splitpath(szPath, drive, dir, filename, NULL);
     sprintf(szPath, "%s%s%s.log", drive, dir, filename);
-    CLogger::Get().Open(szPath, false);
+    CLogger::Get().Open(szPath);
 
 #ifndef NDEBUG
     CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
