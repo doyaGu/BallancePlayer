@@ -76,6 +76,8 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
         return false;
     }
 
+    CLogger::Get().Debug("Render Context created.");
+
     if (m_Config.fullscreen)
         OnGoFullscreen();
 
@@ -236,12 +238,14 @@ void CGamePlayer::Play()
 {
     m_State = ePlaying;
     m_CKContext->Play();
+    CLogger::Get().Debug("Game is playing.");
 }
 
 void CGamePlayer::Pause()
 {
     m_State = ePaused;
     m_CKContext->Pause();
+    CLogger::Get().Debug("Game is paused.");
 }
 
 void CGamePlayer::Reset()
@@ -249,6 +253,7 @@ void CGamePlayer::Reset()
     m_State = ePlaying;
     m_CKContext->Reset();
     m_CKContext->Play();
+    CLogger::Get().Debug("Game is reset.");
 }
 
 CGamePlayer::CGamePlayer()
@@ -300,6 +305,8 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
+    CLogger::Get().Debug("Main window class registered.");
+
     if (m_Config.childWindowRendering)
     {
         if (!RegisterRenderWindowClass(hInstance))
@@ -307,6 +314,8 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
             CLogger::Get().Error("Failed to register render window class!");
             return false;
         }
+
+        CLogger::Get().Debug("Render window class registered.");
     }
 
     DWORD style = (m_Config.fullscreen || m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
@@ -334,6 +343,8 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
+    CLogger::Get().Debug("Main window created.");
+
     if (m_Config.childWindowRendering)
     {
         if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
@@ -342,6 +353,8 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
             CLogger::Get().Error("Failed to create render window!");
             return false;
         }
+
+        CLogger::Get().Debug("Render window created.");
     }
 
     m_hAccelTable = ::LoadAccelerators(m_hInstance, MAKEINTRESOURCE(IDR_ACCEL));
@@ -361,30 +374,36 @@ bool CGamePlayer::InitEngine(CWindow &mainWindow)
 {
     if (CKStartUp() != CK_OK)
     {
-        CLogger::Get().Error("CK Engine can not startup!");
+        CLogger::Get().Error("CK Engine can not start up!");
         return false;
     }
+
+    CLogger::Get().Debug("CK Engine starts up successfully.");
 
     CKPluginManager *pluginManager = CKGetPluginManager();
     if (!InitPlugins(pluginManager))
     {
-        CLogger::Get().Error("Unable to initialize plugins.");
+        CLogger::Get().Error("Failed to initialize plugins.");
         return false;
     }
 
     int renderEngine = InitRenderEngines(pluginManager);
     if (renderEngine == -1)
     {
-        CLogger::Get().Error("Unable to load a RenderEngine.");
+        CLogger::Get().Error("Failed to initialize render engine.");
         return false;
     }
+
+    CLogger::Get().Debug("Render Engine initialized.");
 
     CKERROR res = CKCreateContext(&m_CKContext, mainWindow.GetHandle(), renderEngine, 0);
     if (res != CK_OK)
     {
-        CLogger::Get().Error("Unable to initialize CK Engine.");
+        CLogger::Get().Error("Failed to initialize CK Engine.");
         return false;
     }
+
+    CLogger::Get().Debug("CK Engine initialized.");
 
     m_CKContext->SetVirtoolsVersion(CK_VIRTOOLS_DEV, 0x2000043);
     m_CKContext->SetInterfaceMode(FALSE, LogRedirect, NULL);
@@ -573,6 +592,8 @@ bool CGamePlayer::FinishLoad()
             CLogger::Get().Error("Failed to apply hotfixes on script!");
             return false;
         }
+
+        CLogger::Get().Debug("Hotfixes applied on script.");
     }
 
     // Launch the default scene
@@ -651,6 +672,8 @@ bool CGamePlayer::LoadRenderEngines(CKPluginManager *pluginManager)
         return false;
     }
 
+    CLogger::Get().Debug("Render engine loaded.");
+
     return true;
 }
 
@@ -671,6 +694,8 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
         CLogger::Get().Error("Managers directory does not exist!");
         return false;
     }
+
+    CLogger::Get().Debug("Loading managers from %s", path);
 
     if (m_Config.loadAllManagers)
     {
@@ -693,6 +718,8 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
             }
         }
     }
+
+    CLogger::Get().Debug("Managers loaded.");
 
     return true;
 }
@@ -734,6 +761,8 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
         return false;
     }
 
+    CLogger::Get().Debug("Loading building blocks from %s", path);
+
     if (m_Config.loadAllBuildingBlocks)
     {
         if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
@@ -768,6 +797,8 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
         }
     }
 
+    CLogger::Get().Debug("Building blocks loaded.");
+
     return true;
 }
 
@@ -790,6 +821,8 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
         return false;
     }
 
+    CLogger::Get().Debug("Loading plugins from %s", path);
+
     if (m_Config.loadAllPlugins)
     {
         if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
@@ -811,6 +844,8 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
             }
         }
     }
+
+    CLogger::Get().Debug("Plugins loaded.");
 
     return true;
 }
@@ -854,7 +889,7 @@ int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(driver);
     if (!drDesc)
     {
-        CLogger::Get().Error("Unable to find specified driver.");
+        CLogger::Get().Error("Unable to find render driver %d.", driver);
         return false;
     }
 
