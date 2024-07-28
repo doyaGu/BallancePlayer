@@ -334,7 +334,7 @@ bool EditScript(CKLevel *level, const CGameConfig &config)
     CKBehavior *defaultLevel = scriptutils::GetBehavior(level->ComputeObjectList(CKCID_BEHAVIOR), "Default Level");
     if (!defaultLevel)
     {
-        CLogger::Get().Error("Unable to find Default Level");
+        CLogger::Get().Warn("Unable to find Default Level");
         return false;
     }
 
@@ -342,31 +342,31 @@ bool EditScript(CKLevel *level, const CGameConfig &config)
     if (config.debug)
     {
         if (!SetDebugMode(scriptutils::GetBehavior(defaultLevel, "set DebugMode")))
-            CLogger::Get().Error("Failed to set debug mode");
+            CLogger::Get().Warn("Failed to set debug mode");
     }
 
     // Bypass "Set Language" script and set our language id
     if (!SetLanguage(scriptutils::GetBehavior(defaultLevel, "Set Language"), config.langId))
-        CLogger::Get().Error("Failed to set language id");
+        CLogger::Get().Warn("Failed to set language id");
 
     int i;
 
     CKBehavior *sm = scriptutils::GetBehavior(defaultLevel, "Screen Modes");
     if (!sm)
     {
-        CLogger::Get().Error("Unable to find script Screen Modes");
+        CLogger::Get().Warn("Unable to find script Screen Modes");
         return false;
     }
 
     if (!ReplaceListDriver(sm))
     {
-        CLogger::Get().Error("Failed to set driver");
+        CLogger::Get().Warn("Failed to set driver");
         return false;
     }
 
     if (!ReplaceListScreenModes(sm))
     {
-        CLogger::Get().Error("Failed to set screen mode");
+        CLogger::Get().Warn("Failed to set screen mode");
         return false;
     }
 
@@ -398,7 +398,7 @@ bool EditScript(CKLevel *level, const CGameConfig &config)
     // Correct the bbp filter
     if (!bbpFilter)
     {
-        CLogger::Get().Error("Failed to correct the bbp filter");
+        CLogger::Get().Warn("Failed to correct the bbp filter");
     }
     else
     {
@@ -409,20 +409,20 @@ bool EditScript(CKLevel *level, const CGameConfig &config)
     if (config.unlockWidescreen)
     {
         if (!UnlockWidescreen(sm, minWidth))
-            CLogger::Get().Error("Failed to unlock widescreen");
+            CLogger::Get().Warn("Failed to unlock widescreen");
     }
 
     // Unlock high resolution
     if (config.unlockHighResolution)
     {
         if (!UnlockHighResolution(sm, bbpFilter, minWidth, maxWidth, config.unlockWidescreen))
-            CLogger::Get().Error("Failed to unlock high resolution");
+            CLogger::Get().Warn("Failed to unlock high resolution");
     }
 
     CKBehavior *sts = scriptutils::GetBehavior(defaultLevel, "Synch to Screen");
     if (!sts)
     {
-        CLogger::Get().Error("Unable to find script Synch to Screen");
+        CLogger::Get().Warn("Unable to find script Synch to Screen");
         return false;
     }
 
@@ -430,18 +430,18 @@ bool EditScript(CKLevel *level, const CGameConfig &config)
     if (config.unlockFramerate)
     {
         if (!UnlockFramerate(sts))
-            CLogger::Get().Error("Failed to unlock frame rate limitation");
+            CLogger::Get().Warn("Failed to unlock frame rate limitation");
     }
 
     // Make it not to test 640x480 resolution
     if (!SkipResolutionCheck(sts))
-        CLogger::Get().Error("Failed to bypass 640x480 resolution test");
+        CLogger::Get().Warn("Failed to bypass 640x480 resolution test");
 
     // Skip Opening Animation
     if (config.skipOpening)
     {
         if (!SkipOpeningAnimation(defaultLevel, sts))
-            CLogger::Get().Error("Failed to skip opening animation");
+            CLogger::Get().Warn("Failed to skip opening animation");
     }
 
     return true;

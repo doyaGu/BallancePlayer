@@ -589,8 +589,7 @@ bool CGamePlayer::FinishLoad()
     {
         if (!EditScript(level, m_Config))
         {
-            CLogger::Get().Error("Failed to apply hotfixes on script!");
-            return false;
+            CLogger::Get().Warn("Failed to apply hotfixes on script!");
         }
 
         CLogger::Get().Debug("Hotfixes applied on script.");
