@@ -534,12 +534,7 @@ bool CGamePlayer::FinishLoad()
         return false;
     }
 
-    // Render the first frame
-    m_RenderContext->Clear();
-    m_RenderContext->BackToFront();
-    m_RenderContext->Clear();
-
-    // Set the initial conditions for the level
+    // Launch the default scene
     level->LaunchScene(NULL);
 
     // ReRegister OnClick Message in case it changed
