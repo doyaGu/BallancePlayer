@@ -140,22 +140,25 @@ bool CGamePlayer::Load(const char *filename)
     m_CKContext->DeleteCKFile(f);
     DeleteCKObjectArray(array);
 
-    InterfaceManager *im = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
-    im->SetDriver(m_Config.driver);
-    im->SetScreenMode(m_Config.screenMode);
-    im->SetRookie(m_Config.rookie);
-    im->SetTaskSwitchEnabled(true);
-
-    if (m_GameInfo)
+    InterfaceManager *man = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
+    if (man)
     {
-        delete m_GameInfo;
-        m_GameInfo = NULL;
-    }
+        man->SetDriver(m_Config.driver);
+        man->SetScreenMode(m_Config.screenMode);
+        man->SetRookie(m_Config.rookie);
+        man->SetTaskSwitchEnabled(true);
 
-    m_GameInfo = new CGameInfo;
-    strcpy(m_GameInfo->path, ".");
-    strcpy(m_GameInfo->fileName, filename);
-    im->SetGameInfo(m_GameInfo);
+        if (m_GameInfo)
+        {
+            delete m_GameInfo;
+            m_GameInfo = NULL;
+        }
+
+        m_GameInfo = new CGameInfo;
+        strcpy(m_GameInfo->path, ".");
+        strcpy(m_GameInfo->fileName, filename);
+        man->SetGameInfo(m_GameInfo);
+    }
 
     return FinishLoad();
 }
@@ -528,10 +531,13 @@ bool CGamePlayer::FinishLoad()
             mesh->Show(CKHIDE);
     }
 
-    if (!EditScript(level, m_Config))
+    if (m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != NULL)
     {
-        CLogger::Get().Error("Failed to apply hotfixes on script!");
-        return false;
+        if (!EditScript(level, m_Config))
+        {
+            CLogger::Get().Error("Failed to apply hotfixes on script!");
+            return false;
+        }
     }
 
     // Launch the default scene
