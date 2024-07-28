@@ -119,13 +119,17 @@ void CLogger::Log(const char *level, const char *fmt, va_list args)
 
     for (int i = 0; i < 2; ++i)
     {
-        fprintf(outs[i], "[%02d/%02d/%d %02d:%02d:%02d.%03d] ",
+        FILE *out = outs[i];
+        if (!out)
+            continue;
+
+        fprintf(out, "[%02d/%02d/%d %02d:%02d:%02d.%03d] ",
                 sys.wMonth, sys.wDay, sys.wYear,
                 sys.wHour, sys.wMinute, sys.wSecond, sys.wMilliseconds);
-        fprintf(outs[i], "[%s]: ", level);
-        vfprintf(outs[i], fmt, args);
-        fputc('\n', outs[i]);
-        fflush(outs[i]);
+        fprintf(out, "[%s]: ", level);
+        vfprintf(out, fmt, args);
+        fputc('\n', out);
+        fflush(out);
     }
 }
 
