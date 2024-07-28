@@ -468,36 +468,71 @@ bool CGamePlayer::InitDriver()
         return false;
     }
 
+    if (driverCount == 1)
+    {
+        CLogger::Get().Debug("Found a render driver");
+    }
+    else
+    {
+        CLogger::Get().Debug("Found %s render drivers", driverCount);
+    }
+
     if (m_Config.manualSetup)
         OpenSetupDialog();
 
     m_Config.manualSetup = false;
-    bool useDefault = false;
+    bool tryFailed = false;
 
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(m_Config.driver);
     if (!drDesc)
     {
         CLogger::Get().Error("Unable to find driver %d", m_Config.driver);
         m_Config.driver = 0;
+        tryFailed = true;
         if (!OpenSetupDialog())
         {
             SetDefaultValuesForDriver();
-            useDefault = true;
         }
     }
+
+    if (tryFailed)
+    {
+        drDesc = m_RenderManager->GetRenderDriverDescription(m_Config.driver);
+        if (!drDesc)
+        {
+            CLogger::Get().Error("Unable to find driver %d", m_Config.driver);
+            return false;
+        }
+    }
+
+    CLogger::Get().Debug("Render Driver ID: %d", m_Config.driver);
+    CLogger::Get().Debug("Render Driver Name: %s", drDesc->DriverName);
+    CLogger::Get().Debug("Render Driver Desc: %s", drDesc->DriverDesc);
+
+    tryFailed = false;
 
     m_Config.screenMode = FindScreenMode(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver);
     if (m_Config.screenMode == -1)
     {
         CLogger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
-        if (!useDefault && !OpenSetupDialog())
+        tryFailed = true;
+        if (!OpenSetupDialog())
         {
             SetDefaultValuesForDriver();
-            m_Config.screenMode = FindScreenMode(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver);
-            if (m_Config.screenMode == -1)
-                return false;
         }
     }
+
+    if (tryFailed)
+    {
+        m_Config.screenMode = FindScreenMode(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver);
+        if (m_Config.screenMode == -1)
+        {
+            CLogger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
+            return false;
+        }
+    }
+
+    CLogger::Get().Debug("Screen Mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
 
     return true;
 }
