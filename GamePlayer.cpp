@@ -102,11 +102,10 @@ bool CGamePlayer::Load(const char *filename)
         return false;
 
     XString resolvedFile = filename;
-    pm->ResolveFileName(resolvedFile, DATA_PATH_IDX);
-
-    if (!utils::FileOrDirectoryExists(resolvedFile.CStr()))
+    CKERROR err = pm->ResolveFileName(resolvedFile, DATA_PATH_IDX);
+    if (err != CK_OK)
     {
-        CLogger::Get().Error("%s is not found.", resolvedFile.CStr());
+        CLogger::Get().Error("Failed to resolve filename %s", filename);
         return false;
     }
 
