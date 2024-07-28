@@ -16,7 +16,7 @@ public:
     ~CGamePlayer();
 
     bool Init(HINSTANCE hInstance, const CGameConfig &config);
-    bool Load(const char *filename);
+    bool Load(const char *filename = NULL);
 
     void Run();
     bool Update();
@@ -76,6 +76,9 @@ private:
     bool LoadBuildingBlocks(CKPluginManager *pluginManager);
     bool LoadPlugins(CKPluginManager *pluginManager);
     int InitRenderEngines(CKPluginManager *pluginManager);
+
+    bool SetupManagers();
+    bool SetupPaths();
 
     void ResizeWindow();
 

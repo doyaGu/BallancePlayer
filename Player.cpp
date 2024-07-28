@@ -6,47 +6,69 @@
 #include "CmdlineParser.h"
 #include "GameConfig.h"
 #include "GamePlayer.h"
+#include "LockGuard.h"
 #include "Logger.h"
 #include "Utils.h"
 
-static void InitLogger()
+static HANDLE CreatNamedMutex();
+static void LoadPaths(CGameConfig &config, CmdlineParser &parser);
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    char szPath[MAX_PATH];
-    char drive[4];
-    char dir[MAX_PATH];
-    char filename[MAX_PATH];
-    ::GetModuleFileNameA(NULL, szPath, MAX_PATH);
-    _splitpath(szPath, drive, dir, filename, NULL);
-    sprintf(szPath, "%s%s%s.log", drive, dir, filename);
-    CLogger::Get().Open(szPath);
-
-#ifndef NDEBUG
-    CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
-#endif
-}
-
-static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
-{
-    // First check whether the config file is specified in command line
-    config.LoadIniPathFromCmdline(parser);
-
-    // If no config file is specified, use the default path
-    if (!config.HasPath(eConfigPath) || !utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
+    HANDLE hMutex = CreatNamedMutex();
+    if (!hMutex)
     {
-        char szPath[MAX_PATH];
-        char drive[4];
-        char dir[MAX_PATH];
-        char filename[MAX_PATH];
-        ::GetModuleFileNameA(NULL, szPath, MAX_PATH);
-        _splitpath(szPath, drive, dir, filename, NULL);
-        sprintf(szPath, "%s%s%s.ini", drive, dir, filename);
-        config.SetPath(eConfigPath, szPath);
-        if (!utils::FileOrDirectoryExists(szPath))
-            config.SaveToIni();
+        ::MessageBox(NULL, TEXT("Another player is running!"), TEXT("Error"), MB_OK);
+        return -1;
     }
 
-    // Load paths
-    config.LoadPathsFromCmdline(parser);
+    LockGuard guard(hMutex);
+
+    CmdlineParser parser(__argc, __argv);
+    CGameConfig config;
+
+    // Load paths from command line
+    LoadPaths(config, parser);
+
+    // Flush ini file if it doesn't exist
+    if (!utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
+    {
+        config.SaveToIni();
+    }
+
+    // Load configurations
+    config.LoadFromIni();
+    config.LoadFromCmdline(parser);
+
+    CLogger::Get().Open(config.GetPath(eLogPath));
+#ifdef NDEBUG
+    if (config.verbose)
+    {
+        CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
+    }
+#else
+    CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
+#endif
+
+    CGamePlayer &player = CGamePlayer::GetInstance();
+
+    if (!player.Init(hInstance, config))
+    {
+        ::MessageBox(NULL, TEXT("Failed to initialize player!"), TEXT("Error"), MB_OK);
+        return -1;
+    }
+
+    if (!player.Load())
+    {
+        ::MessageBox(NULL, TEXT("Failed to load game composition!"), TEXT("Error"), MB_OK);
+        return -1;
+    }
+
+    player.Play();
+    player.Run();
+    player.Exit();
+
+    return 0;
 }
 
 static HANDLE CreatNamedMutex()
@@ -68,131 +90,56 @@ static HANDLE CreatNamedMutex()
     return hMutex;
 }
 
-static bool SetupGameDirectories(CGameConfig &config)
+static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
 {
+    static const char *const DefaultPaths[] = {
+        "Player.ini",
+        "Player.log",
+        "base.cmo",
+        "..\\",
+        "Plugins\\",
+        "RenderEngines\\",
+        "Managers\\",
+        "BuildingBlocks\\",
+        "Sounds\\",
+        "Textures\\",
+        "",
+    };
+
     char szPath[MAX_PATH];
-    char drive[4];
-    char dir[MAX_PATH];
-    char filename[MAX_PATH];
-    ::GetModuleFileNameA(NULL, szPath, MAX_PATH);
-    _splitpath(szPath, drive, dir, filename, NULL);
-    _snprintf(szPath, MAX_PATH, "%s%s..\\", drive, dir);
-    if (!utils::DirectoryExists(szPath))
-        CLogger::Get().Error("The root directory is not valid!");
+    bool useDefault;
 
-    config.SetPath(eRootPath, szPath);
-    config.SetPath(eDataPath, szPath);
+    // Load paths
+    config.LoadPathsFromCmdline(parser);
 
-    const char *const dirs[] = {
-        "Plugins",
-        "RenderEngines",
-        "Managers",
-        "BuildingBlocks",
-        "Sounds",
-        "Textures"};
-
-    bool useDefaultDir = false;
-    for (int p = ePluginPath; p < ePathCategoryCount; ++p)
+    // Set default value for the path if it was not specified in command line
+    for (int p = eConfigPath; p < ePathCategoryCount; ++p)
     {
         if (!config.HasPath((PathCategory)p))
         {
-            useDefaultDir = true;
+            useDefault = true;
         }
         else if (!utils::DirectoryExists(config.GetPath((PathCategory)p)))
         {
-            CLogger::Get().Warn("%s does not exist, use default directory instead", config.GetPath((PathCategory)p), dirs[p - ePluginPath]);
-            useDefaultDir = true;
+            CLogger::Get().Warn("%s does not exist, using default path: %s", config.GetPath((PathCategory)p), DefaultPaths[p]);
+            useDefault = true;
         }
-
-        if (useDefaultDir)
+        else
         {
-            utils::ConcatPath(szPath, MAX_PATH, config.GetPath(eRootPath), dirs[p - ePluginPath]);
-            strcat(szPath, "\\");
-            config.SetPath((PathCategory)p, szPath);
-            useDefaultDir = false;
+            useDefault = false;
         }
 
-        if (!utils::DirectoryExists(config.GetPath((PathCategory)p)))
+        if (useDefault)
         {
-            CLogger::Get().Error("Directory [%s] is not found", dirs[p - ePluginPath]);
-            return false;
+            if (p < ePluginPath)
+            {
+                config.SetPath((PathCategory)p, DefaultPaths[p]);
+            }
+            else
+            {
+                utils::ConcatPath(szPath, MAX_PATH, config.GetPath(eRootPath), DefaultPaths[p]);
+                config.SetPath((PathCategory)p, szPath);
+            }
         }
     }
-
-    return true;
-}
-
-class LockGuard
-{
-public:
-    explicit LockGuard(HANDLE mutex) : m_Mutex(mutex) {}
-
-    ~LockGuard()
-    {
-        Release();
-    }
-
-    void Release()
-    {
-        ::CloseHandle(m_Mutex);
-        m_Mutex = NULL;
-    }
-
-private:
-    LockGuard(const LockGuard &);
-    LockGuard &operator=(const LockGuard &);
-
-    HANDLE m_Mutex;
-};
-
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-{
-    HANDLE hMutex = CreatNamedMutex();
-    if (!hMutex)
-        return -1;
-
-    LockGuard guard(hMutex);
-
-    CmdlineParser parser(__argc, __argv);
-
-    InitLogger();
-
-    CGameConfig config;
-
-    // Load paths from command line
-    LoadPaths(config, parser);
-
-    // Load settings
-    config.LoadFromIni();
-    config.LoadFromCmdline(parser);
-
-    if (config.debug && CLogger::Get().GetLevel() != CLogger::LEVEL_DEBUG)
-    {
-        CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
-    }
-
-    if (!SetupGameDirectories(config))
-    {
-        CLogger::Get().Error("Failed to setup game directories");
-        return -1;
-    }
-
-    CGamePlayer &player = CGamePlayer::GetInstance();
-    if (!player.Init(hInstance, config))
-    {
-        ::MessageBox(NULL, TEXT("Player Initialization Failed!"), TEXT("Error"), MB_OK);
-        return -1;
-    }
-
-    if (!player.Load("base.cmo"))
-    {
-        ::MessageBox(NULL, TEXT("Game Load Failed!"), TEXT("Error"), MB_OK);
-        return -1;
-    }
-
-    player.Play();
-    player.Run();
-    player.Exit();
-
-    return 0;
 }

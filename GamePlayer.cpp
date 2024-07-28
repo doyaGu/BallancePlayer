@@ -94,7 +94,7 @@ bool CGamePlayer::Load(const char *filename)
         return false;
 
     if (!filename || (*filename) == '\0')
-        return false;
+        filename = m_Config.GetPath(eCmoPath);
 
     if (!m_CKContext)
         return false;
@@ -408,72 +408,17 @@ bool CGamePlayer::InitEngine(CWindow &mainWindow)
     m_CKContext->SetVirtoolsVersion(CK_VIRTOOLS_DEV, 0x2000043);
     m_CKContext->SetInterfaceMode(FALSE, LogRedirect, NULL);
 
-    m_RenderManager = m_CKContext->GetRenderManager();
-    if (!m_RenderManager)
+    if (!SetupManagers())
     {
-        CLogger::Get().Error("Unable to initialize Render Manager.");
+        CLogger::Get().Error("Failed to setup managers.");
         return false;
     }
 
-    m_RenderManager->SetRenderOptions("DisableFilter", m_Config.disableFilter);
-    m_RenderManager->SetRenderOptions("DisableDithering", m_Config.disableDithering);
-    m_RenderManager->SetRenderOptions("Antialias", m_Config.antialias);
-    m_RenderManager->SetRenderOptions("DisableMipmap", m_Config.disableMipmap);
-    m_RenderManager->SetRenderOptions("DisableSpecular", m_Config.disableSpecular);
-
-    m_MessageManager = m_CKContext->GetMessageManager();
-    if (!m_MessageManager)
+    if (!SetupPaths())
     {
-        CLogger::Get().Error("Unable to initialize Message Manager.");
+        CLogger::Get().Error("Failed to setup paths.");
         return false;
     }
-
-    m_TimeManager = m_CKContext->GetTimeManager();
-    if (!m_TimeManager)
-    {
-        CLogger::Get().Error("Unable to initialize Time Manager.");
-        return false;
-    }
-
-    m_AttributeManager = m_CKContext->GetAttributeManager();
-    if (!m_AttributeManager)
-    {
-        CLogger::Get().Error("Unable to initialize Attribute Manager.");
-        return false;
-    }
-
-    m_InputManager = (CKInputManager *)m_CKContext->GetManagerByGuid(INPUT_MANAGER_GUID);
-    if (!m_InputManager)
-    {
-        CLogger::Get().Error("Unable to initialize Input Manager.");
-        return false;
-    }
-
-    CKPathManager *pm = m_CKContext->GetPathManager();
-    if (!pm)
-    {
-        CLogger::Get().Error("Unable to initialize Path Manager.");
-        return false;
-    }
-
-    XString path = m_Config.GetPath(eDataPath);
-    pm->AddPath(DATA_PATH_IDX, path);
-
-    if (!utils::DirectoryExists(m_Config.GetPath(eSoundPath)))
-    {
-        CLogger::Get().Error("Sounds directory is not found.");
-        return false;
-    }
-    path = m_Config.GetPath(eSoundPath);
-    pm->AddPath(SOUND_PATH_IDX, path);
-
-    if (!utils::DirectoryExists(m_Config.GetPath(eBitmapPath)))
-    {
-        CLogger::Get().Error("Textures directory is not found.");
-        return false;
-    }
-    path = m_Config.GetPath(eBitmapPath);
-    pm->AddPath(BITMAP_PATH_IDX, path);
 
     return true;
 }
@@ -585,7 +530,7 @@ bool CGamePlayer::FinishLoad()
             mesh->Show(CKHIDE);
     }
 
-    if (m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != NULL)
+    if (!m_Config.noHotfix && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != NULL)
     {
         if (!EditScript(level, m_Config))
         {
@@ -872,6 +817,98 @@ int CGamePlayer::InitRenderEngines(CKPluginManager *pluginManager)
     }
 
     return -1;
+}
+
+bool CGamePlayer::SetupManagers()
+{
+    m_RenderManager = m_CKContext->GetRenderManager();
+    if (!m_RenderManager)
+    {
+        CLogger::Get().Error("Unable to get Render Manager.");
+        return false;
+    }
+
+    m_RenderManager->SetRenderOptions("DisableFilter", m_Config.disableFilter);
+    m_RenderManager->SetRenderOptions("DisableDithering", m_Config.disableDithering);
+    m_RenderManager->SetRenderOptions("Antialias", m_Config.antialias);
+    m_RenderManager->SetRenderOptions("DisableMipmap", m_Config.disableMipmap);
+    m_RenderManager->SetRenderOptions("DisableSpecular", m_Config.disableSpecular);
+
+    m_MessageManager = m_CKContext->GetMessageManager();
+    if (!m_MessageManager)
+    {
+        CLogger::Get().Error("Unable to get Message Manager.");
+        return false;
+    }
+
+    m_TimeManager = m_CKContext->GetTimeManager();
+    if (!m_TimeManager)
+    {
+        CLogger::Get().Error("Unable to get Time Manager.");
+        return false;
+    }
+
+    m_AttributeManager = m_CKContext->GetAttributeManager();
+    if (!m_AttributeManager)
+    {
+        CLogger::Get().Error("Unable to get Attribute Manager.");
+        return false;
+    }
+
+    m_InputManager = (CKInputManager *)m_CKContext->GetManagerByGuid(INPUT_MANAGER_GUID);
+    if (!m_InputManager)
+    {
+        CLogger::Get().Error("Unable to get Input Manager.");
+        return false;
+    }
+
+    return true;
+}
+
+bool CGamePlayer::SetupPaths()
+{
+    CKPathManager *pm = m_CKContext->GetPathManager();
+    if (!pm)
+    {
+        CLogger::Get().Error("Unable to get Path Manager.");
+        return false;
+    }
+
+     char path[MAX_PATH];
+     char dir[MAX_PATH];
+     ::GetCurrentDirectoryA(MAX_PATH, dir);
+
+    if (!utils::DirectoryExists(m_Config.GetPath(eDataPath)))
+    {
+        CLogger::Get().Error("Data path is not found.");
+        return false;
+    }
+    _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eDataPath));
+    XString dataPath = path;
+    pm->AddPath(DATA_PATH_IDX, dataPath);
+    CLogger::Get().Debug("Data path: %s", dataPath.CStr());
+
+    if (!utils::DirectoryExists(m_Config.GetPath(eSoundPath)))
+    {
+        CLogger::Get().Error("Sounds path is not found.");
+        return false;
+    }
+    _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eSoundPath));
+    XString soundPath = path;
+    pm->AddPath(SOUND_PATH_IDX, soundPath);
+    CLogger::Get().Debug("Sounds path: %s", soundPath.CStr());
+
+    if (!utils::DirectoryExists(m_Config.GetPath(eBitmapPath)))
+    {
+        CLogger::Get().Error("Bitmap path is not found.");
+        return false;
+    }
+     _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eBitmapPath));
+    XString bitmapPath = path;
+    pm->AddPath(BITMAP_PATH_IDX, bitmapPath);
+    CLogger::Get().Debug("Bitmap path: %s", bitmapPath.CStr());
+
+    return true;
 }
 
 void CGamePlayer::ResizeWindow()

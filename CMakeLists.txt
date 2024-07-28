@@ -69,6 +69,7 @@ set(PLAYER_HEADERS
         Splash.h
         ScriptUtils.h
         CmdlineParser.h
+        LockGuard.h
         Logger.h
         Utils.h
         )
