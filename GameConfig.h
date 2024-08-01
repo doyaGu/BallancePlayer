@@ -44,10 +44,6 @@ public:
     int width;
     int height;
     bool fullscreen;
-    bool unlockFramerate;
-    bool unlockWidescreen;
-    bool unlockHighResolution;
-
     int antialias;
     bool disableFilter;
     bool disableDithering;
@@ -66,6 +62,9 @@ public:
     int langId;
     bool skipOpening;
     bool noHotfix;
+    bool unlockFramerate;
+    bool unlockWidescreen;
+    bool unlockHighResolution;
     bool debug;
     bool rookie;
 

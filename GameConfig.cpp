@@ -76,21 +76,6 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.fullscreen = true;
             continue;
         }
-        if (parser.Next(arg, "--unlock-framerate", 'u'))
-        {
-            config.unlockFramerate = true;
-            continue;
-        }
-        if (parser.Next(arg, "--unlock-widescreen", '\0'))
-        {
-            config.unlockWidescreen = true;
-            continue;
-        }
-        if (parser.Next(arg, "--unlock-high-resolution", '\0'))
-        {
-            config.unlockHighResolution = true;
-            continue;
-        }
         if (parser.Next(arg, "--antialias", '\0', 1))
         {
             if (arg.GetValue(0, value))
@@ -163,6 +148,21 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
         if (parser.Next(arg, "--no-hotfix", '\0'))
         {
             config.noHotfix = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-framerate", 'u'))
+        {
+            config.unlockFramerate = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-widescreen", '\0'))
+        {
+            config.unlockWidescreen = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-high-resolution", '\0'))
+        {
+            config.unlockHighResolution = true;
             continue;
         }
         if (parser.Next(arg, "--debug", 'd'))
@@ -239,9 +239,6 @@ CGameConfig::CGameConfig()
     width = PLAYER_DEFAULT_WIDTH;
     height = PLAYER_DEFAULT_HEIGHT;
     fullscreen = false;
-    unlockFramerate = false;
-    unlockWidescreen = false;
-    unlockHighResolution = false;
 
     antialias = 0;
     disableFilter = false;
@@ -259,6 +256,9 @@ CGameConfig::CGameConfig()
     langId = 1;
     skipOpening = false;
     noHotfix = false;
+    unlockFramerate = false;
+    unlockWidescreen = false;
+    unlockHighResolution = false;
     debug = false;
     rookie = false;
 }
@@ -280,9 +280,6 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     width = config.width;
     height = config.height;
     fullscreen = config.fullscreen;
-    unlockFramerate = config.unlockFramerate;
-    unlockWidescreen = config.unlockWidescreen;
-    unlockHighResolution = config.unlockHighResolution;
 
     antialias = config.antialias;
     disableFilter = config.disableFilter;
@@ -300,6 +297,9 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     langId = config.langId;
     skipOpening = config.skipOpening;
     noHotfix = config.noHotfix;
+    unlockFramerate = config.unlockFramerate;
+    unlockWidescreen = config.unlockWidescreen;
+    unlockHighResolution = config.unlockHighResolution;
     debug = config.debug;
     rookie = config.rookie;
 
@@ -446,9 +446,6 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetInteger("Graphics", "Width", width, filename);
     IniGetInteger("Graphics", "Height", height, filename);
     IniGetBoolean("Graphics", "FullScreen", fullscreen, filename);
-    IniGetBoolean("Graphics", "UnlockFramerate", unlockFramerate, filename);
-    IniGetBoolean("Graphics", "UnlockWidescreen", unlockWidescreen, filename);
-    IniGetBoolean("Graphics", "UnlockHighResolution", unlockHighResolution, filename);
 
     IniGetInteger("Graphics", "Antialias", antialias, filename);
     IniGetBoolean("Graphics", "DisableFilter", disableFilter, filename);
@@ -466,6 +463,9 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetInteger("Game", "Language", langId, filename);
     IniGetBoolean("Game", "SkipOpening", skipOpening, filename);
     IniGetBoolean("Game", "NoHotfix", noHotfix, filename);
+    IniGetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
+    IniGetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
+    IniGetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
     IniGetBoolean("Game", "Debug", debug, filename);
     IniGetBoolean("Game", "Rookie", rookie, filename);
 }
@@ -501,9 +501,6 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetInteger("Graphics", "Width", width, filename);
     IniSetInteger("Graphics", "Height", height, filename);
     IniSetBoolean("Graphics", "FullScreen", fullscreen, filename);
-    IniSetBoolean("Graphics", "UnlockFramerate", unlockFramerate, filename);
-    IniSetBoolean("Graphics", "UnlockWidescreen", unlockWidescreen, filename);
-    IniSetBoolean("Graphics", "UnlockHighResolution", unlockHighResolution, filename);
 
     IniSetInteger("Graphics", "Antialias", antialias, filename);
     IniSetBoolean("Graphics", "DisableFilter", disableFilter, filename);
@@ -521,4 +518,7 @@ void CGameConfig::SaveToIni(const char *filename)
     IniSetInteger("Game", "Language", langId, filename);
     IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
     IniSetBoolean("Game", "NoHotfix", noHotfix, filename);
+    IniSetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
+    IniSetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
+    IniSetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
 }
