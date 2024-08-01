@@ -3,6 +3,7 @@
 
 #include "config.h"
 
+#include "VxMathDefines.h"
 #include "XString.h"
 
 #ifndef MAX_PATH
