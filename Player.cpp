@@ -32,9 +32,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     // Flush ini file if it doesn't exist
     if (!utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
-    {
         config.SaveToIni();
-    }
 
     // Load configurations
     config.LoadFromIni();
@@ -47,9 +45,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     CLogger::Get().Open(config.GetPath(eLogPath), overwrite);
 #ifdef NDEBUG
     if (config.verbose)
-    {
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
-    }
 #else
     CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
 #endif

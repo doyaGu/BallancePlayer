@@ -306,9 +306,7 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
 
     int i;
     for (i = 0; i < ePathCategoryCount; ++i)
-    {
         m_Paths[i] = config.m_Paths[i];
-    }
 
     return *this;
 }

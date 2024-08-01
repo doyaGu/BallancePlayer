@@ -45,10 +45,10 @@ private:
     enum PlayerState
     {
         eInitial = 0,
-        eReady = 1,
-        ePlaying = 2,
-        ePaused = 3,
-        eFocusLost = 4,
+        eReady,
+        ePlaying,
+        ePaused,
+        eFocusLost,
     };
 
     CGamePlayer();
