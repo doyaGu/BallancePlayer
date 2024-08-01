@@ -1440,7 +1440,7 @@ bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
     {
         int width = dm[i].Width;
         int height = dm[i].Height;
-        while (dm[i].Width == width && dm[i].Height == height && i < dmCount)
+        while (i < dmCount && dm[i].Width == width && dm[i].Height == height)
         {
             if (dm[i].Bpp > 8)
             {
