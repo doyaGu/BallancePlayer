@@ -227,4 +227,181 @@ namespace utils
 
         *(size_t *)out = crc;
     }
+
+    VX_PIXELFORMAT String2PixelFormat(const char *str, size_t max)
+    {
+        if (!str || str[0] == '\0' || max == 0)
+            return UNKNOWN_PF;
+
+        VX_PIXELFORMAT format = UNKNOWN_PF;
+        if (strncmp(str, "_32_ARGB8888", max) == 0)
+            format = _32_ARGB8888;
+        else if (strncmp(str, "_32_RGB888", max) == 0)
+            format = _32_RGB888;
+        else if (strncmp(str, "_24_RGB888", max) == 0)
+            format = _24_RGB888;
+        else if (strncmp(str, "_16_RGB565", max) == 0)
+            format = _16_RGB565;
+        else if (strncmp(str, "_16_RGB555", max) == 0)
+            format = _16_RGB555;
+        else if (strncmp(str, "_16_ARGB1555", max) == 0)
+            format = _16_ARGB1555;
+        else if (strncmp(str, "_16_ARGB4444", max) == 0)
+            format = _16_ARGB4444;
+        else if (strncmp(str, "_8_RGB332", max) == 0)
+            format = _8_RGB332;
+        else if (strncmp(str, "_8_ARGB2222", max) == 0)
+            format = _8_ARGB2222;
+        else if (strncmp(str, "_32_ABGR8888", max) == 0)
+            format = _32_ABGR8888;
+        else if (strncmp(str, "_32_RGBA8888", max) == 0)
+            format = _32_RGBA8888;
+        else if (strncmp(str, "_32_BGRA8888", max) == 0)
+            format = _32_BGRA8888;
+        else if (strncmp(str, "_32_BGR888", max) == 0)
+            format = _32_BGR888;
+        else if (strncmp(str, "_24_BGR888", max) == 0)
+            format = _24_BGR888;
+        else if (strncmp(str, "_16_BGR565", max) == 0)
+            format = _16_BGR565;
+        else if (strncmp(str, "_16_BGR555", max) == 0)
+            format = _16_BGR555;
+        else if (strncmp(str, "_16_ABGR1555", max) == 0)
+            format = _16_ABGR1555;
+        else if (strncmp(str, "_16_ABGR4444", max) == 0)
+            format = _16_ABGR4444;
+        else if (strncmp(str, "_DXT1", max) == 0)
+            format = _DXT1;
+        else if (strncmp(str, "_DXT2", max) == 0)
+            format = _DXT2;
+        else if (strncmp(str, "_DXT3", max) == 0)
+            format = _DXT3;
+        else if (strncmp(str, "_DXT4", max) == 0)
+            format = _DXT4;
+        else if (strncmp(str, "_DXT5", max) == 0)
+            format = _DXT5;
+        else if (strncmp(str, "_16_V8U8", max) == 0)
+            format = _16_V8U8;
+        else if (strncmp(str, "_32_V16U16", max) == 0)
+            format = _32_V16U16;
+        else if (strncmp(str, "_16_L6V5U5", max) == 0)
+            format = _16_L6V5U5;
+        else if (strncmp(str, "_32_X8L8V8U8", max) == 0)
+            format = _32_X8L8V8U8;
+        else if (strncmp(str, "_8_ABGR8888_CLUT", max) == 0)
+            format = _8_ABGR8888_CLUT;
+        else if (strncmp(str, "_8_ARGB8888_CLUT", max) == 0)
+            format = _8_ARGB8888_CLUT;
+        else if (strncmp(str, "_4_ABGR8888_CLUT", max) == 0)
+            format = _4_ABGR8888_CLUT;
+        else if (strncmp(str, "_4_ARGB8888_CLUT", max) == 0)
+            format = _4_ARGB8888_CLUT;
+
+        return format;
+    }
+
+    const char *PixelFormat2String(VX_PIXELFORMAT format)
+    {
+        const char *str;
+        switch (format) {
+            case _32_ARGB8888:
+                str = "_32_ARGB8888";
+                break;
+            case _32_RGB888:
+                str = "_32_RGB888";
+                break;
+            case _24_RGB888:
+                str = "_24_RGB888";
+                break;
+            case _16_RGB565:
+                str = "_16_RGB565";
+                break;
+            case _16_RGB555:
+                str = "_16_RGB555";
+                break;
+            case _16_ARGB1555:
+                str = "_16_ARGB1555";
+                break;
+            case _16_ARGB4444:
+                str = "_16_ARGB4444";
+                break;
+            case _8_RGB332:
+                str = "_8_RGB332";
+                break;
+            case _8_ARGB2222:
+                str = "_8_ARGB2222";
+                break;
+            case _32_ABGR8888:
+                str = "_32_ABGR8888";
+                break;
+            case _32_RGBA8888:
+                str = "_32_RGBA8888";
+                break;
+            case _32_BGRA8888:
+                str = "_32_BGRA8888";
+                break;
+            case _32_BGR888:
+                str = "_32_BGR888";
+                break;
+            case _24_BGR888:
+                str = "_24_BGR888";
+                break;
+            case _16_BGR565:
+                str = "_16_BGR565";
+                break;
+            case _16_BGR555:
+                str = "_16_BGR555";
+                break;
+            case _16_ABGR1555:
+                str = "_16_ABGR1555";
+                break;
+            case _16_ABGR4444:
+                str = "_16_ABGR4444";
+                break;
+            case _DXT1:
+                str = "_DXT1";
+                break;
+            case _DXT2:
+                str = "_DXT2";
+                break;
+            case _DXT3:
+                str = "_DXT3";
+                break;
+            case _DXT4:
+                str = "_DXT4";
+                break;
+            case _DXT5:
+                str = "_DXT5";
+                break;
+            case _16_V8U8:
+                str = "_16_V8U8";
+                break;
+            case _32_V16U16:
+                str = "_32_V16U16";
+                break;
+            case _16_L6V5U5:
+                str = "_16_L6V5U5";
+                break;
+            case _32_X8L8V8U8:
+                str = "_32_X8L8V8U8";
+                break;
+            case _8_ABGR8888_CLUT:
+                str = "_8_ABGR8888_CLUT";
+                break;
+            case _8_ARGB8888_CLUT:
+                str = "_8_ARGB8888_CLUT";
+                break;
+            case _4_ABGR8888_CLUT:
+                str = "_4_ABGR8888_CLUT";
+                break;
+            case _4_ARGB8888_CLUT:
+                str = "_4_ARGB8888_CLUT";
+                break;
+            default:
+                str = "UNKNOWN_PF";
+                break;
+        }
+
+        return str;
+    }
 }

@@ -3,6 +3,8 @@
 
 #include <wchar.h>
 
+#include "VxMathDefines.h"
+
 namespace utils
 {
     bool FileOrDirectoryExists(const char *file);
@@ -21,6 +23,9 @@ namespace utils
     int WcharToChar(const wchar_t *wcharStr, char *charStr, int size);
 
     void CRC32(const void *key, size_t len, size_t seed, void *out);
+
+    VX_PIXELFORMAT String2PixelFormat(const char *str, size_t max);
+    const char *PixelFormat2String(VX_PIXELFORMAT format);
 }
 
 #endif // PLAYER_UTILS_H
