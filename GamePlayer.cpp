@@ -846,8 +846,10 @@ bool CGamePlayer::SetupManagers()
     m_RenderManager->SetRenderOptions("VertexCache", m_Config.vertexCache);
     m_RenderManager->SetRenderOptions("TextureCacheManagement", m_Config.textureCacheManagement);
     m_RenderManager->SetRenderOptions("SortTransparentObjects", m_Config.sortTransparentObjects);
-    m_RenderManager->SetRenderOptions("TextureVideoFormat", m_Config.textureVideoFormat);
-    m_RenderManager->SetRenderOptions("SpriteVideoFormat", m_Config.spriteVideoFormat);
+    if (m_Config.textureVideoFormat != UNKNOWN_PF)
+        m_RenderManager->SetRenderOptions("TextureVideoFormat", m_Config.textureVideoFormat);
+    if (m_Config.spriteVideoFormat != UNKNOWN_PF)
+        m_RenderManager->SetRenderOptions("SpriteVideoFormat", m_Config.spriteVideoFormat);
 
     m_MessageManager = m_CKContext->GetMessageManager();
     if (!m_MessageManager)
