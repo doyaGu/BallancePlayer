@@ -395,8 +395,11 @@ bool CGamePlayer::InitEngine(CWindow &mainWindow)
     }
 
     CLogger::Get().Debug("Render Engine initialized.");
-
+#if CKVERSION == 0x13022002
     CKERROR res = CKCreateContext(&m_CKContext, mainWindow.GetHandle(), renderEngine, 0);
+#else
+    CKERROR res = CKCreateContext(&m_CKContext, mainWindow.GetHandle(), 0);
+#endif
     if (res != CK_OK)
     {
         CLogger::Get().Error("Failed to initialize CK Engine.");
@@ -929,8 +932,13 @@ int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
         return false;
     }
 
+#if CKVERSION == 0x13022002
     VxDisplayMode *dm = drDesc->DisplayModes;
     const int dmCount = drDesc->DisplayModeCount;
+#else
+    XArray<VxDisplayMode> &dm = drDesc->DisplayModes;
+    const int dmCount = dm.Size();
+#endif
 
     int refreshRate = 0;
     for (int i = 0; i < dmCount; ++i)
@@ -966,8 +974,13 @@ bool CGamePlayer::GetDisplayMode(int &width, int &height, int &bpp, int driver, 
     if (!drDesc)
         return false;
 
+#if CKVERSION == 0x13022002
     if (screenMode < 0 || screenMode >= drDesc->DisplayModeCount)
         return false;
+#else
+    if (screenMode < 0 || screenMode >= drDesc->DisplayModes.Size())
+        return false;
+#endif
 
     const VxDisplayMode &dm = drDesc->DisplayModes[screenMode];
     width = dm.Width;
@@ -1200,6 +1213,7 @@ void CGamePlayer::OnClick(bool dblClk)
 
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
+#if CKVERSION == 0x13022002
     CKPOINT ckpt = {pt.x, pt.y};
     CKPICKRESULT res;
     CKObject *obj = m_RenderContext->Pick(ckpt, &res, FALSE);
@@ -1211,6 +1225,14 @@ void CGamePlayer::OnClick(bool dblClk)
         if (sprite)
             m_MessageManager->SendMessageSingle(msgType, (CKBeObject *)sprite, NULL);
     }
+#else
+    VxIntersectionDesc desc;
+    CKObject *obj = m_RenderContext->Pick(pt.x, pt.y, &desc);
+    if (obj && CKIsChildClassOf(obj, CKCID_BEOBJECT))
+        m_MessageManager->SendMessageSingle(msgType, (CKBeObject*)obj);
+    if (desc.Sprite)
+        m_MessageManager->SendMessageSingle(msgType, (CKBeObject*)desc.Sprite);
+#endif
 }
 
 int CGamePlayer::OnCommand(UINT id, UINT code)
@@ -1373,7 +1395,12 @@ bool CGamePlayer::FillDriverList(HWND hWnd)
     for (int i = 0; i < drCount; ++i)
     {
         VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(i);
-        int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_ADDSTRING, 0, (LPARAM)drDesc->DriverName);
+#if CKVERSION == 0x13022002
+        const char *driverName = drDesc->DriverName;
+#else
+        const char *driverName = drDesc->DriverName.CStr();
+#endif
+        int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_ADDSTRING, 0, (LPARAM)driverName);
         ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETITEMDATA, index, i);
         if (i == m_Config.driver)
             ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETCURSEL, index, 0);
@@ -1390,6 +1417,7 @@ bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
     if (!drDesc)
         return false;
 
+#if CKVERSION == 0x13022002
     VxDisplayMode *dm = drDesc->DisplayModes;
     if (!dm)
         return false;
@@ -1397,6 +1425,15 @@ bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
     const int dmCount = drDesc->DisplayModeCount;
     if (dmCount == 0)
         return false;
+#else
+    XArray<VxDisplayMode> &dm = drDesc->DisplayModes;
+    if (dm.IsEmpty())
+        return false;
+
+    const int dmCount = dm.Size();
+    if (dmCount == 0)
+        return false;
+#endif
 
     int i = 0;
     while (i < dmCount)

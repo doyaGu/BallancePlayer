@@ -329,7 +329,7 @@ bool CGameConfig::HasPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
         return false;
-    return !m_Paths[category].Empty();
+    return m_Paths[category].Length() != 0;
 }
 
 void CGameConfig::LoadFromCmdline(CmdlineParser &parser)
@@ -421,7 +421,7 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     if (filename[0] == '\0')
     {
-        if (m_Paths[eConfigPath].Empty() || !utils::FileOrDirectoryExists(m_Paths[eConfigPath].CStr()))
+        if (m_Paths[eConfigPath].Length() == 0 || !utils::FileOrDirectoryExists(m_Paths[eConfigPath].CStr()))
             return;
         filename = m_Paths[eConfigPath].CStr();
     }
@@ -477,7 +477,7 @@ void CGameConfig::SaveToIni(const char *filename)
 
     if (filename[0] == '\0')
     {
-        if (m_Paths[eConfigPath].Empty())
+        if (m_Paths[eConfigPath].Length() == 0)
             return;
         filename = m_Paths[eConfigPath].CStr();
     }

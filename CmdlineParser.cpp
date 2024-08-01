@@ -1,5 +1,6 @@
 #include "CmdlineParser.h"
 
+#include <ctype.h>
 #include <string.h>
 
 bool CmdlineArg::GetValue(int i, XString &value) const
@@ -174,7 +175,7 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
             while (valueCount < maxValueCount)
             {
                 const XString &next = m_Args[m_Index];
-                if (!next.Empty() && next[0] == '-')
+                if (next.Length() != 0 && next[0] == '-')
                     break;
                 ++m_Index;
                 ++valueCount;

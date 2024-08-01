@@ -89,9 +89,17 @@ static int ListDriver(const CKBehaviorContext &behcontext)
     {
         VxDriverDesc *drDesc = context->GetRenderManager()->GetRenderDriverDescription(i);
         drivers->InsertRow();
+#if CKVERSION == 0x13022002
         drivers->SetElementStringValue(i, 0, drDesc->DriverName);
+#else
+        drivers->SetElementStringValue(i, 0, drDesc->DriverName.Str());
+#endif
         drivers->SetElementValue(i, 1, &i, sizeof(int));
+#if CKVERSION == 0x13022002
         drivers->SetElementStringValue(i, 2, drDesc->DriverDesc);
+#else
+        drivers->SetElementStringValue(i, 2, drDesc->DriverDesc.Str());
+#endif
     }
 
     int driver = man->GetDriver();
@@ -146,8 +154,13 @@ static int ListScreenModes(const CKBehaviorContext &behcontext)
         return CKBR_OK;
     }
 
-    VxDisplayMode *dm = drDesc->DisplayModes;
+#if CKVERSION == 0x13022002
+    VxDisplayMode* dm = drDesc->DisplayModes;
     const int dmCount = drDesc->DisplayModeCount;
+#else
+    XArray<VxDisplayMode>& dm = drDesc->DisplayModes;
+    const int dmCount = dm.Size();
+#endif
     int i = 0, row = 0;
     while (i < dmCount)
     {
