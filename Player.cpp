@@ -47,6 +47,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     if (config.verbose)
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
 #else
+    ::AllocConsole();
+    freopen("CONOUT$", "w", stdout);
+
     CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
 #endif
 

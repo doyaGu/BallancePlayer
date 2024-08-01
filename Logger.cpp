@@ -20,12 +20,6 @@ void CLogger::Open(const char *filename, bool overwrite, int level)
 {
     m_Level = level;
 
-    if (level >= LEVEL_DEBUG)
-    {
-        ::AllocConsole();
-        freopen("CONOUT$", "w", stdout);
-    }
-
     if (m_File)
         return;
 
