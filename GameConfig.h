@@ -51,11 +51,24 @@ public:
     int width;
     int height;
     bool fullscreen;
-    int antialias;
+
+    bool disablePerspectiveCorrection;
+    bool forceLinearFog;
+    bool forceSoftware;
     bool disableFilter;
+    bool ensureVertexShader;
+    bool useIndexBuffers;
     bool disableDithering;
+    int antialias;
     bool disableMipmap;
     bool disableSpecular;
+    bool enableScreenDump;
+    bool enableDebugMode;
+    int vertexCache;
+    bool textureCacheManagement;
+    bool sortTransparentObjects;
+    VX_PIXELFORMAT textureVideoFormat;
+    VX_PIXELFORMAT spriteVideoFormat;
 
     // Window Settings
     bool childWindowRendering;

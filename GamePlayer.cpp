@@ -831,11 +831,23 @@ bool CGamePlayer::SetupManagers()
         return false;
     }
 
+    m_RenderManager->SetRenderOptions("DisablePerspectiveCorrection", m_Config.disablePerspectiveCorrection);
+    m_RenderManager->SetRenderOptions("ForceLinearFog", m_Config.forceLinearFog);
+    m_RenderManager->SetRenderOptions("ForceSoftware", m_Config.forceSoftware);
     m_RenderManager->SetRenderOptions("DisableFilter", m_Config.disableFilter);
+    m_RenderManager->SetRenderOptions("EnsureVertexShader", m_Config.ensureVertexShader);
+    m_RenderManager->SetRenderOptions("UseIndexBuffers", m_Config.useIndexBuffers);
     m_RenderManager->SetRenderOptions("DisableDithering", m_Config.disableDithering);
     m_RenderManager->SetRenderOptions("Antialias", m_Config.antialias);
     m_RenderManager->SetRenderOptions("DisableMipmap", m_Config.disableMipmap);
     m_RenderManager->SetRenderOptions("DisableSpecular", m_Config.disableSpecular);
+    m_RenderManager->SetRenderOptions("EnableScreenDump", m_Config.enableScreenDump);
+    m_RenderManager->SetRenderOptions("EnableDebugMode", m_Config.enableDebugMode);
+    m_RenderManager->SetRenderOptions("VertexCache", m_Config.vertexCache);
+    m_RenderManager->SetRenderOptions("TextureCacheManagement", m_Config.textureCacheManagement);
+    m_RenderManager->SetRenderOptions("SortTransparentObjects", m_Config.sortTransparentObjects);
+    m_RenderManager->SetRenderOptions("TextureVideoFormat", m_Config.textureVideoFormat);
+    m_RenderManager->SetRenderOptions("SpriteVideoFormat", m_Config.spriteVideoFormat);
 
     m_MessageManager = m_CKContext->GetMessageManager();
     if (!m_MessageManager)
