@@ -1,0 +1,61 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    env:
+      VIRTOOLS_SDK_PATH: ${{ github.workspace }}/Virtools-SDK-2.1
+      PROJECT_NAME: Player
+      
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Checkout Virtools SDK
+      uses: actions/checkout@v4
+      with:
+        repository: doyaGu/Virtools-SDK-2.1
+        path: ${{ env.VIRTOOLS_SDK_PATH }}
+
+    - name: Get current branch and commit hash
+      shell: bash
+      run: |
+        echo "GIT_BRANCH=$(echo ${GITHUB_REF#refs/heads/})" >> "$GITHUB_ENV"
+        echo "GIT_SHA=$(git rev-parse --short "$GITHUB_SHA")" >> "$GITHUB_ENV"
+
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Setup MSVC
+      uses: TheMrMilchmann/setup-msvc-dev@v3.0.0
+      with:
+        arch: x86
+      
+    - name: Configure CMake for Release version
+      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release -A Win32
+
+    - name: Build
+      # Build your program with the given configuration
+      run: cmake --build ${{ github.workspace }}/build --config Release
+
+    - name: Test
+      working-directory: ${{ github.workspace }}/build
+      run: ctest -C Release
+
+    - name: Install
+      run: cmake --install ${{ github.workspace }}/build --prefix ${{ github.workspace }}/dist --config Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4.3.3
+      with:
+        name: ${{env.PROJECT_NAME}}-${{env.GIT_SHA}}
+        path: ${{github.workspace}}/dist
