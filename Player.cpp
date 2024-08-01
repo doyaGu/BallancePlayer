@@ -40,7 +40,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     config.LoadFromIni();
     config.LoadFromCmdline(parser);
 
-    CLogger::Get().Open(config.GetPath(eLogPath));
+    bool overwrite = true;
+    if (config.logMode == eLogAppend)
+        overwrite = false;
+
+    CLogger::Get().Open(config.GetPath(eLogPath), overwrite);
 #ifdef NDEBUG
     if (config.verbose)
     {

@@ -227,6 +227,7 @@ static bool IniSetBoolean(const char *section, const char *name, bool value, con
 
 CGameConfig::CGameConfig()
 {
+    logMode = eLogOverwrite;
     verbose = false;
     manualSetup = false;
     loadAllManagers = true;
@@ -435,6 +436,7 @@ void CGameConfig::LoadFromIni(const char *filename)
         filename = path;
     }
 
+    IniGetInteger("Startup", "LogMode", logMode, filename);
     IniGetBoolean("Startup", "Verbose", verbose, filename);
     IniGetBoolean("Startup", "ManualSetup", manualSetup, filename);
     IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
@@ -490,6 +492,7 @@ void CGameConfig::SaveToIni(const char *filename)
         filename = path;
     }
 
+    IniSetInteger("Startup", "LogMode", logMode, filename);
     IniSetBoolean("Startup", "Verbose", verbose, filename);
     IniSetBoolean("Startup", "ManualSetup", manualSetup, filename);
     IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);

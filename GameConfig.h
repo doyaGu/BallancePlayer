@@ -27,10 +27,17 @@ enum PathCategory
     ePathCategoryCount
 };
 
+enum LogMode
+{
+    eLogAppend = 0,
+    eLogOverwrite,
+};
+
 class CGameConfig
 {
 public:
     // Startup Settings
+    int logMode;
     bool verbose;
     bool manualSetup;
     bool loadAllManagers;
