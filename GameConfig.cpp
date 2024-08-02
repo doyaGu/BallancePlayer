@@ -144,14 +144,14 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
                 config.vertexCache = value;
             continue;
         }
-        if (parser.Next(arg, "--texture-cache-management", 's'))
+        if (parser.Next(arg, "--disable-texture-cache-management", 's'))
         {
-            config.textureCacheManagement = true;
+            config.textureCacheManagement = false;
             continue;
         }
-        if (parser.Next(arg, "--sort-transparent-objects", 's'))
+        if (parser.Next(arg, "--disable-sort-transparent-objects", 's'))
         {
-            config.sortTransparentObjects = true;
+            config.sortTransparentObjects = false;
             continue;
         }
         if (parser.Next(arg, "--texture-video-format", '\0', 1))
