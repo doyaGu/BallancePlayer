@@ -28,24 +28,19 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.manualSetup = true;
             continue;
         }
-        if (parser.Next(arg, "--load-all-managers", '\0'))
+        if (parser.Next(arg, "--load-required-managers", '\0'))
         {
-            config.loadAllManagers = true;
+            config.loadAllManagers = false;
             continue;
         }
-        if (parser.Next(arg, "--load-all-building-blocks", '\0'))
+        if (parser.Next(arg, "--load-required-building-blocks", '\0'))
         {
-            config.loadAllBuildingBlocks = true;
+            config.loadAllBuildingBlocks = false;
             continue;
         }
-        if (parser.Next(arg, "--load-all-plugins", '\0'))
+        if (parser.Next(arg, "--load-required-plugins", '\0'))
         {
-            config.loadAllPlugins = true;
-            continue;
-        }
-        if (parser.Next(arg, "--load-all-managers", '\0'))
-        {
-            config.loadAllManagers = true;
+            config.loadAllPlugins = false;
             continue;
         }
         if (parser.Next(arg, "--video-driver", 'v', 1))
