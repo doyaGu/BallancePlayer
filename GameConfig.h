@@ -82,7 +82,7 @@ public:
     // Game Settings
     int langId;
     bool skipOpening;
-    bool noHotfix;
+    bool applyHotfix;
     bool unlockFramerate;
     bool unlockWidescreen;
     bool unlockHighResolution;

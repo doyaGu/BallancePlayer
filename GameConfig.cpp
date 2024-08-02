@@ -209,9 +209,9 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.skipOpening = true;
             continue;
         }
-        if (parser.Next(arg, "--no-hotfix", '\0'))
+        if (parser.Next(arg, "--disable-hotfix", '\0'))
         {
-            config.noHotfix = true;
+            config.applyHotfix = false;
             continue;
         }
         if (parser.Next(arg, "--unlock-framerate", 'u'))
@@ -348,7 +348,7 @@ CGameConfig::CGameConfig()
 
     langId = 1;
     skipOpening = false;
-    noHotfix = false;
+    applyHotfix = true;
     unlockFramerate = false;
     unlockWidescreen = false;
     unlockHighResolution = false;
@@ -401,7 +401,7 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
 
     langId = config.langId;
     skipOpening = config.skipOpening;
-    noHotfix = config.noHotfix;
+    applyHotfix = config.applyHotfix;
     unlockFramerate = config.unlockFramerate;
     unlockWidescreen = config.unlockWidescreen;
     unlockHighResolution = config.unlockHighResolution;
@@ -578,7 +578,7 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     IniGetInteger("Game", "Language", langId, filename);
     IniGetBoolean("Game", "SkipOpening", skipOpening, filename);
-    IniGetBoolean("Game", "NoHotfix", noHotfix, filename);
+    IniGetBoolean("Game", "ApplyHotfix", applyHotfix, filename);
     IniGetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
     IniGetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
     IniGetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
@@ -646,7 +646,7 @@ void CGameConfig::SaveToIni(const char *filename)
 
     IniSetInteger("Game", "Language", langId, filename);
     IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
-    IniSetBoolean("Game", "NoHotfix", noHotfix, filename);
+    IniSetBoolean("Game", "ApplyHotfix", applyHotfix, filename);
     IniSetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
     IniSetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
     IniSetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);

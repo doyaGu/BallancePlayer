@@ -533,7 +533,7 @@ bool CGamePlayer::FinishLoad()
             mesh->Show(CKHIDE);
     }
 
-    if (!m_Config.noHotfix && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != NULL)
+    if (m_Config.applyHotfix && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != NULL)
     {
         if (!EditScript(level, m_Config))
         {
