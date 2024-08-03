@@ -1441,7 +1441,7 @@ bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
         return false;
 #else
     XArray<VxDisplayMode> &dm = drDesc->DisplayModes;
-    if (dm.IsEmpty())
+    if (dm.Size() == 0)
         return false;
 
     const int dmCount = dm.Size();
