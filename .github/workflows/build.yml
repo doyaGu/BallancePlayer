@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        sdk_version: [2.1, 2.5, 3.0, 3.5]
+        sdk_version: ["2.1", "2.5", "3.0", "3.5"]
         configuration: [Release, Debug]
 
     env:
