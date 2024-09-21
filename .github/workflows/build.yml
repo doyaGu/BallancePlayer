@@ -10,21 +10,26 @@ jobs:
   build:
     runs-on: windows-latest
 
+    strategy:
+      matrix:
+        sdk_version: [2.1, 2.5, 3.0, 3.5]
+        configuration: [Release, Debug]
+
     env:
-      VIRTOOLS_SDK_PATH: ${{ github.workspace }}/Virtools-SDK-2.1
       PROJECT_NAME: Player
-      
+      BASE_BUILD_DIR: ${{ github.workspace }}/build
+      BASE_DIST_DIR: ${{ github.workspace }}/dist
+      CMAKE_GENERATOR: "Ninja"
+
     steps:
     - name: Checkout source code
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - name: Checkout Virtools SDK
       uses: actions/checkout@v4
       with:
-        repository: doyaGu/Virtools-SDK-2.1
-        path: ${{ env.VIRTOOLS_SDK_PATH }}
+        repository: doyaGu/Virtools-SDK-${{ matrix.sdk_version }}
+        path: ${{ github.workspace }}/Virtools-SDK-${{ matrix.sdk_version }}
 
     - name: Get current branch and commit hash
       shell: bash
@@ -39,23 +44,22 @@ jobs:
       uses: TheMrMilchmann/setup-msvc-dev@v3.0.0
       with:
         arch: x86
-      
-    - name: Configure CMake for Release version
-      run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release -A Win32
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{ github.workspace }}/build --config Release
+    - name: Configure CMake
+      run: >
+        cmake -G "${{ env.CMAKE_GENERATOR }}" -B ${{ env.BASE_BUILD_DIR }}/${{ matrix.sdk_version }}/${{ matrix.configuration }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.configuration }}
+        -DVIRTOOLS_SDK_PATH=${{ github.workspace }}/Virtools-SDK-${{ matrix.sdk_version }}
+        -DCMAKE_INSTALL_PREFIX=${{ env.BASE_DIST_DIR }}/${{ matrix.sdk_version }}/${{ matrix.configuration }}
 
-    - name: Test
-      working-directory: ${{ github.workspace }}/build
-      run: ctest -C Release
+    - name: Build the project
+      run: cmake --build ${{ env.BASE_BUILD_DIR }}/${{ matrix.sdk_version }}/${{ matrix.configuration }}
 
-    - name: Install
-      run: cmake --install ${{ github.workspace }}/build --prefix ${{ github.workspace }}/dist --config Release
+    - name: Install binaries to distribution folder
+      run: cmake --install ${{ env.BASE_BUILD_DIR }}/${{ matrix.sdk_version }}/${{ matrix.configuration }} --prefix ${{ env.BASE_DIST_DIR }}/${{ matrix.sdk_version }}/${{ matrix.configuration }}
 
-    - name: Upload Artifact
+    - name: Upload build artifacts
       uses: actions/upload-artifact@v4.3.3
       with:
-        name: ${{env.PROJECT_NAME}}-${{env.GIT_SHA}}
-        path: ${{github.workspace}}/dist
+        name: ${{ env.PROJECT_NAME }}-${{ matrix.sdk_version }}-${{ env.GIT_BRANCH }}-${{ env.GIT_SHA }}-${{ matrix.configuration }}
+        path: ${{ env.BASE_DIST_DIR }}/${{ matrix.sdk_version }}/${{ matrix.configuration }}
