@@ -74,11 +74,34 @@ public:
     bool GetWindowRect(LPRECT rect) const { return ::GetWindowRect(m_Window,rect) == TRUE; }
     bool IsIconic() const { return ::IsIconic(m_Window) == TRUE; }
     bool IsZoomed() const { return ::IsZoomed(m_Window) == TRUE; }
+
     bool ClientToScreen(LPPOINT point) const { return ::ClientToScreen(m_Window, point) == TRUE; }
     bool ScreenToClient(LPPOINT point) const { return ::ScreenToClient(m_Window, point) == TRUE; }
 
-    void ScreenToClient(RECT *rect)
+    void ClientToScreen(LPRECT rect)
     {
+        if (rect == NULL)
+            return;
+
+        POINT p1, p2;
+        p1.x = rect->left;
+        p1.y = rect->top;
+        p2.x = rect->right;
+        p2.y = rect->bottom;
+        ClientToScreen(&p1);
+        ClientToScreen(&p2);
+
+        rect->left = p1.x;
+        rect->top = p1.y;
+        rect->right = p2.x;
+        rect->bottom = p2.y;
+    }
+
+    void ScreenToClient(LPRECT rect)
+    {
+        if (rect == NULL)
+            return;
+
         POINT p1, p2;
         p1.x = rect->left;
         p1.y = rect->top;
@@ -92,6 +115,7 @@ public:
         rect->right = p2.x;
         rect->bottom = p2.y;
     }
+
     bool GetClientRect(LPRECT rect) { return ::GetClientRect(m_Window, rect) == TRUE; }
 
     bool Show(int cmdShow = SW_SHOW) { return ::ShowWindow(m_Window, cmdShow) == TRUE; }

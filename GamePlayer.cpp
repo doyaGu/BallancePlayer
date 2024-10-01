@@ -1084,6 +1084,18 @@ bool CGamePlayer::RegisterRenderWindowClass(HINSTANCE hInstance)
     return ::RegisterClass(&renderWndClass) != 0;
 }
 
+bool CGamePlayer::ClipCursor()
+{
+    if (m_Config.clipCursor)
+    {
+        RECT rect;
+        m_MainWindow.GetClientRect(&rect);
+        m_MainWindow.ClientToScreen(&rect);
+        return ::ClipCursor(&rect) == TRUE;
+    }
+    return ::ClipCursor(NULL) == TRUE;
+}
+
 bool CGamePlayer::OpenSetupDialog()
 {
     return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, CGamePlayer::FullscreenSetupDlgProc, 0) == IDOK;
@@ -1096,18 +1108,24 @@ bool CGamePlayer::OpenAboutDialog()
 
 void CGamePlayer::OnDestroy()
 {
+    ::ClipCursor(NULL);
     ::PostQuitMessage(0);
 }
 
 void CGamePlayer::OnMove()
 {
-    if (m_State == ePlaying && !m_Config.fullscreen)
+    if (!m_Config.fullscreen)
     {
         RECT rect;
         m_MainWindow.GetWindowRect(&rect);
         m_Config.posX = rect.left;
         m_Config.posY = rect.top;
     }
+}
+
+void CGamePlayer::OnSize()
+{
+    ClipCursor();
 }
 
 void CGamePlayer::OnPaint()
@@ -1142,6 +1160,8 @@ void CGamePlayer::OnActivateApp(bool active)
             else if (!m_Config.alwaysHandleInput)
                 m_InputManager->Pause(TRUE);
 
+            ::ClipCursor(NULL);
+
             if (m_RenderContext && IsRenderFullscreen())
             {
                 if (firstDeActivate)
@@ -1165,6 +1185,8 @@ void CGamePlayer::OnActivateApp(bool active)
     {
         if (wasFullscreen && !firstDeActivate)
             OnGoFullscreen();
+
+        ClipCursor();
 
         if (!m_Config.alwaysHandleInput)
             m_InputManager->Pause(FALSE);
@@ -1314,6 +1336,8 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
     if (fullscreen)
         StopFullscreen();
 
+    ClipCursor();
+
     m_Config.driver = driver;
     m_Config.screenMode = screenMode;
     m_Config.width = width;
@@ -1336,6 +1360,8 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
 void CGamePlayer::OnGoFullscreen()
 {
     Pause();
+
+    ::ClipCursor(NULL);
 
     if (GoFullscreen())
     {
@@ -1385,6 +1411,8 @@ void CGamePlayer::OnStopFullscreen()
         if (m_Config.childWindowRendering)
             m_RenderWindow.Update();
     }
+
+    ClipCursor();
 
     Play();
 }
@@ -1486,6 +1514,10 @@ LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
     case WM_MOVE:
         player.OnMove();
+        break;
+
+    case WM_SIZE:
+        player.OnSize();
         break;
 
     case WM_PAINT:

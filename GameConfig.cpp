@@ -171,6 +171,11 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
             config.borderless = true;
             continue;
         }
+        if (parser.Next(arg, "--clip-cursor", '\0'))
+        {
+            config.clipCursor = true;
+            continue;
+        }
         if (parser.Next(arg, "--always-handle-input", '\0'))
         {
             config.alwaysHandleInput = true;
@@ -336,6 +341,7 @@ CGameConfig::CGameConfig()
 
     childWindowRendering = false;
     borderless = false;
+    clipCursor = false;
     alwaysHandleInput = false;
     pauseOnDeactivated = false;
     posX = 2147483647;
@@ -389,6 +395,7 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
 
     childWindowRendering = config.childWindowRendering;
     borderless = config.borderless;
+    clipCursor = config.clipCursor;
     alwaysHandleInput = config.alwaysHandleInput;
     pauseOnDeactivated = config.pauseOnDeactivated;
     posX = config.posX;
@@ -566,6 +573,7 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     IniGetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
     IniGetBoolean("Window", "Borderless", borderless, filename);
+    IniGetBoolean("Window", "ClipCursor", clipCursor, filename);
     IniGetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
     IniGetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
     IniGetInteger("Window", "X", posX, filename);
@@ -634,6 +642,7 @@ void CGameConfig::SaveToIni(const char *filename)
 
     IniSetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
     IniSetBoolean("Window", "Borderless", borderless, filename);
+    IniSetBoolean("Window", "ClipCursor", clipCursor, filename);
     IniSetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
     IniSetBoolean("Window", "PauseOnDeactivated", pauseOnDeactivated, filename);
     IniSetInteger("Window", "X", posX, filename);

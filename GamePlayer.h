@@ -93,11 +93,14 @@ private:
     bool RegisterMainWindowClass(HINSTANCE hInstance);
     bool RegisterRenderWindowClass(HINSTANCE hInstance);
 
+    bool ClipCursor();
+
     bool OpenSetupDialog();
     bool OpenAboutDialog();
 
     void OnDestroy();
     void OnMove();
+    void OnSize();
     void OnPaint();
     void OnClose();
     void OnActivateApp(bool active);

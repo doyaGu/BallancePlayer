@@ -74,6 +74,7 @@ public:
     // Window Settings
     bool childWindowRendering;
     bool borderless;
+    bool clipCursor;
     bool alwaysHandleInput;
     bool pauseOnDeactivated;
     int posX;
