@@ -891,9 +891,9 @@ bool CGamePlayer::SetupPaths()
         return false;
     }
 
-     char path[MAX_PATH];
-     char dir[MAX_PATH];
-     ::GetCurrentDirectoryA(MAX_PATH, dir);
+    char path[MAX_PATH];
+    char dir[MAX_PATH];
+    ::GetCurrentDirectoryA(MAX_PATH, dir);
 
     if (!utils::DirectoryExists(m_Config.GetPath(eDataPath)))
     {
@@ -920,7 +920,7 @@ bool CGamePlayer::SetupPaths()
         CLogger::Get().Error("Bitmap path is not found.");
         return false;
     }
-     _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eBitmapPath));
+    _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eBitmapPath));
     XString bitmapPath = path;
     pm->AddPath(BITMAP_PATH_IDX, bitmapPath);
     CLogger::Get().Debug("Bitmap path: %s", bitmapPath.CStr());
@@ -1228,7 +1228,7 @@ void CGamePlayer::OnClick(bool dblClk)
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
 #if CKVERSION == 0x13022002
-    CKPOINT ckpt = {pt.x, pt.y};
+    CKPOINT ckpt = {(int)pt.x, (int)pt.y};
     CKPICKRESULT res;
     CKObject *obj = m_RenderContext->Pick(ckpt, &res, FALSE);
     if (obj && CKIsChildClassOf(obj, CKCID_BEOBJECT))
@@ -1243,9 +1243,9 @@ void CGamePlayer::OnClick(bool dblClk)
     VxIntersectionDesc desc;
     CKObject *obj = m_RenderContext->Pick(pt.x, pt.y, &desc);
     if (obj && CKIsChildClassOf(obj, CKCID_BEOBJECT))
-        m_MessageManager->SendMessageSingle(msgType, (CKBeObject*)obj);
+        m_MessageManager->SendMessageSingle(msgType, (CKBeObject *)obj);
     if (desc.Sprite)
-        m_MessageManager->SendMessageSingle(msgType, (CKBeObject*)desc.Sprite);
+        m_MessageManager->SendMessageSingle(msgType, (CKBeObject *)desc.Sprite);
 #endif
 }
 
