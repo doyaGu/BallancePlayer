@@ -2,58 +2,65 @@
 
 ## Overview
 
-BallancePlayer is a new player for the game "Ballance" created by decompiling and improving the original version. It enhances the gaming experience with several modern features and optimizations.
+BallancePlayer is a modern, enhanced player for the game Ballance, developed by decompiling and improving the original version. It offers various new features and optimizations to deliver an improved gaming experience while maintaining compatibility with the original game.
 
 ## Features
 
-- Out-of-the-box and portable, zero-configuration to start game
-- Support .ini file configurations
-- Support command-line options
-- Support 32-bit color mode
-- Support the monitor without 640x480 resolution
-- Support high refresh rate monitor
-- Support in-game resolution switching
-- Add hotkeys for switching fullscreen and closing game
-- No registry operation
+- Portable and ready to use, no configuration needed to start the game
+- Support for `.ini` file configurations
+- Command-line options for flexibility
+- 32-bit color mode support
+- Compatibility with monitors that don't support 640x480 resolution
+- High refresh rate monitor support
+- In-game resolution switching support
+- Hotkeys for toggling fullscreen mode and closing the game
+- No registry modifications
 - No dependency on `Dsetup.dll`
-- Integrated `ResDll.dll`
-- Fix some bugs that exist in the original player
-- Performance improvement
+- Integrated `ResDll.dll` for seamless operation
+- Fixes for bugs present in the original player
+- Various performance improvements
 
-## Environment
+## System Requirements
 
-Supports Windows XP, Vista, 7, 8, 8.1, 10, 11.
+Supports the following Windows versions:
+- Windows XP
+- Windows Vista
+- Windows 7
+- Windows 8 / 8.1
+- Windows 10
+- Windows 11
 
-## Instructions
+## Installation
 
-1. Extract the package into `Bin` directory of your game folder.
-2. Start the game by clicking on `Player.exe` without setting compatibility mode.
+1. Extract the provided package into the `Bin` directory of your game folder.
+2. Launch the game by running `Player.exe`. No need to set compatibility mode.
 
 ## Building from Source
 
-### Pre-requisites
+### Prerequisites
 
-Virtools SDK: Required for building the project. Obtainable from [Virtools-SDK-2.1](https://github.com/doyaGu/Virtools-SDK-2.1).
-
-Please set the environment variable `VIRTOOLS_SDK_PATH` to the path of the Virtools SDK before building the project.
+To build BallancePlayer, you’ll need the Virtools SDK, which can be obtained from [Virtools-SDK-2.1](https://github.com/doyaGu/Virtools-SDK-2.1). Set the `VIRTOOLS_SDK_PATH` environment variable to the path where the SDK is installed before starting the build process.
 
 ### Building with CMake
 
-- Install CMake: Ensure CMake is installed on your system.
-- Navigate to Project Directory: Change to the directory where the BallancePlayer source code resides.
-- Run the Command in Console: `cmake -B build -G "Visual Studio 16 2022" -A Win32`. This command generates Visual Studio project files and solutions tailored for 32-bit architecture.
-- Open Solution in Visual Studio: Navigate to the `build` directory, then open `BallancePlayer.sln`.
-- Build the Solution: Use Visual Studio's build tools to compile the project.
+1. **Install CMake**: Ensure CMake is installed on your system.
+2. **Navigate to Project Directory**: Open a console and navigate to the directory containing the BallancePlayer source code.
+3. **Generate Build Files**: Run the following command to generate Visual Studio project files for 32-bit architecture:
+   ```
+   cmake -B build -G "Visual Studio 16 2022" -A Win32
+   ```
+4. **Open in Visual Studio**: Navigate to the `build` directory and open the solution file `BallancePlayer.sln` in Visual Studio.
+5. **Build the Solution**: Use Visual Studio to compile the project.
 
 ### Building with Visual Studio 6.0
 
-- Install Visual Studio 6.0: Ensure it's installed on your system.
-- Open the Project: Locate `Player.dsw` in the project directory and open it with Visual Studio 6.0.
-- Build the Project: Use the build tools in Visual Studio 6.0 to compile the project.
+1. **Install Visual Studio 6.0**: Ensure Visual Studio 6.0 is installed.
+2. **Open the Project**: Locate `Player.dsw` in the project directory and open it with Visual Studio 6.0.
+3. **Build the Project**: Use the build tools in Visual Studio 6.0 to compile the project.
 
 ### Notes
 
-The release package is built with Visual Studio 6.0 for maximum compatibility.
+The official release package is built with Visual Studio 6.0 for maximum compatibility with older systems.
 
 ## Hotkeys
 
@@ -63,119 +70,183 @@ The release package is built with Visual Studio 6.0 for maximum compatibility.
 
 ## INI Settings
 
-There are several settings in `Player.ini`.
+The `Player.ini` file contains several settings that control the behavior of the game.
 
 ### Startup
 
-- `ManualSetup`:
-  - Disable: `0`
-  - Enable: `1`
-- `LoadAllManagers`:
-  - Disable: `0`
-  - Enable: `1`
-- `LoadAllBuildingBlocks`:
-  - Disable: `0`
-  - Enable: `1`
-- `LoadAllPlugins`:
-  - Disable: `0`
-  - Enable: `1`
+- `LogMode`: Controls how logs are handled.
+  - `0`: Append to the log file.
+  - `1`: Overwrite the log file.
+- `Verbose`: Toggles verbose logging.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `ManualSetup`: Controls whether the setup dialog appears on startup.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `LoadAllManagers`: Controls whether all managers are loaded.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `LoadAllBuildingBlocks`: Controls whether all building blocks are loaded.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `LoadAllPlugins`: Controls whether all plugins are loaded.
+  - `0`: Disabled.
+  - `1`: Enabled.
 
 ### Graphics
 
-- `Driver`:
-  - Driver ID: `The id of the graphics card driver to display`
-- `BitsPerPixel`:
-  - 32-bit: `32`
-  - 16-bit: `16`
-- `Width`:
-  - Screen Width: `The screen width which can be found in your monitor resolutions`
-- `Height`:
-  - Screen Height: `The screen height which can be found in your monitor resolutions`
-- `FullScreen`:
-  - Windowed Mode: `0`
-  - FullScreen Mode: `1`
-- `UnlockFramerate`:
-  - Lock: `0`
-  - Unlock: `1`
-- `UnlockWidescreen`:
-  - Lock: `0`
-  - Unlock: `1`
-- `UnlockHighResolution`:
-  - Lock: `0`
-  - Unlock: `1`
-- `Antialias`:
-  - Anti-aliasing Level: `The number of multi-sample for anti-aliasing (minimum: 2)`
-- `DisableFilter`:
-  - OFF: `0`
-  - ON: `1`
-- `DisableDithering`:
-  - OFF: `0`
-  - ON: `1`
-- `DisableMipmap`:
-  - OFF: `0`
-  - ON: `1`
-- `DisableSpecular`:
-  - OFF: `0`
-  - ON: `1`
+- `Driver`: Specifies the driver ID of the graphics card to use.
+- `BitsPerPixel`: Specifies color depth.
+  - `32`: 32-bit color.
+  - `16`: 16-bit color.
+- `Width`: Specifies screen width (based on your monitor resolution).
+- `Height`: Specifies screen height (based on your monitor resolution).
+- `FullScreen`: Controls display mode.
+  - `0`: Windowed mode.
+  - `1`: Fullscreen mode.
+- `DisablePerspectiveCorrection`: Toggles perspective correction.
+  - `0`: Off.
+  - `1`: On.
+- `ForceLinearFog`: Forces linear fog modes.
+  - `0`: Off.
+  - `1`: On.
+- `ForceSoftware`: Disables hardware rendering.
+  - `0`: Off.
+  - `1`: On.
+- `DisableFilter`: Disables texture filtering.
+  - `0`: Off.
+  - `1`: On.
+- `EnsureVertexShader`: Ensures vertex shader support.
+  - `0`: Off.
+  - `1`: On.
+- `UseIndexBuffers`: Enables index buffer usage.
+  - `0`: Off.
+  - `1`: On.
+- `DisableDithering`: Disables dithering.
+  - `0`: Off.
+  - `1`: On.
+- `Antialias`: Sets the level of anti-aliasing (minimum value: 2).
+- `DisableMipmap`: Disables mipmaps.
+  - `0`: Off.
+  - `1`: On.
+- `DisableSpecular`: Disables specular highlights.
+  - `0`: Off.
+  - `1`: On.
+- `EnableScreenDump`: Enables screen dumping functionality.
+  - `0`: Off.
+  - `1`: On.
+- `EnableDebugMode`: Enables debug mode for step-by-step rendering.
+  - `0`: Off.
+  - `1`: On.
+- `VertexCache`: Sets the size of the vertex cache. A value of `0` disables sorting.
+- `TextureCacheManagement`: Enables or disables texture cache management.
+  - `0`: Off.
+  - `1`: On.
+- `SortTransparentObjects`: Toggles sorting of transparent objects.
+  - `0`: Off.
+  - `1`: On.
+- `TextureVideoFormat`: Specifies the default pixel format for textures (e.g., `_32_ARGB8888`).
+- `SpriteVideoFormat`: Specifies the default pixel format for sprites (e.g., `_32_ARGB8888`).
 
 ### Window
 
-- `Borderless`:
-  - Disable: `0`
-  - Enable: `1`
-- `AlwaysHandleInput`
-  - Disable: `0`
-  - Enable: `1`
-- `PauseOnDeactivated`
-  - Disable: `0`
-  - Enable: `1`
-- `X`:
-  - Window Horizontal Coordinate: `Any integer between negative window width and screen width`
-- `Y`:
-  - Window Vertical Coordinate: `Any integer between negative window height and screen height`
+- `ChildWindowRendering`: Controls whether rendering occurs in a child window.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `Borderless`: Controls window borders.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `ClipCursor`: Controls whether the cursor is clipped to the window.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `AlwaysHandleInput`: Allows the player to handle input even when the window is in the background.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `PauseOnDeactivated`: Pauses the game when the window is deactivated.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `X`: Specifies the horizontal window coordinate (can be negative).
+- `Y`: Specifies the vertical window coordinate (can be negative).
 
 ### Game
 
-- `Language`:
-  - German: `0`
-  - English: `1`
-  - Spanish: `2`
-  - Italian: `3`
-  - French: `4`
-- `SkipOpening`:
-  - Disable: `0`
-  - Enable: `1`
+- `Language`: Sets the game language.
+  - `0`: German.
+  - `1`: English.
+  - `2`: Spanish.
+  - `3`: Italian.
+  - `4`: French.
+- `SkipOpening`: Controls whether to skip the opening animation.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `ApplyHotfix`: Controls whether hotfixes are applied.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `UnlockFramerate`: Unlocks the frame rate limitation.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `UnlockWidescreen`: Unlocks non-4:3 resolutions.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `UnlockHighResolution`: Unlocks resolutions higher than 1600x1200.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `Debug`: Enables in-game debug mode.
+  - `0`: Disabled.
+  - `1`: Enabled.
+- `Rookie`: Enables in-game rookie mode.
+  - `0`: Disabled.
+  - `1`: Enabled.
 
 ## Command-line Options
+
+You can also use command-line options to customize game behavior:
 
 ```bash
 Player.exe [OPTIONS]
 ```
-
-- `-m`, `--manual-setup`: Always show setup dialog box at startup
-- `--load-all-managers`: Control whether player loads all managers
-- `--load-all-building-blocks`: Control whether player loads all building blocks
-- `--load-all-plugins`: Control whether player loads all plugins
-- `-v <driver>`, `--video-driver <driver>`: Set the id of the graphics card driver to display
-- `-b <bpp>`, `--bpp <bpp>`: Set the bit per pixel of the screen (32 or 16)
-- `-w <width>`, `--width <width>`: Set the screen width
-- `-h <height>`, `--height <height>`: Set the screen height
-- `-f`, `--fullscreen`: Startup in fullscreen mode
-- `-u`, `--unlock-framerate`: Unlock the frame rate limitation
-- `--unlock-widescreen`: Unlock non-4:3 resolutions
-- `--unlock-high-resolution`: Unlock resolutions higher than 1600x1200
-- `--antialias <level>`: Enable image antialiasing (minimum: 2)
-- `--disable-filter`: Disable texture filtering
-- `--disable-dithering`: Disable image dithering
-- `--disable-mipmap`: Disable mipmap
-- `--disable-specular`: Disable specular highlights
-- `-c`, `--borderless`: Startup in borderless mode
-- `--always-handle-input`: Allow player handle input while window is in background
-- `-p`, `--pause-on-deactivated`: Pause the game once the window is deactivated
-- `-x <X>`, `--position-x <X>`: Set the position x of the window
-- `-y <Y>`, `--position-y <Y>`: Set the position y of the window
-- `-l <lang>`, `--lang <lang>`: Set the language id
-- `--skip-opening`: Skip the opening animation
+- `--verbose`: Enable verbose logging.
+- `-m`, `--manual-setup`: Always show the setup dialog box at startup.
+- `--load-all-managers`: Load all managers at startup.
+- `--load-all-building-blocks`: Load all building blocks at startup.
+- `--load-all-plugins`: Load all plugins at startup.
+- `-v <driver>`, `--video-driver <driver>`: Set the graphics card driver ID.
+- `-b <bpp>`, `--bpp <bpp>`: Set the bits per pixel (32 or 16).
+- `-w <width>`, `--width <width>`: Set the screen width.
+- `-h <height>`, `--height <height>`: Set the screen height.
+- `-f`, `--fullscreen`: Start the game in fullscreen mode.
+- `--disable--perspective-correction`: Disable perspective correction.
+- `--force-linear-fog`: Force the fog mode to linear.
+- `--force-software`: Disable hardware rendering and force software mode.
+- `--disable-filter`: Disable texture filtering.
+- `--ensure-vertex-shader`: Ensure vertex shader support.
+- `--use-index-buffers`: Enable index buffer usage.
+- `--disable-dithering`: Disable image dithering.
+- `--antialias <level>`: Enable image antialiasing (minimum: 2).
+- `--disable-mipmap`: Disable mipmaps.
+- `--disable-specular`: Disable specular highlights.
+- `--enable-screen-dump`: Dump screen content using (CTRL + ALT + F10).
+- `--enable-debug-mode`: Enable debug mode using (CTRL + ALT + F11).
+- `--vertex-cache <size>`: Set the vertex cache size (0 disables sorting).
+- `--disable-texture-cache-management`: Disable texture cache management.
+- `--disable-sort-transparent-objects`: Disable sorting of transparent objects.
+- `--texture-video-format <pixel-format>`: Set the texture pixel format (e.g., `_32_ARGB8888`).
+- `--sprite-video-format <pixel-format>`: Set the sprite pixel format (e.g., `_32_ARGB8888`).
+- `-s`, `--child-window-rendering`:Enable child window rendering.
+- `-c`, `--borderless`: Start the game in borderless mode.
+- `--clip-cursor`: Clip the cursor to the window.
+- `--always-handle-input`:  Allow input handling when the window is in the background.
+- `-p`, `--pause-on-deactivated`: Pause the game when the window is deactivated.
+- `-x <X>`, `--position-x <X>`: Set the window's X coordinate.
+- `-y <Y>`, `--position-y <Y>`: Set the window's Y coordinate.
+- `-l <lang>`, `--lang <lang>`: Set the game language.
+- `--skip-opening`: Skip the opening animation.
+- `--disable-hotfix`: Disable script hotfixes.
+- `-u`, `--unlock-framerate`: Unlock the frame rate limitation.
+- `--unlock-widescreen`: Unlock non-4:3 resolutions.
+- `--unlock-high-resolution`: Unlock resolutions higher than 1600x1200.
+- `d`, `--debug`: Enable in-game debug mode.
+- `r`, `--rookie`: Enable in-game rookie mode.
 
 ## Contact
 
@@ -183,304 +254,313 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
+### v0.3.3 (2024-10-01)
+
+**New Features**
+
+- Added the `LogMode` setting to control log mode.
+- Added the `Verbose` setting with the `--verbose` option to control debug log output.
+- Introduced the `ApplyHotfix` setting with the `--no-hotfix` option to control whether script hotfixes are applied.
+- Added the `ClipCursor` setting with the `--clip-cursor` option to manage cursor clipping behavior.
+- Added more graphics settings and options.
+- Improved error messaging for better clarity.
+
+**Changes**
+
+- Logs now overwrite the existing file instead of appending to it.
+- Reorganized configuration categories for better structure.
+- Where possible, relative paths are now used.
+
 ### v0.3.2 (2024-07-16)
 
 **Bug Fixes**
 
-- Fix broken plugin registration.
+- Fixed an issue with broken plugin registration.
 
-**Changed**
+**Changes**
 
-- Create window in the center of the screen by default.
+- The application window now opens in the center of the screen by default.
 
 ### v0.3.1 (2024-03-04)
 
 **Bug Fixes**
 
-- Fix possible abnormal resolution problem.
+- Fixed a potential issue with abnormal resolution settings.
 
 ### v0.3.0 (2023-05-20)
 
-**News**
+**New Features**
 
-- Add a new setting `ChildWindowRendering` and corresponding command-line option `--child-window-rendering` to control whether to render in a child window.
+- Added the `ChildWindowRendering` setting with the `--child-window-rendering` option to control rendering in a child window.
 
 **Bug Fixes**
 
-- Fix a possible black screen problem during full-screen switching.
+- Resolved a possible black screen issue when switching to full-screen mode.
 
-**Changed**
+**Changes**
 
-- No longer to rendering in a separate window by default.
+- By default, rendering is no longer done in a separate window.
 
 ### v0.2.4 (2023-03-23)
 
 **Bug Fixes**
 
-- Fix game initialization failure when no screen mode is selected in setup dialog.
-- Fix improper render driver initialization process.
+- Fixed a game initialization failure that occurred when no screen mode was selected in the setup dialog.
+- Corrected the render driver initialization process.
 
 ### v0.2.3 (2023-03-13)
 
-**News**
+**New Features**
 
-- Allow to run multiple instance.
+- Added support for running multiple instances of the game.
 
 **Bug Fixes**
 
-- Fix the bug that the game crashes upon exit.
+- Fixed a crash that occurred when exiting the game.
 
-**Changed**
+**Changes**
 
-- Deprecate `Resizable`.
-- Deprecate `ClipMouse`.
-- Improve error messages.
-- Refactor codebase to simplify implementation.
+- Deprecated the `Resizable` and `ClipMouse` settings.
+- Enhanced error messages for better clarity.
+- Refactored the codebase to simplify the implementation.
 
 ### v0.2.2 (2023-01-23)
 
-**News**
+**New Features**
 
-- Add a new setting `ManualSetup` and corresponding command-line option `--manual-setup` to control whether to show setup dialog box at startup.
+- Added the `ManualSetup` setting and corresponding `--manual-setup` command-line option to control whether the setup dialog box is shown at startup.
 
 **Bug Fixes**
 
-- Fix broken command line short option parsing.
+- Fixed issues with short option parsing in the command line.
 
-**Changed**
+**Changes**
 
-- Deprecate `AdaptiveCamera`.
-- Deprecate delay-loaded DLL.
-- Deprecate path customization.
-- Simplify the workaround for enumeration of driver and screen mode.
+- Deprecated the `AdaptiveCamera` setting.
+- Deprecated delay-loaded DLL.
+- Deprecated path customization.
+- Simplified the workaround for driver and screen mode enumeration.
 
 ### v0.2.1 (2022-11-24)
 
-**News**
+**New Features**
 
-- Support console log.
-- Add a new setting `LoadAllManagers` and corresponding command-line option `--load-all-managers` to control whether player loads all managers.
-- Add a new setting `LoadAllBuildingBlocks` and corresponding command-line option `--load-all-building-blocks` to control whether player loads all building blocks.
-- Add a new setting `LoadAllPlugins` and corresponding command-line option `--load-all-plugins` to control whether player loads all plugins.
+- Added support for console logging.
+- Added the `LoadAllManagers` setting with the `--load-all-managers` command-line option to control whether all managers are loaded.
+- Added the `LoadAllBuildingBlocks` setting with the `--load-all-building-blocks` option to control whether all building blocks are loaded.
+- Added the `LoadAllPlugins` setting with the `--load-all-plugins` command-line option to control whether all plugins are loaded.
 
 **Bug Fixes**
 
-- Fix the problem that player changes screen mode incorrectly.
-- Fix the problem that player can not startup if a wrong path setting exists.
+- Fixed an issue where the screen modes will be changed incorrectly.
+- Resolved a startup failure caused by incorrect path settings.
 
-**Changed**
+**Changes**
 
-- Remove dependency on the modified version of `TT_InterfaceManager_RT.dll`. Avoid to modify original files.
+- Removed the dependency on the modified version of `TT_InterfaceManager_RT.dll`.
 
 ### v0.2.0 (2022-10-15)
 
-**News**
+**New Features**
 
-- Add the Chinese version of README.
+- Added a Chinese version of the README.
 
 ### v0.2.0-rc1 (2022-10-09)
 
 **Bug Fixes**
 
-- Fix possible crash problem upon exit.
+- Fixed a potential crash issue that occurred upon exiting the game.
 
-**Changed**
+**Changes**
 
-- Improve game loop.
+- Improved the game loop for better performance.
 
 ### v0.2.0-beta4 (2022-10-02)
 
 **Bug Fixes**
 
-- Fix the problem that player can not switch between fullscreen and windowed mode when using OpenGL.
-- Fix error-prone task switching.
+- Fixed an issue preventing the player from switching between fullscreen and windowed mode when using OpenGL.
+- Resolved problems with task switching that could lead to errors.
 
 ### v0.2.0-beta3 (2022-10-01)
 
 **Bug Fixes**
 
-- Fix the problem that UI will crash on task switching in fullscreen mode.
-- Fix the problem that specifying a display driver has no effect.
+- Fixed a UI crash that occurred during task switching in fullscreen mode.
+- Resolved an issue where specifying a display driver had no effect.
 
-**Changed**
+**Changes**
 
-- Swap the positions of `Driver` and `Screen Mode` in FullScreen Setup Dialog.
+- Swapped the positions of `Driver` and `Screen Mode` in the `FullScreen Setup` dialog.
 
 ### v0.2.0-beta2 (2022-09-28)
 
 **Bug Fixes**
 
-- Fix pop-up black screen after exiting.
+- Fixed a pop-up black screen issue after exiting.
 
 ### v0.2.0-beta1 (2022-09-28)
 
 **Bug Fixes**
 
-- Fix forced fullscreen Vsync.
-- Fix window position restoration.
+- Fixed forced fullscreen Vsync.
+- Fixed the issue that window position can not be restored correctly.
 
 ### v0.2.0-alpha4 (2022-09-25)
 
 **Bug Fixes**
 
-- Fix the black screen error on the monitor which is not support 640x480 resolution.
+- Resolved a black screen error on monitors that do not support 640x480 resolution.
 
 ### v0.2.0-alpha2 (2022-09-23)
 
-**News**
+**New Features**
 
-- Support in-game debug mode.
-- Support new command line options style like `--root-path=<dir>`.
+- Added support for in-game debug mode.
+- Introduced new command-line options like `--root-path=<dir>`.
 
 ### v0.2.0-alpha1 (2022-09-17)
 
-**News**
+**New Features**
 
-- Support more resolutions.
-- Support skipping the opening animation.
-- Support mouse clip.
-- Support off-site startup.
-- Support game path customization.
-- Support Virtools console output.
-- Add many new settings and corresponding command-line options.
+- Added support for more resolutions, skipping the opening animation, mouse clipping, off-site startup, game path customization, and Virtools console output.
+- Introduced many new settings and corresponding command-line options.
 
 **Bug Fixes**
 
-- Fix the problematic fullscreen setup.
-- Fix the problem that player will be stuck when using custom resolution.
+- Fixed issues with fullscreen setup.
+- Resolved an issue where the player would get stuck when using custom resolutions.
 
-**Changed**
+**Changes**
 
-- Unify log and error output.
-- Rearrange settings and corresponding command-line options.
+- Unified log and error output.
+- Rearranged settings and corresponding command-line options.
 
 ### v0.1.9 (2022-08-30)
 
 **Bug Fixes**
 
-- Fix the incorrect position saving mechanism when it comes to exiting full screen.
+- Fixed an issue with the position-saving mechanism when exiting fullscreen mode.
 
-**Changed**
+**Changes**
 
-- If the window is resizable (window has a title), it shows in the upper-left corner with a title and a slim margin from the screen edge when the window position is set to 0.
-- The saved value of window position can be negative.
-- Save last game mode (fullscreen or windowed) and restore it next time the game startups.
+- If the window is resizable (with a title), it now appears in the upper-left corner with a slim margin from the screen edge when the window position is set to 0.
+- The saved window position value can now be negative.
+- The game will now save the last used game mode (fullscreen or windowed) and restore it the next time it starts up.
 
 ### v0.1.8 (2022-08-17)
 
 **Bug Fixes**
 
-- Fix the bug that the game locks at 60 FPS on 144Hz monitor when v-sync is enabled.
-- Fix the bug that the game can not find multiple drivers.
+- Fixed an issue where the game was locked at 60 FPS on 144Hz monitors when v-sync was enabled.
+- Resolved a bug preventing the game from finding multiple display drivers.
 
 ### v0.1.7 (2022-08-15)
 
-**News**
+**New Features**
 
-- Add two new settings `X` and `Y`, and corresponding command-line options `-x` and `-y` to set the screen coordinate of the upper-left corner of the window.
+- Added `X` and `Y` settings with corresponding `-x` and `-y` options to set the screen coordinates of the upper-left corner of the window.
 
 **Bug Fixes**
 
-- Fix the bug that the game window resizes unnaturally before starting.
+- Fixed an issue where the game window resized unnaturally before starting.
 
-**Changed**
+**Changes**
 
-- Save last window position and restore it next time the game startups.
+- The last window position is now saved and restored on the next startup.
 
 ### v0.1.6 (2022-08-05)
 
-**News**
+**New Features**
 
-- Add a new setting `Borderless` and corresponding command-line option `-c` to startup in borderless mode.
-- Add a new setting `Resizable` and corresponding command-line option `-s` to make window resizable.
+- Added the `Borderless` setting with the `-c` option to start in borderless mode.
+- Added the `Resizable` setting with the `-s` option to make the window resizable.
 
-**Changed**
+**Changes**
 
-- Make window not resizable by default.
+- The window is now non-resizable by default.
 
 ### v0.1.5 (2022-07-20)
 
-**News**
+**New Features**
 
-- Support 32-bit color mode.
-- Add command-line long option support.
-- Add a new setting `Language` and corresponding command-line option `-l` to set game language.
-- Add a new setting `UnlockFramerate` and corresponding command-line option `-u` to unlock the frame-rate limitation.
+- Added support for 32-bit color mode.
+- Added support for command-line long options.
+- Added the `Language` setting with the `-l` option to set the game language.
+- Added the `UnlockFramerate` setting with the `-u` option to unlock the frame-rate limit.
 
 **Bug Fixes**
 
-- Fix the bug that the game UI will be disordered between task switching.
+- Fixed a UI disorder bug during task switching.
 
-**Changed**
+**Changes**
 
-- Change the command-line option for disabling task switching from `-d` to `-e`.
-- Reimplement initialization configuration mechanism.
-- Rewritten the command-line support.
-- Integrate the function of ResDll.
+- Changed the command-line option for disabling task switching from `-d` to `-e`.
+- Reimplemented the initialization configuration mechanism.
+- Rewrote command-line support.
+- Integrated the functions of `ResDll`.
 
 ### v0.1.4 (2022-05-12)
 
-**News**
+**New Features**
 
-- Add a new setting `PauseOnTaskSwitch` and corresponding command-line option `-p` to enable game pause on task switching.
+- Added the `PauseOnTaskSwitch` setting with the `-p` option to enable game pause during task switching.
 
 **Bug Fixes**
 
-- Fix the bug that the game exits early.
-- Fix the bug that the game crashes upon exit.
+- Fixed bugs where the game would exit early and crash upon exit.
 
-**Changed**
+**Changes**
 
-- Remove unnecessary virtual functions to improve performance.
-- Remove the Interface Sprite that will not be used in the game.
-- Improve Error-Handling.
+- Removed unnecessary virtual functions to improve performance.
+- Removed the unused Interface Sprite.
+- Improved error handling.
 
 ### v0.1.3 (2022-05-09)
 
-**News**
+**New Features**
 
-- Support command-line options.
+- Added support for command-line options.
 
 **Bug Fixes**
 
-- Fix the bug that the game will crash in fullscreen mode.
-- Fix the bug that the game will be stuck between task switching.
-- Fix the bug that the game will show resolution duplicates in Graphics Options.
+- Fixed fullscreen crash.
+- Fixed task switching issues.
+- Fixed resolution duplicates in Graphics Options.
 
-**Changed**
+**Changes**
 
-- Remove dependency on `Dsetup.dll` since it is normally needless to check the DirectX version on a modern PC.
-- Disable Exception Handling to improve performance.
+- Removed dependency on `Dsetup.dll` since checking DirectX is unnecessary on modern PCs.
+- Removed exception handling to improve performance.
 
 ### v0.1.2 (2022-05-08)
 
 **Bug Fixes**
 
-- Fix the bug that the game maybe crashes when upon exit.
+- Fixed an issue where the game might crash upon exit.
 
-**Changed**
+**Changes**
 
-- Change to generate default config file when no configuration file is found.
-- Replace the remaining registry operation in the main function.
-- Disable Exception Handling to improve performance.
-- Remove an unnecessary class `FixedString`.
+- Default config files are now generated when no configuration file is found.
+- Replaced remaining registry operations in the main function.
+- Removed `FixedString`.
 
 ### v0.1.1 (2022-05-04)
 
-**News**
+**New Features**
 
-- Support initialization file configuration.
+- Added support for initialization file configuration.
 
 **Bug Fixes**
 
-- Fix the bug that the game displays incompletely in windowed mode.
+- Fixed an issue where the game displayed incompletely in windowed mode.
 
-**Changed**
+**Changes**
 
-- Remove some unknown class members.
+- Removed some unknown class members.
 
 ### v0.1.0 (2022-05-03)
 
 **Bug Fixes**
 
-- Fix the bug that the memory checking gets the wrong result.
+- Fixed a memory checking bug that caused incorrect results.
