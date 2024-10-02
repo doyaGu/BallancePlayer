@@ -43,15 +43,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         overwrite = false;
 
     CLogger::Get().Open(config.GetPath(eLogPath), overwrite);
-#ifdef NDEBUG
     if (config.verbose)
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
-#else
-    ::AllocConsole();
-    freopen("CONOUT$", "w", stdout);
-
-    CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
-#endif
 
     CGamePlayer &player = CGamePlayer::GetInstance();
 
