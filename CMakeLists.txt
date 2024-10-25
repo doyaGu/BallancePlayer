@@ -6,7 +6,7 @@ project(BallancePlayer
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
         )
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED NO)
 set(CMAKE_CXX_EXTENSIONS YES)
 
@@ -55,4 +55,5 @@ set(PLAYER_SCREEN_WIDTH 640 CACHE STRING "Player screen width default value" FOR
 set(PLAYER_SCREEN_HEIGHT 480 CACHE STRING "Player screen height default value" FORCE)
 set(PLAYER_SCREEN_BPP 32 CACHE STRING "Player screen bpp default value" FORCE)
 
+add_subdirectory(deps)
 add_subdirectory(src)
