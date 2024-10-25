@@ -1,17 +1,26 @@
+#include <cstdio>
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
 
-#include "CmdlineParser.h"
+#include <cxxopts.hpp>
+
 #include "GameConfig.h"
 #include "GamePlayer.h"
+#include "ConsoleAttacher.h"
 #include "LockGuard.h"
 #include "Logger.h"
 #include "Utils.h"
 
 static HANDLE CreatNamedMutex();
-static void LoadPaths(CGameConfig &config, CmdlineParser &parser);
+
+void AddCommandLineOptions(cxxopts::Options &options);
+void LoadConfigsFromCommandLine(CGameConfig &config, const cxxopts::ParseResult &result);
+void LoadPathsFromCommandLine(CGameConfig &config, const cxxopts::ParseResult &result);
+
+static void LoadPaths(CGameConfig &config, const cxxopts::ParseResult &result);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -24,11 +33,54 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     LockGuard guard(hMutex);
 
-    CmdlineParser parser(__argc, __argv);
+    ConsoleAttacher consoleAttacher;
+
+    cxxopts::Options options("Player", PLAYER_DESCRIPTION);
+    try
+    {
+        AddCommandLineOptions(options);
+    }
+    catch (const cxxopts::exceptions::specification &e)
+    {
+        CLogger::Get().Error("Error adding command line options: %s", e.what());
+        return -1;
+    }
+
+    cxxopts::ParseResult result;
+    try
+    {
+        result = std::move(options.parse(__argc, __argv));
+    }
+    catch (const cxxopts::exceptions::parsing &e)
+    {
+        CLogger::Get().Error("Error parsing command line: %s", e.what());
+        return -1;
+    }
+
+    if (result.contains("help"))
+    {
+        const auto help = options.help();
+        puts(help.c_str());
+        return 0;
+    }
+    if (result.contains("version"))
+    {
+        puts(PLAYER_VERSION);
+        return 0;
+    }
+
     CGameConfig config;
 
-    // Load paths from command line
-    LoadPaths(config, parser);
+    try
+    {
+        // Load paths from command line
+        LoadPaths(config, result);
+    }
+    catch (const cxxopts::exceptions::option_has_no_value &e)
+    {
+        CLogger::Get().Error("Error parsing command line: %s", e.what());
+        return -1;
+    }
 
     // Flush ini file if it doesn't exist
     if (!utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
@@ -36,7 +88,15 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     // Load configurations
     config.LoadFromIni();
-    config.LoadFromCmdline(parser);
+    try
+    {
+        LoadConfigsFromCommandLine(config, result);
+    }
+    catch (const cxxopts::exceptions::option_has_no_value &e)
+    {
+        CLogger::Get().Error("Error parsing command line: %s", e.what());
+        return -1;
+    }
 
     bool overwrite = true;
     if (config.logMode == eLogAppend)
@@ -86,7 +146,7 @@ static HANDLE CreatNamedMutex()
     return hMutex;
 }
 
-static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
+static void LoadPaths(CGameConfig &config, const cxxopts::ParseResult &result)
 {
     static const char *const DefaultPaths[] = {
         "Player.ini",
@@ -106,7 +166,7 @@ static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
     bool useDefault;
 
     // Load paths
-    config.LoadPathsFromCmdline(parser);
+    LoadPathsFromCommandLine(config, result);
 
     // Set default value for the path if it was not specified in command line
     for (int p = eConfigPath; p < ePathCategoryCount; ++p)

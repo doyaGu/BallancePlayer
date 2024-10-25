@@ -10,8 +10,6 @@
 #define MAX_PATH 260
 #endif
 
-class CmdlineParser;
-
 enum PathCategory
 {
     eConfigPath = 0,
@@ -97,8 +95,6 @@ public:
     const char *GetPath(PathCategory category) const;
     bool HasPath(PathCategory category) const;
 
-    void LoadFromCmdline(CmdlineParser &parser);
-    void LoadPathsFromCmdline(CmdlineParser &parser);
     void LoadFromIni(const char *filename = "");
     void SaveToIni(const char *filename = "");
 

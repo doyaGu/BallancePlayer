@@ -11,7 +11,7 @@ set(PLAYER_HEADERS
         Window.h
         Splash.h
         ScriptUtils.h
-        CmdlineParser.h
+        ConsoleAttacher.h
         LockGuard.h
         Logger.h
         Utils.h
@@ -36,7 +36,20 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
         WIN32_EXECUTABLE TRUE
         )
 
-target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
+target_include_directories(${PLAYER_NAME}
+        PUBLIC
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_link_libraries(${PLAYER_NAME}
+        PUBLIC
+        CK2 VxMath
+        PRIVATE
+        cxxopts
+)
+
 
 install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION Bin)
 
