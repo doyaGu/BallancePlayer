@@ -54,14 +54,13 @@ bool GamePlayer::Init(HINSTANCE hInstance, const GameConfig &config) {
         ResizeWindow();
     }
 
-    HWND handle = (!m_Config.childWindowRendering) ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
+    HWND handle = !m_Config.childWindowRendering ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
     CKRECT rect = {0, 0, m_Config.width, m_Config.height};
     m_RenderContext = m_RenderManager->CreateRenderContext(handle, m_Config.driver, &rect, FALSE, m_Config.bpp);
     if (!m_RenderContext) {
         Logger::Get().Error("Failed to create Render Context!");
         return false;
     }
-
     Logger::Get().Debug("Render Context created.");
 
     if (m_Config.fullscreen)
@@ -78,7 +77,7 @@ bool GamePlayer::Load(const char *filename) {
     if (m_State == eInitial)
         return false;
 
-    if (!filename || (*filename) == '\0')
+    if (!filename || filename[0] == '\0')
         filename = m_Config.GetPath(eCmoPath);
 
     if (!m_CKContext)
@@ -220,21 +219,7 @@ void GamePlayer::Reset() {
     Logger::Get().Debug("Game is reset.");
 }
 
-GamePlayer::GamePlayer()
-    : m_State(eInitial),
-      m_hInstance(nullptr),
-      m_hAccelTable(nullptr),
-      m_CKContext(nullptr),
-      m_RenderContext(nullptr),
-      m_RenderManager(nullptr),
-      m_MessageManager(nullptr),
-      m_TimeManager(nullptr),
-      m_AttributeManager(nullptr),
-      m_InputManager(nullptr),
-      m_MsgClick(-1),
-      m_MsgDoubleClick(-1),
-      m_GameInfo(nullptr) {
-}
+GamePlayer::GamePlayer() = default;
 
 void GamePlayer::Process() {
     m_CKContext->Process();

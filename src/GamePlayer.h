@@ -124,24 +124,24 @@ private:
     static BOOL CALLBACK FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static BOOL CALLBACK AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-    int m_State;
-    HINSTANCE m_hInstance;
-    HACCEL m_hAccelTable;
+    int m_State = eInitial;
+    HINSTANCE m_hInstance = nullptr;
+    HACCEL m_hAccelTable = nullptr;
     CWindow m_MainWindow;
     CWindow m_RenderWindow;
 
-    CKContext *m_CKContext;
-    CKRenderContext *m_RenderContext;
-    CKRenderManager *m_RenderManager;
-    CKMessageManager *m_MessageManager;
-    CKTimeManager *m_TimeManager;
-    CKAttributeManager *m_AttributeManager;
-    CKInputManager *m_InputManager;
+    CKContext *m_CKContext = nullptr;
+    CKRenderContext *m_RenderContext = nullptr;
+    CKRenderManager *m_RenderManager = nullptr;
+    CKMessageManager *m_MessageManager = nullptr;
+    CKTimeManager *m_TimeManager = nullptr;
+    CKAttributeManager *m_AttributeManager = nullptr;
+    CKInputManager *m_InputManager = nullptr;
 
-    CKMessageType m_MsgClick;
-    CKMessageType m_MsgDoubleClick;
+    CKMessageType m_MsgClick = -1;
+    CKMessageType m_MsgDoubleClick = -1;
 
-    GameInfo *m_GameInfo;
+    GameInfo *m_GameInfo = nullptr;
     GameConfig m_Config;
 };
 
