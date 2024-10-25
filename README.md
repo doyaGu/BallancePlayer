@@ -2,7 +2,7 @@
 
 ## Overview
 
-BallancePlayer is a modern, enhanced player for the game Ballance, developed by decompiling and improving the original version. It offers various new features and optimizations to deliver an improved gaming experience while maintaining compatibility with the original game.
+BallancePlayer is a modern, enhanced player for the game Ballance, developed by decompiling and improving the original version. It offers various new features and optimizations to deliver an improved gaming experience.
 
 ## Features
 
@@ -23,8 +23,6 @@ BallancePlayer is a modern, enhanced player for the game Ballance, developed by 
 ## System Requirements
 
 Supports the following Windows versions:
-- Windows XP
-- Windows Vista
 - Windows 7
 - Windows 8 / 8.1
 - Windows 10
@@ -51,16 +49,6 @@ To build BallancePlayer, you’ll need the Virtools SDK, which can be obtained f
    ```
 4. **Open in Visual Studio**: Navigate to the `build` directory and open the solution file `BallancePlayer.sln` in Visual Studio.
 5. **Build the Solution**: Use Visual Studio to compile the project.
-
-### Building with Visual Studio 6.0
-
-1. **Install Visual Studio 6.0**: Ensure Visual Studio 6.0 is installed.
-2. **Open the Project**: Locate `Player.dsw` in the project directory and open it with Visual Studio 6.0.
-3. **Build the Project**: Use the build tools in Visual Studio 6.0 to compile the project.
-
-### Notes
-
-The official release package is built with Visual Studio 6.0 for maximum compatibility with older systems.
 
 ## Hotkeys
 

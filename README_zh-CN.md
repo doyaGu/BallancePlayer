@@ -2,7 +2,7 @@
 
 ## 概述
 
-BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，通过反编译和改进原始版本开发而成。它在保持与原版游戏兼容的同时，提供了多项新功能和优化，带来更好的游戏体验。
+BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，通过反编译和改进原始版本开发而成。它提供了多项新功能和优化，带来更好的游戏体验。
 
 ## 特点
 
@@ -23,8 +23,6 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 ## 系统要求
 
 支持以下 Windows 版本：
-- Windows XP
-- Windows Vista
 - Windows 7
 - Windows 8 / 8.1
 - Windows 10
@@ -51,16 +49,6 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
    ```
 4. **在 Visual Studio 中打开**：进入 `build` 目录，打开 `BallancePlayer.sln` 解决方案文件。
 5. **构建解决方案**：使用 Visual Studio 的构建工具编译项目。
-
-### 使用 Visual Studio 6.0 构建
-
-1. **安装 Visual Studio 6.0**：确保已安装 Visual Studio 6.0。
-2. **打开项目**：在项目目录中找到 `Player.dsw` 并使用 Visual Studio 6.0 打开。
-3. **构建项目**：使用 Visual Studio 6.0 的构建工具编译项目。
-
-### 注意事项
-
-官方发行版本为最大限度地提高兼容性，使用 Visual Studio 6.0 进行构建。
 
 ## 快捷键
 
