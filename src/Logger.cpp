@@ -48,16 +48,6 @@ int CLogger::GetLevel() const
 void CLogger::SetLevel(int level)
 {
     m_Level = level;
-    if (!m_ConsoleOpened && level >= LEVEL_DEBUG)
-    {
-        ::AllocConsole();
-        freopen("CONOUT$", "w", stdout);
-    }
-    else if (m_ConsoleOpened && level < LEVEL_DEBUG)
-    {
-        freopen("CON", "w", stdout);
-        ::FreeConsole();
-    }
 }
 
 void CLogger::Debug(const char *fmt, ...)
