@@ -1,7 +1,11 @@
 #ifndef PLAYER_GAMEPLAYER_H
 #define PLAYER_GAMEPLAYER_H
 
+#include <string>
+
 #include "CKAll.h"
+
+#include "imgui.h"
 
 #include "Window.h"
 #include "GameConfig.h"
@@ -64,6 +68,7 @@ private:
     bool InitWindow(HINSTANCE hInstance);
     bool InitEngine(CWindow &mainWindow);
     bool InitDriver();
+    bool InitImGuiContext();
 
     bool FinishLoad();
     void ReportMissingGuids(CKFile *file, const char *resolvedFile);
@@ -107,6 +112,8 @@ private:
     int OnSysKeyDown(UINT uKey);
     void OnClick(bool dblClk = false);
     int OnCommand(UINT id, UINT code);
+    int OnImeComposition(HWND hWnd, UINT gcs);
+
     void OnExceptionCMO();
     void OnReturn();
     bool OnLoadCMO(const char *filename);
@@ -129,6 +136,10 @@ private:
     HACCEL m_hAccelTable = nullptr;
     CWindow m_MainWindow;
     CWindow m_RenderWindow;
+
+    ImGuiContext *m_ImGuiContext = nullptr;
+    bool m_ImGuiReady = false;
+    std::wstring m_CompositionString;
 
     CKContext *m_CKContext = nullptr;
     CKRenderContext *m_RenderContext = nullptr;

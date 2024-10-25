@@ -3,6 +3,10 @@
 #include <cstdio>
 #include <cstring>
 
+#include "imgui_impl_ck2.h"
+#define IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
+#include "backends/imgui_impl_win32.h"
+
 #include "Logger.h"
 #include "Utils.h"
 #include "InterfaceManager.h"
@@ -11,6 +15,8 @@
 
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 extern bool EditScript(CKLevel *level, const GameConfig &config);
 
@@ -68,6 +74,12 @@ bool GamePlayer::Init(HINSTANCE hInstance, const GameConfig &config) {
 
     m_MainWindow.Show();
     m_MainWindow.SetFocus();
+
+    if (!InitImGuiContext()) {
+        Logger::Get().Error("Failed to initialize ImGui!");
+        return false;
+    }
+    Logger::Get().Debug("ImGui is initialized.");
 
     m_State = eReady;
     return true;
@@ -185,6 +197,13 @@ void GamePlayer::Exit() {
         m_CKContext->Reset();
         m_CKContext->ClearAll();
 
+        if (m_ImGuiContext != nullptr) {
+            ImGui_ImplCK2_Shutdown();
+            ImGui_ImplWin32_Shutdown();
+            ImGui::DestroyContext();
+            m_ImGuiContext = nullptr;
+        }
+
         if (m_RenderManager && m_RenderContext) {
             m_RenderManager->DestroyRenderContext(m_RenderContext);
             m_RenderContext = nullptr;
@@ -222,11 +241,28 @@ void GamePlayer::Reset() {
 GamePlayer::GamePlayer() = default;
 
 void GamePlayer::Process() {
+    ImGui_ImplCK2_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
     m_CKContext->Process();
+
+    ImGui::EndFrame();
+    m_ImGuiReady = true;
 }
 
 void GamePlayer::Render() {
+    m_RenderContext->ChangeCurrentRenderOptions(0, CK_RENDER_DOBACKTOFRONT);
     m_RenderContext->Render();
+    m_RenderContext->ChangeCurrentRenderOptions(CK_RENDER_DOBACKTOFRONT, 0);
+
+    if (m_ImGuiReady) {
+        ImGui::Render();
+        ImGui_ImplCK2_RenderDrawData(ImGui::GetDrawData());
+        m_ImGuiReady = false;
+    }
+
+    m_RenderContext->BackToFront();
 }
 
 static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *) {
@@ -417,6 +453,34 @@ bool GamePlayer::InitDriver() {
     }
 
     Logger::Get().Debug("Screen Mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
+
+    return true;
+}
+
+bool GamePlayer::InitImGuiContext() {
+    m_ImGuiContext = ImGui::CreateContext();
+    if (m_ImGuiContext == nullptr) {
+        Logger::Get().Error("Failed to create ImGui context");
+        return false;
+    }
+
+    ImGuiIO &io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImFontConfig font;
+    font.SizePixels = 32.0f;
+    io.Fonts->AddFontDefault(&font);
+
+    if (!ImGui_ImplWin32_Init(m_MainWindow.GetHandle())) {
+        Logger::Get().Error("Failed to initialize platform backend for ImGui");
+        return false;
+    }
+
+    if (!ImGui_ImplCK2_Init(m_CKContext)) {
+        Logger::Get().Error("Failed to initialize render backend for ImGui");
+        return false;
+    }
 
     return true;
 }
@@ -1106,6 +1170,24 @@ int GamePlayer::OnCommand(UINT id, UINT code) {
     return 0;
 }
 
+int GamePlayer::OnImeComposition(HWND hWnd, UINT gcs) {
+    if (gcs & GCS_RESULTSTR) {
+        if (!ImGui::GetCurrentContext())
+            return 0;
+
+        HIMC hIMC = ImmGetContext(hWnd);
+        LONG len = ImmGetCompositionStringW(hIMC, GCS_RESULTSTR, nullptr, 0) / (LONG) sizeof(WCHAR);
+        if (len > (LONG) m_CompositionString.size())
+            m_CompositionString.resize(len);
+        ImmGetCompositionStringW(hIMC, GCS_RESULTSTR, m_CompositionString.data(), len * sizeof(WCHAR));
+        ImmReleaseContext(hWnd, hIMC);
+        for (int i = 0; i < len; ++i) {
+            ImGui::GetIO().AddInputCharacterUTF16(m_CompositionString[i]);
+        }
+    }
+    return 1;
+}
+
 void GamePlayer::OnExceptionCMO() {
     Logger::Get().Error("Exception in the CMO - Abort");
     m_MainWindow.PostMsg(TT_MSG_EXIT_TO_SYS, 0, 0);
@@ -1299,7 +1381,10 @@ bool GamePlayer::FillScreenModeList(HWND hWnd, int driver) {
 }
 
 LRESULT GamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    GamePlayer &player = GamePlayer::GetInstance();
+    GamePlayer &player = GetInstance();
+
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+        return 1;
 
     switch (uMsg) {
         case WM_DESTROY:
@@ -1347,6 +1432,11 @@ LRESULT GamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
         case WM_COMMAND:
             return player.OnCommand(LOWORD(wParam), HIWORD(wParam));
+
+        case WM_IME_COMPOSITION:
+            if (player.OnImeComposition(hWnd, lParam) == 1)
+                return 1;
+            break;
 
         case TT_MSG_NO_GAMEINFO:
             player.OnExceptionCMO();

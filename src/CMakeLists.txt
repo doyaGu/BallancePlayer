@@ -28,7 +28,30 @@ set(PLAYER_SOURCES
         Player.rc
         )
 
-add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
+set(IMGUI_HEADERS
+        ${IMGUI_SOURCE_DIR}/imgui.h
+        ${IMGUI_SOURCE_DIR}/imgui_internal.h
+        ${IMGUI_SOURCE_DIR}/imstb_rectpack.h
+        ${IMGUI_SOURCE_DIR}/imstb_textedit.h
+        ${IMGUI_SOURCE_DIR}/imstb_truetype.h
+        ${IMGUI_SOURCE_DIR}/backends/imgui_impl_win32.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_ck2.h
+)
+
+set(IMGUI_SOURCES
+        ${IMGUI_SOURCE_DIR}/imgui.cpp
+        ${IMGUI_SOURCE_DIR}/imgui_draw.cpp
+        ${IMGUI_SOURCE_DIR}/imgui_widgets.cpp
+        ${IMGUI_SOURCE_DIR}/imgui_demo.cpp
+        ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
+        ${IMGUI_SOURCE_DIR}/backends/imgui_impl_win32.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_ck2.cpp
+)
+
+add_executable(${PLAYER_NAME}
+        ${PLAYER_HEADERS} ${PLAYER_SOURCES}
+        ${IMGUI_SOURCES} ${IMGUI_HEADERS}
+)
 
 set_target_properties(${PLAYER_NAME} PROPERTIES
         OUTPUT_NAME ${PLAYER_NAME}
@@ -37,6 +60,7 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
 
 target_include_directories(${PLAYER_NAME}
         PUBLIC
+        $<BUILD_INTERFACE:${IMGUI_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -49,6 +73,10 @@ target_link_libraries(${PLAYER_NAME}
         cxxopts
 )
 
+add_custom_command(TARGET ${PLAYER_NAME} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h" "${IMGUI_SOURCE_DIR}"
+        VERBATIM
+)
 
 install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION Bin)
 
