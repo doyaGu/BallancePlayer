@@ -49,10 +49,6 @@ add_compile_definitions(
 
 find_package(VirtoolsSDK REQUIRED)
 
-if (NOT DEFINED PLAYER_NAME)
-    set(PLAYER_NAME "Player")
-endif ()
-
 set(PLAYER_VERSION ${CMAKE_PROJECT_VERSION})
 
 set(PLAYER_SCREEN_WIDTH 640 CACHE STRING "Player screen width default value" FORCE)

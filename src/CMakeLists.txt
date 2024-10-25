@@ -1,3 +1,7 @@
+if (NOT DEFINED PLAYER_NAME)
+    set(PLAYER_NAME "Player")
+endif ()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/Player.rc)
 
