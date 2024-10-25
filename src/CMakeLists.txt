@@ -23,7 +23,6 @@ set(PLAYER_SOURCES
         GameConfig.cpp
         Hotfix.cpp
         Splash.cpp
-        CmdlineParser.cpp
         Logger.cpp
         Utils.cpp
         Player.rc
