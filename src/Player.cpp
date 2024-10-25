@@ -9,6 +9,7 @@
 
 #include "GameConfig.h"
 #include "GamePlayer.h"
+#include "Splash.h"
 #include "ConsoleAttacher.h"
 #include "LockGuard.h"
 #include "Logger.h"
@@ -89,6 +90,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     Logger::Get().Open(config.GetPath(eLogPath), overwrite);
     if (config.verbose)
         Logger::Get().SetLevel(Logger::LEVEL_DEBUG);
+
+    Splash splash(hInstance);
+    splash.Show();
 
     GamePlayer &player = GamePlayer::GetInstance();
 

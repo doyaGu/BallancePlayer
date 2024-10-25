@@ -5,7 +5,6 @@
 
 #include "Logger.h"
 #include "Utils.h"
-#include "Splash.h"
 #include "InterfaceManager.h"
 
 #include "resource.h"
@@ -37,11 +36,6 @@ bool GamePlayer::Init(HINSTANCE hInstance, const GameConfig &config) {
     if (!InitWindow(hInstance)) {
         Logger::Get().Error("Failed to initialize window!");
         return false;
-    }
-
-    {
-        Splash splash(hInstance);
-        splash.Show();
     }
 
     if (!InitEngine(m_MainWindow)) {
