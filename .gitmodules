@@ -1,3 +1,6 @@
 [submodule "deps/yyjson"]
 	path = deps/yyjson
 	url = https://github.com/ibireme/yyjson.git
+[submodule "deps/imgui"]
+	path = deps/imgui
+	url = https://github.com/ocornut/imgui.git
