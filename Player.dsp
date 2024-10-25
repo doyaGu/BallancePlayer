@@ -96,35 +96,35 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\CmdlineParser.cpp
+SOURCE=.\src\CmdlineParser.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\GameConfig.cpp
+SOURCE=.\src\GameConfig.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\GamePlayer.cpp
+SOURCE=.\src\GamePlayer.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Hotfix.cpp
+SOURCE=.\src\Hotfix.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Logger.cpp
+SOURCE=.\src\Logger.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Player.cpp
+SOURCE=.\src\Player.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Splash.cpp
+SOURCE=.\src\Splash.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\Utils.cpp
+SOURCE=.\src\Utils.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -132,51 +132,51 @@ SOURCE=.\Utils.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\CmdlineParser.h
+SOURCE=.\src\CmdlineParser.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\config.h
+SOURCE=.\src\config.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\GameConfig.h
+SOURCE=.\src\GameConfig.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\GameInfo.h
+SOURCE=.\src\GameInfo.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\GamePlayer.h
+SOURCE=.\src\GamePlayer.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\InterfaceManager.h
+SOURCE=.\src\InterfaceManager.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Logger.h
+SOURCE=.\src\Logger.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\resource.h
+SOURCE=.\src\resource.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\ScriptUtils.h
+SOURCE=.\src\ScriptUtils.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Splash.h
+SOURCE=.\src\Splash.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Utils.h
+SOURCE=.\src\Utils.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\Window.h
+SOURCE=.\src\Window.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -184,11 +184,11 @@ SOURCE=.\Window.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\Player.ico
+SOURCE=.\src\Player.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\Player.rc
+SOURCE=.\src\Player.rc
 # End Source File
 # End Group
 # End Target
