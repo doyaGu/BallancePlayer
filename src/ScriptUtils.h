@@ -1,7 +1,7 @@
 #ifndef PLAYER_SCRIPTUTILS_H
 #define PLAYER_SCRIPTUTILS_H
 
-#include <assert.h>
+#include <cassert>
 
 #include "CKGlobals.h"
 #include "CKBeObject.h"
@@ -14,15 +14,13 @@
 #include "CKParameterLocal.h"
 #include "CKParameterManager.h"
 
-namespace scriptutils
-{
-    inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehaviorIO *out, int delay = 0)
-    {
-        assert(script != NULL);
-        assert(in != NULL);
-        assert(out != NULL);
+namespace scriptutils {
+    inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehaviorIO *out, int delay = 0) {
+        assert(script != nullptr);
+        assert(in != nullptr);
+        assert(out != nullptr);
 
-        CKBehaviorLink *link = (CKBehaviorLink *)script->GetCKContext()->CreateObject(CKCID_BEHAVIORLINK);
+        CKBehaviorLink *link = (CKBehaviorLink *) script->GetCKContext()->CreateObject(CKCID_BEHAVIORLINK);
         link->SetInBehaviorIO(in);
         link->SetOutBehaviorIO(out);
         link->SetInitialActivationDelay(delay);
@@ -31,53 +29,45 @@ namespace scriptutils
         return link;
     }
 
-    inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehavior *inBeh, CKBehaviorIO *out, int inPos, int delay = 0)
-    {
-        assert(script != NULL);
-        assert(inBeh != NULL);
-        assert(out != NULL);
+    inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehavior *inBeh, CKBehaviorIO *out, int inPos, int delay = 0) {
+        assert(script != nullptr);
+        assert(inBeh != nullptr);
+        assert(out != nullptr);
 
         return CreateBehaviorLink(script, inBeh->GetOutput(inPos), out, delay);
     }
 
-    inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehavior *outBeh, int outPos, int delay = 0)
-    {
-        assert(script != NULL);
-        assert(in != NULL);
-        assert(outBeh != NULL);
+    inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehavior *outBeh, int outPos, int delay = 0) {
+        assert(script != nullptr);
+        assert(in != nullptr);
+        assert(outBeh != nullptr);
 
         return CreateBehaviorLink(script, in, outBeh->GetInput(outPos), delay);
     }
 
-    inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehavior *inBeh, CKBehavior *outBeh, int inPos = 0, int outPos = 0, int delay = 0)
-    {
+    inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehavior *inBeh, CKBehavior *outBeh, int inPos = 0, int outPos = 0, int delay = 0) {
         return CreateBehaviorLink(script, inBeh->GetOutput(inPos), outBeh->GetInput(outPos), delay);
     }
 
-    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehaviorIO *out, CKBehaviorLink *previous = NULL)
-    {
-        assert(script != NULL);
-        assert(in != NULL);
-        assert(out != NULL);
+    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehaviorIO *out, CKBehaviorLink *previous = nullptr) {
+        assert(script != nullptr);
+        assert(in != nullptr);
+        assert(out != nullptr);
 
         const int linkCount = script->GetSubBehaviorLinkCount();
         int i = 0;
 
-        if (previous)
-        {
-            for (; i < linkCount; ++i)
-            {
+        if (previous) {
+            for (; i < linkCount; ++i) {
                 CKBehaviorLink *link = script->GetSubBehaviorLink(i);
-                if (link == previous)
-                {
+                if (link == previous) {
                     ++i;
                     break;
                 }
             }
         }
 
-        for (; i < linkCount; ++i)
-        {
+        for (; i < linkCount; ++i) {
             CKBehaviorLink *link = script->GetSubBehaviorLink(i);
             CKBehaviorIO *inIO = link->GetInBehaviorIO();
             CKBehaviorIO *outIO = link->GetOutBehaviorIO();
@@ -85,34 +75,29 @@ namespace scriptutils
                 return link;
         }
 
-        return NULL;
+        return nullptr;
     }
 
-    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, CKBehavior *inBeh, CKBehavior *outBeh, int inPos = 0, int outPos = 0,
-                                           CKBehaviorLink *previous = NULL)
-    {
-        assert(script != NULL);
-        assert(inBeh != NULL);
-        assert(outBeh != NULL);
+    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, CKBehavior *inBeh, CKBehavior *outBeh,
+                                           int inPos = 0, int outPos = 0, CKBehaviorLink *previous = nullptr) {
+        assert(script != nullptr);
+        assert(inBeh != nullptr);
+        assert(outBeh != nullptr);
 
         const int linkCount = script->GetSubBehaviorLinkCount();
         int i = 0;
 
-        if (previous)
-        {
-            for (; i < linkCount; ++i)
-            {
+        if (previous) {
+            for (; i < linkCount; ++i) {
                 CKBehaviorLink *link = script->GetSubBehaviorLink(i);
-                if (link == previous)
-                {
+                if (link == previous) {
                     ++i;
                     break;
                 }
             }
         }
 
-        for (; i < linkCount; ++i)
-        {
+        for (; i < linkCount; ++i) {
             CKBehaviorLink *link = script->GetSubBehaviorLink(i);
             CKBehaviorIO *inIO = link->GetInBehaviorIO();
             CKBehaviorIO *outIO = link->GetOutBehaviorIO();
@@ -121,34 +106,29 @@ namespace scriptutils
                 return link;
         }
 
-        return NULL;
+        return nullptr;
     }
 
-    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, const char *inBehName, CKBehavior *outBeh, int inPos = 0, int outPos = 0,
-                                           CKBehaviorLink *previous = NULL)
-    {
-        assert(script != NULL);
-        assert(inBehName != NULL);
-        assert(outBeh != NULL);
+    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, const char *inBehName, CKBehavior *outBeh,
+                                           int inPos = 0, int outPos = 0, CKBehaviorLink *previous = nullptr) {
+        assert(script != nullptr);
+        assert(inBehName != nullptr);
+        assert(outBeh != nullptr);
 
         const int linkCount = script->GetSubBehaviorLinkCount();
         int i = 0;
 
-        if (previous)
-        {
-            for (; i < linkCount; ++i)
-            {
+        if (previous) {
+            for (; i < linkCount; ++i) {
                 CKBehaviorLink *link = script->GetSubBehaviorLink(i);
-                if (link == previous)
-                {
+                if (link == previous) {
                     ++i;
                     break;
                 }
             }
         }
 
-        for (; i < linkCount; ++i)
-        {
+        for (; i < linkCount; ++i) {
             CKBehaviorLink *link = script->GetSubBehaviorLink(i);
             CKBehaviorIO *inIO = link->GetInBehaviorIO();
             CKBehaviorIO *outIO = link->GetOutBehaviorIO();
@@ -158,34 +138,29 @@ namespace scriptutils
                 return link;
         }
 
-        return NULL;
+        return nullptr;
     }
 
-    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, CKBehavior *inBeh, const char *outBehName, int inPos = 0, int outPos = 0,
-                                           CKBehaviorLink *previous = NULL)
-    {
-        assert(script != NULL);
-        assert(inBeh != NULL);
-        assert(outBehName != NULL);
+    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, CKBehavior *inBeh, const char *outBehName,
+                                           int inPos = 0, int outPos = 0, CKBehaviorLink *previous = nullptr) {
+        assert(script != nullptr);
+        assert(inBeh != nullptr);
+        assert(outBehName != nullptr);
 
         const int linkCount = script->GetSubBehaviorLinkCount();
         int i = 0;
 
-        if (previous)
-        {
-            for (; i < linkCount; ++i)
-            {
+        if (previous) {
+            for (; i < linkCount; ++i) {
                 CKBehaviorLink *link = script->GetSubBehaviorLink(i);
-                if (link == previous)
-                {
+                if (link == previous) {
                     ++i;
                     break;
                 }
             }
         }
 
-        for (; i < linkCount; ++i)
-        {
+        for (; i < linkCount; ++i) {
             CKBehaviorLink *link = script->GetSubBehaviorLink(i);
             CKBehaviorIO *inIO = link->GetInBehaviorIO();
             CKBehaviorIO *outIO = link->GetOutBehaviorIO();
@@ -195,34 +170,29 @@ namespace scriptutils
                 return link;
         }
 
-        return NULL;
+        return nullptr;
     }
 
-    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, const char *inBehName, const char *outBehName, int inPos = 0, int outPos = 0,
-                                           CKBehaviorLink *previous = NULL)
-    {
-        assert(script != NULL);
-        assert(inBehName != NULL);
-        assert(outBehName != NULL);
+    inline CKBehaviorLink *GetBehaviorLink(CKBehavior *script, const char *inBehName, const char *outBehName,
+                                           int inPos = 0, int outPos = 0, CKBehaviorLink *previous = nullptr) {
+        assert(script != nullptr);
+        assert(inBehName != nullptr);
+        assert(outBehName != nullptr);
 
         const int linkCount = script->GetSubBehaviorLinkCount();
         int i = 0;
 
-        if (previous)
-        {
-            for (; i < linkCount; ++i)
-            {
+        if (previous) {
+            for (; i < linkCount; ++i) {
                 CKBehaviorLink *link = script->GetSubBehaviorLink(i);
-                if (link == previous)
-                {
+                if (link == previous) {
                     ++i;
                     break;
                 }
             }
         }
 
-        for (; i < linkCount; ++i)
-        {
+        for (; i < linkCount; ++i) {
             CKBehaviorLink *link = script->GetSubBehaviorLink(i);
             CKBehaviorIO *inIO = link->GetInBehaviorIO();
             CKBehaviorIO *outIO = link->GetOutBehaviorIO();
@@ -233,124 +203,113 @@ namespace scriptutils
                 return link;
         }
 
-        return NULL;
+        return nullptr;
     }
 
-    inline void SetBehaviorLink(CKBehavior *script, CKBehaviorLink *link, CKBehavior *inBeh, CKBehavior *outBeh, int inPos = 0, int outPos = 0)
-    {
-        assert(link != NULL);
-        assert(inBeh != NULL);
-        assert(outBeh != NULL);
+    inline void SetBehaviorLink(CKBehavior *script, CKBehaviorLink *link, CKBehavior *inBeh, CKBehavior *outBeh,
+                                int inPos = 0, int outPos = 0) {
+        assert(link != nullptr);
+        assert(inBeh != nullptr);
+        assert(outBeh != nullptr);
 
         link->SetInBehaviorIO(inBeh->GetOutput(inPos));
         link->SetOutBehaviorIO(outBeh->GetInput(outPos));
     }
 
-    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehaviorIO *out, bool destroy = false)
-    {
-        assert(script != NULL);
-        assert(in != NULL);
-        assert(out != NULL);
+    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehaviorIO *out, bool destroy = false) {
+        assert(script != nullptr);
+        assert(in != nullptr);
+        assert(out != nullptr);
 
         CKBehaviorLink *link = GetBehaviorLink(script, in, out);
         if (!link)
-            return NULL;
+            return nullptr;
 
         script->RemoveSubBehaviorLink(link);
-        if (destroy)
-        {
+        if (destroy) {
             CKDestroyObject(link);
-            return NULL;
+            return nullptr;
         }
         return link;
     }
 
-    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, CKBehavior *inBeh, CKBehavior *outBeh, int inPos = 0, int outPos = 0,
-                                              bool destroy = false)
-    {
-        assert(script != NULL);
-        assert(inBeh != NULL);
-        assert(outBeh != NULL);
+    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, CKBehavior *inBeh, CKBehavior *outBeh,
+                                              int inPos = 0, int outPos = 0, bool destroy = false) {
+        assert(script != nullptr);
+        assert(inBeh != nullptr);
+        assert(outBeh != nullptr);
 
         CKBehaviorLink *link = GetBehaviorLink(script, inBeh, outBeh, inPos, outPos);
         if (!link)
-            return NULL;
+            return nullptr;
 
         script->RemoveSubBehaviorLink(link);
-        if (destroy)
-        {
+        if (destroy) {
             CKDestroyObject(link);
-            return NULL;
+            return nullptr;
         }
         return link;
     }
 
-    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, const char *inBehName, CKBehavior *outBeh, int inPos = 0, int outPos = 0,
-                                              bool destroy = false)
-    {
-        assert(script != NULL);
-        assert(inBehName != NULL);
-        assert(outBeh != NULL);
+    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, const char *inBehName, CKBehavior *outBeh,
+                                              int inPos = 0, int outPos = 0, bool destroy = false) {
+        assert(script != nullptr);
+        assert(inBehName != nullptr);
+        assert(outBeh != nullptr);
 
         CKBehaviorLink *link = GetBehaviorLink(script, inBehName, outBeh, inPos, outPos);
         if (!link)
-            return NULL;
+            return nullptr;
 
         script->RemoveSubBehaviorLink(link);
-        if (destroy)
-        {
+        if (destroy) {
             CKDestroyObject(link);
-            return NULL;
+            return nullptr;
         }
         return link;
     }
 
-    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, CKBehavior *inBeh, const char *outBehName, int inPos = 0, int outPos = 0,
-                                              bool destroy = false)
-    {
-        assert(script != NULL);
-        assert(inBeh != NULL);
-        assert(outBehName != NULL);
+    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, CKBehavior *inBeh, const char *outBehName,
+                                              int inPos = 0, int outPos = 0, bool destroy = false) {
+        assert(script != nullptr);
+        assert(inBeh != nullptr);
+        assert(outBehName != nullptr);
 
         CKBehaviorLink *link = GetBehaviorLink(script, inBeh, outBehName, inPos, outPos);
         if (!link)
-            return NULL;
+            return nullptr;
 
         script->RemoveSubBehaviorLink(link);
-        if (destroy)
-        {
+        if (destroy) {
             CKDestroyObject(link);
-            return NULL;
+            return nullptr;
         }
         return link;
     }
 
-    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, const char *inBehName, const char *outBehName, int inPos = 0, int outPos = 0,
-                                              bool destroy = false)
-    {
-        assert(script != NULL);
-        assert(inBehName != NULL);
-        assert(outBehName != NULL);
+    inline CKBehaviorLink *RemoveBehaviorLink(CKBehavior *script, const char *inBehName, const char *outBehName,
+                                              int inPos = 0, int outPos = 0, bool destroy = false) {
+        assert(script != nullptr);
+        assert(inBehName != nullptr);
+        assert(outBehName != nullptr);
 
         CKBehaviorLink *link = GetBehaviorLink(script, inBehName, outBehName, inPos, outPos);
         if (!link)
-            return NULL;
+            return nullptr;
 
         script->RemoveSubBehaviorLink(link);
-        if (destroy)
-        {
+        if (destroy) {
             CKDestroyObject(link);
-            return NULL;
+            return nullptr;
         }
         return link;
     }
 
-    inline CKBehavior *CreateBehavior(CKBehavior *script, CKGUID guid, bool useTarget = false)
-    {
-        assert(script != NULL);
+    inline CKBehavior *CreateBehavior(CKBehavior *script, CKGUID guid, bool useTarget = false) {
+        assert(script != nullptr);
         assert(guid.d1 != 0 && guid.d2 != 0);
 
-        CKBehavior *behavior = (CKBehavior *)script->GetCKContext()->CreateObject(CKCID_BEHAVIOR);
+        CKBehavior *behavior = (CKBehavior *) script->GetCKContext()->CreateObject(CKCID_BEHAVIOR);
         behavior->InitFromGuid(guid);
         if (useTarget)
             behavior->UseTarget();
@@ -358,17 +317,14 @@ namespace scriptutils
         return behavior;
     }
 
-    inline CKBehavior *RemoveBehavior(CKBehavior *script, CKBehavior *beh, bool destroy = false)
-    {
+    inline CKBehavior *RemoveBehavior(CKBehavior *script, CKBehavior *beh, bool destroy = false) {
         assert(script);
         assert(beh);
 
         const int count = script->GetSubBehaviorLinkCount();
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             CKBehaviorLink *link = script->GetSubBehaviorLink(i);
-            if (link->GetInBehaviorIO()->GetOwner() == beh || link->GetOutBehaviorIO()->GetOwner() == beh)
-            {
+            if (link->GetInBehaviorIO()->GetOwner() == beh || link->GetOutBehaviorIO()->GetOwner() == beh) {
                 script->RemoveSubBehaviorLink(link);
                 if (destroy)
                     CKDestroyObject(link);
@@ -377,62 +333,53 @@ namespace scriptutils
 
         beh->Activate(false);
         script->RemoveSubBehavior(beh);
-        if (destroy)
-        {
+        if (destroy) {
             CKDestroyObject(beh);
-            return NULL;
+            return nullptr;
         }
         return beh;
     }
 
-    inline CKBehavior *MoveBehavior(CKBehavior *script, CKBehavior *beh, CKBehavior *dest)
-    {
-        assert(script != NULL);
-        assert(beh != NULL);
-        assert(dest != NULL);
+    inline CKBehavior *MoveBehavior(CKBehavior *script, CKBehavior *beh, CKBehavior *dest) {
+        assert(script != nullptr);
+        assert(beh != nullptr);
+        assert(dest != nullptr);
 
         RemoveBehavior(script, beh, false);
         dest->AddSubBehavior(beh);
         return beh;
     }
 
-    inline CKBehavior *CopyBehavior(CKBehavior *script, CKBehavior *beh, CKBehavior *dest)
-    {
-        assert(script != NULL);
-        assert(beh != NULL);
-        assert(dest != NULL);
+    inline CKBehavior *CopyBehavior(CKBehavior *script, CKBehavior *beh, CKBehavior *dest) {
+        assert(script != nullptr);
+        assert(beh != nullptr);
+        assert(dest != nullptr);
 
-        CKBehavior *newBeh = (CKBehavior *)script->GetCKContext()->CopyObject(beh);
+        CKBehavior *newBeh = (CKBehavior *) script->GetCKContext()->CopyObject(beh);
         MoveBehavior(script, newBeh, dest);
         dest->AddSubBehavior(newBeh);
         return newBeh;
     }
 
-    inline CKBehavior *GetBehavior(const XObjectPointerArray &array, const char *name, CKBehavior *previous = NULL)
-    {
-        assert(name != NULL);
+    inline CKBehavior *GetBehavior(const XObjectPointerArray &array, const char *name, CKBehavior *previous = nullptr) {
+        assert(name != nullptr);
 
-        CKBehavior *behavior = NULL;
+        CKBehavior *behavior = nullptr;
         CKObject **it = array.Begin();
 
-        if (previous)
-        {
-            for (; it != array.End(); ++it)
-            {
-                if (*it == previous)
-                {
+        if (previous) {
+            for (; it != array.End(); ++it) {
+                if (*it == previous) {
                     ++it;
                     break;
                 }
             }
         }
 
-        for (; it != array.End(); ++it)
-        {
+        for (; it != array.End(); ++it) {
             CKObject *obj = *it;
-            if (obj->GetClassID() == CKCID_BEHAVIOR && strcmp(obj->GetName(), name) == 0)
-            {
-                behavior = (CKBehavior *)obj;
+            if (obj->GetClassID() == CKCID_BEHAVIOR && strcmp(obj->GetName(), name) == 0) {
+                behavior = (CKBehavior *) obj;
                 break;
             }
         }
@@ -440,33 +387,27 @@ namespace scriptutils
         return behavior;
     }
 
-    inline CKBehavior *GetBehavior(CKBehavior *script, const char *name, CKBehavior *previous = NULL)
-    {
-        assert(script != NULL);
-        assert(name != NULL);
+    inline CKBehavior *GetBehavior(CKBehavior *script, const char *name, CKBehavior *previous = nullptr) {
+        assert(script != nullptr);
+        assert(name != nullptr);
 
-        CKBehavior *behavior = NULL;
+        CKBehavior *behavior = nullptr;
         const int count = script->GetSubBehaviorCount();
         int i = 0;
 
-        if (previous)
-        {
-            for (; i < count; ++i)
-            {
+        if (previous) {
+            for (; i < count; ++i) {
                 CKBehavior *b = script->GetSubBehavior(i);
-                if (b == previous)
-                {
+                if (b == previous) {
                     ++i;
                     break;
                 }
             }
         }
 
-        for (; i < count; ++i)
-        {
+        for (; i < count; ++i) {
             CKBehavior *b = script->GetSubBehavior(i);
-            if (strcmp(b->GetName(), name) == 0)
-            {
+            if (strcmp(b->GetName(), name) == 0) {
                 behavior = b;
                 break;
             }
@@ -475,37 +416,30 @@ namespace scriptutils
         return behavior;
     }
 
-    inline CKBehavior *GetBehavior(CKBehavior *script, const char *name, const char *targetName, CKBehavior *previous = NULL)
-    {
-        assert(script != NULL);
-        assert(name != NULL);
-        assert(targetName != NULL);
+    inline CKBehavior *GetBehavior(CKBehavior *script, const char *name, const char *targetName, CKBehavior *previous = nullptr) {
+        assert(script != nullptr);
+        assert(name != nullptr);
+        assert(targetName != nullptr);
 
-        CKBehavior *behavior = NULL;
+        CKBehavior *behavior = nullptr;
         const int count = script->GetSubBehaviorCount();
         int i = 0;
 
-        if (previous)
-        {
-            for (; i < count; ++i)
-            {
+        if (previous) {
+            for (; i < count; ++i) {
                 CKBehavior *b = script->GetSubBehavior(i);
-                if (b == previous)
-                {
+                if (b == previous) {
                     ++i;
                     break;
                 }
             }
         }
 
-        for (; i < count; ++i)
-        {
+        for (; i < count; ++i) {
             CKBehavior *b = script->GetSubBehavior(i);
-            if (strcmp(b->GetName(), name) == 0)
-            {
+            if (strcmp(b->GetName(), name) == 0) {
                 CKObject *target = b->GetTarget();
-                if (target && strcmp(target->GetName(), targetName) == 0)
-                {
+                if (target && strcmp(target->GetName(), targetName) == 0) {
                     behavior = b;
                     break;
                 }
@@ -515,11 +449,9 @@ namespace scriptutils
         return behavior;
     }
 
-    inline XObjectPointerArray &GetBehaviors(CKBehavior *script, XObjectPointerArray &behaviors, const char *name, bool hierarchy = false)
-    {
+    inline XObjectPointerArray &GetBehaviors(CKBehavior *script, XObjectPointerArray &behaviors, const char *name, bool hierarchy = false) {
         const int count = script->GetSubBehaviorCount();
-        for (int i = 0; i < count; ++i)
-        {
+        for (int i = 0; i < count; ++i) {
             CKBehavior *b = script->GetSubBehavior(i);
             if (strcmp(b->GetName(), name) == 0)
                 behaviors.PushBack(b);
@@ -530,88 +462,81 @@ namespace scriptutils
         return behaviors;
     }
 
-    inline CKParameterLocal *CreateLocalParameter(CKBehavior *script, const char *name = "", CKGUID type = CKPGUID_STRING)
-    {
-        assert(script != NULL);
-        return script->CreateLocalParameter((CKSTRING)name, type);
+    inline CKParameterLocal *CreateLocalParameter(CKBehavior *script, const char *name = "",
+                                                  CKGUID type = CKPGUID_STRING) {
+        assert(script != nullptr);
+        return script->CreateLocalParameter((CKSTRING) name, type);
     }
 
-    template <typename T>
-    CKParameterLocal *CreateLocalParameter(CKBehavior *script, const char *name, T value, CKGUID type)
-    {
+    template<typename T>
+    CKParameterLocal *CreateLocalParameter(CKBehavior *script, const char *name, T value, CKGUID type) {
         CKParameterLocal *param = CreateLocalParameter(script, name, type);
         param->SetValue(&value, sizeof(T));
         return param;
     }
 
-    template <>
-    CKParameterLocal *CreateLocalParameter<CKObject *>(CKBehavior *script, const char *name, CKObject *value, CKGUID type)
-    {
+    template<>
+    CKParameterLocal *CreateLocalParameter<CKObject *>(CKBehavior *script, const char *name, CKObject *value, CKGUID type) {
         return CreateLocalParameter(script, name, CKOBJID(value), type);
     }
 
-    template <>
-    CKParameterLocal *CreateLocalParameter<const char *>(CKBehavior *script, const char *name, const char *value, CKGUID type)
-    {
+    template<>
+    CKParameterLocal *CreateLocalParameter<const char *>(CKBehavior *script, const char *name, const char *value, CKGUID type) {
         CKParameterLocal *param = CreateLocalParameter(script, name, type);
-        param->SetStringValue((CKSTRING)value);
+        param->SetStringValue((CKSTRING) value);
         return param;
     }
 
-    inline CKParameterLocal *CreateLocalParameter(CKBehavior *script, const char *name = "", const char *value = "")
-    {
+    inline CKParameterLocal *CreateLocalParameter(CKBehavior *script, const char *name = "", const char *value = "") {
         return CreateLocalParameter(script, name, value, CKPGUID_STRING);
     }
 
-    inline CKParameterLocal *GenerateInputParameter(CKBehavior *script, CKBehavior *beh, int inPos)
-    {
-        assert(script != NULL);
-        assert(beh != NULL);
+    inline CKParameterLocal *GenerateInputParameter(CKBehavior *script, CKBehavior *beh, int inPos) {
+        assert(script != nullptr);
+        assert(beh != nullptr);
 
         if (inPos < 0 || inPos > beh->GetInputParameterCount())
-            return NULL;
+            return nullptr;
 
         CKParameterIn *inParam = beh->GetInputParameter(inPos);
         CKParameterManager *pm = beh->GetCKContext()->GetParameterManager();
-        CKParameterLocal *param = CreateLocalParameter(script, inParam->GetName(), pm->ParameterTypeToGuid(inParam->GetType()));
+        CKParameterLocal *param = CreateLocalParameter(script, inParam->GetName(),
+                                                       pm->ParameterTypeToGuid(inParam->GetType()));
         inParam->SetDirectSource(param);
         return param;
     }
 
-    template <typename T>
-    CKParameterLocal *GenerateInputParameter(CKBehavior *script, CKBehavior *beh, int inPos, T value)
-    {
+    template<typename T>
+    CKParameterLocal *GenerateInputParameter(CKBehavior *script, CKBehavior *beh, int inPos, T value) {
         CKParameterLocal *param = GenerateInputParameter(script, beh, inPos);
         param->SetValue(&value, sizeof(T));
         return param;
     }
 
-    template <>
-    CKParameterLocal *GenerateInputParameter<CKObject *>(CKBehavior *script, CKBehavior *beh, int inPos, CKObject *value)
-    {
+    template<>
+    CKParameterLocal *GenerateInputParameter<CKObject *>(CKBehavior *script, CKBehavior *beh, int inPos,
+                                                         CKObject *value) {
         return GenerateInputParameter(script, beh, inPos, CKOBJID(value));
     }
 
-    template <>
-    CKParameterLocal *GenerateInputParameter<const char *>(CKBehavior *script, CKBehavior *beh, int inPos, const char *value)
-    {
+    template<>
+    CKParameterLocal *GenerateInputParameter<const char *>(CKBehavior *script, CKBehavior *beh, int inPos,
+                                                           const char *value) {
         CKParameterLocal *param = GenerateInputParameter(script, beh, inPos);
-        param->SetValue((CKSTRING)value);
+        param->SetValue((CKSTRING) value);
         return param;
     }
 
-    template <>
-    CKParameterLocal *GenerateInputParameter<CKSTRING>(CKBehavior *script, CKBehavior *beh, int inPos, CKSTRING value)
-    {
+    template<>
+    CKParameterLocal *GenerateInputParameter<CKSTRING>(CKBehavior *script, CKBehavior *beh, int inPos, CKSTRING value) {
         CKParameterLocal *param = GenerateInputParameter(script, beh, inPos);
         param->SetValue(value);
         return param;
     }
 
-    inline CKParameterLocal *GenerateTargetParameter(CKBehavior *script, CKBehavior *beh)
-    {
-        assert(script != NULL);
-        assert(beh != NULL);
+    inline CKParameterLocal *GenerateTargetParameter(CKBehavior *script, CKBehavior *beh) {
+        assert(script != nullptr);
+        assert(beh != nullptr);
 
         CKParameterIn *targetParam = beh->GetTargetParameter();
         CKParameterManager *pm = beh->GetCKContext()->GetParameterManager();
@@ -620,149 +545,124 @@ namespace scriptutils
         return param;
     }
 
-    template <typename T>
-    CKParameterLocal *GenerateTargetParameter(CKBehavior *script, CKBehavior *beh, T value)
-    {
+    template<typename T>
+    CKParameterLocal *GenerateTargetParameter(CKBehavior *script, CKBehavior *beh, T value) {
         CKParameterLocal *param = GenerateTargetParameter(script, beh);
         param->SetValue(&value, sizeof(T));
         return param;
     }
 
-    template <>
-    CKParameterLocal *GenerateTargetParameter<CKObject *>(CKBehavior *script, CKBehavior *beh, CKObject *value)
-    {
+    template<>
+    CKParameterLocal *GenerateTargetParameter<CKObject *>(CKBehavior *script, CKBehavior *beh, CKObject *value) {
         return GenerateTargetParameter(script, beh, CKOBJID(value));
     }
 
-    template <>
-    CKParameterLocal *GenerateTargetParameter<const char *>(CKBehavior *script, CKBehavior *beh, const char *value)
-    {
-        CKParameterLocal *param = GenerateTargetParameter(script, beh);
-        param->SetValue((CKSTRING)value);
-        return param;
-    }
-
-    template <>
-    CKParameterLocal *GenerateTargetParameter<CKSTRING>(CKBehavior *script, CKBehavior *beh, CKSTRING value)
-    {
+    template<>
+    CKParameterLocal *GenerateTargetParameter<const char *>(CKBehavior *script, CKBehavior *beh, const char *value) {
         CKParameterLocal *param = GenerateTargetParameter(script, beh);
         param->SetValue(value);
         return param;
     }
 
-    template <typename T>
-    void SetParameterValue(CKParameter *param, T value)
-    {
+    template<>
+    CKParameterLocal *GenerateTargetParameter<CKSTRING>(CKBehavior *script, CKBehavior *beh, CKSTRING value) {
+        CKParameterLocal *param = GenerateTargetParameter(script, beh);
+        param->SetValue(value);
+        return param;
+    }
+
+    template<typename T>
+    void SetParameterValue(CKParameter *param, T value) {
         param->SetValue(&value, sizeof(T));
     }
 
-    inline void SetParameterObject(CKParameter *param, CKObject *value)
-    {
+    inline void SetParameterObject(CKParameter *param, CKObject *value) {
         CK_ID obj = CKOBJID(value);
         SetParameterValue(param, obj);
     }
 
-    inline void SetParameterString(CKParameter *param, const char *value)
-    {
-        param->SetStringValue((CKSTRING)value);
+    inline void SetParameterString(CKParameter *param, const char *value) {
+        param->SetStringValue((CKSTRING) value);
     }
 
-    template <typename T>
-    void SetTargetParameterValue(CKBehavior *beh, T value)
-    {
-        assert(beh != NULL);
+    template<typename T>
+    void SetTargetParameterValue(CKBehavior *beh, T value) {
+        assert(beh != nullptr);
         CKParameter *param = beh->GetTargetParameter()->GetDirectSource();
         param->SetValue(&value, sizeof(T));
     }
 
-    inline void SetTargetParameterObject(CKBehavior *beh, CKObject *value)
-    {
+    inline void SetTargetParameterObject(CKBehavior *beh, CKObject *value) {
         SetTargetParameterValue(beh, CKOBJID(value));
     }
 
-    inline void SetTargetParameterString(CKBehavior *beh, const char *value)
-    {
-        assert(beh != NULL);
+    inline void SetTargetParameterString(CKBehavior *beh, const char *value) {
+        assert(beh != nullptr);
         CKParameter *param = beh->GetTargetParameter()->GetDirectSource();
-        param->SetValue((CKSTRING)value);
+        param->SetValue((CKSTRING) value);
     }
 
-    template <typename T>
-    void SetInputParameterValue(CKBehavior *beh, int inPos, T value)
-    {
-        assert(beh != NULL);
-        if (0 <= inPos && inPos < beh->GetInputParameterCount())
-        {
+    template<typename T>
+    void SetInputParameterValue(CKBehavior *beh, int inPos, T value) {
+        assert(beh != nullptr);
+        if (0 <= inPos && inPos < beh->GetInputParameterCount()) {
             CKParameter *param = beh->GetInputParameter(inPos)->GetDirectSource();
             param->SetValue(&value, sizeof(T));
         }
     }
 
-    inline void SetInputParameterObject(CKBehavior *beh, int inPos, CKObject *value)
-    {
+    inline void SetInputParameterObject(CKBehavior *beh, int inPos, CKObject *value) {
         SetInputParameterValue(beh, inPos, CKOBJID(value));
     }
 
-    inline void SetInputParameterString(CKBehavior *beh, int inPos, const char *value)
-    {
-        assert(beh != NULL);
-        if (0 <= inPos && inPos < beh->GetInputParameterCount())
-        {
+    inline void SetInputParameterString(CKBehavior *beh, int inPos, const char *value) {
+        assert(beh != nullptr);
+        if (0 <= inPos && inPos < beh->GetInputParameterCount()) {
             CKParameter *param = beh->GetInputParameter(inPos)->GetDirectSource();
-            param->SetValue((CKSTRING)value);
+            param->SetValue((CKSTRING) value);
         }
     }
 
-    template <typename T>
-    void SetLocalParameterValue(CKBehavior *beh, int pos, T value)
-    {
-        assert(beh != NULL);
-        if (0 <= pos && pos < beh->GetLocalParameterCount())
-        {
+    template<typename T>
+    void SetLocalParameterValue(CKBehavior *beh, int pos, T value) {
+        assert(beh != nullptr);
+        if (0 <= pos && pos < beh->GetLocalParameterCount()) {
             CKParameterLocal *param = beh->GetLocalParameter(pos);
             param->SetValue(&value, sizeof(T));
         }
     }
 
-    inline void SetLocalParameterObject(CKBehavior *beh, int pos, CKObject *value)
-    {
+    inline void SetLocalParameterObject(CKBehavior *beh, int pos, CKObject *value) {
         SetLocalParameterValue(beh, pos, CKOBJID(value));
     }
 
-    inline void SetLocalParameterString(CKBehavior *beh, int pos, const char *value)
-    {
-        assert(beh != NULL);
-        if (0 <= pos && pos < beh->GetLocalParameterCount())
-        {
+    inline void SetLocalParameterString(CKBehavior *beh, int pos, const char *value) {
+        assert(beh != nullptr);
+        if (0 <= pos && pos < beh->GetLocalParameterCount()) {
             CKParameterLocal *param = beh->GetLocalParameter(pos);
-            param->SetValue((CKSTRING)value);
+            param->SetValue((CKSTRING) value);
         }
     }
 
-    template <typename T>
-    T GetParameterValue(CKParameter *param)
-    {
+    template<typename T>
+    T GetParameterValue(CKParameter *param) {
         T res;
         param->GetValue(&res);
         return res;
     }
 
-    inline CKObject *GetParameterObject(CKParameter *param)
-    {
+    inline CKObject *GetParameterObject(CKParameter *param) {
         return param->GetValueObject();
     }
 
-    inline const char *GetParameterString(CKParameter *param)
-    {
-        return (const char *)param->GetReadDataPtr();
+    inline const char *GetParameterString(CKParameter *param) {
+        return (const char *) param->GetReadDataPtr();
     }
 
-    template <typename T>
-    T GetInputParameterValue(CKBehavior *beh, int inPos)
-    {
-        assert(beh != NULL);
-        if (0 <= inPos && inPos < beh->GetInputParameterCount())
-        {
+    template<typename T>
+    T GetInputParameterValue(CKBehavior *beh, int inPos) {
+        assert(beh != nullptr);
+        if (0 <= inPos && inPos < beh->GetInputParameterCount()) {
             T res;
             beh->GetInputParameter(inPos)->GetValue(&res);
             return res;
@@ -770,33 +670,27 @@ namespace scriptutils
         return T();
     }
 
-    inline CKObject *GetInputParameterObject(CKBehavior *beh, int inPos)
-    {
-        assert(beh != NULL);
-        if (0 <= inPos && inPos < beh->GetInputParameterCount())
-        {
+    inline CKObject *GetInputParameterObject(CKBehavior *beh, int inPos) {
+        assert(beh != nullptr);
+        if (0 <= inPos && inPos < beh->GetInputParameterCount()) {
             CKParameter *param = beh->GetInputParameter(inPos)->GetDirectSource();
             return param->GetValueObject();
         }
-        return NULL;
+        return nullptr;
     }
 
-    inline const char *GetInputParameterString(CKBehavior *beh, int inPos)
-    {
-        assert(beh != NULL);
-        if (0 <= inPos && inPos < beh->GetInputParameterCount())
-        {
-            return (const char *)beh->GetInputParameter(inPos)->GetReadDataPtr();
+    inline const char *GetInputParameterString(CKBehavior *beh, int inPos) {
+        assert(beh != nullptr);
+        if (0 <= inPos && inPos < beh->GetInputParameterCount()) {
+            return (const char *) beh->GetInputParameter(inPos)->GetReadDataPtr();
         }
-        return NULL;
+        return nullptr;
     }
 
-    template <typename T>
-    T GetOutputParameterValue(CKBehavior *beh, int outPos)
-    {
-        assert(beh != NULL);
-        if (0 <= outPos && outPos < beh->GetOutputParameterCount())
-        {
+    template<typename T>
+    T GetOutputParameterValue(CKBehavior *beh, int outPos) {
+        assert(beh != nullptr);
+        if (0 <= outPos && outPos < beh->GetOutputParameterCount()) {
             T res;
             beh->GetOutputParameter(outPos)->GetValue(&res);
             return res;
@@ -804,32 +698,26 @@ namespace scriptutils
         return T();
     }
 
-    inline CKObject *GetOutputParameterObject(CKBehavior *beh, int outPos)
-    {
-        assert(beh != NULL);
-        if (0 <= outPos && outPos < beh->GetOutputParameterCount())
-        {
+    inline CKObject *GetOutputParameterObject(CKBehavior *beh, int outPos) {
+        assert(beh != nullptr);
+        if (0 <= outPos && outPos < beh->GetOutputParameterCount()) {
             return beh->GetOutputParameter(outPos)->GetValueObject();
         }
-        return NULL;
+        return nullptr;
     }
 
-    inline const char *GetOutputParameterString(CKBehavior *beh, int outPos)
-    {
-        assert(beh != NULL);
-        if (0 <= outPos && outPos < beh->GetOutputParameterCount())
-        {
-            return (const char *)beh->GetOutputParameter(outPos)->GetReadDataPtr();
+    inline const char *GetOutputParameterString(CKBehavior *beh, int outPos) {
+        assert(beh != nullptr);
+        if (0 <= outPos && outPos < beh->GetOutputParameterCount()) {
+            return (const char *) beh->GetOutputParameter(outPos)->GetReadDataPtr();
         }
-        return NULL;
+        return nullptr;
     }
 
-    template <typename T>
-    T GetLocalParameterValue(CKBehavior *beh, int pos)
-    {
-        assert(beh != NULL);
-        if (0 <= pos && pos < beh->GetLocalParameterCount())
-        {
+    template<typename T>
+    T GetLocalParameterValue(CKBehavior *beh, int pos) {
+        assert(beh != nullptr);
+        if (0 <= pos && pos < beh->GetLocalParameterCount()) {
             T res;
             beh->GetLocalParameter(pos)->GetValue(&res);
             return res;
@@ -837,25 +725,21 @@ namespace scriptutils
         return T();
     }
 
-    inline CKObject *GetLocalParameterObject(CKBehavior *beh, int pos)
-    {
-        assert(beh != NULL);
-        if (0 <= pos && pos < beh->GetLocalParameterCount())
-        {
+    inline CKObject *GetLocalParameterObject(CKBehavior *beh, int pos) {
+        assert(beh != nullptr);
+        if (0 <= pos && pos < beh->GetLocalParameterCount()) {
             CKParameterLocal *param = beh->GetLocalParameter(pos);
             return param->GetValueObject();
         }
-        return NULL;
+        return nullptr;
     }
 
-    inline const char *GetLocalParameterString(CKBehavior *beh, int pos)
-    {
-        assert(beh != NULL);
-        if (0 <= pos && pos < beh->GetLocalParameterCount())
-        {
-            return (const char *)beh->GetLocalParameter(pos)->GetReadDataPtr();
+    inline const char *GetLocalParameterString(CKBehavior *beh, int pos) {
+        assert(beh != nullptr);
+        if (0 <= pos && pos < beh->GetLocalParameterCount()) {
+            return (const char *) beh->GetLocalParameter(pos)->GetReadDataPtr();
         }
-        return NULL;
+        return nullptr;
     }
 }
 

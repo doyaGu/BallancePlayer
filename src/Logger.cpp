@@ -5,19 +5,16 @@
 #endif
 #include <Windows.h>
 
-CLogger &CLogger::Get()
-{
-    static CLogger logger;
+Logger &Logger::Get() {
+    static Logger logger;
     return logger;
 }
 
-CLogger::~CLogger()
-{
+Logger::~Logger() {
     Close();
 }
 
-void CLogger::Open(const char *filename, bool overwrite, int level)
-{
+void Logger::Open(const char *filename, bool overwrite, int level) {
     m_Level = level;
 
     if (m_File)
@@ -29,10 +26,8 @@ void CLogger::Open(const char *filename, bool overwrite, int level)
         m_File = fopen(filename, "a");
 }
 
-void CLogger::Close()
-{
-    if (m_ConsoleOpened)
-    {
+void Logger::Close() {
+    if (m_ConsoleOpened) {
         ::FreeConsole();
     }
 
@@ -40,20 +35,16 @@ void CLogger::Close()
         fclose(m_File);
 }
 
-int CLogger::GetLevel() const
-{
+int Logger::GetLevel() const {
     return m_Level;
 }
 
-void CLogger::SetLevel(int level)
-{
+void Logger::SetLevel(int level) {
     m_Level = level;
 }
 
-void CLogger::Debug(const char *fmt, ...)
-{
-    if (m_Level >= LEVEL_DEBUG)
-    {
+void Logger::Debug(const char *fmt, ...) {
+    if (m_Level >= LEVEL_DEBUG) {
         va_list args;
         va_start(args, fmt);
         Log("DEBUG", fmt, args);
@@ -61,10 +52,8 @@ void CLogger::Debug(const char *fmt, ...)
     }
 }
 
-void CLogger::Info(const char *fmt, ...)
-{
-    if (m_Level >= LEVEL_INFO)
-    {
+void Logger::Info(const char *fmt, ...) {
+    if (m_Level >= LEVEL_INFO) {
         va_list args;
         va_start(args, fmt);
         Log("INFO", fmt, args);
@@ -72,10 +61,8 @@ void CLogger::Info(const char *fmt, ...)
     }
 }
 
-void CLogger::Warn(const char *fmt, ...)
-{
-    if (m_Level >= LEVEL_WARN)
-    {
+void Logger::Warn(const char *fmt, ...) {
+    if (m_Level >= LEVEL_WARN) {
         va_list args;
         va_start(args, fmt);
         Log("WARN", fmt, args);
@@ -83,10 +70,8 @@ void CLogger::Warn(const char *fmt, ...)
     }
 }
 
-void CLogger::Error(const char *fmt, ...)
-{
-    if (m_Level >= LEVEL_ERROR)
-    {
+void Logger::Error(const char *fmt, ...) {
+    if (m_Level >= LEVEL_ERROR) {
         va_list args;
         va_start(args, fmt);
         Log("ERROR", fmt, args);
@@ -94,15 +79,13 @@ void CLogger::Error(const char *fmt, ...)
     }
 }
 
-void CLogger::Log(const char *level, const char *fmt, va_list args)
-{
+void Logger::Log(const char *level, const char *fmt, va_list args) {
     SYSTEMTIME sys;
     GetLocalTime(&sys);
 
     FILE *outs[] = {stdout, m_File};
 
-    for (int i = 0; i < 2; ++i)
-    {
+    for (int i = 0; i < 2; ++i) {
         FILE *out = outs[i];
         if (!out)
             continue;
@@ -117,4 +100,4 @@ void CLogger::Log(const char *level, const char *fmt, va_list args)
     }
 }
 
-CLogger::CLogger() : m_Level(LEVEL_OFF), m_ConsoleOpened(false), m_File(NULL) {}
+Logger::Logger() : m_Level(LEVEL_OFF), m_ConsoleOpened(false), m_File(nullptr) {}

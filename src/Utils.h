@@ -1,12 +1,9 @@
 #ifndef PLAYER_UTILS_H
 #define PLAYER_UTILS_H
 
-#include <wchar.h>
-
 #include "VxMathDefines.h"
 
-namespace utils
-{
+namespace utils {
     bool FileOrDirectoryExists(const char *file);
     bool DirectoryExists(const char *dir);
 

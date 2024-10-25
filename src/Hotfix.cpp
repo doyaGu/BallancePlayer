@@ -5,8 +5,7 @@
 #include "InterfaceManager.h"
 #include "GameConfig.h"
 
-static bool SetDebugMode(CKBehavior *setDebugMode)
-{
+static bool SetDebugMode(CKBehavior *setDebugMode) {
     if (!setDebugMode)
         return false;
 
@@ -20,8 +19,7 @@ static bool SetDebugMode(CKBehavior *setDebugMode)
     return true;
 }
 
-static bool SetLanguage(CKBehavior *setLanguage, int langId)
-{
+static bool SetLanguage(CKBehavior *setLanguage, int langId) {
     if (!setLanguage)
         return false;
 
@@ -29,10 +27,9 @@ static bool SetLanguage(CKBehavior *setLanguage, int langId)
     if (!gc)
         return false;
 
-    CKBehaviorLink *linkIn0 = NULL;
+    CKBehaviorLink *linkIn0 = nullptr;
     const int linkCount = setLanguage->GetSubBehaviorLinkCount();
-    for (int i = 0; i < linkCount; ++i)
-    {
+    for (int i = 0; i < linkCount; ++i) {
         CKBehaviorLink *link = setLanguage->GetSubBehaviorLink(i);
         CKBehaviorIO *outIO = link->GetOutBehaviorIO();
         if (outIO->GetOwner() == gc && gc->GetInput(0) == outIO)
@@ -54,14 +51,12 @@ static bool SetLanguage(CKBehavior *setLanguage, int langId)
     return true;
 }
 
-static int ListDriver(const CKBehaviorContext &behcontext)
-{
+static int ListDriver(const CKBehaviorContext &behcontext) {
     CKBehavior *beh = behcontext.Behavior;
     CKContext *context = behcontext.Context;
 
-    CKDataArray *drivers = (CKDataArray *)beh->GetInputParameterObject(0);
-    if (!drivers)
-    {
+    CKDataArray *drivers = (CKDataArray *) beh->GetInputParameterObject(0);
+    if (!drivers) {
         context->OutputToConsoleExBeep("ListDriver: No DataArray Object is found.");
         beh->ActivateOutput(1);
         return CKBR_OK;
@@ -73,9 +68,8 @@ static int ListDriver(const CKBehaviorContext &behcontext)
         drivers->RemoveColumn(0);
 
     InterfaceManager *man = InterfaceManager::GetManager(context);
-    if (!man)
-    {
-        context->OutputToConsoleExBeep("ListDriver: im == NULL");
+    if (!man) {
+        context->OutputToConsoleExBeep("ListDriver: im == nullptr");
         beh->ActivateOutput(1);
         return CKBR_OK;
     }
@@ -85,8 +79,7 @@ static int ListDriver(const CKBehaviorContext &behcontext)
     drivers->InsertColumn(1, CKARRAYTYPE_INT, "DriverID");
 
     const int driverCount = context->GetRenderManager()->GetRenderDriverCount();
-    for (int i = 0; i < driverCount; ++i)
-    {
+    for (int i = 0; i < driverCount; ++i) {
         VxDriverDesc *drDesc = context->GetRenderManager()->GetRenderDriverDescription(i);
         drivers->InsertRow();
 #if CKVERSION == 0x13022002
@@ -108,8 +101,7 @@ static int ListDriver(const CKBehaviorContext &behcontext)
     return CKBR_OK;
 }
 
-static bool ReplaceListDriver(CKBehavior *screenModes)
-{
+static bool ReplaceListDriver(CKBehavior *screenModes) {
     if (!screenModes)
         return false;
 
@@ -121,17 +113,15 @@ static bool ReplaceListDriver(CKBehavior *screenModes)
     return true;
 }
 
-static int ListScreenModes(const CKBehaviorContext &behcontext)
-{
+static int ListScreenModes(const CKBehaviorContext &behcontext) {
     CKBehavior *beh = behcontext.Behavior;
     CKContext *context = behcontext.Context;
 
     int driverId = 0;
     beh->GetInputParameterValue(0, &driverId);
 
-    CKDataArray *screenModes = (CKDataArray *)beh->GetInputParameterObject(1);
-    if (!screenModes)
-    {
+    CKDataArray *screenModes = (CKDataArray *) beh->GetInputParameterObject(1);
+    if (!screenModes) {
         context->OutputToConsoleExBeep("ListScreenModes: No DataArray Object is found.");
         beh->ActivateOutput(1);
         return CKBR_OK;
@@ -147,8 +137,7 @@ static int ListScreenModes(const CKBehaviorContext &behcontext)
     screenModes->InsertColumn(2, CKARRAYTYPE_INT, "Height");
 
     VxDriverDesc *drDesc = context->GetRenderManager()->GetRenderDriverDescription(driverId);
-    if (!drDesc)
-    {
+    if (!drDesc) {
         context->OutputToConsoleExBeep("ListScreenModes: No Driver Description for Driver-ID '%d' is found", driverId);
         beh->ActivateOutput(1);
         return CKBR_OK;
@@ -162,22 +151,18 @@ static int ListScreenModes(const CKBehaviorContext &behcontext)
     const int dmCount = dm.Size();
 #endif
     int i = 0, row = 0;
-    while (i < dmCount)
-    {
+    while (i < dmCount) {
         int width = dm[i].Width;
         int height = dm[i].Height;
 
         int maxRefreshRate = 0;
-        for (int j = i; j < dmCount && dm[j].Width == width && dm[j].Height == height; ++j)
-        {
+        for (int j = i; j < dmCount && dm[j].Width == width && dm[j].Height == height; ++j) {
             if (dm[j].Bpp > 8 && dm[j].RefreshRate > maxRefreshRate)
                 maxRefreshRate = dm[j].RefreshRate;
         }
 
-        while (i < dmCount && dm[i].Width == width && dm[i].Height == height)
-        {
-            if (dm[i].Bpp > 8 && dm[i].RefreshRate == maxRefreshRate)
-            {
+        while (i < dmCount && dm[i].Width == width && dm[i].Height == height) {
+            if (dm[i].Bpp > 8 && dm[i].RefreshRate == maxRefreshRate) {
                 screenModes->InsertRow();
                 screenModes->SetElementValue(row, 0, &i, sizeof(int));
                 screenModes->SetElementValue(row, 1, &dm[i].Width, sizeof(int));
@@ -190,9 +175,8 @@ static int ListScreenModes(const CKBehaviorContext &behcontext)
     }
 
     InterfaceManager *man = InterfaceManager::GetManager(context);
-    if (!man)
-    {
-        context->OutputToConsoleExBeep("ListScreenModes: im == NULL");
+    if (!man) {
+        context->OutputToConsoleExBeep("ListScreenModes: im == nullptr");
         beh->ActivateOutput(1);
         return CKBR_OK;
     }
@@ -203,8 +187,7 @@ static int ListScreenModes(const CKBehaviorContext &behcontext)
     return CKBR_OK;
 }
 
-static bool ReplaceListScreenModes(CKBehavior *screenModes)
-{
+static bool ReplaceListScreenModes(CKBehavior *screenModes) {
     if (!screenModes)
         return false;
 
@@ -216,8 +199,7 @@ static bool ReplaceListScreenModes(CKBehavior *screenModes)
     return true;
 }
 
-static bool UnlockWidescreen(CKBehavior *screenModes, CKBehavior *minWidth)
-{
+static bool UnlockWidescreen(CKBehavior *screenModes, CKBehavior *minWidth) {
     if (!screenModes || !minWidth)
         return false;
 
@@ -239,8 +221,8 @@ static bool UnlockWidescreen(CKBehavior *screenModes, CKBehavior *minWidth)
     return true;
 }
 
-static bool UnlockHighResolution(CKBehavior *screenModes, CKBehavior *bppFilter, CKBehavior *minWidth, CKBehavior *maxWidth, bool unlockWidescreen)
-{
+static bool UnlockHighResolution(CKBehavior *screenModes, CKBehavior *bppFilter, CKBehavior *minWidth,
+                                 CKBehavior *maxWidth, bool unlockWidescreen) {
     if (!screenModes || !bppFilter || !minWidth || !maxWidth)
         return false;
 
@@ -258,19 +240,16 @@ static bool UnlockHighResolution(CKBehavior *screenModes, CKBehavior *bppFilter,
     return true;
 }
 
-static bool UnlockFramerate(CKBehavior *synchToScreen)
-{
+static bool UnlockFramerate(CKBehavior *synchToScreen) {
     if (!synchToScreen)
         return false;
 
     bool res = false;
 
-    for (int i = 0; i < synchToScreen->GetSubBehaviorCount(); ++i)
-    {
+    for (int i = 0; i < synchToScreen->GetSubBehaviorCount(); ++i) {
         CKBehavior *beh = synchToScreen->GetSubBehavior(i);
-        if (strcmp(beh->GetName(), "Time Settings") == 0)
-        {
-            CKDWORD *frameRate = (CKDWORD *)beh->GetInputParameterReadDataPtr(0);
+        if (strcmp(beh->GetName(), "Time Settings") == 0) {
+            CKDWORD *frameRate = (CKDWORD *) beh->GetInputParameterReadDataPtr(0);
             if (*frameRate == 3) // Frame Rate == Limit
             {
                 *frameRate = 1; // Frame Rate = Free
@@ -283,8 +262,7 @@ static bool UnlockFramerate(CKBehavior *synchToScreen)
     return res;
 }
 
-static bool SkipResolutionCheck(CKBehavior *synchToScreen)
-{
+static bool SkipResolutionCheck(CKBehavior *synchToScreen) {
     if (!synchToScreen)
         return false;
 
@@ -298,7 +276,8 @@ static bool SkipResolutionCheck(CKBehavior *synchToScreen)
     if (!(linkTsIi1 && linkTsIi2))
         return false;
 
-    CKBehaviorLink *linkDelayerCsm = scriptutils::RemoveBehaviorLink(synchToScreen, delayer, "TT Change ScreenMode", 0, 0);
+    CKBehaviorLink *linkDelayerCsm = scriptutils::RemoveBehaviorLink(synchToScreen, delayer, "TT Change ScreenMode", 0,
+                                                                     0);
     if (!linkDelayerCsm)
         return false;
 
@@ -309,8 +288,7 @@ static bool SkipResolutionCheck(CKBehavior *synchToScreen)
     return true;
 }
 
-static bool SkipOpeningAnimation(CKBehavior *defaultLevel, CKBehavior *synchToScreen)
-{
+static bool SkipOpeningAnimation(CKBehavior *defaultLevel, CKBehavior *synchToScreen) {
     if (!defaultLevel || !synchToScreen)
         return false;
 
@@ -339,60 +317,51 @@ static bool SkipOpeningAnimation(CKBehavior *defaultLevel, CKBehavior *synchToSc
     return true;
 }
 
-bool EditScript(CKLevel *level, const CGameConfig &config)
-{
+bool EditScript(CKLevel *level, const GameConfig &config) {
     if (!level)
         return false;
 
     CKBehavior *defaultLevel = scriptutils::GetBehavior(level->ComputeObjectList(CKCID_BEHAVIOR), "Default Level");
-    if (!defaultLevel)
-    {
-        CLogger::Get().Warn("Unable to find Default Level");
+    if (!defaultLevel) {
+        Logger::Get().Warn("Unable to find Default Level");
         return false;
     }
 
     // Set debug mode
-    if (config.debug)
-    {
+    if (config.debug) {
         if (!SetDebugMode(scriptutils::GetBehavior(defaultLevel, "set DebugMode")))
-            CLogger::Get().Warn("Failed to set debug mode");
+            Logger::Get().Warn("Failed to set debug mode");
     }
 
     // Bypass "Set Language" script and set our language id
     if (!SetLanguage(scriptutils::GetBehavior(defaultLevel, "Set Language"), config.langId))
-        CLogger::Get().Warn("Failed to set language id");
+        Logger::Get().Warn("Failed to set language id");
 
     int i;
 
     CKBehavior *sm = scriptutils::GetBehavior(defaultLevel, "Screen Modes");
-    if (!sm)
-    {
-        CLogger::Get().Warn("Unable to find script Screen Modes");
+    if (!sm) {
+        Logger::Get().Warn("Unable to find script Screen Modes");
         return false;
     }
 
-    if (!ReplaceListDriver(sm))
-    {
-        CLogger::Get().Warn("Failed to set driver");
+    if (!ReplaceListDriver(sm)) {
+        Logger::Get().Warn("Failed to set driver");
         return false;
     }
 
-    if (!ReplaceListScreenModes(sm))
-    {
-        CLogger::Get().Warn("Failed to set screen mode");
+    if (!ReplaceListScreenModes(sm)) {
+        Logger::Get().Warn("Failed to set screen mode");
         return false;
     }
 
-    CKBehavior *bbpFilter = NULL;
-    CKBehavior *minWidth = NULL;
-    CKBehavior *maxWidth = NULL;
-    for (i = 0; i < sm->GetSubBehaviorCount(); ++i)
-    {
+    CKBehavior *bbpFilter = nullptr;
+    CKBehavior *minWidth = nullptr;
+    CKBehavior *maxWidth = nullptr;
+    for (i = 0; i < sm->GetSubBehaviorCount(); ++i) {
         CKBehavior *beh = sm->GetSubBehavior(i);
-        if (strcmp(beh->GetName(), "Remove Row If") == 0)
-        {
-            switch (scriptutils::GetInputParameterValue<int>(beh, 2))
-            {
+        if (strcmp(beh->GetName(), "Remove Row If") == 0) {
+            switch (scriptutils::GetInputParameterValue<int>(beh, 2)) {
                 case 16: // BBP filter
                     bbpFilter = beh;
                     break;
@@ -409,52 +378,44 @@ bool EditScript(CKLevel *level, const CGameConfig &config)
     }
 
     // Correct the bbp filter
-    if (!bbpFilter)
-    {
-        CLogger::Get().Warn("Failed to correct the bbp filter");
-    }
-    else
-    {
+    if (!bbpFilter) {
+        Logger::Get().Warn("Failed to correct the bbp filter");
+    } else {
         scriptutils::SetInputParameterValue(bbpFilter, 2, config.bpp);
     }
 
     // Unlock widescreen (Not 4:3)
-    if (config.unlockWidescreen)
-    {
+    if (config.unlockWidescreen) {
         if (!UnlockWidescreen(sm, minWidth))
-            CLogger::Get().Warn("Failed to unlock widescreen");
+            Logger::Get().Warn("Failed to unlock widescreen");
     }
 
     // Unlock high resolution
-    if (config.unlockHighResolution)
-    {
+    if (config.unlockHighResolution) {
         if (!UnlockHighResolution(sm, bbpFilter, minWidth, maxWidth, config.unlockWidescreen))
-            CLogger::Get().Warn("Failed to unlock high resolution");
+            Logger::Get().Warn("Failed to unlock high resolution");
     }
 
     CKBehavior *sts = scriptutils::GetBehavior(defaultLevel, "Synch to Screen");
-    if (!sts)
-    {
-        CLogger::Get().Warn("Unable to find script Synch to Screen");
+    if (!sts) {
+        Logger::Get().Warn("Unable to find script Synch to Screen");
         return false;
     }
 
     // Unlock frame rate limitation
-    if (config.unlockFramerate)
-    {
+    if (config.unlockFramerate) {
         if (!UnlockFramerate(sts))
-            CLogger::Get().Warn("Failed to unlock frame rate limitation");
+            Logger::Get().Warn("Failed to unlock frame rate limitation");
     }
 
     // Make it not to test 640x480 resolution
     if (!SkipResolutionCheck(sts))
-        CLogger::Get().Warn("Failed to bypass 640x480 resolution test");
+        Logger::Get().Warn("Failed to bypass 640x480 resolution test");
 
     // Skip Opening Animation
-    if (config.skipOpening)
-    {
+    if (config.skipOpening) {
         if (!SkipOpeningAnimation(defaultLevel, sts))
-            CLogger::Get().Warn("Failed to skip opening animation");
+            Logger::Get().Warn("Failed to skip opening animation");
     }
 
     return true;

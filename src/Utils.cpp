@@ -1,7 +1,7 @@
 #include "Utils.h"
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -12,26 +12,22 @@
 #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #endif
 
-namespace utils
-{
-    bool FileOrDirectoryExists(const char *file)
-    {
+namespace utils {
+    bool FileOrDirectoryExists(const char *file) {
         if (!file || file[0] == '\0')
             return false;
         const DWORD attributes = ::GetFileAttributesA(file);
         return attributes != INVALID_FILE_ATTRIBUTES;
     }
 
-    bool DirectoryExists(const char *dir)
-    {
+    bool DirectoryExists(const char *dir) {
         if (!dir || dir[0] == '\0')
             return false;
         const DWORD attributes = ::GetFileAttributesA(dir);
         return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
     }
 
-    bool IsAbsolutePath(const char *path)
-    {
+    bool IsAbsolutePath(const char *path) {
         if (!path || path[0] == '\0')
             return false;
 
@@ -41,8 +37,7 @@ namespace utils
         return true;
     }
 
-    bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing)
-    {
+    bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing) {
         if (!path || path[0] == '\0')
             return false;
 
@@ -50,13 +45,10 @@ namespace utils
             return false;
 
         size_t len;
-        if (IsAbsolutePath(path))
-        {
+        if (IsAbsolutePath(path)) {
             len = strlen(path);
             strncpy(buffer, path, size);
-        }
-        else
-        {
+        } else {
             size_t n = ::GetCurrentDirectoryA(size, buffer);
             n = size - 1 - n;
             strncat(buffer, "\\", n);
@@ -65,32 +57,24 @@ namespace utils
             len = strlen(path);
         }
 
-        if (trailing && !HasTrailingPathSeparator(path))
-        {
-            if (size > len + 2)
-            {
+        if (trailing && !HasTrailingPathSeparator(path)) {
+            if (size > len + 2) {
                 buffer[len] = '\\';
                 buffer[len + 1] = '\0';
             }
-        }
-        else if (!trailing && HasTrailingPathSeparator(path))
-        {
+        } else if (!trailing && HasTrailingPathSeparator(path)) {
             buffer[len - 1] = '\0';
         }
         return true;
     }
 
-    char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2)
-    {
+    char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2) {
         if (!buffer)
-            return NULL;
+            return nullptr;
 
-        if (!path1 || path1[0] == '\0')
-        {
+        if (!path1 || path1[0] == '\0') {
             strncpy(buffer, path2, size);
-        }
-        else if (path2)
-        {
+        } else if (path2) {
             strncpy(buffer, path1, size);
             RemoveTrailingPathSeparator(buffer);
             size_t len2 = strlen(path2);
@@ -103,18 +87,16 @@ namespace utils
         return buffer;
     }
 
-    const char *FindLastPathSeparator(const char *path)
-    {
+    const char *FindLastPathSeparator(const char *path) {
         if (!path || path[0] == '\0')
-            return NULL;
+            return nullptr;
 
         const char *const lastSep = strrchr(path, '\\');
         const char *const lastAltSep = strrchr(path, '/');
         return (lastAltSep && (!lastSep || lastAltSep > lastSep)) ? lastAltSep : lastSep;
     }
 
-    bool HasTrailingPathSeparator(const char *path)
-    {
+    bool HasTrailingPathSeparator(const char *path) {
         if (!path || path[0] == '\0')
             return false;
 
@@ -124,22 +106,19 @@ namespace utils
         return false;
     }
 
-    bool RemoveTrailingPathSeparator(char *path)
-    {
+    bool RemoveTrailingPathSeparator(char *path) {
         if (!HasTrailingPathSeparator(path))
             return false;
         path[strlen(path) - 1] = '\0';
         return true;
     }
 
-    int CharToWchar(const char *charStr, wchar_t *wcharStr, int size)
-    {
+    int CharToWchar(const char *charStr, wchar_t *wcharStr, int size) {
         return ::MultiByteToWideChar(CP_ACP, 0, charStr, -1, wcharStr, size);
     }
 
-    int WcharToChar(const wchar_t *wcharStr, char *charStr, int size)
-    {
-        return ::WideCharToMultiByte(CP_ACP, 0, wcharStr, -1, charStr, size, NULL, NULL);
+    int WcharToChar(const wchar_t *wcharStr, char *charStr, int size) {
+        return ::WideCharToMultiByte(CP_ACP, 0, wcharStr, -1, charStr, size, nullptr, nullptr);
     }
 
     /* crc32.c -- compute the CRC-32 of a data stream
@@ -200,36 +179,33 @@ namespace utils
         0xbdbdf21cL, 0xcabac28aL, 0x53b39330L, 0x24b4a3a6L, 0xbad03605L,
         0xcdd70693L, 0x54de5729L, 0x23d967bfL, 0xb3667a2eL, 0xc4614ab8L,
         0x5d681b02L, 0x2a6f2b94L, 0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL,
-        0x2d02ef8dL};
+        0x2d02ef8dL
+    };
 
 #define DO1(buf) crc = crc_table[((int)crc ^ (*buf++)) & 0xff] ^ (crc >> 8)
 #define DO2(buf) DO1(buf); DO1(buf)
 #define DO4(buf) DO2(buf); DO2(buf)
 #define DO8(buf) DO4(buf); DO4(buf)
 
-    void CRC32(const void *key, size_t len, size_t seed, void *out)
-    {
-        unsigned char *buf = (unsigned char *)key;
+    void CRC32(const void *key, size_t len, size_t seed, void *out) {
+        unsigned char *buf = (unsigned char *) key;
         size_t crc = seed ^ 0xffffffffL;
 
-        while (len >= 8)
-        {
+        while (len >= 8) {
             DO8(buf);
             len -= 8;
         }
 
-        while (len--)
-        {
+        while (len--) {
             DO1(buf);
         }
 
         crc ^= 0xffffffffL;
 
-        *(size_t *)out = crc;
+        *(size_t *) out = crc;
     }
 
-    VX_PIXELFORMAT String2PixelFormat(const char *str, size_t max)
-    {
+    VX_PIXELFORMAT String2PixelFormat(const char *str, size_t max) {
         if (!str || str[0] == '\0' || max == 0)
             return UNKNOWN_PF;
 
@@ -300,8 +276,7 @@ namespace utils
         return format;
     }
 
-    const char *PixelFormat2String(VX_PIXELFORMAT format)
-    {
+    const char *PixelFormat2String(VX_PIXELFORMAT format) {
         const char *str;
         switch (format) {
             case _32_ARGB8888:

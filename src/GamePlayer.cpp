@@ -1,7 +1,7 @@
 #include "GamePlayer.h"
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "Logger.h"
 #include "Utils.h"
@@ -13,21 +13,18 @@
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
 
-extern bool EditScript(CKLevel *level, const CGameConfig &config);
+extern bool EditScript(CKLevel *level, const GameConfig &config);
 
-CGamePlayer &CGamePlayer::GetInstance()
-{
-    static CGamePlayer player;
+GamePlayer &GamePlayer::GetInstance() {
+    static GamePlayer player;
     return player;
 }
 
-CGamePlayer::~CGamePlayer()
-{
+GamePlayer::~GamePlayer() {
     Exit();
 }
 
-bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
-{
+bool GamePlayer::Init(HINSTANCE hInstance, const GameConfig &config) {
     if (m_State != eInitial)
         return true;
 
@@ -37,46 +34,41 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
     m_hInstance = hInstance;
     m_Config = config;
 
-    if (!InitWindow(hInstance))
-    {
-        CLogger::Get().Error("Failed to initialize window!");
+    if (!InitWindow(hInstance)) {
+        Logger::Get().Error("Failed to initialize window!");
         return false;
     }
 
     {
-        CSplash splash(hInstance);
+        Splash splash(hInstance);
         splash.Show();
     }
 
-    if (!InitEngine(m_MainWindow))
-    {
-        CLogger::Get().Error("Failed to initialize CK Engine!");
+    if (!InitEngine(m_MainWindow)) {
+        Logger::Get().Error("Failed to initialize CK Engine!");
         return false;
     }
 
-    if (!InitDriver())
-    {
-        CLogger::Get().Error("Failed to initialize Render Driver!");
+    if (!InitDriver()) {
+        Logger::Get().Error("Failed to initialize Render Driver!");
         return false;
     }
 
     RECT rc;
     m_MainWindow.GetClientRect(&rc);
-    if (rc.right - rc.left != m_Config.width || rc.bottom - rc.top != m_Config.height)
-    {
+    if (rc.right - rc.left != m_Config.width || rc.bottom - rc.top != m_Config.height) {
         ResizeWindow();
     }
 
     HWND handle = (!m_Config.childWindowRendering) ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
     CKRECT rect = {0, 0, m_Config.width, m_Config.height};
     m_RenderContext = m_RenderManager->CreateRenderContext(handle, m_Config.driver, &rect, FALSE, m_Config.bpp);
-    if (!m_RenderContext)
-    {
-        CLogger::Get().Error("Failed to create Render Context!");
+    if (!m_RenderContext) {
+        Logger::Get().Error("Failed to create Render Context!");
         return false;
     }
 
-    CLogger::Get().Debug("Render Context created.");
+    Logger::Get().Debug("Render Context created.");
 
     if (m_Config.fullscreen)
         OnGoFullscreen();
@@ -88,8 +80,7 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
     return true;
 }
 
-bool CGamePlayer::Load(const char *filename)
-{
+bool GamePlayer::Load(const char *filename) {
     if (m_State == eInitial)
         return false;
 
@@ -105,9 +96,8 @@ bool CGamePlayer::Load(const char *filename)
 
     XString resolvedFile = filename;
     CKERROR err = pm->ResolveFileName(resolvedFile, DATA_PATH_IDX);
-    if (err != CK_OK)
-    {
-        CLogger::Get().Error("Failed to resolve filename %s", filename);
+    if (err != CK_OK) {
+        Logger::Get().Error("Failed to resolve filename %s", filename);
         return false;
     }
 
@@ -116,25 +106,22 @@ bool CGamePlayer::Load(const char *filename)
 
     // Load the file and fills the array with loaded objects
     CKFile *f = m_CKContext->CreateCKFile();
-    CKERROR res = f->OpenFile(resolvedFile.Str(), (CK_LOAD_FLAGS)(CK_LOAD_DEFAULT | CK_LOAD_CHECKDEPENDENCIES));
-    if (res != CK_OK)
-    {
+    CKERROR res = f->OpenFile(resolvedFile.Str(), (CK_LOAD_FLAGS) (CK_LOAD_DEFAULT | CK_LOAD_CHECKDEPENDENCIES));
+    if (res != CK_OK) {
         // something failed
-        if (res == CKERR_PLUGINSMISSING)
-        {
+        if (res == CKERR_PLUGINSMISSING) {
             // log the missing guids
             ReportMissingGuids(f, resolvedFile.CStr());
         }
         m_CKContext->DeleteCKFile(f);
 
-        CLogger::Get().Error("Failed to open file: %s", resolvedFile.CStr());
+        Logger::Get().Error("Failed to open file: %s", resolvedFile.CStr());
         return false;
     }
 
     CKObjectArray *array = CreateCKObjectArray();
     res = f->LoadFileData(array);
-    if (res != CK_OK)
-    {
+    if (res != CK_OK) {
         m_CKContext->DeleteCKFile(f);
         return false;
     }
@@ -142,21 +129,19 @@ bool CGamePlayer::Load(const char *filename)
     m_CKContext->DeleteCKFile(f);
     DeleteCKObjectArray(array);
 
-    InterfaceManager *man = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
-    if (man)
-    {
+    auto *man = (InterfaceManager *) m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
+    if (man) {
         man->SetDriver(m_Config.driver);
         man->SetScreenMode(m_Config.screenMode);
         man->SetRookie(m_Config.rookie);
         man->SetTaskSwitchEnabled(true);
 
-        if (m_GameInfo)
-        {
+        if (m_GameInfo) {
             delete m_GameInfo;
-            m_GameInfo = NULL;
+            m_GameInfo = nullptr;
         }
 
-        m_GameInfo = new CGameInfo;
+        m_GameInfo = new GameInfo;
         strcpy(m_GameInfo->path, ".");
         strcpy(m_GameInfo->fileName, filename);
         man->SetGameInfo(m_GameInfo);
@@ -165,38 +150,30 @@ bool CGamePlayer::Load(const char *filename)
     return FinishLoad();
 }
 
-void CGamePlayer::Run()
-{
+void GamePlayer::Run() {
     while (Update())
         continue;
 }
 
-bool CGamePlayer::Update()
-{
+bool GamePlayer::Update() {
     MSG msg;
-    if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-    {
+    if (::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_QUIT)
             return false;
 
-        if (!::TranslateAccelerator(m_MainWindow.GetHandle(), m_hAccelTable, &msg))
-        {
+        if (!::TranslateAccelerator(m_MainWindow.GetHandle(), m_hAccelTable, &msg)) {
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
         }
-    }
-    else
-    {
+    } else {
         float beforeRender = 0.0f;
         float beforeProcess = 0.0f;
         m_TimeManager->GetTimeToWaitForLimits(beforeRender, beforeProcess);
-        if (beforeProcess <= 0)
-        {
+        if (beforeProcess <= 0) {
             m_TimeManager->ResetChronos(FALSE, TRUE);
             Process();
         }
-        if (beforeRender <= 0)
-        {
+        if (beforeRender <= 0) {
             m_TimeManager->ResetChronos(TRUE, FALSE);
             Render();
         }
@@ -205,28 +182,24 @@ bool CGamePlayer::Update()
     return true;
 }
 
-void CGamePlayer::Exit()
-{
-    if (m_GameInfo)
-    {
+void GamePlayer::Exit() {
+    if (m_GameInfo) {
         delete m_GameInfo;
-        m_GameInfo = NULL;
+        m_GameInfo = nullptr;
     }
 
-    if (m_CKContext)
-    {
+    if (m_CKContext) {
         m_CKContext->Reset();
         m_CKContext->ClearAll();
 
-        if (m_RenderManager && m_RenderContext)
-        {
+        if (m_RenderManager && m_RenderContext) {
             m_RenderManager->DestroyRenderContext(m_RenderContext);
-            m_RenderContext = NULL;
+            m_RenderContext = nullptr;
         }
 
         CKCloseContext(m_CKContext);
         CKShutdown();
-        m_CKContext = NULL;
+        m_CKContext = nullptr;
     }
 
     // Save settings
@@ -234,88 +207,77 @@ void CGamePlayer::Exit()
         m_Config.SaveToIni();
 }
 
-void CGamePlayer::Play()
-{
+void GamePlayer::Play() {
     m_State = ePlaying;
     m_CKContext->Play();
-    CLogger::Get().Debug("Game is playing.");
+    Logger::Get().Debug("Game is playing.");
 }
 
-void CGamePlayer::Pause()
-{
+void GamePlayer::Pause() {
     m_State = ePaused;
     m_CKContext->Pause();
-    CLogger::Get().Debug("Game is paused.");
+    Logger::Get().Debug("Game is paused.");
 }
 
-void CGamePlayer::Reset()
-{
+void GamePlayer::Reset() {
     m_State = ePlaying;
     m_CKContext->Reset();
     m_CKContext->Play();
-    CLogger::Get().Debug("Game is reset.");
+    Logger::Get().Debug("Game is reset.");
 }
 
-CGamePlayer::CGamePlayer()
+GamePlayer::GamePlayer()
     : m_State(eInitial),
-      m_hInstance(NULL),
-      m_hAccelTable(NULL),
-      m_CKContext(NULL),
-      m_RenderContext(NULL),
-      m_RenderManager(NULL),
-      m_MessageManager(NULL),
-      m_TimeManager(NULL),
-      m_AttributeManager(NULL),
-      m_InputManager(NULL),
+      m_hInstance(nullptr),
+      m_hAccelTable(nullptr),
+      m_CKContext(nullptr),
+      m_RenderContext(nullptr),
+      m_RenderManager(nullptr),
+      m_MessageManager(nullptr),
+      m_TimeManager(nullptr),
+      m_AttributeManager(nullptr),
+      m_InputManager(nullptr),
       m_MsgClick(-1),
       m_MsgDoubleClick(-1),
-      m_GameInfo(NULL) {}
+      m_GameInfo(nullptr) {
+}
 
-void CGamePlayer::Process()
-{
+void GamePlayer::Process() {
     m_CKContext->Process();
 }
 
-void CGamePlayer::Render()
-{
+void GamePlayer::Render() {
     m_RenderContext->Render();
 }
 
-static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *)
-{
+static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *) {
     if (cbStruct.Reason == CKUIM_OUTTOCONSOLE ||
         cbStruct.Reason == CKUIM_OUTTOINFOBAR ||
-        cbStruct.Reason == CKUIM_DEBUGMESSAGESEND)
-    {
+        cbStruct.Reason == CKUIM_DEBUGMESSAGESEND) {
         static XString text = "";
-        if (text.Compare(cbStruct.ConsoleString))
-        {
-            CLogger::Get().Info(cbStruct.ConsoleString);
+        if (text.Compare(cbStruct.ConsoleString)) {
+            Logger::Get().Info(cbStruct.ConsoleString);
             text = cbStruct.ConsoleString;
         }
     }
     return CK_OK;
 }
 
-bool CGamePlayer::InitWindow(HINSTANCE hInstance)
-{
-    if (!RegisterMainWindowClass(hInstance))
-    {
-        CLogger::Get().Error("Failed to register main window class!");
+bool GamePlayer::InitWindow(HINSTANCE hInstance) {
+    if (!RegisterMainWindowClass(hInstance)) {
+        Logger::Get().Error("Failed to register main window class!");
         return false;
     }
 
-    CLogger::Get().Debug("Main window class registered.");
+    Logger::Get().Debug("Main window class registered.");
 
-    if (m_Config.childWindowRendering)
-    {
-        if (!RegisterRenderWindowClass(hInstance))
-        {
-            CLogger::Get().Error("Failed to register render window class!");
+    if (m_Config.childWindowRendering) {
+        if (!RegisterRenderWindowClass(hInstance)) {
+            Logger::Get().Error("Failed to register render window class!");
             return false;
         }
 
-        CLogger::Get().Debug("Render window class registered.");
+        Logger::Get().Debug("Render window class registered.");
     }
 
     DWORD style = (m_Config.fullscreen || m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
@@ -337,30 +299,26 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         y = (screenHeight - height) / 2;
 
     if (!m_MainWindow.CreateEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
-                               x, y, width, height, NULL, NULL, hInstance, NULL))
-    {
-        CLogger::Get().Error("Failed to create main window!");
+                               x, y, width, height, nullptr, nullptr, hInstance, nullptr)) {
+        Logger::Get().Error("Failed to create main window!");
         return false;
     }
 
-    CLogger::Get().Debug("Main window created.");
+    Logger::Get().Debug("Main window created.");
 
-    if (m_Config.childWindowRendering)
-    {
+    if (m_Config.childWindowRendering) {
         if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
-                                     0, 0, m_Config.width, m_Config.height, m_MainWindow.GetHandle(), NULL, hInstance, NULL))
-        {
-            CLogger::Get().Error("Failed to create render window!");
+                                     0, 0, m_Config.width, m_Config.height, m_MainWindow.GetHandle(), nullptr, hInstance, nullptr)) {
+            Logger::Get().Error("Failed to create render window!");
             return false;
         }
 
-        CLogger::Get().Debug("Render window created.");
+        Logger::Get().Debug("Render window created.");
     }
 
     m_hAccelTable = ::LoadAccelerators(m_hInstance, MAKEINTRESOURCE(IDR_ACCEL));
-    if (!m_hAccelTable)
-    {
-        CLogger::Get().Error("Failed to load the accelerator table!");
+    if (!m_hAccelTable) {
+        Logger::Get().Error("Failed to load the accelerator table!");
         return false;
     }
 
@@ -370,78 +328,66 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     return true;
 }
 
-bool CGamePlayer::InitEngine(CWindow &mainWindow)
-{
-    if (CKStartUp() != CK_OK)
-    {
-        CLogger::Get().Error("CK Engine can not start up!");
+bool GamePlayer::InitEngine(CWindow &mainWindow) {
+    if (CKStartUp() != CK_OK) {
+        Logger::Get().Error("CK Engine can not start up!");
         return false;
     }
 
-    CLogger::Get().Debug("CK Engine starts up successfully.");
+    Logger::Get().Debug("CK Engine starts up successfully.");
 
     CKPluginManager *pluginManager = CKGetPluginManager();
-    if (!InitPlugins(pluginManager))
-    {
-        CLogger::Get().Error("Failed to initialize plugins.");
+    if (!InitPlugins(pluginManager)) {
+        Logger::Get().Error("Failed to initialize plugins.");
         return false;
     }
 
     int renderEngine = InitRenderEngines(pluginManager);
-    if (renderEngine == -1)
-    {
-        CLogger::Get().Error("Failed to initialize render engine.");
+    if (renderEngine == -1) {
+        Logger::Get().Error("Failed to initialize render engine.");
         return false;
     }
 
-    CLogger::Get().Debug("Render Engine initialized.");
+    Logger::Get().Debug("Render Engine initialized.");
 #if CKVERSION == 0x13022002
     CKERROR res = CKCreateContext(&m_CKContext, mainWindow.GetHandle(), renderEngine, 0);
 #else
     CKERROR res = CKCreateContext(&m_CKContext, mainWindow.GetHandle(), 0);
 #endif
-    if (res != CK_OK)
-    {
-        CLogger::Get().Error("Failed to initialize CK Engine.");
+    if (res != CK_OK) {
+        Logger::Get().Error("Failed to initialize CK Engine.");
         return false;
     }
 
-    CLogger::Get().Debug("CK Engine initialized.");
+    Logger::Get().Debug("CK Engine initialized.");
 
     m_CKContext->SetVirtoolsVersion(CK_VIRTOOLS_DEV, 0x2000043);
-    m_CKContext->SetInterfaceMode(FALSE, LogRedirect, NULL);
+    m_CKContext->SetInterfaceMode(FALSE, LogRedirect, nullptr);
 
-    if (!SetupManagers())
-    {
-        CLogger::Get().Error("Failed to setup managers.");
+    if (!SetupManagers()) {
+        Logger::Get().Error("Failed to setup managers.");
         return false;
     }
 
-    if (!SetupPaths())
-    {
-        CLogger::Get().Error("Failed to setup paths.");
+    if (!SetupPaths()) {
+        Logger::Get().Error("Failed to setup paths.");
         return false;
     }
 
     return true;
 }
 
-bool CGamePlayer::InitDriver()
-{
+bool GamePlayer::InitDriver() {
     int driverCount = m_RenderManager->GetRenderDriverCount();
-    if (driverCount == 0)
-    {
-        CLogger::Get().Error("No render driver found.");
+    if (driverCount == 0) {
+        Logger::Get().Error("No render driver found.");
         return false;
     }
 
-    if (driverCount == 1)
-    {
-        CLogger::Get().Debug("Found a render driver");
-    }
-    else
-    {
-        CLogger::Get().Debug("Found %s render drivers", driverCount);
+    if (driverCount == 1) {
+        Logger::Get().Debug("Found a render driver");
+    } else {
+        Logger::Get().Debug("Found %s render drivers", driverCount);
     }
 
     if (m_Config.manualSetup)
@@ -451,66 +397,56 @@ bool CGamePlayer::InitDriver()
     bool tryFailed = false;
 
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(m_Config.driver);
-    if (!drDesc)
-    {
-        CLogger::Get().Error("Unable to find driver %d", m_Config.driver);
+    if (!drDesc) {
+        Logger::Get().Error("Unable to find driver %d", m_Config.driver);
         m_Config.driver = 0;
         tryFailed = true;
-        if (!OpenSetupDialog())
-        {
+        if (!OpenSetupDialog()) {
             SetDefaultValuesForDriver();
         }
     }
 
-    if (tryFailed)
-    {
+    if (tryFailed) {
         drDesc = m_RenderManager->GetRenderDriverDescription(m_Config.driver);
-        if (!drDesc)
-        {
-            CLogger::Get().Error("Unable to find driver %d", m_Config.driver);
+        if (!drDesc) {
+            Logger::Get().Error("Unable to find driver %d", m_Config.driver);
             return false;
         }
     }
 
-    CLogger::Get().Debug("Render Driver ID: %d", m_Config.driver);
-    CLogger::Get().Debug("Render Driver Name: %s", drDesc->DriverName);
-    CLogger::Get().Debug("Render Driver Desc: %s", drDesc->DriverDesc);
+    Logger::Get().Debug("Render Driver ID: %d", m_Config.driver);
+    Logger::Get().Debug("Render Driver Name: %s", drDesc->DriverName);
+    Logger::Get().Debug("Render Driver Desc: %s", drDesc->DriverDesc);
 
     tryFailed = false;
 
     m_Config.screenMode = FindScreenMode(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver);
-    if (m_Config.screenMode == -1)
-    {
-        CLogger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
+    if (m_Config.screenMode == -1) {
+        Logger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
         tryFailed = true;
-        if (!OpenSetupDialog())
-        {
+        if (!OpenSetupDialog()) {
             SetDefaultValuesForDriver();
         }
     }
 
-    if (tryFailed)
-    {
+    if (tryFailed) {
         m_Config.screenMode = FindScreenMode(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver);
-        if (m_Config.screenMode == -1)
-        {
-            CLogger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
+        if (m_Config.screenMode == -1) {
+            Logger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
             return false;
         }
     }
 
-    CLogger::Get().Debug("Screen Mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
+    Logger::Get().Debug("Screen Mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
 
     return true;
 }
 
-bool CGamePlayer::FinishLoad()
-{
+bool GamePlayer::FinishLoad() {
     // Retrieve the level
     CKLevel *level = m_CKContext->GetCurrentLevel();
-    if (!level)
-    {
-        CLogger::Get().Error("Failed to retrieve the level!");
+    if (!level) {
+        Logger::Get().Error("Failed to retrieve the level!");
         return false;
     }
 
@@ -521,30 +457,27 @@ bool CGamePlayer::FinishLoad()
     // (in case it is not set by the composition later)
     const XObjectPointerArray cams = m_CKContext->GetObjectListByType(CKCID_CAMERA, TRUE);
     if (cams.Size() != 0)
-        m_RenderContext->AttachViewpointToCamera((CKCamera *)cams[0]);
+        m_RenderContext->AttachViewpointToCamera((CKCamera *) cams[0]);
 
     // Hide curves ?
     int curveCount = m_CKContext->GetObjectsCountByClassID(CKCID_CURVE);
     CK_ID *curve_ids = m_CKContext->GetObjectsListByClassID(CKCID_CURVE);
-    for (int i = 0; i < curveCount; ++i)
-    {
-        CKMesh *mesh = ((CKCurve *)m_CKContext->GetObject(curve_ids[i]))->GetCurrentMesh();
+    for (int i = 0; i < curveCount; ++i) {
+        CKMesh *mesh = ((CKCurve *) m_CKContext->GetObject(curve_ids[i]))->GetCurrentMesh();
         if (mesh)
             mesh->Show(CKHIDE);
     }
 
-    if (m_Config.applyHotfix && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != NULL)
-    {
-        if (!EditScript(level, m_Config))
-        {
-            CLogger::Get().Warn("Failed to apply hotfixes on script!");
+    if (m_Config.applyHotfix && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != nullptr) {
+        if (!EditScript(level, m_Config)) {
+            Logger::Get().Warn("Failed to apply hotfixes on script!");
         }
 
-        CLogger::Get().Debug("Hotfixes applied on script.");
+        Logger::Get().Debug("Hotfixes applied on script.");
     }
 
     // Launch the default scene
-    level->LaunchScene(NULL);
+    level->LaunchScene(nullptr);
 
     // ReRegister OnClick Message in case it changed
     m_MsgClick = m_MessageManager->AddMessageType("OnClick");
@@ -556,77 +489,65 @@ bool CGamePlayer::FinishLoad()
     return true;
 }
 
-void CGamePlayer::ReportMissingGuids(CKFile *file, const char *resolvedFile)
-{
+void GamePlayer::ReportMissingGuids(CKFile *file, const char *resolvedFile) {
     // retrieve the list of missing plugins/guids
     XClassArray<CKFilePluginDependencies> *p = file->GetMissingPlugins();
-    for (CKFilePluginDependencies *it = p->Begin(); it != p->End(); it++)
-    {
+    for (CKFilePluginDependencies *it = p->Begin(); it != p->End(); it++) {
         int count = (*it).m_Guids.Size();
-        for (int i = 0; i < count; i++)
-        {
-            if (!((*it).ValidGuids[i]))
-            {
+        for (int i = 0; i < count; i++) {
+            if (!((*it).ValidGuids[i])) {
                 if (resolvedFile)
-                    CLogger::Get().Error("File Name : %s\nMissing GUIDS:\n", resolvedFile);
-                CLogger::Get().Error("%x,%x\n", (*it).m_Guids[i].d1, (*it).m_Guids[i].d2);
+                    Logger::Get().Error("File Name : %s\nMissing GUIDS:\n", resolvedFile);
+                Logger::Get().Error("%x,%x\n", (*it).m_Guids[i].d1, (*it).m_Guids[i].d2);
             }
         }
     }
 }
 
-bool CGamePlayer::InitPlugins(CKPluginManager *pluginManager)
-{
+bool GamePlayer::InitPlugins(CKPluginManager *pluginManager) {
     if (!pluginManager)
         return false;
 
-    if (!LoadRenderEngines(pluginManager))
-    {
-        CLogger::Get().Error("Failed to load render engine!");
+    if (!LoadRenderEngines(pluginManager)) {
+        Logger::Get().Error("Failed to load render engine!");
         return false;
     }
 
-    if (!LoadManagers(pluginManager))
-    {
-        CLogger::Get().Error("Failed to load managers!");
+    if (!LoadManagers(pluginManager)) {
+        Logger::Get().Error("Failed to load managers!");
         return false;
     }
 
-    if (!LoadBuildingBlocks(pluginManager))
-    {
-        CLogger::Get().Error("Failed to load building blocks!");
+    if (!LoadBuildingBlocks(pluginManager)) {
+        Logger::Get().Error("Failed to load building blocks!");
         return false;
     }
 
-    if (!LoadPlugins(pluginManager))
-    {
-        CLogger::Get().Error("Failed to load plugins!");
+    if (!LoadPlugins(pluginManager)) {
+        Logger::Get().Error("Failed to load plugins!");
         return false;
     }
 
     return true;
 }
 
-bool CGamePlayer::LoadRenderEngines(CKPluginManager *pluginManager)
-{
+bool GamePlayer::LoadRenderEngines(CKPluginManager *pluginManager) {
     if (!pluginManager)
         return false;
 
     const char *path = m_Config.GetPath(eRenderEnginePath);
-    if (!utils::DirectoryExists(path) || pluginManager->ParsePlugins((CKSTRING)(path)) == 0)
-    {
-        CLogger::Get().Error("Render engine parse error.");
+    if (!utils::DirectoryExists(path) || pluginManager->ParsePlugins((CKSTRING) (path)) == 0) {
+        Logger::Get().Error("Render engine parse error.");
         return false;
     }
 
-    CLogger::Get().Debug("Render engine loaded.");
+    Logger::Get().Debug("Render engine loaded.");
 
     return true;
 }
 
-bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
-{
-    static const char *const VirtoolsManagers[] = {
+bool GamePlayer::LoadManagers(CKPluginManager *pluginManager) {
+    constexpr const char *const VirtoolsManagers[] = {
         "Dx5InputManager.dll",
         "DX7SoundManager.dll",
         "ParameterOperations.dll",
@@ -636,44 +557,36 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
         return false;
 
     const char *path = m_Config.GetPath(eManagerPath);
-    if (!utils::DirectoryExists(path))
-    {
-        CLogger::Get().Error("Managers directory does not exist!");
+    if (!utils::DirectoryExists(path)) {
+        Logger::Get().Error("Managers directory does not exist!");
         return false;
     }
 
-    CLogger::Get().Debug("Loading managers from %s", path);
+    Logger::Get().Debug("Loading managers from %s", path);
 
-    if (m_Config.loadAllManagers)
-    {
-        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
-        {
-            CLogger::Get().Error("Managers parse error.");
+    if (m_Config.loadAllManagers) {
+        if (pluginManager->ParsePlugins((CKSTRING) path) == 0) {
+            Logger::Get().Error("Managers parse error.");
             return false;
         }
-    }
-    else
-    {
+    } else {
         char szPath[MAX_PATH];
-        for (int i = 0; i < ARRAY_NUM(VirtoolsManagers); ++i)
-        {
+        for (int i = 0; i < ARRAY_NUM(VirtoolsManagers); ++i) {
             utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsManagers[i]);
-            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
-            {
-                CLogger::Get().Error("Unable to register manager: %s", VirtoolsManagers[i]);
+            if (pluginManager->RegisterPlugin(szPath) != CK_OK) {
+                Logger::Get().Error("Unable to register manager: %s", VirtoolsManagers[i]);
                 return false;
             }
         }
     }
 
-    CLogger::Get().Debug("Managers loaded.");
+    Logger::Get().Debug("Managers loaded.");
 
     return true;
 }
 
-bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
-{
-    static const char *const VirtoolsBuildingBlocks[] = {
+bool GamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager) {
+    constexpr const char *const VirtoolsBuildingBlocks[] = {
         "3DTransfo.dll",
         "BuildingBlocksAddons1.dll",
         "Cameras.dll",
@@ -689,7 +602,7 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
         "WorldEnvironments.dll",
     };
 
-    static const char *const CustomBuildingBlocks[] = {
+    constexpr const char *const CustomBuildingBlocks[] = {
         "physics_RT.dll",
         "TT_DatabaseManager_RT.dll",
         "TT_Gravity_RT.dll",
@@ -702,56 +615,46 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
         return false;
 
     const char *path = m_Config.GetPath(eBuildingBlockPath);
-    if (!utils::DirectoryExists(path))
-    {
-        CLogger::Get().Error("BuildingBlocks directory does not exist!");
+    if (!utils::DirectoryExists(path)) {
+        Logger::Get().Error("BuildingBlocks directory does not exist!");
         return false;
     }
 
-    CLogger::Get().Debug("Loading building blocks from %s", path);
+    Logger::Get().Debug("Loading building blocks from %s", path);
 
-    if (m_Config.loadAllBuildingBlocks)
-    {
-        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
-        {
-            CLogger::Get().Error("Behaviors parse error.");
+    if (m_Config.loadAllBuildingBlocks) {
+        if (pluginManager->ParsePlugins((CKSTRING) path) == 0) {
+            Logger::Get().Error("Behaviors parse error.");
             return false;
         }
-    }
-    else
-    {
+    } else {
         char szPath[MAX_PATH];
         int i;
 
-        for (i = 0; i < ARRAY_NUM(VirtoolsBuildingBlocks); ++i)
-        {
+        for (i = 0; i < ARRAY_NUM(VirtoolsBuildingBlocks); ++i) {
             utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsBuildingBlocks[i]);
-            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
-            {
-                CLogger::Get().Error("Unable to register building blocks: %s", VirtoolsBuildingBlocks[i]);
+            if (pluginManager->RegisterPlugin(szPath) != CK_OK) {
+                Logger::Get().Error("Unable to register building blocks: %s", VirtoolsBuildingBlocks[i]);
                 return false;
             }
         }
 
-        for (i = 0; i < ARRAY_NUM(CustomBuildingBlocks); ++i)
-        {
+        for (i = 0; i < ARRAY_NUM(CustomBuildingBlocks); ++i) {
             utils::ConcatPath(szPath, MAX_PATH, path, CustomBuildingBlocks[i]);
-            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
-            {
-                CLogger::Get().Error("Unable to register building blocks: %s", CustomBuildingBlocks[i]);
+            if (pluginManager->RegisterPlugin(szPath) != CK_OK) {
+                Logger::Get().Error("Unable to register building blocks: %s", CustomBuildingBlocks[i]);
                 return false;
             }
         }
     }
 
-    CLogger::Get().Debug("Building blocks loaded.");
+    Logger::Get().Debug("Building blocks loaded.");
 
     return true;
 }
 
-bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
-{
-    static const char *const VirtoolsPlugins[] = {
+bool GamePlayer::LoadPlugins(CKPluginManager *pluginManager) {
+    constexpr const char *const VirtoolsPlugins[] = {
         "AVIReader.dll",
         "ImageReader.dll",
         "VirtoolsLoaderR.dll",
@@ -762,49 +665,40 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
         return false;
 
     const char *path = m_Config.GetPath(ePluginPath);
-    if (!utils::DirectoryExists(path))
-    {
-        CLogger::Get().Error("Plugins directory does not exist!");
+    if (!utils::DirectoryExists(path)) {
+        Logger::Get().Error("Plugins directory does not exist!");
         return false;
     }
 
-    CLogger::Get().Debug("Loading plugins from %s", path);
+    Logger::Get().Debug("Loading plugins from %s", path);
 
-    if (m_Config.loadAllPlugins)
-    {
-        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
-        {
-            CLogger::Get().Error("Plugins parse error.");
+    if (m_Config.loadAllPlugins) {
+        if (pluginManager->ParsePlugins((CKSTRING) path) == 0) {
+            Logger::Get().Error("Plugins parse error.");
             return false;
         }
-    }
-    else
-    {
+    } else {
         char szPath[MAX_PATH];
-        for (int i = 0; i < ARRAY_NUM(VirtoolsPlugins); ++i)
-        {
+        for (int i = 0; i < ARRAY_NUM(VirtoolsPlugins); ++i) {
             utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsPlugins[i]);
-            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
-            {
-                CLogger::Get().Error("Unable to register plugin: %s", VirtoolsPlugins[i]);
+            if (pluginManager->RegisterPlugin(szPath) != CK_OK) {
+                Logger::Get().Error("Unable to register plugin: %s", VirtoolsPlugins[i]);
                 return false;
             }
         }
     }
 
-    CLogger::Get().Debug("Plugins loaded.");
+    Logger::Get().Debug("Plugins loaded.");
 
     return true;
 }
 
-int CGamePlayer::InitRenderEngines(CKPluginManager *pluginManager)
-{
+int GamePlayer::InitRenderEngines(CKPluginManager *pluginManager) {
     if (!pluginManager)
         return -1;
 
     int count = pluginManager->GetPluginCount(CKPLUGIN_RENDERENGINE_DLL);
-    for (int i = 0; i < count; ++i)
-    {
+    for (int i = 0; i < count; ++i) {
         CKPluginEntry *entry = pluginManager->GetPluginInfo(CKPLUGIN_RENDERENGINE_DLL, i);
         if (!entry)
             break;
@@ -814,7 +708,7 @@ int CGamePlayer::InitRenderEngines(CKPluginManager *pluginManager)
             break;
 
         char filename[MAX_PATH];
-        _splitpath(dll->m_DllFileName.Str(), NULL, NULL, filename, NULL);
+        _splitpath(dll->m_DllFileName.Str(), nullptr, nullptr, filename, nullptr);
         if (!_strnicmp("CK2_3D", filename, strlen(filename)))
             return i;
     }
@@ -822,12 +716,10 @@ int CGamePlayer::InitRenderEngines(CKPluginManager *pluginManager)
     return -1;
 }
 
-bool CGamePlayer::SetupManagers()
-{
+bool GamePlayer::SetupManagers() {
     m_RenderManager = m_CKContext->GetRenderManager();
-    if (!m_RenderManager)
-    {
-        CLogger::Get().Error("Unable to get Render Manager.");
+    if (!m_RenderManager) {
+        Logger::Get().Error("Unable to get Render Manager.");
         return false;
     }
 
@@ -852,42 +744,36 @@ bool CGamePlayer::SetupManagers()
         m_RenderManager->SetRenderOptions("SpriteVideoFormat", m_Config.spriteVideoFormat);
 
     m_MessageManager = m_CKContext->GetMessageManager();
-    if (!m_MessageManager)
-    {
-        CLogger::Get().Error("Unable to get Message Manager.");
+    if (!m_MessageManager) {
+        Logger::Get().Error("Unable to get Message Manager.");
         return false;
     }
 
     m_TimeManager = m_CKContext->GetTimeManager();
-    if (!m_TimeManager)
-    {
-        CLogger::Get().Error("Unable to get Time Manager.");
+    if (!m_TimeManager) {
+        Logger::Get().Error("Unable to get Time Manager.");
         return false;
     }
 
     m_AttributeManager = m_CKContext->GetAttributeManager();
-    if (!m_AttributeManager)
-    {
-        CLogger::Get().Error("Unable to get Attribute Manager.");
+    if (!m_AttributeManager) {
+        Logger::Get().Error("Unable to get Attribute Manager.");
         return false;
     }
 
-    m_InputManager = (CKInputManager *)m_CKContext->GetManagerByGuid(INPUT_MANAGER_GUID);
-    if (!m_InputManager)
-    {
-        CLogger::Get().Error("Unable to get Input Manager.");
+    m_InputManager = (CKInputManager *) m_CKContext->GetManagerByGuid(INPUT_MANAGER_GUID);
+    if (!m_InputManager) {
+        Logger::Get().Error("Unable to get Input Manager.");
         return false;
     }
 
     return true;
 }
 
-bool CGamePlayer::SetupPaths()
-{
+bool GamePlayer::SetupPaths() {
     CKPathManager *pm = m_CKContext->GetPathManager();
-    if (!pm)
-    {
-        CLogger::Get().Error("Unable to get Path Manager.");
+    if (!pm) {
+        Logger::Get().Error("Unable to get Path Manager.");
         return false;
     }
 
@@ -895,54 +781,48 @@ bool CGamePlayer::SetupPaths()
     char dir[MAX_PATH];
     ::GetCurrentDirectoryA(MAX_PATH, dir);
 
-    if (!utils::DirectoryExists(m_Config.GetPath(eDataPath)))
-    {
-        CLogger::Get().Error("Data path is not found.");
+    if (!utils::DirectoryExists(m_Config.GetPath(eDataPath))) {
+        Logger::Get().Error("Data path is not found.");
         return false;
     }
     _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eDataPath));
     XString dataPath = path;
     pm->AddPath(DATA_PATH_IDX, dataPath);
-    CLogger::Get().Debug("Data path: %s", dataPath.CStr());
+    Logger::Get().Debug("Data path: %s", dataPath.CStr());
 
-    if (!utils::DirectoryExists(m_Config.GetPath(eSoundPath)))
-    {
-        CLogger::Get().Error("Sounds path is not found.");
+    if (!utils::DirectoryExists(m_Config.GetPath(eSoundPath))) {
+        Logger::Get().Error("Sounds path is not found.");
         return false;
     }
     _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eSoundPath));
     XString soundPath = path;
     pm->AddPath(SOUND_PATH_IDX, soundPath);
-    CLogger::Get().Debug("Sounds path: %s", soundPath.CStr());
+    Logger::Get().Debug("Sounds path: %s", soundPath.CStr());
 
-    if (!utils::DirectoryExists(m_Config.GetPath(eBitmapPath)))
-    {
-        CLogger::Get().Error("Bitmap path is not found.");
+    if (!utils::DirectoryExists(m_Config.GetPath(eBitmapPath))) {
+        Logger::Get().Error("Bitmap path is not found.");
         return false;
     }
     _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eBitmapPath));
     XString bitmapPath = path;
     pm->AddPath(BITMAP_PATH_IDX, bitmapPath);
-    CLogger::Get().Debug("Bitmap path: %s", bitmapPath.CStr());
+    Logger::Get().Debug("Bitmap path: %s", bitmapPath.CStr());
 
     return true;
 }
 
-void CGamePlayer::ResizeWindow()
-{
+void GamePlayer::ResizeWindow() {
     RECT rc = {0, 0, m_Config.width, m_Config.height};
     ::AdjustWindowRect(&rc, m_MainWindow.GetStyle(), FALSE);
-    m_MainWindow.SetPos(NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
+    m_MainWindow.SetPos(nullptr, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
     if (m_Config.childWindowRendering)
-        m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+        m_RenderWindow.SetPos(nullptr, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
 }
 
-int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
-{
+int GamePlayer::FindScreenMode(int width, int height, int bpp, int driver) {
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(driver);
-    if (!drDesc)
-    {
-        CLogger::Get().Error("Unable to find render driver %d.", driver);
+    if (!drDesc) {
+        Logger::Get().Error("Unable to find render driver %d.", driver);
         return false;
     }
 
@@ -955,25 +835,21 @@ int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
 #endif
 
     int refreshRate = 0;
-    for (int i = 0; i < dmCount; ++i)
-    {
+    for (int i = 0; i < dmCount; ++i) {
         if (dm[i].Width == width &&
             dm[i].Height == height &&
-            dm[i].Bpp == bpp)
-        {
+            dm[i].Bpp == bpp) {
             if (dm[i].RefreshRate > refreshRate)
                 refreshRate = dm[i].RefreshRate;
         }
     }
 
     int screenMode = -1;
-    for (int j = 0; j < dmCount; ++j)
-    {
+    for (int j = 0; j < dmCount; ++j) {
         if (dm[j].Width == width &&
             dm[j].Height == height &&
             dm[j].Bpp == bpp &&
-            dm[j].RefreshRate == refreshRate)
-        {
+            dm[j].RefreshRate == refreshRate) {
             screenMode = j;
             break;
         }
@@ -982,8 +858,7 @@ int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
     return screenMode;
 }
 
-bool CGamePlayer::GetDisplayMode(int &width, int &height, int &bpp, int driver, int screenMode)
-{
+bool GamePlayer::GetDisplayMode(int &width, int &height, int &bpp, int driver, int screenMode) {
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(driver);
     if (!drDesc)
         return false;
@@ -1004,45 +879,39 @@ bool CGamePlayer::GetDisplayMode(int &width, int &height, int &bpp, int driver, 
     return true;
 }
 
-void CGamePlayer::SetDefaultValuesForDriver()
-{
+void GamePlayer::SetDefaultValuesForDriver() {
     m_Config.width = PLAYER_DEFAULT_WIDTH;
     m_Config.height = PLAYER_DEFAULT_HEIGHT;
     m_Config.bpp = PLAYER_DEFAULT_BPP;
     m_Config.driver = 0;
 }
 
-bool CGamePlayer::IsRenderFullscreen() const
-{
+bool GamePlayer::IsRenderFullscreen() const {
     if (!m_RenderContext)
         return false;
     return m_RenderContext->IsFullScreen() == TRUE;
 }
 
-bool CGamePlayer::GoFullscreen()
-{
+bool GamePlayer::GoFullscreen() {
     if (!m_RenderContext || IsRenderFullscreen())
         return false;
 
     m_Config.fullscreen = true;
-    if (m_RenderContext->GoFullScreen(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver) != CK_OK)
-    {
+    if (m_RenderContext->GoFullScreen(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver) != CK_OK) {
         m_Config.fullscreen = false;
-        CLogger::Get().Debug("GoFullScreen Failed");
+        Logger::Get().Debug("GoFullScreen Failed");
         return false;
     }
 
     return true;
 }
 
-bool CGamePlayer::StopFullscreen()
-{
+bool GamePlayer::StopFullscreen() {
     if (!m_RenderContext || !IsRenderFullscreen())
         return false;
 
-    if (m_RenderContext->StopFullScreen() != CK_OK)
-    {
-        CLogger::Get().Debug("StopFullscreen Failed");
+    if (m_RenderContext->StopFullScreen() != CK_OK) {
+        Logger::Get().Debug("StopFullscreen Failed");
         return false;
     }
 
@@ -1050,33 +919,31 @@ bool CGamePlayer::StopFullscreen()
     return true;
 }
 
-bool CGamePlayer::RegisterMainWindowClass(HINSTANCE hInstance)
-{
+bool GamePlayer::RegisterMainWindowClass(HINSTANCE hInstance) {
     WNDCLASSEX mainWndClass;
     memset(&mainWndClass, 0, sizeof(WNDCLASSEX));
 
-    mainWndClass.lpfnWndProc = CGamePlayer::MainWndProc;
+    mainWndClass.lpfnWndProc = MainWndProc;
     mainWndClass.cbSize = sizeof(WNDCLASSEX);
     mainWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
     mainWndClass.cbClsExtra = 0;
     mainWndClass.cbWndExtra = 0;
     mainWndClass.hInstance = hInstance;
     mainWndClass.hIcon = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
-    mainWndClass.hCursor = ::LoadCursor(NULL, IDC_ARROW);
-    mainWndClass.hbrBackground = (HBRUSH)::GetStockObject(BLACK_BRUSH);
-    mainWndClass.lpszMenuName = NULL;
+    mainWndClass.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
+    mainWndClass.hbrBackground = (HBRUSH) ::GetStockObject(BLACK_BRUSH);
+    mainWndClass.lpszMenuName = nullptr;
     mainWndClass.lpszClassName = TEXT("Ballance");
     mainWndClass.hIconSm = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
 
     return ::RegisterClassEx(&mainWndClass) != 0;
 }
 
-bool CGamePlayer::RegisterRenderWindowClass(HINSTANCE hInstance)
-{
+bool GamePlayer::RegisterRenderWindowClass(HINSTANCE hInstance) {
     WNDCLASS renderWndClass;
     memset(&renderWndClass, 0, sizeof(WNDCLASS));
 
-    renderWndClass.lpfnWndProc = CGamePlayer::MainWndProc;
+    renderWndClass.lpfnWndProc = MainWndProc;
     renderWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
     renderWndClass.hInstance = hInstance;
     renderWndClass.lpszClassName = TEXT("Ballance Render");
@@ -1084,38 +951,31 @@ bool CGamePlayer::RegisterRenderWindowClass(HINSTANCE hInstance)
     return ::RegisterClass(&renderWndClass) != 0;
 }
 
-bool CGamePlayer::ClipCursor()
-{
-    if (m_Config.clipCursor)
-    {
+bool GamePlayer::ClipCursor() {
+    if (m_Config.clipCursor) {
         RECT rect;
         m_MainWindow.GetClientRect(&rect);
         m_MainWindow.ClientToScreen(&rect);
         return ::ClipCursor(&rect) == TRUE;
     }
-    return ::ClipCursor(NULL) == TRUE;
+    return ::ClipCursor(nullptr) == TRUE;
 }
 
-bool CGamePlayer::OpenSetupDialog()
-{
-    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, CGamePlayer::FullscreenSetupDlgProc, 0) == IDOK;
+bool GamePlayer::OpenSetupDialog() {
+    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), nullptr, FullscreenSetupDlgProc, 0) == IDOK;
 }
 
-bool CGamePlayer::OpenAboutDialog()
-{
-    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT), NULL, CGamePlayer::AboutDlgProc, 0) == IDOK;
+bool GamePlayer::OpenAboutDialog() {
+    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT), nullptr, AboutDlgProc, 0) == IDOK;
 }
 
-void CGamePlayer::OnDestroy()
-{
-    ::ClipCursor(NULL);
+void GamePlayer::OnDestroy() {
+    ::ClipCursor(nullptr);
     ::PostQuitMessage(0);
 }
 
-void CGamePlayer::OnMove()
-{
-    if (!m_Config.fullscreen)
-    {
+void GamePlayer::OnMove() {
+    if (!m_Config.fullscreen) {
         RECT rect;
         m_MainWindow.GetWindowRect(&rect);
         m_Config.posX = rect.left;
@@ -1123,24 +983,20 @@ void CGamePlayer::OnMove()
     }
 }
 
-void CGamePlayer::OnSize()
-{
+void GamePlayer::OnSize() {
     ClipCursor();
 }
 
-void CGamePlayer::OnPaint()
-{
+void GamePlayer::OnPaint() {
     if (m_RenderContext && !m_Config.fullscreen)
         Render();
 }
 
-void CGamePlayer::OnClose()
-{
+void GamePlayer::OnClose() {
     m_MainWindow.Destroy();
 }
 
-void CGamePlayer::OnActivateApp(bool active)
-{
+void GamePlayer::OnActivateApp(bool active) {
     static bool wasPlaying = false;
     static bool wasFullscreen = false;
     static bool firstDeActivate = true;
@@ -1148,10 +1004,8 @@ void CGamePlayer::OnActivateApp(bool active)
     if (m_State == eInitial)
         return;
 
-    if (!active)
-    {
-        if (m_CKContext)
-        {
+    if (!active) {
+        if (m_CKContext) {
             if (firstDeActivate)
                 wasPlaying = m_CKContext->IsPlaying() == TRUE;
 
@@ -1160,10 +1014,9 @@ void CGamePlayer::OnActivateApp(bool active)
             else if (!m_Config.alwaysHandleInput)
                 m_InputManager->Pause(TRUE);
 
-            ::ClipCursor(NULL);
+            ::ClipCursor(nullptr);
 
-            if (m_RenderContext && IsRenderFullscreen())
-            {
+            if (m_RenderContext && IsRenderFullscreen()) {
                 if (firstDeActivate)
                     wasFullscreen = true;
 
@@ -1172,17 +1025,13 @@ void CGamePlayer::OnActivateApp(bool active)
                 Pause();
                 if (wasPlaying && !m_Config.pauseOnDeactivated)
                     Play();
-            }
-            else if (firstDeActivate)
-            {
+            } else if (firstDeActivate) {
                 wasFullscreen = false;
             }
         }
         firstDeActivate = false;
         m_State = eFocusLost;
-    }
-    else
-    {
+    } else {
         if (wasFullscreen && !firstDeActivate)
             OnGoFullscreen();
 
@@ -1199,44 +1048,38 @@ void CGamePlayer::OnActivateApp(bool active)
     }
 }
 
-void CGamePlayer::OnSetCursor()
-{
+void GamePlayer::OnSetCursor() {
     if (m_State == ePaused)
-        ::SetCursor(::LoadCursor(NULL, IDC_ARROW));
+        ::SetCursor(::LoadCursor(nullptr, IDC_ARROW));
 }
 
-void CGamePlayer::OnGetMinMaxInfo(LPMINMAXINFO lpmmi)
-{
-    if (lpmmi)
-    {
+void GamePlayer::OnGetMinMaxInfo(LPMINMAXINFO lpmmi) {
+    if (lpmmi) {
         lpmmi->ptMinTrackSize.x = PLAYER_DEFAULT_WIDTH;
         lpmmi->ptMinTrackSize.y = PLAYER_DEFAULT_HEIGHT;
     }
 }
 
-int CGamePlayer::OnSysKeyDown(UINT uKey)
-{
+int GamePlayer::OnSysKeyDown(UINT uKey) {
     // Manage system key (ALT + KEY)
-    switch (uKey)
-    {
-    case VK_RETURN:
-        // ALT + ENTER -> SwitchFullscreen
-        OnSwitchFullscreen();
-        break;
+    switch (uKey) {
+        case VK_RETURN:
+            // ALT + ENTER -> SwitchFullscreen
+            OnSwitchFullscreen();
+            break;
 
-    case VK_F4:
-        // ALT + F4 -> Quit the application
-        m_MainWindow.PostMsg(TT_MSG_EXIT_TO_SYS, 0, 0);
-        return 1;
+        case VK_F4:
+            // ALT + F4 -> Quit the application
+            m_MainWindow.PostMsg(TT_MSG_EXIT_TO_SYS, 0, 0);
+            return 1;
 
-    default:
-        break;
+        default:
+            break;
     }
     return 0;
 }
 
-void CGamePlayer::OnClick(bool dblClk)
-{
+void GamePlayer::OnClick(bool dblClk) {
     if (!m_RenderManager)
         return;
 
@@ -1250,16 +1093,15 @@ void CGamePlayer::OnClick(bool dblClk)
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
 #if CKVERSION == 0x13022002
-    CKPOINT ckpt = {(int)pt.x, (int)pt.y};
+    CKPOINT ckpt = {(int) pt.x, (int) pt.y};
     CKPICKRESULT res;
     CKObject *obj = m_RenderContext->Pick(ckpt, &res, FALSE);
     if (obj && CKIsChildClassOf(obj, CKCID_BEOBJECT))
-        m_MessageManager->SendMessageSingle(msgType, (CKBeObject *)obj, NULL);
-    if (res.Sprite)
-    {
+        m_MessageManager->SendMessageSingle(msgType, (CKBeObject *) obj, nullptr);
+    if (res.Sprite) {
         CKObject *sprite = m_CKContext->GetObject(res.Sprite);
         if (sprite)
-            m_MessageManager->SendMessageSingle(msgType, (CKBeObject *)sprite, NULL);
+            m_MessageManager->SendMessageSingle(msgType, (CKBeObject *) sprite, nullptr);
     }
 #else
     VxIntersectionDesc desc;
@@ -1271,33 +1113,28 @@ void CGamePlayer::OnClick(bool dblClk)
 #endif
 }
 
-int CGamePlayer::OnCommand(UINT id, UINT code)
-{
-    switch (id)
-    {
-    case IDM_APP_ABOUT:
-        Pause();
-        OpenAboutDialog();
-        Play();
-        break;
+int GamePlayer::OnCommand(UINT id, UINT code) {
+    switch (id) {
+        case IDM_APP_ABOUT:
+            Pause();
+            OpenAboutDialog();
+            Play();
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
     return 0;
 }
 
-void CGamePlayer::OnExceptionCMO()
-{
-    CLogger::Get().Error("Exception in the CMO - Abort");
+void GamePlayer::OnExceptionCMO() {
+    Logger::Get().Error("Exception in the CMO - Abort");
     m_MainWindow.PostMsg(TT_MSG_EXIT_TO_SYS, 0, 0);
 }
 
-void CGamePlayer::OnReturn()
-{
+void GamePlayer::OnReturn() {
     XString filename = m_GameInfo->fileName;
-    if (!Load(filename.CStr()))
-    {
+    if (!Load(filename.CStr())) {
         OnClose();
         return;
     }
@@ -1305,13 +1142,11 @@ void CGamePlayer::OnReturn()
     Play();
 }
 
-bool CGamePlayer::OnLoadCMO(const char *filename)
-{
-    return Load((const char *)filename);
+bool GamePlayer::OnLoadCMO(const char *filename) {
+    return Load((const char *) filename);
 }
 
-void CGamePlayer::OnExitToSystem()
-{
+void GamePlayer::OnExitToSystem() {
     bool fullscreen = m_Config.fullscreen;
     OnStopFullscreen();
     m_Config.fullscreen = fullscreen;
@@ -1319,16 +1154,12 @@ void CGamePlayer::OnExitToSystem()
     m_MainWindow.PostMsg(WM_CLOSE, 0, 0);
 }
 
-void CGamePlayer::OnExitToTitle()
-{
-}
+void GamePlayer::OnExitToTitle() {}
 
-int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
-{
+int GamePlayer::OnChangeScreenMode(int driver, int screenMode) {
     int width, height, bpp;
-    if (!GetDisplayMode(width, height, bpp, driver, screenMode))
-    {
-        CLogger::Get().Error("Failed to change screen mode.");
+    if (!GetDisplayMode(width, height, bpp, driver, screenMode)) {
+        Logger::Get().Error("Failed to change screen mode.");
         return 0;
     }
 
@@ -1344,7 +1175,7 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
     m_Config.height = height;
     m_Config.bpp = bpp;
 
-    InterfaceManager *im = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
+    InterfaceManager *im = (InterfaceManager *) m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
     im->SetDriver(m_Config.driver);
     im->SetScreenMode(m_Config.screenMode);
 
@@ -1357,22 +1188,19 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
     return 1;
 }
 
-void CGamePlayer::OnGoFullscreen()
-{
+void GamePlayer::OnGoFullscreen() {
     Pause();
 
-    ::ClipCursor(NULL);
+    ::ClipCursor(nullptr);
 
-    if (GoFullscreen())
-    {
+    if (GoFullscreen()) {
         m_MainWindow.SetStyle(WS_POPUP);
-        m_MainWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        m_MainWindow.SetPos(nullptr, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
         m_MainWindow.Show();
         m_MainWindow.SetFocus();
 
-        if (m_Config.childWindowRendering)
-        {
+        if (m_Config.childWindowRendering) {
             m_RenderWindow.Show();
             m_RenderWindow.SetFocus();
         }
@@ -1385,12 +1213,10 @@ void CGamePlayer::OnGoFullscreen()
     Play();
 }
 
-void CGamePlayer::OnStopFullscreen()
-{
+void GamePlayer::OnStopFullscreen() {
     Pause();
 
-    if (StopFullscreen())
-    {
+    if (StopFullscreen()) {
         LONG style = (m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
         RECT rc = {0, 0, m_Config.width, m_Config.height};
         ::AdjustWindowRect(&rc, style, FALSE);
@@ -1401,9 +1227,8 @@ void CGamePlayer::OnStopFullscreen()
         m_MainWindow.Show();
         m_MainWindow.SetFocus();
 
-        if (m_Config.childWindowRendering)
-        {
-            m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+        if (m_Config.childWindowRendering) {
+            m_RenderWindow.SetPos(nullptr, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
             m_RenderWindow.SetFocus();
         }
 
@@ -1417,8 +1242,7 @@ void CGamePlayer::OnStopFullscreen()
     Play();
 }
 
-void CGamePlayer::OnSwitchFullscreen()
-{
+void GamePlayer::OnSwitchFullscreen() {
     if (m_State == eInitial)
         return;
 
@@ -1428,21 +1252,19 @@ void CGamePlayer::OnSwitchFullscreen()
         OnStopFullscreen();
 }
 
-bool CGamePlayer::FillDriverList(HWND hWnd)
-{
+bool GamePlayer::FillDriverList(HWND hWnd) {
     const int drCount = m_RenderManager->GetRenderDriverCount();
     if (drCount == 0)
         return false;
 
-    for (int i = 0; i < drCount; ++i)
-    {
+    for (int i = 0; i < drCount; ++i) {
         VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(i);
 #if CKVERSION == 0x13022002
         const char *driverName = drDesc->DriverName;
 #else
         const char *driverName = drDesc->DriverName.CStr();
 #endif
-        int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_ADDSTRING, 0, (LPARAM)driverName);
+        int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_ADDSTRING, 0, (LPARAM) driverName);
         ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETITEMDATA, index, i);
         if (i == m_Config.driver)
             ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETCURSEL, index, 0);
@@ -1451,8 +1273,7 @@ bool CGamePlayer::FillDriverList(HWND hWnd)
     return true;
 }
 
-bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
-{
+bool GamePlayer::FillScreenModeList(HWND hWnd, int driver) {
     char buffer[256];
 
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(driver);
@@ -1478,19 +1299,15 @@ bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
 #endif
 
     int i = 0;
-    while (i < dmCount)
-    {
+    while (i < dmCount) {
         int width = dm[i].Width;
         int height = dm[i].Height;
-        while (i < dmCount && dm[i].Width == width && dm[i].Height == height)
-        {
-            if (dm[i].Bpp > 8)
-            {
+        while (i < dmCount && dm[i].Width == width && dm[i].Height == height) {
+            if (dm[i].Bpp > 8) {
                 sprintf(buffer, "%d x %d x %d x %dHz", dm[i].Width, dm[i].Height, dm[i].Bpp, dm[i].RefreshRate);
-                int index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_ADDSTRING, 0, (LPARAM)buffer);
+                int index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_ADDSTRING, 0, (LPARAM) buffer);
                 ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETITEMDATA, index, i);
-                if (i == m_Config.screenMode)
-                {
+                if (i == m_Config.screenMode) {
                     ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETCURSEL, index, 0);
                     ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETTOPINDEX, index, 0);
                 }
@@ -1502,187 +1319,171 @@ bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
     return true;
 }
 
-LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    CGamePlayer &player = CGamePlayer::GetInstance();
+LRESULT GamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    GamePlayer &player = GamePlayer::GetInstance();
 
-    switch (uMsg)
-    {
-    case WM_DESTROY:
-        player.OnDestroy();
-        return 0;
+    switch (uMsg) {
+        case WM_DESTROY:
+            player.OnDestroy();
+            return 0;
 
-    case WM_MOVE:
-        player.OnMove();
-        break;
+        case WM_MOVE:
+            player.OnMove();
+            break;
 
-    case WM_SIZE:
-        player.OnSize();
-        break;
+        case WM_SIZE:
+            player.OnSize();
+            break;
 
-    case WM_PAINT:
-        player.OnPaint();
-        break;
+        case WM_PAINT:
+            player.OnPaint();
+            break;
 
-    case WM_CLOSE:
-        player.OnClose();
-        return 0;
+        case WM_CLOSE:
+            player.OnClose();
+            return 0;
 
-    case WM_ACTIVATEAPP:
-        player.OnActivateApp(wParam == WA_ACTIVE);
-        break;
+        case WM_ACTIVATEAPP:
+            player.OnActivateApp(wParam == WA_ACTIVE);
+            break;
 
-    case WM_SETCURSOR:
-        player.OnSetCursor();
-        break;
+        case WM_SETCURSOR:
+            player.OnSetCursor();
+            break;
 
-    case WM_GETMINMAXINFO:
-        player.OnGetMinMaxInfo((LPMINMAXINFO)lParam);
-        break;
+        case WM_GETMINMAXINFO:
+            player.OnGetMinMaxInfo((LPMINMAXINFO) lParam);
+            break;
 
-    case WM_SYSKEYDOWN:
-        return player.OnSysKeyDown(wParam);
+        case WM_SYSKEYDOWN:
+            return player.OnSysKeyDown(wParam);
 
-    case WM_LBUTTONDOWN:
-        player.OnClick();
-        break;
+        case WM_LBUTTONDOWN:
+            player.OnClick();
+            break;
 
-    case WM_LBUTTONDBLCLK:
-        player.OnClick(true);
-        break;
+        case WM_LBUTTONDBLCLK:
+            player.OnClick(true);
+            break;
 
-    case WM_COMMAND:
-        return player.OnCommand(LOWORD(wParam), HIWORD(wParam));
+        case WM_COMMAND:
+            return player.OnCommand(LOWORD(wParam), HIWORD(wParam));
 
-    case TT_MSG_NO_GAMEINFO:
-        player.OnExceptionCMO();
-        break;
+        case TT_MSG_NO_GAMEINFO:
+            player.OnExceptionCMO();
+            break;
 
-    case TT_MSG_CMO_RESTART:
-        player.OnReturn();
-        break;
+        case TT_MSG_CMO_RESTART:
+            player.OnReturn();
+            break;
 
-    case TT_MSG_CMO_LOAD:
-        player.OnLoadCMO((const char *)wParam);
-        break;
+        case TT_MSG_CMO_LOAD:
+            player.OnLoadCMO((const char *) wParam);
+            break;
 
-    case TT_MSG_EXIT_TO_SYS:
-        player.OnExitToSystem();
-        break;
+        case TT_MSG_EXIT_TO_SYS:
+            player.OnExitToSystem();
+            break;
 
-    case TT_MSG_EXIT_TO_TITLE:
-        player.OnExitToTitle();
-        break;
+        case TT_MSG_EXIT_TO_TITLE:
+            player.OnExitToTitle();
+            break;
 
-    case TT_MSG_SCREEN_MODE_CHG:
-        return player.OnChangeScreenMode((int)lParam, (int)wParam);
+        case TT_MSG_SCREEN_MODE_CHG:
+            return player.OnChangeScreenMode((int) lParam, (int) wParam);
 
-    case TT_MSG_GO_FULLSCREEN:
-        player.OnGoFullscreen();
-        break;
+        case TT_MSG_GO_FULLSCREEN:
+            player.OnGoFullscreen();
+            break;
 
-    case TT_MSG_STOP_FULLSCREEN:
-        player.OnStopFullscreen();
-        return 1;
+        case TT_MSG_STOP_FULLSCREEN:
+            player.OnStopFullscreen();
+            return 1;
 
-    default:
-        break;
+        default:
+            break;
     }
 
     return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
+BOOL GamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     WORD wNotifyCode = HIWORD(wParam);
     int wID = LOWORD(wParam);
 
-    CGamePlayer &player = CGamePlayer::GetInstance();
-    CGameConfig &config = player.GetConfig();
+    GamePlayer &player = GamePlayer::GetInstance();
+    GameConfig &config = player.GetConfig();
 
-    switch (uMsg)
-    {
-    case WM_INITDIALOG:
-    {
-        if (!player.FillDriverList(hWnd))
-            ::EndDialog(hWnd, IDCANCEL);
-        if (!player.FillScreenModeList(hWnd, config.driver))
-            ::EndDialog(hWnd, IDCANCEL);
-        return TRUE;
-    }
-
-    case WM_COMMAND:
-    {
-        if (wNotifyCode == LBN_SELCHANGE && wID == IDC_LB_DRIVER)
-        {
-            int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
-            int driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
-
-            ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_RESETCONTENT, 0, 0);
-
-            player.FillScreenModeList(hWnd, driver);
-
+    switch (uMsg) {
+        case WM_INITDIALOG: {
+            if (!player.FillDriverList(hWnd))
+                ::EndDialog(hWnd, IDCANCEL);
+            if (!player.FillScreenModeList(hWnd, config.driver))
+                ::EndDialog(hWnd, IDCANCEL);
             return TRUE;
         }
-        else if (wID == IDOK || wID == IDCANCEL)
-        {
-            if (wID == IDOK)
-            {
+
+        case WM_COMMAND: {
+            if (wNotifyCode == LBN_SELCHANGE && wID == IDC_LB_DRIVER) {
                 int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
-                if (index == LB_ERR)
-                {
-                    ::EndDialog(hWnd, IDCANCEL);
-                    return TRUE;
-                }
-                config.driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
+                int driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
 
-                index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETCURSEL, 0, 0);
-                if (index == LB_ERR)
-                {
-                    ::EndDialog(hWnd, IDCANCEL);
-                    return TRUE;
-                }
-                config.screenMode = SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0);
+                ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_RESETCONTENT, 0, 0);
 
-                VxDriverDesc *drDesc = player.GetRenderManager()->GetRenderDriverDescription(config.driver);
-                if (drDesc)
-                {
-                    const VxDisplayMode &dm = drDesc->DisplayModes[config.screenMode];
-                    config.width = dm.Width;
-                    config.height = dm.Height;
-                    config.bpp = dm.Bpp;
+                player.FillScreenModeList(hWnd, driver);
+
+                return TRUE;
+            } else if (wID == IDOK || wID == IDCANCEL) {
+                if (wID == IDOK) {
+                    int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
+                    if (index == LB_ERR) {
+                        ::EndDialog(hWnd, IDCANCEL);
+                        return TRUE;
+                    }
+                    config.driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
+
+                    index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETCURSEL, 0, 0);
+                    if (index == LB_ERR) {
+                        ::EndDialog(hWnd, IDCANCEL);
+                        return TRUE;
+                    }
+                    config.screenMode = SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0);
+
+                    VxDriverDesc *drDesc = player.GetRenderManager()->GetRenderDriverDescription(config.driver);
+                    if (drDesc) {
+                        const VxDisplayMode &dm = drDesc->DisplayModes[config.screenMode];
+                        config.width = dm.Width;
+                        config.height = dm.Height;
+                        config.bpp = dm.Bpp;
+                    }
                 }
+
+                ::EndDialog(hWnd, wID);
+                return TRUE;
             }
-
-            ::EndDialog(hWnd, wID);
-            return TRUE;
         }
-    }
-    break;
-
-    default:
         break;
+
+        default:
+            break;
     }
     return FALSE;
 }
 
-BOOL CGamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uMsg)
-    {
-    case WM_INITDIALOG:
-        return TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            ::EndDialog(hWnd, LOWORD(wParam));
+BOOL GamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    switch (uMsg) {
+        case WM_INITDIALOG:
             return TRUE;
-        }
-        break;
 
-    default:
-        break;
+        case WM_COMMAND:
+            if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
+                ::EndDialog(hWnd, LOWORD(wParam));
+                return TRUE;
+            }
+            break;
+
+        default:
+            break;
     }
 
     return FALSE;

@@ -9,12 +9,18 @@
 #undef WIN32_LEAN_AND_MEAN
 #endif
 
-class CSplash
-{
+class Splash {
 public:
-    CSplash();
-    explicit CSplash(HINSTANCE hInstance);
-    ~CSplash();
+    Splash();
+    explicit Splash(HINSTANCE hInstance);
+
+    Splash(const Splash &) = delete;
+    Splash(Splash &&) = delete;
+
+    ~Splash();
+
+    Splash &operator=(const Splash &) = delete;
+    Splash &operator=(Splash &&) = delete;
 
     bool Show();
     bool LoadBMP(LPCSTR lpFileName);
@@ -32,9 +38,6 @@ public:
     HPALETTE GetPalette() const;
 
 private:
-    CSplash(const CSplash &);
-    CSplash &operator=(const CSplash &);
-
     BYTE *m_Data;
     HWND m_hWnd;
     HINSTANCE m_hInstance;

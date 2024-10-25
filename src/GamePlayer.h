@@ -6,17 +6,22 @@
 #include "Window.h"
 #include "GameConfig.h"
 
-class CGameInfo;
+class GameInfo;
 
-class CGamePlayer
-{
+class GamePlayer {
 public:
-    static CGamePlayer &GetInstance();
+    static GamePlayer &GetInstance();
 
-    ~CGamePlayer();
+    GamePlayer(const GamePlayer &) = delete;
+    GamePlayer(GamePlayer &&) = delete;
 
-    bool Init(HINSTANCE hInstance, const CGameConfig &config);
-    bool Load(const char *filename = NULL);
+    ~GamePlayer();
+
+    GamePlayer &operator=(const GamePlayer &) = delete;
+    GamePlayer &operator=(GamePlayer &&) = delete;
+
+    bool Init(HINSTANCE hInstance, const GameConfig &config);
+    bool Load(const char *filename = nullptr);
 
     void Run();
     bool Update();
@@ -26,24 +31,20 @@ public:
     void Pause();
     void Reset();
 
-    CKContext *GetCKContext()
-    {
+    CKContext *GetCKContext() {
         return m_CKContext;
     }
 
-    CKRenderContext *GetRenderContext()
-    {
+    CKRenderContext *GetRenderContext() {
         return m_RenderContext;
     }
 
-    CKRenderManager *GetRenderManager()
-    {
+    CKRenderManager *GetRenderManager() {
         return m_RenderManager;
     }
 
 private:
-    enum PlayerState
-    {
+    enum PlayerState {
         eInitial = 0,
         eReady,
         ePlaying,
@@ -51,12 +52,9 @@ private:
         eFocusLost,
     };
 
-    CGamePlayer();
-    CGamePlayer(const CGamePlayer &);
-    CGamePlayer &operator=(const CGamePlayer &);
+    GamePlayer();
 
-    CGameConfig &GetConfig()
-    {
+    GameConfig &GetConfig() {
         return m_Config;
     }
 
@@ -143,8 +141,8 @@ private:
     CKMessageType m_MsgClick;
     CKMessageType m_MsgDoubleClick;
 
-    CGameInfo *m_GameInfo;
-    CGameConfig m_Config;
+    GameInfo *m_GameInfo;
+    GameConfig m_Config;
 };
 
-#endif /* PLAYER_GAMEPLAYER_H */
+#endif // PLAYER_GAMEPLAYER_H

@@ -1,6 +1,6 @@
 #include "GameConfig.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -11,68 +11,66 @@
 
 #include "Utils.h"
 
-void AddCommandLineOptions(cxxopts::Options &options)
-{
+void AddCommandLineOptions(cxxopts::Options &options) {
     options.add_options()
-        ("verbose", "Enable verbose mode")
-        ("m,manual-setup", "Enable manual setup")
-        ("load-required-managers", "Load required managers only")
-        ("load-required-building-blocks", "Load required building blocks only")
-        ("load-required-plugins", "Load required plugins only")
-        ("video-driver", "Set video driver", cxxopts::value<long>())
-        ("bpp", "Set bits per pixel", cxxopts::value<long>())
-        ("width", "Set window width", cxxopts::value<long>())
-        ("height", "Set window height", cxxopts::value<long>())
-        ("fullscreen", "Enable fullscreen mode")
-        ("disable-perspective-correction", "Disable perspective correction")
-        ("force-linear-fog", "Force linear fog")
-        ("force-software", "Force software rendering")
-        ("disable-filter", "Disable filter")
-        ("ensure-vertex-shader", "Ensure vertex shader")
-        ("use-index-buffers", "Use index buffers")
-        ("disable-dithering", "Disable dithering")
-        ("antialias", "Set antialias level", cxxopts::value<long>())
-        ("disable-mipmap", "Disable mipmap")
-        ("disable-specular", "Disable specular")
-        ("enable-screen-dump", "Enable screen dump")
-        ("enable-debug-mode", "Enable debug mode")
-        ("vertex-cache", "Set vertex cache size", cxxopts::value<long>())
-        ("disable-texture-cache-management", "Disable texture cache management")
-        ("disable-sort-transparent-objects", "Disable sort transparent objects")
-        ("texture-video-format", "Set texture video format", cxxopts::value<std::string>())
-        ("sprite-video-format", "Set sprite video format", cxxopts::value<std::string>())
-        ("child-window-rendering", "Enable child window rendering")
-        ("borderless", "Enable borderless mode")
-        ("clip-cursor", "Enable clip cursor")
-        ("always-handle-input", "Always handle input")
-        ("pause-on-deactivated", "Pause on deactivated")
-        ("x,position-x", "Set window position x", cxxopts::value<long>())
-        ("y,position-y", "Set window position y", cxxopts::value<long>())
-        ("l,lang", "Set language id", cxxopts::value<long>())
-        ("skip-opening", "Skip opening")
-        ("disable-hotfix", "Disable hotfix")
-        ("unlock-framerate", "Unlock framerate")
-        ("unlock-widescreen", "Unlock widescreen")
-        ("unlock-high-resolution", "Unlock high resolution")
-        ("debug", "Enable debug mode")
-        ("rookie", "Enable rookie mode")
-        ("config", "Set config file path", cxxopts::value<std::string>())
-        ("log", "Set log file path", cxxopts::value<std::string>())
-        ("cmo", "Set cmo file path", cxxopts::value<std::string>())
-        ("root-path", "Set root path", cxxopts::value<std::string>())
-        ("plugin-path", "Set plugin path", cxxopts::value<std::string>())
-        ("render-engine-path", "Set render engine path", cxxopts::value<std::string>())
-        ("manager-path", "Set manager path", cxxopts::value<std::string>())
-        ("building-block-path", "Set building block path", cxxopts::value<std::string>())
-        ("sound-path", "Set sound path", cxxopts::value<std::string>())
-        ("bitmap-path", "Set bitmap path", cxxopts::value<std::string>())
-        ("data-path", "Set data path", cxxopts::value<std::string>())
-        ("v,version", "Print version")
-        ("h,help", "Print usage");
+            ("verbose", "Enable verbose mode")
+            ("m,manual-setup", "Enable manual setup")
+            ("load-required-managers", "Load required managers only")
+            ("load-required-building-blocks", "Load required building blocks only")
+            ("load-required-plugins", "Load required plugins only")
+            ("video-driver", "Set video driver", cxxopts::value<long>())
+            ("bpp", "Set bits per pixel", cxxopts::value<long>())
+            ("width", "Set window width", cxxopts::value<long>())
+            ("height", "Set window height", cxxopts::value<long>())
+            ("fullscreen", "Enable fullscreen mode")
+            ("disable-perspective-correction", "Disable perspective correction")
+            ("force-linear-fog", "Force linear fog")
+            ("force-software", "Force software rendering")
+            ("disable-filter", "Disable filter")
+            ("ensure-vertex-shader", "Ensure vertex shader")
+            ("use-index-buffers", "Use index buffers")
+            ("disable-dithering", "Disable dithering")
+            ("antialias", "Set antialias level", cxxopts::value<long>())
+            ("disable-mipmap", "Disable mipmap")
+            ("disable-specular", "Disable specular")
+            ("enable-screen-dump", "Enable screen dump")
+            ("enable-debug-mode", "Enable debug mode")
+            ("vertex-cache", "Set vertex cache size", cxxopts::value<long>())
+            ("disable-texture-cache-management", "Disable texture cache management")
+            ("disable-sort-transparent-objects", "Disable sort transparent objects")
+            ("texture-video-format", "Set texture video format", cxxopts::value<std::string>())
+            ("sprite-video-format", "Set sprite video format", cxxopts::value<std::string>())
+            ("child-window-rendering", "Enable child window rendering")
+            ("borderless", "Enable borderless mode")
+            ("clip-cursor", "Enable clip cursor")
+            ("always-handle-input", "Always handle input")
+            ("pause-on-deactivated", "Pause on deactivated")
+            ("x,position-x", "Set window position x", cxxopts::value<long>())
+            ("y,position-y", "Set window position y", cxxopts::value<long>())
+            ("l,lang", "Set language id", cxxopts::value<long>())
+            ("skip-opening", "Skip opening")
+            ("disable-hotfix", "Disable hotfix")
+            ("unlock-framerate", "Unlock framerate")
+            ("unlock-widescreen", "Unlock widescreen")
+            ("unlock-high-resolution", "Unlock high resolution")
+            ("debug", "Enable debug mode")
+            ("rookie", "Enable rookie mode")
+            ("config", "Set config file path", cxxopts::value<std::string>())
+            ("log", "Set log file path", cxxopts::value<std::string>())
+            ("cmo", "Set cmo file path", cxxopts::value<std::string>())
+            ("root-path", "Set root path", cxxopts::value<std::string>())
+            ("plugin-path", "Set plugin path", cxxopts::value<std::string>())
+            ("render-engine-path", "Set render engine path", cxxopts::value<std::string>())
+            ("manager-path", "Set manager path", cxxopts::value<std::string>())
+            ("building-block-path", "Set building block path", cxxopts::value<std::string>())
+            ("sound-path", "Set sound path", cxxopts::value<std::string>())
+            ("bitmap-path", "Set bitmap path", cxxopts::value<std::string>())
+            ("data-path", "Set data path", cxxopts::value<std::string>())
+            ("v,version", "Print version")
+            ("h,help", "Print usage");
 }
 
-void LoadConfigsFromCommandLine(CGameConfig &config, const cxxopts::ParseResult &result)
-{
+void LoadConfigsFromCommandLine(GameConfig &config, const cxxopts::ParseResult &result) {
     if (result.contains("verbose"))
         config.verbose = result["verbose"].as<bool>();
     if (result.contains("manual-setup"))
@@ -163,8 +161,7 @@ void LoadConfigsFromCommandLine(CGameConfig &config, const cxxopts::ParseResult 
         config.rookie = result["rookie"].as<bool>();
 }
 
-void LoadPathsFromCommandLine(CGameConfig &config, const cxxopts::ParseResult &result)
-{
+void LoadPathsFromCommandLine(GameConfig &config, const cxxopts::ParseResult &result) {
     if (result.contains("config"))
         config.SetPath(eConfigPath, result["config"].as<std::string>().c_str());
     if (result.contains("log"))
@@ -189,35 +186,31 @@ void LoadPathsFromCommandLine(CGameConfig &config, const cxxopts::ParseResult &r
         config.SetPath(eDataPath, result["data-path"].as<std::string>().c_str());
 }
 
-static bool IniGetString(const char *section, const char *name, char *str, int size, const char *filename)
-{
+static bool IniGetString(const char *section, const char *name, char *str, int size, const char *filename) {
     return ::GetPrivateProfileStringA(section, name, "", str, size, filename) != 0;
 }
 
-static bool IniGetInteger(const char *section, const char *name, int &value, const char *filename)
-{
+static bool IniGetInteger(const char *section, const char *name, int &value, const char *filename) {
     char buf[512];
     ::GetPrivateProfileStringA(section, name, "", buf, 512, filename);
     if (strcmp(buf, "") == 0)
         return false;
-    int val = strtol(buf, NULL, 10);
+    const int val = strtol(buf, nullptr, 10);
     if (val == 0 && strcmp(buf, "0") != 0)
         return false;
     value = val;
     return true;
 }
 
-static bool IniGetBoolean(const char *section, const char *name, bool &value, const char *filename)
-{
-    UINT val = ::GetPrivateProfileIntA(section, name, -1, filename);
+static bool IniGetBoolean(const char *section, const char *name, bool &value, const char *filename) {
+    const UINT val = ::GetPrivateProfileIntA(section, name, -1, filename);
     if (val == -1)
         return false;
     value = (val == 1);
     return true;
 }
 
-static bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT &value, const char *filename)
-{
+static bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT &value, const char *filename) {
     char buf[16];
     ::GetPrivateProfileStringA(section, name, "", buf, 16, filename);
     if (strcmp(buf, "") == 0)
@@ -227,31 +220,26 @@ static bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFOR
     return true;
 }
 
-static bool IniSetString(const char *section, const char *name, const char *str, const char *filename)
-{
+static bool IniSetString(const char *section, const char *name, const char *str, const char *filename) {
     return ::WritePrivateProfileStringA(section, name, str, filename) != 0;
 }
 
-static bool IniSetInteger(const char *section, const char *name, int value, const char *filename)
-{
+static bool IniSetInteger(const char *section, const char *name, int value, const char *filename) {
     char buf[64];
     sprintf(buf, "%d", value);
     return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
 }
 
-static bool IniSetBoolean(const char *section, const char *name, bool value, const char *filename)
-{
+static bool IniSetBoolean(const char *section, const char *name, bool value, const char *filename) {
     const char *buf = (value) ? "1" : "0";
     return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
 }
 
-static bool IniSetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT value, const char *filename)
-{
+static bool IniSetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT value, const char *filename) {
     return ::WritePrivateProfileStringA(section, name, utils::PixelFormat2String(value), filename) != 0;
 }
 
-CGameConfig::CGameConfig()
-{
+GameConfig::GameConfig() {
     logMode = eLogOverwrite;
     verbose = false;
     manualSetup = false;
@@ -302,13 +290,12 @@ CGameConfig::CGameConfig()
     rookie = false;
 }
 
-CGameConfig &CGameConfig::operator=(const CGameConfig &config)
-{
+GameConfig &GameConfig::operator=(const GameConfig &config) {
     if (this == &config)
         return *this;
 
     verbose = config.verbose;
-    manualSetup =  config.manualSetup;
+    manualSetup = config.manualSetup;
     loadAllManagers = config.loadAllManagers;
     loadAllBuildingBlocks = config.loadAllPlugins;
     loadAllPlugins = config.loadAllPlugins;
@@ -362,42 +349,36 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     return *this;
 }
 
-void CGameConfig::SetPath(PathCategory category, const char *path)
-{
+void GameConfig::SetPath(PathCategory category, const char *path) {
     if (category < 0 || category >= ePathCategoryCount || !path)
         return;
     m_Paths[category] = path;
 }
 
-const char *CGameConfig::GetPath(PathCategory category) const
-{
+const char *GameConfig::GetPath(PathCategory category) const {
     if (category < 0 || category >= ePathCategoryCount)
-        return NULL;
+        return nullptr;
     return m_Paths[category].CStr();
 }
 
-bool CGameConfig::HasPath(PathCategory category) const
-{
+bool GameConfig::HasPath(PathCategory category) const {
     if (category < 0 || category >= ePathCategoryCount)
         return false;
     return m_Paths[category].Length() != 0;
 }
 
-void CGameConfig::LoadFromIni(const char *filename)
-{
+void GameConfig::LoadFromIni(const char *filename) {
     if (!filename)
         return;
 
-    if (filename[0] == '\0')
-    {
+    if (filename[0] == '\0') {
         if (m_Paths[eConfigPath].Length() == 0 || !utils::FileOrDirectoryExists(m_Paths[eConfigPath].CStr()))
             return;
         filename = m_Paths[eConfigPath].CStr();
     }
 
     char path[MAX_PATH];
-    if (!utils::IsAbsolutePath(filename))
-    {
+    if (!utils::IsAbsolutePath(filename)) {
         ::GetCurrentDirectoryA(MAX_PATH, path);
         utils::ConcatPath(path, MAX_PATH, path, filename);
         filename = path;
@@ -452,21 +433,18 @@ void CGameConfig::LoadFromIni(const char *filename)
     IniGetBoolean("Game", "Rookie", rookie, filename);
 }
 
-void CGameConfig::SaveToIni(const char *filename)
-{
+void GameConfig::SaveToIni(const char *filename) {
     if (!filename)
         return;
 
-    if (filename[0] == '\0')
-    {
+    if (filename[0] == '\0') {
         if (m_Paths[eConfigPath].Length() == 0)
             return;
         filename = m_Paths[eConfigPath].CStr();
     }
 
     char path[MAX_PATH];
-    if (!utils::IsAbsolutePath(filename))
-    {
+    if (!utils::IsAbsolutePath(filename)) {
         ::GetCurrentDirectoryA(MAX_PATH, path);
         utils::ConcatPath(path, MAX_PATH, path, filename);
         filename = path;

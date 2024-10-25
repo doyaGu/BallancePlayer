@@ -6,26 +6,24 @@
 #endif
 #include <Windows.h>
 
-class LockGuard
-{
+class LockGuard {
 public:
     explicit LockGuard(HANDLE mutex) : m_Mutex(mutex) {}
 
-    ~LockGuard()
-    {
-        Release();
-    }
+    LockGuard(const LockGuard &) = delete;
+    LockGuard(LockGuard &&) = delete;
 
-    void Release()
-    {
+    ~LockGuard() { Release(); }
+
+    LockGuard &operator=(const LockGuard &) = delete;
+    LockGuard &operator=(LockGuard &&) = delete;
+
+    void Release() {
         ::CloseHandle(m_Mutex);
-        m_Mutex = NULL;
+        m_Mutex = nullptr;
     }
 
 private:
-    LockGuard(const LockGuard &);
-    LockGuard &operator=(const LockGuard &);
-
     HANDLE m_Mutex;
 };
 

@@ -1,43 +1,38 @@
 #ifndef PLAYER_CONSOLEATTACHER_H
 #define PLAYER_CONSOLEATTACHER_H
 
-#include <stdio.h>
+#include <cstdio>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
 
-class ConsoleAttacher
-{
+class ConsoleAttacher {
 public:
     ConsoleAttacher() {
-        if (::AttachConsole(ATTACH_PARENT_PROCESS))
-        {
+        if (::AttachConsole(ATTACH_PARENT_PROCESS)) {
             freopen("CONOUT$", "w", stdout);
             m_Attached = true;
-        }
-        else
-        {
+        } else {
             m_Attached = false;
         }
     }
 
-    ~ConsoleAttacher()
-    {
-        Release();
-    }
+    ConsoleAttacher(const ConsoleAttacher &) = delete;
+    ConsoleAttacher(ConsoleAttacher &&) = delete;
 
-    void Release()
-    {
+    ~ConsoleAttacher() { Release(); }
+
+    ConsoleAttacher &operator=(const ConsoleAttacher &) = delete;
+    ConsoleAttacher &operator=(ConsoleAttacher &&) = delete;
+
+    void Release() {
         if (m_Attached)
             ::FreeConsole();
     }
 
 private:
-    ConsoleAttacher(const ConsoleAttacher &);
-    ConsoleAttacher &operator=(const ConsoleAttacher &);
-
     bool m_Attached;
 };
 

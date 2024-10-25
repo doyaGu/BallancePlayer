@@ -10,8 +10,7 @@
 #define MAX_PATH 260
 #endif
 
-enum PathCategory
-{
+enum PathCategory {
     eConfigPath = 0,
     eLogPath,
     eCmoPath,
@@ -26,14 +25,12 @@ enum PathCategory
     ePathCategoryCount
 };
 
-enum LogMode
-{
+enum LogMode {
     eLogAppend = 0,
     eLogOverwrite,
 };
 
-class CGameConfig
-{
+class GameConfig {
 public:
     // Startup Settings
     int logMode;
@@ -88,8 +85,8 @@ public:
     bool debug;
     bool rookie;
 
-    CGameConfig();
-    CGameConfig &operator=(const CGameConfig &config);
+    GameConfig();
+    GameConfig &operator=(const GameConfig &config);
 
     void SetPath(PathCategory category, const char *path);
     const char *GetPath(PathCategory category) const;
