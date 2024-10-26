@@ -8,6 +8,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_D
 set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
+        InputManager.h
         Window.h
         Splash.h
         ScriptUtils.h
@@ -21,6 +22,7 @@ set(PLAYER_SOURCES
         Player.cpp
         GamePlayer.cpp
         GameConfig.cpp
+        InputManager.cpp
         Hotfix.cpp
         Splash.cpp
         Logger.cpp
@@ -71,6 +73,7 @@ target_link_libraries(${PLAYER_NAME}
         CK2 VxMath
         PRIVATE
         cxxopts
+        dinput8 dxguid
 )
 
 add_custom_command(TARGET ${PLAYER_NAME} PRE_BUILD

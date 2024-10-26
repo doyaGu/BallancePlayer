@@ -16,6 +16,8 @@
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
 
+#define INPUTMANAGER_GUID CKGUID(0xF787C904, 0)
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 extern bool EditScript(CKLevel *level, const GameConfig &config);
@@ -209,6 +211,7 @@ void GamePlayer::Exit() {
             m_RenderContext = nullptr;
         }
 
+        RemoveInputManager();
         CKCloseContext(m_CKContext);
         CKShutdown();
         m_CKContext = nullptr;
@@ -571,6 +574,9 @@ bool GamePlayer::InitPlugins(CKPluginManager *pluginManager) {
         return false;
     }
 
+    // Unload Input Manager Dll
+    UnloadPlugins(pluginManager, CKPLUGIN_MANAGER_DLL, INPUTMANAGER_GUID);
+
     return true;
 }
 
@@ -759,6 +765,44 @@ int GamePlayer::InitRenderEngines(CKPluginManager *pluginManager) {
     return -1;
 }
 
+bool GamePlayer::UnloadPlugins(CKPluginManager *pluginManager, CK_PLUGIN_TYPE type, CKGUID guid) {
+    if (!pluginManager)
+        return false;
+
+    const int count = pluginManager->GetPluginCount(type);
+
+    for (int i = 0; i < count; ++i) {
+        auto *entry = pluginManager->GetPluginInfo(type, i);
+        auto &info = entry->m_PluginInfo;
+        if (info.m_GUID == guid) {
+            if (pluginManager->UnLoadPluginDll(entry->m_PluginDllIndex) == CK_OK)
+                return true;
+            break;
+        }
+    }
+
+    return false;
+}
+
+void GamePlayer::CreateInputManager() {
+    CKInitializeParameterTypes(m_CKContext);
+    CKInitializeOperationTypes(m_CKContext);
+    CKInitializeOperationFunctions(m_CKContext);
+
+    if (!m_InputManager)
+        m_InputManager = new InputManager(m_CKContext);
+}
+
+void GamePlayer::RemoveInputManager() {
+    if (m_InputManager) {
+        delete m_InputManager;
+        m_InputManager = nullptr;
+    }
+
+    CKUnInitializeParameterTypes(m_CKContext);
+    CKUnInitializeOperationTypes(m_CKContext);
+}
+
 bool GamePlayer::SetupManagers() {
     m_RenderManager = m_CKContext->GetRenderManager();
     if (!m_RenderManager) {
@@ -804,11 +848,7 @@ bool GamePlayer::SetupManagers() {
         return false;
     }
 
-    m_InputManager = (CKInputManager *) m_CKContext->GetManagerByGuid(INPUT_MANAGER_GUID);
-    if (!m_InputManager) {
-        Logger::Get().Error("Unable to get Input Manager.");
-        return false;
-    }
+    CreateInputManager();
 
     return true;
 }

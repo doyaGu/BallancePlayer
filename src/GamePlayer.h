@@ -9,6 +9,7 @@
 
 #include "Window.h"
 #include "GameConfig.h"
+#include "InputManager.h"
 
 class GameInfo;
 
@@ -79,6 +80,10 @@ private:
     bool LoadBuildingBlocks(CKPluginManager *pluginManager);
     bool LoadPlugins(CKPluginManager *pluginManager);
     int InitRenderEngines(CKPluginManager *pluginManager);
+    bool UnloadPlugins(CKPluginManager *pluginManager, CK_PLUGIN_TYPE type, CKGUID guid);
+
+    void CreateInputManager();
+    void RemoveInputManager();
 
     bool SetupManagers();
     bool SetupPaths();
@@ -147,7 +152,7 @@ private:
     CKMessageManager *m_MessageManager = nullptr;
     CKTimeManager *m_TimeManager = nullptr;
     CKAttributeManager *m_AttributeManager = nullptr;
-    CKInputManager *m_InputManager = nullptr;
+    InputManager *m_InputManager = nullptr;
 
     CKMessageType m_MsgClick = -1;
     CKMessageType m_MsgDoubleClick = -1;
