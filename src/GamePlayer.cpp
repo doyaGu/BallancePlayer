@@ -248,7 +248,38 @@ void GamePlayer::Process() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
+    ImGuiIO &io = ImGui::GetIO();
+
+    if (io.WantCaptureKeyboard) {
+        m_InputManager->DisableDevice(CK_INPUT_DEVICE_KEYBOARD);
+    }
+
+    if (io.WantCaptureMouse) {
+        m_InputManager->DisableDevice(CK_INPUT_DEVICE_MOUSE);
+    }
+
     m_CKContext->Process();
+
+    if (io.WantCaptureKeyboard) {
+        m_InputManager->EnableDevice(CK_INPUT_DEVICE_KEYBOARD);
+    }
+
+    if (io.WantCaptureMouse) {
+        m_InputManager->EnableDevice(CK_INPUT_DEVICE_MOUSE);
+    }
+
+    static bool cursorVisibilityChanged = false;
+    if (!m_InputManager->GetCursorVisibility()) {
+        if (io.WantCaptureMouse) {
+            m_InputManager->ShowCursor(TRUE);
+            cursorVisibilityChanged = true;
+        }
+    } else if (cursorVisibilityChanged) {
+        if (!io.WantCaptureMouse) {
+            m_InputManager->ShowCursor(FALSE);
+            cursorVisibilityChanged = false;
+        }
+    }
 
     ImGui::EndFrame();
     m_ImGuiReady = true;
