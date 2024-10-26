@@ -10,6 +10,7 @@
 #include "Window.h"
 #include "GameConfig.h"
 #include "InputManager.h"
+#include "SoundManager.h"
 
 class GameInfo;
 
@@ -84,6 +85,8 @@ private:
 
     void CreateInputManager();
     void RemoveInputManager();
+    void CreateSoundManager();
+    void RemoveSoundManager();
 
     bool SetupManagers();
     bool SetupPaths();
@@ -153,6 +156,7 @@ private:
     CKTimeManager *m_TimeManager = nullptr;
     CKAttributeManager *m_AttributeManager = nullptr;
     InputManager *m_InputManager = nullptr;
+    SoundManager *m_SoundManager = nullptr;
 
     CKMessageType m_MsgClick = -1;
     CKMessageType m_MsgDoubleClick = -1;

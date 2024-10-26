@@ -17,6 +17,7 @@
     (sizeof(Array) / sizeof(Array[0]))
 
 #define INPUTMANAGER_GUID CKGUID(0xF787C904, 0)
+#define SOUNDMANAGER_GUID CKGUID(0x77135393, 0x225c679a)
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -212,6 +213,7 @@ void GamePlayer::Exit() {
         }
 
         RemoveInputManager();
+        RemoveSoundManager();
         CKCloseContext(m_CKContext);
         CKShutdown();
         m_CKContext = nullptr;
@@ -608,6 +610,9 @@ bool GamePlayer::InitPlugins(CKPluginManager *pluginManager) {
     // Unload Input Manager Dll
     UnloadPlugins(pluginManager, CKPLUGIN_MANAGER_DLL, INPUTMANAGER_GUID);
 
+    // Unload Sound Manager Dll
+    UnloadPlugins(pluginManager, CKPLUGIN_MANAGER_DLL, SOUNDMANAGER_GUID);
+
     return true;
 }
 
@@ -834,6 +839,18 @@ void GamePlayer::RemoveInputManager() {
     CKUnInitializeOperationTypes(m_CKContext);
 }
 
+void GamePlayer::CreateSoundManager() {
+    if (!m_SoundManager)
+        m_SoundManager = new SoundManager(m_CKContext);
+}
+
+void GamePlayer::RemoveSoundManager() {
+    if (m_SoundManager) {
+        delete m_SoundManager;
+        m_SoundManager = nullptr;
+    }
+}
+
 bool GamePlayer::SetupManagers() {
     m_RenderManager = m_CKContext->GetRenderManager();
     if (!m_RenderManager) {
@@ -880,6 +897,7 @@ bool GamePlayer::SetupManagers() {
     }
 
     CreateInputManager();
+    CreateSoundManager();
 
     return true;
 }

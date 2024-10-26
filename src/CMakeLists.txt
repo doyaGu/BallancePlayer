@@ -9,6 +9,7 @@ set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
         InputManager.h
+        SoundManager.h
         Window.h
         Splash.h
         ScriptUtils.h
@@ -23,6 +24,7 @@ set(PLAYER_SOURCES
         GamePlayer.cpp
         GameConfig.cpp
         InputManager.cpp
+        SoundManager.cpp
         Hotfix.cpp
         Splash.cpp
         Logger.cpp
@@ -73,7 +75,7 @@ target_link_libraries(${PLAYER_NAME}
         CK2 VxMath
         PRIVATE
         cxxopts
-        dinput8 dxguid
+        dinput8 dsound dxguid
 )
 
 add_custom_command(TARGET ${PLAYER_NAME} PRE_BUILD
