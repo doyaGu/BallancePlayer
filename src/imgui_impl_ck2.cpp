@@ -123,13 +123,17 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
             data = dev->GetDrawPrimitiveStructure((CKRST_DPFLAGS)(CKRST_DP_CL_VCT | CKRST_DP_VBUFFER), vtx_count);
 
             // Copy and convert vertices, convert colors to required format.
-#if CKVERSION == 0x13022002 || CKVERSION == 0x05082002
+#if CKVERSION == 0x13022002
             XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
             XPtrStrided<CKDWORD> colors(data->ColorPtr, data->ColorStride);
             XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
+#elif CKVERSION == 0x05082002
+            XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
+            XPtrStrided<DWORD> colors(data->ColorPtr, data->ColorStride);
+            XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
 #else
             XPtrStrided<VxVector4> &positions = data->Positions;
-            XPtrStrided<CKDWORD> &colors = data->Colors;
+            XPtrStrided<DWORD> &colors = data->Colors;
             XPtrStrided<VxUV> &uvs = data->TexCoord;
 #endif
             for (int vtx_i = 0; vtx_i < vtx_count; vtx_i++)
@@ -179,13 +183,17 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
                     data = dev->GetDrawPrimitiveStructure((CKRST_DPFLAGS)(CKRST_DP_CL_VCT | CKRST_DP_VBUFFER), vtx_count);
 
                     // Copy and convert vertices, convert colors to required format.
-#if CKVERSION == 0x13022002 || CKVERSION == 0x05082002
+#if CKVERSION == 0x13022002
             XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
             XPtrStrided<CKDWORD> colors(data->ColorPtr, data->ColorStride);
             XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
+#elif CKVERSION == 0x05082002
+            XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
+            XPtrStrided<DWORD> colors(data->ColorPtr, data->ColorStride);
+            XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
 #else
             XPtrStrided<VxVector4> &positions = data->Positions;
-            XPtrStrided<CKDWORD> &colors = data->Colors;
+            XPtrStrided<DWORD> &colors = data->Colors;
             XPtrStrided<VxUV> &uvs = data->TexCoord;
 #endif
                     for (int vtx_i = 0; vtx_i < vtx_count; vtx_i++)
