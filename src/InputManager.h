@@ -126,15 +126,12 @@ public:
     void Pause(CKBOOL pause) override;
 
     void ShowCursor(CKBOOL iShow) override;
-
     CKBOOL GetCursorVisibility() override;
 
     VXCURSOR_POINTER GetSystemCursor() override;
-
     void SetSystemCursor(VXCURSOR_POINTER cursor) override;
 
     virtual int GetJoystickCount();
-
     virtual IDirectInputDevice2 *GetJoystickDxInterface(int iJoystick);
 
     virtual CKBOOL IsDeviceEnabled(CK_INPUT_DEVICE device);

@@ -114,10 +114,10 @@ bool GamePlayer::Load(const char *filename) {
 
     // Load the file and fills the array with loaded objects
     CKFile *f = m_CKContext->CreateCKFile();
-    CKERROR res = f->OpenFile(resolvedFile.Str(), (CK_LOAD_FLAGS) (CK_LOAD_DEFAULT | CK_LOAD_CHECKDEPENDENCIES));
-    if (res != CK_OK) {
+    err = f->OpenFile(resolvedFile.Str(), (CK_LOAD_FLAGS) (CK_LOAD_DEFAULT | CK_LOAD_CHECKDEPENDENCIES));
+    if (err != CK_OK) {
         // something failed
-        if (res == CKERR_PLUGINSMISSING) {
+        if (err == CKERR_PLUGINSMISSING) {
             // log the missing guids
             ReportMissingGuids(f, resolvedFile.CStr());
         }
@@ -128,8 +128,8 @@ bool GamePlayer::Load(const char *filename) {
     }
 
     CKObjectArray *array = CreateCKObjectArray();
-    res = f->LoadFileData(array);
-    if (res != CK_OK) {
+    err = f->LoadFileData(array);
+    if (err != CK_OK) {
         m_CKContext->DeleteCKFile(f);
         return false;
     }
@@ -559,8 +559,8 @@ bool GamePlayer::FinishLoad() {
     level->LaunchScene(nullptr);
 
     // ReRegister OnClick Message in case it changed
-    m_MsgClick = m_MessageManager->AddMessageType("OnClick");
-    m_MsgDoubleClick = m_MessageManager->AddMessageType("OnDblClick");
+    m_MsgClick = m_MessageManager->AddMessageType((CKSTRING) "OnClick");
+    m_MsgDoubleClick = m_MessageManager->AddMessageType((CKSTRING) "OnDblClick");
 
     // Render the first frame
     m_RenderContext->Render();
@@ -858,25 +858,25 @@ bool GamePlayer::SetupManagers() {
         return false;
     }
 
-    m_RenderManager->SetRenderOptions("DisablePerspectiveCorrection", m_Config.disablePerspectiveCorrection);
-    m_RenderManager->SetRenderOptions("ForceLinearFog", m_Config.forceLinearFog);
-    m_RenderManager->SetRenderOptions("ForceSoftware", m_Config.forceSoftware);
-    m_RenderManager->SetRenderOptions("DisableFilter", m_Config.disableFilter);
-    m_RenderManager->SetRenderOptions("EnsureVertexShader", m_Config.ensureVertexShader);
-    m_RenderManager->SetRenderOptions("UseIndexBuffers", m_Config.useIndexBuffers);
-    m_RenderManager->SetRenderOptions("DisableDithering", m_Config.disableDithering);
-    m_RenderManager->SetRenderOptions("Antialias", m_Config.antialias);
-    m_RenderManager->SetRenderOptions("DisableMipmap", m_Config.disableMipmap);
-    m_RenderManager->SetRenderOptions("DisableSpecular", m_Config.disableSpecular);
-    m_RenderManager->SetRenderOptions("EnableScreenDump", m_Config.enableScreenDump);
-    m_RenderManager->SetRenderOptions("EnableDebugMode", m_Config.enableDebugMode);
-    m_RenderManager->SetRenderOptions("VertexCache", m_Config.vertexCache);
-    m_RenderManager->SetRenderOptions("TextureCacheManagement", m_Config.textureCacheManagement);
-    m_RenderManager->SetRenderOptions("SortTransparentObjects", m_Config.sortTransparentObjects);
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisablePerspectiveCorrection", m_Config.disablePerspectiveCorrection);
+    m_RenderManager->SetRenderOptions((CKSTRING) "ForceLinearFog", m_Config.forceLinearFog);
+    m_RenderManager->SetRenderOptions((CKSTRING) "ForceSoftware", m_Config.forceSoftware);
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisableFilter", m_Config.disableFilter);
+    m_RenderManager->SetRenderOptions((CKSTRING) "EnsureVertexShader", m_Config.ensureVertexShader);
+    m_RenderManager->SetRenderOptions((CKSTRING) "UseIndexBuffers", m_Config.useIndexBuffers);
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisableDithering", m_Config.disableDithering);
+    m_RenderManager->SetRenderOptions((CKSTRING) "Antialias", m_Config.antialias);
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisableMipmap", m_Config.disableMipmap);
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisableSpecular", m_Config.disableSpecular);
+    m_RenderManager->SetRenderOptions((CKSTRING) "EnableScreenDump", m_Config.enableScreenDump);
+    m_RenderManager->SetRenderOptions((CKSTRING) "EnableDebugMode", m_Config.enableDebugMode);
+    m_RenderManager->SetRenderOptions((CKSTRING) "VertexCache", m_Config.vertexCache);
+    m_RenderManager->SetRenderOptions((CKSTRING) "TextureCacheManagement", m_Config.textureCacheManagement);
+    m_RenderManager->SetRenderOptions((CKSTRING) "SortTransparentObjects", m_Config.sortTransparentObjects);
     if (m_Config.textureVideoFormat != UNKNOWN_PF)
-        m_RenderManager->SetRenderOptions("TextureVideoFormat", m_Config.textureVideoFormat);
+        m_RenderManager->SetRenderOptions((CKSTRING) "TextureVideoFormat", m_Config.textureVideoFormat);
     if (m_Config.spriteVideoFormat != UNKNOWN_PF)
-        m_RenderManager->SetRenderOptions("SpriteVideoFormat", m_Config.spriteVideoFormat);
+        m_RenderManager->SetRenderOptions((CKSTRING) "SpriteVideoFormat", m_Config.spriteVideoFormat);
 
     m_MessageManager = m_CKContext->GetMessageManager();
     if (!m_MessageManager) {
@@ -1293,7 +1293,7 @@ void GamePlayer::OnReturn() {
 }
 
 bool GamePlayer::OnLoadCMO(const char *filename) {
-    return Load((const char *) filename);
+    return Load(filename);
 }
 
 void GamePlayer::OnExitToSystem() {
@@ -1569,7 +1569,7 @@ BOOL GamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
     WORD wNotifyCode = HIWORD(wParam);
     int wID = LOWORD(wParam);
 
-    GamePlayer &player = GamePlayer::GetInstance();
+    GamePlayer &player = GetInstance();
     GameConfig &config = player.GetConfig();
 
     switch (uMsg) {
