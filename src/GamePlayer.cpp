@@ -212,11 +212,16 @@ void GamePlayer::Exit() {
             m_RenderContext = nullptr;
         }
 
-        RemoveInputManager();
-        RemoveSoundManager();
         CKCloseContext(m_CKContext);
         CKShutdown();
         m_CKContext = nullptr;
+        m_RenderContext = nullptr;
+        m_RenderManager = nullptr;
+        m_MessageManager = nullptr;
+        m_TimeManager = nullptr;
+        m_AttributeManager = nullptr;
+        m_InputManager = nullptr;
+        m_SoundManager = nullptr;
     }
 
     // Save settings
@@ -250,26 +255,9 @@ void GamePlayer::Process() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    ImGuiIO &io = ImGui::GetIO();
-
-    if (io.WantCaptureKeyboard) {
-        m_InputManager->DisableDevice(CK_INPUT_DEVICE_KEYBOARD);
-    }
-
-    if (io.WantCaptureMouse) {
-        m_InputManager->DisableDevice(CK_INPUT_DEVICE_MOUSE);
-    }
-
     m_CKContext->Process();
 
-    if (io.WantCaptureKeyboard) {
-        m_InputManager->EnableDevice(CK_INPUT_DEVICE_KEYBOARD);
-    }
-
-    if (io.WantCaptureMouse) {
-        m_InputManager->EnableDevice(CK_INPUT_DEVICE_MOUSE);
-    }
-
+    ImGuiIO &io = ImGui::GetIO();
     static bool cursorVisibilityChanged = false;
     if (!m_InputManager->GetCursorVisibility()) {
         if (io.WantCaptureMouse) {
@@ -820,37 +808,6 @@ bool GamePlayer::UnloadPlugins(CKPluginManager *pluginManager, CK_PLUGIN_TYPE ty
     return false;
 }
 
-void GamePlayer::CreateInputManager() {
-    CKInitializeParameterTypes(m_CKContext);
-    CKInitializeOperationTypes(m_CKContext);
-    CKInitializeOperationFunctions(m_CKContext);
-
-    if (!m_InputManager)
-        m_InputManager = new InputManager(m_CKContext);
-}
-
-void GamePlayer::RemoveInputManager() {
-    if (m_InputManager) {
-        delete m_InputManager;
-        m_InputManager = nullptr;
-    }
-
-    CKUnInitializeParameterTypes(m_CKContext);
-    CKUnInitializeOperationTypes(m_CKContext);
-}
-
-void GamePlayer::CreateSoundManager() {
-    if (!m_SoundManager)
-        m_SoundManager = new SoundManager(m_CKContext);
-}
-
-void GamePlayer::RemoveSoundManager() {
-    if (m_SoundManager) {
-        delete m_SoundManager;
-        m_SoundManager = nullptr;
-    }
-}
-
 bool GamePlayer::SetupManagers() {
     m_RenderManager = m_CKContext->GetRenderManager();
     if (!m_RenderManager) {
@@ -896,8 +853,19 @@ bool GamePlayer::SetupManagers() {
         return false;
     }
 
-    CreateInputManager();
-    CreateSoundManager();
+    m_InputManager = (CKInputManager *) m_CKContext->GetManagerByGuid(INPUT_MANAGER_GUID);
+    if (!m_InputManager)
+    {
+        Logger::Get().Error("Unable to get Input Manager.");
+        return false;
+    }
+
+    m_SoundManager = (CKSoundManager *) m_CKContext->GetManagerByGuid(SOUND_MANAGER_GUID);
+    if (!m_SoundManager)
+    {
+        Logger::Get().Error("Unable to get Sound Manager.");
+        return false;
+    }
 
     return true;
 }

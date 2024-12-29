@@ -8,8 +8,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_D
 set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
-        InputManager.h
-        SoundManager.h
         Window.h
         Splash.h
         ScriptUtils.h
@@ -23,8 +21,6 @@ set(PLAYER_SOURCES
         Player.cpp
         GamePlayer.cpp
         GameConfig.cpp
-        InputManager.cpp
-        SoundManager.cpp
         Hotfix.cpp
         Splash.cpp
         Logger.cpp
