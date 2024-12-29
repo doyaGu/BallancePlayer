@@ -595,12 +595,6 @@ bool GamePlayer::InitPlugins(CKPluginManager *pluginManager) {
         return false;
     }
 
-    // Unload Input Manager Dll
-    UnloadPlugins(pluginManager, CKPLUGIN_MANAGER_DLL, INPUTMANAGER_GUID);
-
-    // Unload Sound Manager Dll
-    UnloadPlugins(pluginManager, CKPLUGIN_MANAGER_DLL, SOUNDMANAGER_GUID);
-
     return true;
 }
 
