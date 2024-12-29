@@ -123,7 +123,7 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
             data = dev->GetDrawPrimitiveStructure((CKRST_DPFLAGS)(CKRST_DP_CL_VCT | CKRST_DP_VBUFFER), vtx_count);
 
             // Copy and convert vertices, convert colors to required format.
-#if CKVERSION == 0x13022002
+#if CKVERSION == 0x13022002 || CKVERSION == 0x05082002
             XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
             XPtrStrided<CKDWORD> colors(data->ColorPtr, data->ColorStride);
             XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
@@ -179,7 +179,7 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
                     data = dev->GetDrawPrimitiveStructure((CKRST_DPFLAGS)(CKRST_DP_CL_VCT | CKRST_DP_VBUFFER), vtx_count);
 
                     // Copy and convert vertices, convert colors to required format.
-#if CKVERSION == 0x13022002
+#if CKVERSION == 0x13022002 || CKVERSION == 0x05082002
             XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
             XPtrStrided<CKDWORD> colors(data->ColorPtr, data->ColorStride);
             XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
