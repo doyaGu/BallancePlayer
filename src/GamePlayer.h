@@ -80,10 +80,15 @@ public:
 
 private:
     bool InitWindow(HINSTANCE hInstance);
+    void ShutdownWindow();
+
     bool InitEngine(CWindow &mainWindow);
+    void ShutdownEngine();
+
     bool InitDriver();
 #if BP_ENABLE_IMGUI
     bool InitImGuiContext();
+    void ShutdownImGuiContext();
 #endif
 
     bool FinishLoad();
@@ -173,6 +178,8 @@ private:
 
     HINSTANCE m_hInstance = nullptr;
     HACCEL m_hAccelTable = nullptr;
+    WNDCLASSEX m_MainWndClass = {};
+    WNDCLASS m_RenderWndClass = {};
     CWindow m_MainWindow;
     CWindow m_RenderWindow;
 

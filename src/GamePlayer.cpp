@@ -324,8 +324,6 @@ bool GamePlayer::Init(BpGameConfig *config, HINSTANCE hInstance) {
     m_GameConfig = config;
     bpGameConfigInit(m_GameConfig);
 
-    m_hInstance = hInstance ? hInstance : GetModuleHandle(nullptr);
-
     if (!InitWindow(hInstance)) {
         m_Logger->Error("Failed to initialize window!");
         return false;
@@ -333,11 +331,13 @@ bool GamePlayer::Init(BpGameConfig *config, HINSTANCE hInstance) {
 
     if (!InitEngine(m_MainWindow)) {
         m_Logger->Error("Failed to initialize CK Engine!");
+        ShutdownWindow();
         return false;
     }
 
     if (!InitDriver()) {
         m_Logger->Error("Failed to initialize Render Driver!");
+        Shutdown();
         return false;
     }
 
@@ -372,6 +372,8 @@ bool GamePlayer::Init(BpGameConfig *config, HINSTANCE hInstance) {
 #if BP_ENABLE_IMGUI
     if (!InitImGuiContext()) {
         m_Logger->Error("Failed to initialize ImGui!");
+
+        Shutdown();
         return false;
     }
     m_Logger->Debug("ImGui is initialized.");
@@ -536,61 +538,14 @@ void GamePlayer::Shutdown() {
         m_GameInfo = nullptr;
     }
 
-    if (m_CKContext) {
-        if (m_State != BP_PLAYER_INITIAL) {
-            m_CKContext->Reset();
-        }
-
-#if BP_ENABLE_IMGUI
-        if (m_ImGuiContext != nullptr) {
-            ImGui_ImplCK2_Shutdown();
-            ImGui_ImplWin32_Shutdown();
-            ImGui::DestroyContext();
-            m_ImGuiContext = nullptr;
-        }
-#endif
-
-        if (m_State != BP_PLAYER_INITIAL) {
-            m_CKContext->ClearAll();
-        }
-
-        if (m_RenderManager && m_RenderContext) {
-            m_RenderManager->DestroyRenderContext(m_RenderContext);
-            m_RenderContext = nullptr;
-        }
-
-        if (m_GameManager) {
-            delete m_GameManager;
-            m_GameManager = nullptr;
-        }
-
-        CKCloseContext(m_CKContext);
-
-        UnregisterContext(m_CKContext);
-        m_CKContext = nullptr;
-
-        m_PluginManager = nullptr;
-        m_AttributeManager = nullptr;
-        m_MessageManager = nullptr;
-        m_TimeManager = nullptr;
-        m_SoundManager = nullptr;
-        m_InputManager = nullptr;
-        m_BehaviorManager = nullptr;
-        m_FloorManager = nullptr;
-        m_CollisionManager = nullptr;
-        m_GridManager = nullptr;
-        m_RenderManager = nullptr;
-        m_ParameterManager = nullptr;
-        m_PathManager = nullptr;
-
-        CKShutdown();
-    }
-
-    if (m_MainWindow.GetHandle())
-        m_MainWindow.Destroy();
+    ShutdownEngine();
+    ShutdownWindow();
 
     m_GameConfig = nullptr;
-    m_State = BP_PLAYER_INITIAL;
+    if (m_State != BP_PLAYER_INITIAL) {
+        m_State = BP_PLAYER_INITIAL;
+        m_Logger->Debug("Game is shut down.");
+    }
 }
 
 void GamePlayer::Play() {
@@ -626,6 +581,12 @@ static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *) {
 }
 
 bool GamePlayer::InitWindow(HINSTANCE hInstance) {
+    m_hInstance = hInstance ? hInstance : GetModuleHandle(nullptr);
+    if (!m_hInstance) {
+        m_Logger->Error("Failed to get the instance handle!");
+        return false;
+    }
+
     if (!RegisterMainWindowClass(hInstance)) {
         m_Logger->Error("Failed to register main window class!");
         return false;
@@ -642,6 +603,8 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
     if (childWindowRendering) {
         if (!RegisterRenderWindowClass(hInstance)) {
             m_Logger->Error("Failed to register render window class!");
+            ::UnregisterClass(TEXT("Ballance"), hInstance);
+            memset(&m_MainWndClass, 0, sizeof(m_MainWndClass));
             return false;
         }
 
@@ -669,6 +632,13 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
     if (!m_MainWindow.CreateEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
                                x, y, windowWidth, windowHeight, nullptr, nullptr, hInstance, nullptr)) {
         m_Logger->Error("Failed to create main window!");
+
+        ::UnregisterClass(TEXT("Ballance"), hInstance);
+        memset(&m_MainWndClass, 0, sizeof(m_MainWndClass));
+        if (childWindowRendering) {
+            ::UnregisterClass(TEXT("Ballance Render"), hInstance);
+            memset(&m_RenderWndClass, 0, sizeof(m_RenderWndClass));
+        }
         return false;
     }
 
@@ -679,6 +649,12 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
         if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
                                      0, 0, width, height, m_MainWindow.GetHandle(), nullptr, hInstance, nullptr)) {
             m_Logger->Error("Failed to create render window!");
+
+            m_MainWindow.Destroy();
+            ::UnregisterClass(TEXT("Ballance"), hInstance);
+            memset(&m_MainWndClass, 0, sizeof(m_MainWndClass));
+            ::UnregisterClass(TEXT("Ballance Render"), hInstance);
+            memset(&m_RenderWndClass, 0, sizeof(m_RenderWndClass));
             return false;
         }
 
@@ -689,6 +665,16 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
     m_hAccelTable = ::LoadAccelerators(m_hInstance, MAKEINTRESOURCE(IDR_ACCEL));
     if (!m_hAccelTable) {
         m_Logger->Error("Failed to load the accelerator table!");
+
+        m_MainWindow.Destroy();
+        if (childWindowRendering)
+            m_RenderWindow.Destroy();
+        ::UnregisterClass(TEXT("Ballance"), hInstance);
+        memset(&m_MainWndClass, 0, sizeof(m_MainWndClass));
+        if (childWindowRendering) {
+            ::UnregisterClass(TEXT("Ballance Render"), hInstance);
+            memset(&m_RenderWndClass, 0, sizeof(m_RenderWndClass));
+        }
         return false;
     }
 
@@ -696,6 +682,25 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
     m_GameConfig->PosY->SetInt32(y);
 
     return true;
+}
+
+void GamePlayer::ShutdownWindow() {
+    if (m_hAccelTable) {
+        ::DestroyAcceleratorTable(m_hAccelTable);
+        m_hAccelTable = nullptr;
+    }
+
+    if (m_RenderWindow.GetHandle()) {
+        m_RenderWindow.Destroy();
+        ::UnregisterClass(TEXT("Ballance Render"), m_hInstance);
+        memset(&m_RenderWndClass, 0, sizeof(m_RenderWndClass));
+    }
+
+    if (m_MainWindow.GetHandle()) {
+        m_MainWindow.Destroy();
+        ::UnregisterClass(TEXT("Ballance"), m_hInstance);
+        memset(&m_MainWindow, 0, sizeof(m_MainWindow));
+    }
 }
 
 bool GamePlayer::InitEngine(CWindow &mainWindow) {
@@ -709,12 +714,14 @@ bool GamePlayer::InitEngine(CWindow &mainWindow) {
     CKPluginManager *pluginManager = CKGetPluginManager();
     if (!InitPlugins(pluginManager)) {
         m_Logger->Error("Failed to initialize plugins.");
+        CKShutdown();
         return false;
     }
 
     int renderEngine = InitRenderEngines(pluginManager);
     if (renderEngine == -1) {
         m_Logger->Error("Failed to initialize render engine.");
+        CKShutdown();
         return false;
     }
 
@@ -726,6 +733,7 @@ bool GamePlayer::InitEngine(CWindow &mainWindow) {
 #endif
     if (res != CK_OK) {
         m_Logger->Error("Failed to initialize CK Engine.");
+        ShutdownEngine();
         return false;
     }
 
@@ -737,15 +745,63 @@ bool GamePlayer::InitEngine(CWindow &mainWindow) {
 
     if (!SetupManagers()) {
         m_Logger->Error("Failed to setup managers.");
+        ShutdownEngine();
         return false;
     }
 
     if (!SetupPaths()) {
         m_Logger->Error("Failed to setup paths.");
+        ShutdownEngine();
         return false;
     }
 
     return true;
+}
+
+void GamePlayer::ShutdownEngine() {
+    if (m_CKContext) {
+        if (m_State != BP_PLAYER_INITIAL) {
+            m_CKContext->Reset();
+        }
+
+#if BP_ENABLE_IMGUI
+        ShutdownImGuiContext();
+#endif
+
+        if (m_State != BP_PLAYER_INITIAL) {
+            m_CKContext->ClearAll();
+        }
+
+        if (m_RenderManager && m_RenderContext) {
+            m_RenderManager->DestroyRenderContext(m_RenderContext);
+            m_RenderContext = nullptr;
+        }
+
+        if (m_GameManager) {
+            delete m_GameManager;
+            m_GameManager = nullptr;
+        }
+
+        CKCloseContext(m_CKContext);
+        UnregisterContext(m_CKContext);
+        m_CKContext = nullptr;
+
+        m_PluginManager = nullptr;
+        m_AttributeManager = nullptr;
+        m_MessageManager = nullptr;
+        m_TimeManager = nullptr;
+        m_SoundManager = nullptr;
+        m_InputManager = nullptr;
+        m_BehaviorManager = nullptr;
+        m_FloorManager = nullptr;
+        m_CollisionManager = nullptr;
+        m_GridManager = nullptr;
+        m_RenderManager = nullptr;
+        m_ParameterManager = nullptr;
+        m_PathManager = nullptr;
+
+        CKShutdown();
+    }
 }
 
 bool GamePlayer::InitDriver() {
@@ -846,12 +902,22 @@ bool GamePlayer::InitImGuiContext() {
 
     if (!ImGui_ImplCK2_Init(m_CKContext)) {
         m_Logger->Error("Failed to initialize render backend for ImGui");
+        ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext(m_ImGuiContext);
         m_ImGuiContext = nullptr;
         return false;
     }
 
     return true;
+}
+
+void GamePlayer::ShutdownImGuiContext() {
+    if (m_ImGuiContext != nullptr) {
+        ImGui_ImplCK2_Shutdown();
+        ImGui_ImplWin32_Shutdown();
+        ImGui::DestroyContext();
+        m_ImGuiContext = nullptr;
+    }
 }
 #endif
 
@@ -1420,35 +1486,33 @@ bool GamePlayer::StopFullscreen() {
 }
 
 bool GamePlayer::RegisterMainWindowClass(HINSTANCE hInstance) {
-    WNDCLASSEX mainWndClass;
-    memset(&mainWndClass, 0, sizeof(WNDCLASSEX));
+    memset(&m_MainWndClass, 0, sizeof(WNDCLASSEX));
 
-    mainWndClass.lpfnWndProc = MainWndProc;
-    mainWndClass.cbSize = sizeof(WNDCLASSEX);
-    mainWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-    mainWndClass.cbClsExtra = 0;
-    mainWndClass.cbWndExtra = 0;
-    mainWndClass.hInstance = hInstance;
-    mainWndClass.hIcon = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
-    mainWndClass.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
-    mainWndClass.hbrBackground = (HBRUSH) ::GetStockObject(BLACK_BRUSH);
-    mainWndClass.lpszMenuName = nullptr;
-    mainWndClass.lpszClassName = TEXT("Ballance");
-    mainWndClass.hIconSm = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
+    m_MainWndClass.lpfnWndProc = MainWndProc;
+    m_MainWndClass.cbSize = sizeof(WNDCLASSEX);
+    m_MainWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+    m_MainWndClass.cbClsExtra = 0;
+    m_MainWndClass.cbWndExtra = 0;
+    m_MainWndClass.hInstance = hInstance;
+    m_MainWndClass.hIcon = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
+    m_MainWndClass.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
+    m_MainWndClass.hbrBackground = (HBRUSH) ::GetStockObject(BLACK_BRUSH);
+    m_MainWndClass.lpszMenuName = nullptr;
+    m_MainWndClass.lpszClassName = TEXT("Ballance");
+    m_MainWndClass.hIconSm = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
 
-    return ::RegisterClassEx(&mainWndClass) != 0;
+    return ::RegisterClassEx(&m_MainWndClass) != 0;
 }
 
 bool GamePlayer::RegisterRenderWindowClass(HINSTANCE hInstance) {
-    WNDCLASS renderWndClass;
-    memset(&renderWndClass, 0, sizeof(WNDCLASS));
+    memset(&m_RenderWndClass, 0, sizeof(WNDCLASS));
 
-    renderWndClass.lpfnWndProc = MainWndProc;
-    renderWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-    renderWndClass.hInstance = hInstance;
-    renderWndClass.lpszClassName = TEXT("Ballance Render");
+    m_RenderWndClass.lpfnWndProc = MainWndProc;
+    m_RenderWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+    m_RenderWndClass.hInstance = hInstance;
+    m_RenderWndClass.lpszClassName = TEXT("Ballance Render");
 
-    return ::RegisterClass(&renderWndClass) != 0;
+    return ::RegisterClass(&m_RenderWndClass) != 0;
 }
 
 void GamePlayer::RegisterWindow(HWND hWnd) {
