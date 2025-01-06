@@ -1207,10 +1207,12 @@ bool GamePlayer::SetupManagers() {
     m_RenderManager->SetRenderOptions((CKSTRING) "VertexCache", m_GameConfig.VertexCache->GetInt32());
     m_RenderManager->SetRenderOptions((CKSTRING) "TextureCacheManagement", m_GameConfig.TextureCacheManagement->GetBool());
     m_RenderManager->SetRenderOptions((CKSTRING) "SortTransparentObjects", m_GameConfig.SortTransparentObjects->GetBool());
-    if (m_GameConfig.TextureVideoFormat->GetInt32() != UNKNOWN_PF)
-        m_RenderManager->SetRenderOptions((CKSTRING) "TextureVideoFormat", m_GameConfig.TextureVideoFormat->GetInt32());
-    if (m_GameConfig.SpriteVideoFormat->GetInt32() != UNKNOWN_PF)
-        m_RenderManager->SetRenderOptions((CKSTRING) "SpriteVideoFormat", m_GameConfig.SpriteVideoFormat->GetInt32());
+    auto textureVideoFormat = bpString2PixelFormat(m_GameConfig.TextureVideoFormat->GetString());
+    if (textureVideoFormat != UNKNOWN_PF)
+        m_RenderManager->SetRenderOptions((CKSTRING) "TextureVideoFormat", textureVideoFormat);
+    auto spriteVideoFormat = bpString2PixelFormat(m_GameConfig.SpriteVideoFormat->GetString());
+    if (spriteVideoFormat != UNKNOWN_PF)
+        m_RenderManager->SetRenderOptions((CKSTRING) "SpriteVideoFormat", spriteVideoFormat);
 
     m_ParameterManager = (CKParameterManager *) m_CKContext->GetManagerByGuid(PARAMETER_MANAGER_GUID);
     if (!m_ParameterManager) {

@@ -207,13 +207,13 @@ bool bpGameConfigInit(BpGameConfig *config) {
     }
     config->SortTransparentObjects->AddRef();
 
-    config->TextureVideoFormat = cfg->AddEntryInt32("TextureVideoFormat", UNKNOWN_PF, "Graphics");
+    config->TextureVideoFormat = cfg->AddEntryString("TextureVideoFormat", "UNKNOWN_PF", "Graphics");
     if (!config->TextureVideoFormat) {
         return false;
     }
     config->TextureVideoFormat->AddRef();
 
-    config->SpriteVideoFormat = cfg->AddEntryInt32("SpriteVideoFormat", UNKNOWN_PF, "Graphics");
+    config->SpriteVideoFormat = cfg->AddEntryString("SpriteVideoFormat", "UNKNOWN_PF", "Graphics");
     if (!config->SpriteVideoFormat) {
         return false;
     }
@@ -261,6 +261,12 @@ bool bpGameConfigInit(BpGameConfig *config) {
     }
     config->PosY->AddRef();
 
+    config->ApplyHotfix = cfg->AddEntryBool("ApplyHotfix", true, "Game");
+    if (!config->ApplyHotfix) {
+        return false;
+    }
+    config->ApplyHotfix->AddRef();
+
     config->LangId = cfg->AddEntryInt32("LangId", 1, "Game");
     if (!config->LangId) {
         return false;
@@ -272,12 +278,6 @@ bool bpGameConfigInit(BpGameConfig *config) {
         return false;
     }
     config->SkipOpening->AddRef();
-
-    config->ApplyHotfix = cfg->AddEntryBool("ApplyHotfix", true, "Game");
-    if (!config->ApplyHotfix) {
-        return false;
-    }
-    config->ApplyHotfix->AddRef();
 
     config->UnlockFramerate = cfg->AddEntryBool("UnlockFramerate", false, "Game");
     if (!config->UnlockFramerate) {
@@ -519,6 +519,11 @@ void bpGameConfigReset(BpGameConfig *config) {
         config->PosY = nullptr;
     }
 
+    if (config->ApplyHotfix) {
+        config->ApplyHotfix->Release();
+        config->ApplyHotfix = nullptr;
+    }
+
     if (config->LangId) {
         config->LangId->Release();
         config->LangId = nullptr;
@@ -527,11 +532,6 @@ void bpGameConfigReset(BpGameConfig *config) {
     if (config->SkipOpening) {
         config->SkipOpening->Release();
         config->SkipOpening = nullptr;
-    }
-
-    if (config->ApplyHotfix) {
-        config->ApplyHotfix->Release();
-        config->ApplyHotfix = nullptr;
     }
 
     if (config->UnlockFramerate) {

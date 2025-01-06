@@ -7,9 +7,9 @@
 
 #include <cxxopts.hpp>
 
-#include "bp/Utils.h"
 #include "bp/GamePlayer.h"
-#include "GameConfig.h"
+#include "bp/GameConfig.h"
+#include "bp/Utils.h"
 #include "Splash.h"
 #include "ConsoleAttacher.h"
 #include "FileLogger.h"
@@ -171,9 +171,9 @@ void AddCommandLineOptions(cxxopts::Options &options) {
             ("pause-on-deactivated", "Pause on deactivated")
             ("x,position-x", "Set window position x", cxxopts::value<long>())
             ("y,position-y", "Set window position y", cxxopts::value<long>())
+            ("disable-hotfix", "Disable hotfix")
             ("l,lang", "Set language id", cxxopts::value<long>())
             ("skip-opening", "Skip opening")
-            ("disable-hotfix", "Disable hotfix")
             ("unlock-framerate", "Unlock framerate")
             ("unlock-widescreen", "Unlock widescreen")
             ("unlock-high-resolution", "Unlock high resolution")
@@ -196,94 +196,222 @@ void AddCommandLineOptions(cxxopts::Options &options) {
 }
 
 void LoadGameConfigFromCommandLine(BpGameConfig *config, const cxxopts::ParseResult &result) {
-    if (result.contains("verbose"))
-        config->Verbose->SetBool(result["verbose"].as<bool>());
-    if (result.contains("manual-setup"))
-        config->ManualSetup->SetBool(result["manual-setup"].as<bool>());
-    if (result.contains("load-required-managers"))
-        config->LoadAllManagers->SetBool(!result["load-required-managers"].as<bool>());
-    if (result.contains("load-required-building-blocks"))
-        config->LoadAllBuildingBlocks->SetBool(!result["load-required-building-blocks"].as<bool>());
-    if (result.contains("load-required-plugins"))
-        config->LoadAllPlugins->SetBool(!result["load-required-plugins"].as<bool>());
-    if (result.contains("video-driver"))
-        config->Driver->SetInt32(result["video-driver"].as<int>());
-    if (result.contains("width"))
-        config->Width->SetInt32(result["width"].as<int>());
-    if (result.contains("height"))
-        config->Height->SetInt32(result["height"].as<int>());
-    if (result.contains("bpp"))
-        config->Bpp->SetInt32(result["bpp"].as<int>());
-    if (result.contains("fullscreen"))
-        config->Fullscreen->SetBool(result["fullscreen"].as<bool>());
-    if (result.contains("disable-perspective-correction"))
-        config->DisablePerspectiveCorrection->SetBool(result["disable-perspective-correction"].as<bool>());
-    if (result.contains("force-linear-fog"))
-        config->ForceLinearFog->SetBool(result["force-linear-fog"].as<bool>());
-    if (result.contains("force-software"))
-        config->ForceSoftware->SetBool(result["force-software"].as<bool>());
-    if (result.contains("disable-filter"))
-        config->DisableFilter->SetBool(result["disable-filter"].as<bool>());
-    if (result.contains("ensure-vertex-shader"))
-        config->EnsureVertexShader->SetBool(result["ensure-vertex-shader"].as<bool>());
-    if (result.contains("use-index-buffers"))
-        config->UseIndexBuffers->SetBool(result["use-index-buffers"].as<bool>());
-    if (result.contains("disable-dithering"))
-        config->DisableDithering->SetBool(result["disable-dithering"].as<bool>());
-    if (result.contains("antialias"))
-        config->Antialias->SetInt32(result["antialias"].as<int>());
-    if (result.contains("disable-mipmap"))
-        config->DisableMipmap->SetBool(result["disable-mipmap"].as<bool>());
-    if (result.contains("disable-specular"))
-        config->DisableSpecular->SetBool(result["disable-specular"].as<bool>());
-    if (result.contains("enable-screen-dump"))
-        config->EnableScreenDump->SetBool(result["enable-screen-dump"].as<bool>());
-    if (result.contains("enable-debug-mode"))
-        config->EnableDebugMode->SetBool(result["enable-debug-mode"].as<bool>());
-    if (result.contains("vertex-cache"))
-        config->VertexCache->SetInt32(result["vertex-cache"].as<int>());
-    if (result.contains("disable-texture-cache-management"))
-        config->TextureCacheManagement->SetBool(!result["disable-texture-cache-management"].as<bool>());
-    if (result.contains("disable-sort-transparent-objects"))
-        config->SortTransparentObjects->SetBool(!result["disable-sort-transparent-objects"].as<bool>());
+    auto *cfg = bpGameConfigGet(config);
+    if (!cfg)
+        return;
+
+    if (result.contains("verbose")) {
+        auto *entry = bpConfigGetEntry(cfg, "Verbose", "Startup");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["verbose"].as<bool>());
+    }
+    if (result.contains("manual-setup")) {
+        auto *entry = bpConfigGetEntry(cfg, "ManualSetup", "Startup");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["manual-setup"].as<bool>());
+    }
+    if (result.contains("load-required-managers")) {
+        auto *entry = bpConfigGetEntry(cfg, "LoadAllManagers", "Startup");
+        if (entry)
+            bpConfigEntrySetBool(entry, !result["load-required-managers"].as<bool>());
+    }
+    if (result.contains("load-required-building-blocks")) {
+        auto *entry = bpConfigGetEntry(cfg, "LoadAllBuildingBlocks", "Startup");
+        if (entry)
+            bpConfigEntrySetBool(entry, !result["load-required-building-blocks"].as<bool>());
+    }
+    if (result.contains("load-required-plugins")) {
+        auto *entry = bpConfigGetEntry(cfg, "LoadAllPlugins", "Startup");
+        if (entry)
+            bpConfigEntrySetBool(entry, !result["load-required-plugins"].as<bool>());
+    }
+    if (result.contains("video-driver")) {
+        auto *entry = bpConfigGetEntry(cfg, "VideoDriver", "Graphics");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["video-driver"].as<int>());
+    }
+    if (result.contains("width")) {
+        auto *entry = bpConfigGetEntry(cfg, "Width", "Graphics");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["width"].as<int>());
+    }
+    if (result.contains("height")) {
+        auto *entry = bpConfigGetEntry(cfg, "Height", "Graphics");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["height"].as<int>());
+    }
+    if (result.contains("bpp")) {
+        auto *entry = bpConfigGetEntry(cfg, "BitsPerPixel", "Graphics");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["bpp"].as<int>());
+    }
+    if (result.contains("fullscreen")) {
+        auto *entry = bpConfigGetEntry(cfg, "Fullscreen", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["fullscreen"].as<bool>());
+    }
+    if (result.contains("disable-perspective-correction")) {
+        auto *entry = bpConfigGetEntry(cfg, "DisablePerspectiveCorrection", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["disable-perspective-correction"].as<bool>());
+    }
+    if (result.contains("force-linear-fog")) {
+        auto *entry = bpConfigGetEntry(cfg, "ForceLinearFog", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["force-linear-fog"].as<bool>());
+    }
+    if (result.contains("force-software")) {
+        auto *entry = bpConfigGetEntry(cfg, "ForceSoftware", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["force-software"].as<bool>());
+    }
+    if (result.contains("disable-filter")) {
+        auto *entry = bpConfigGetEntry(cfg, "DisableFilter", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["disable-filter"].as<bool>());
+    }
+    if (result.contains("ensure-vertex-shader")) {
+        auto *entry = bpConfigGetEntry(cfg, "EnsureVertexShader", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["ensure-vertex-shader"].as<bool>());
+    }
+    if (result.contains("use-index-buffers")) {
+        auto *entry = bpConfigGetEntry(cfg, "UseIndexBuffers", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["use-index-buffers"].as<bool>());
+    }
+    if (result.contains("disable-dithering")) {
+        auto *entry = bpConfigGetEntry(cfg, "DisableDithering", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["disable-dithering"].as<bool>());
+    }
+    if (result.contains("antialias")) {
+        auto *entry = bpConfigGetEntry(cfg, "Antialias", "Graphics");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["antialias"].as<int>());
+    }
+    if (result.contains("disable-mipmap")) {
+        auto *entry = bpConfigGetEntry(cfg, "DisableMipmap", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["disable-mipmap"].as<bool>());
+    }
+    if (result.contains("disable-specular")) {
+        auto *entry = bpConfigGetEntry(cfg, "DisableSpecular", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["disable-specular"].as<bool>());
+    }
+    if (result.contains("enable-screen-dump")) {
+        auto *entry = bpConfigGetEntry(cfg, "EnableScreenDump", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["enable-screen-dump"].as<bool>());
+    }
+    if (result.contains("enable-debug-mode")) {
+        auto *entry = bpConfigGetEntry(cfg, "EnableDebugMode", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["enable-debug-mode"].as<bool>());
+    }
+    if (result.contains("vertex-cache")) {
+        auto *entry = bpConfigGetEntry(cfg, "VertexCache", "Graphics");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["vertex-cache"].as<int>());
+    }
+    if (result.contains("disable-texture-cache-management")) {
+        auto *entry = bpConfigGetEntry(cfg, "TextureCacheManagement", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, !result["disable-texture-cache-management"].as<bool>());
+    }
+    if (result.contains("disable-sort-transparent-objects")) {
+        auto *entry = bpConfigGetEntry(cfg, "SortTransparentObjects", "Graphics");
+        if (entry)
+            bpConfigEntrySetBool(entry, !result["disable-sort-transparent-objects"].as<bool>());
+    }
     if (result.contains("texture-video-format")) {
         const auto &format = result["texture-video-format"].as<std::string>();
-        config->TextureVideoFormat->SetUint32(bpString2PixelFormat(format.c_str(), format.length()));
+        auto *entry = bpConfigGetEntry(cfg, "TextureVideoFormat", "Graphics");
+        if (entry)
+            bpConfigEntrySetString(entry, format.c_str());
     }
     if (result.contains("sprite-video-format")) {
         const auto &format = result["sprite-video-format"].as<std::string>();
-        config->SpriteVideoFormat->SetUint32(bpString2PixelFormat(format.c_str(), format.length()));
+        auto *entry = bpConfigGetEntry(cfg, "SpriteVideoFormat", "Graphics");
+        if (entry)
+            bpConfigEntrySetString(entry, format.c_str());
     }
-    if (result.contains("child-window-rendering"))
-        config->ChildWindowRendering->SetBool(result["child-window-rendering"].as<bool>());
-    if (result.contains("borderless"))
-        config->Borderless->SetBool(result["borderless"].as<bool>());
-    if (result.contains("clip-cursor"))
-        config->ClipCursor->SetBool(result["clip-cursor"].as<bool>());
-    if (result.contains("always-handle-input"))
-        config->AlwaysHandleInput->SetBool(result["always-handle-input"].as<bool>());
-    if (result.contains("pause-on-deactivated"))
-        config->PauseOnDeactivated->SetBool(result["pause-on-deactivated"].as<bool>());
-    if (result.contains("position-x"))
-        config->PosX->SetInt32(result["position-x"].as<int>());
-    if (result.contains("position-y"))
-        config->PosY->SetInt32(result["position-y"].as<int>());
-    if (result.contains("lang"))
-        config->LangId->SetInt32(result["lang"].as<int>());
-    if (result.contains("skip-opening"))
-        config->SkipOpening->SetBool(result["skip-opening"].as<bool>());
-    if (result.contains("disable-hotfix"))
-        config->ApplyHotfix->SetBool(!result["disable-hotfix"].as<bool>());
-    if (result.contains("unlock-framerate"))
-        config->UnlockFramerate->SetBool(result["unlock-framerate"].as<bool>());
-    if (result.contains("unlock-widescreen"))
-        config->UnlockWidescreen->SetBool(result["unlock-widescreen"].as<bool>());
-    if (result.contains("unlock-high-resolution"))
-        config->UnlockHighResolution->SetBool(result["unlock-high-resolution"].as<bool>());
-    if (result.contains("debug"))
-        config->Debug->SetBool(result["debug"].as<bool>());
-    if (result.contains("rookie"))
-        config->Rookie->SetBool(result["rookie"].as<bool>());
+    if (result.contains("child-window-rendering")) {
+        auto *entry = bpConfigGetEntry(cfg, "ChildWindowRendering", "Window");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["child-window-rendering"].as<bool>());
+    }
+    if (result.contains("borderless")) {
+        auto *entry = bpConfigGetEntry(cfg, "Borderless", "Window");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["borderless"].as<bool>());
+    }
+    if (result.contains("clip-cursor")) {
+        auto *entry = bpConfigGetEntry(cfg, "ClipCursor", "Window");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["clip-cursor"].as<bool>());
+    }
+    if (result.contains("always-handle-input")) {
+        auto *entry = bpConfigGetEntry(cfg, "AlwaysHandleInput", "Window");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["always-handle-input"].as<bool>());
+    }
+    if (result.contains("pause-on-deactivated")) {
+        auto *entry = bpConfigGetEntry(cfg, "PauseOnDeactivated", "Window");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["pause-on-deactivated"].as<bool>());
+    }
+    if (result.contains("position-x")) {
+        auto *entry = bpConfigGetEntry(cfg, "X", "Window");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["position-x"].as<int>());
+    }
+    if (result.contains("position-y")) {
+        auto *entry = bpConfigGetEntry(cfg, "Y", "Window");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["position-y"].as<int>());
+    }
+    if (result.contains("disable-hotfix")) {
+        auto *entry = bpConfigGetEntry(cfg, "ApplyHotfix", "Game");
+        if (entry)
+            bpConfigEntrySetBool(entry, !result["disable-hotfix"].as<bool>());
+    }
+    if (result.contains("lang")) {
+        auto *entry = bpConfigGetEntry(cfg, "LangId", "Game");
+        if (entry)
+            bpConfigEntrySetInt32(entry, result["lang"].as<int>());
+    }
+    if (result.contains("skip-opening")) {
+        auto *entry = bpConfigGetEntry(cfg, "SkipOpening", "Game");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["skip-opening"].as<bool>());
+    }
+    if (result.contains("unlock-framerate")) {
+        auto *entry = bpConfigGetEntry(cfg, "UnlockFramerate", "Game");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["unlock-framerate"].as<bool>());
+    }
+    if (result.contains("unlock-widescreen")) {
+        auto *entry = bpConfigGetEntry(cfg, "UnlockWidescreen", "Game");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["unlock-widescreen"].as<bool>());
+    }
+    if (result.contains("unlock-high-resolution")) {
+        auto *entry = bpConfigGetEntry(cfg, "UnlockHighResolution", "Game");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["unlock-high-resolution"].as<bool>());
+    }
+    if (result.contains("debug")) {
+        auto *entry = bpConfigGetEntry(cfg, "Debug", "Game");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["debug"].as<bool>());
+    }
+    if (result.contains("rookie")) {
+        auto *entry = bpConfigGetEntry(cfg, "Rookie", "Game");
+        if (entry)
+            bpConfigEntrySetBool(entry, result["rookie"].as<bool>());
+    }
 }
 
 void LoadGamePathsFromCommandLine(BpGameConfig *config, const cxxopts::ParseResult &result) {
@@ -335,30 +463,20 @@ static void LoadGamePaths(BpGameConfig *config, const cxxopts::ParseResult &resu
     LoadGamePathsFromCommandLine(config, result);
 
     // Set default value for the path if it was not specified in command line
-    for (int p = 0; p < BP_PATH_CATEGORY_COUNT; ++p)
-    {
-        if (!bpHasGamePath(config, (BpPathCategory)p))
-        {
+    for (int p = 0; p < BP_PATH_CATEGORY_COUNT; ++p) {
+        if (!bpHasGamePath(config, (BpPathCategory)p)) {
             useDefault = true;
-        }
-        else if (!bpDirectoryExists(bpGetGamePath(config, (BpPathCategory)p)))
-        {
+        } else if (!bpDirectoryExists(bpGetGamePath(config, (BpPathCategory)p))) {
             bpLogWarn("%s does not exist, using default path: %s", bpGetGamePath(config, (BpPathCategory)p), DefaultPaths[p]);
             useDefault = true;
-        }
-        else
-        {
+        } else {
             useDefault = false;
         }
 
-        if (useDefault)
-        {
-            if (p < BP_PATH_PLUGINS)
-            {
+        if (useDefault) {
+            if (p < BP_PATH_PLUGINS) {
                 bpSetGamePath(config, (BpPathCategory)p, DefaultPaths[p]);
-            }
-            else
-            {
+            } else {
                 char szPath[MAX_PATH];
                 bpConcatPath(szPath, MAX_PATH, bpGetGamePath(config, BP_PATH_ROOT), DefaultPaths[p]);
                 bpSetGamePath(config, (BpPathCategory)p, szPath);
@@ -371,11 +489,18 @@ void InitLogger(BpLogger *logger, const BpGameConfig *config) {
     if (!logger)
         return;
 
-    if (config->Verbose->GetBool())
+    BpConfig *cfg = bpGameConfigGet(config);
+    if (!cfg)
+        return;
+
+    auto *verboseEntry = bpConfigGetEntry(cfg, "Verbose", "Startup");
+    if (verboseEntry && bpConfigEntryGetBool(verboseEntry))
         bpLoggerSetLevel(logger, BP_LOG_DEBUG);
 
     bool overwrite = true;
-    if (config->LogMode->GetBool() == BP_LOG_MODE_APPEND)
+
+    auto *logModeEntry = bpConfigGetEntry(cfg, "LogMode", "Startup");
+    if (logModeEntry && bpConfigEntryGetInt32(logModeEntry) == BP_LOG_MODE_APPEND)
         overwrite = false;
 
     g_FileLogger.Attach(logger, bpGetGamePath(config, BP_PATH_LOG), overwrite);

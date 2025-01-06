@@ -51,9 +51,9 @@ struct BpGameConfig {
     BpConfigEntry *PosY;
 
     // Game Settings
+    BpConfigEntry *ApplyHotfix;
     BpConfigEntry *LangId;
     BpConfigEntry *SkipOpening;
-    BpConfigEntry *ApplyHotfix;
     BpConfigEntry *UnlockFramerate;
     BpConfigEntry *UnlockWidescreen;
     BpConfigEntry *UnlockHighResolution;
