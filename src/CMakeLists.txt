@@ -64,8 +64,6 @@ add_library(${LIBRARY_NAME} SHARED
         ${LIBRARY_HEADERS} ${LIBRARY_SOURCES}
 )
 
-set_target_properties(${LIBRARY_NAME} PROPERTIES DEBUG_POSTFIX "d")
-
 target_include_directories(${LIBRARY_NAME}
         PUBLIC
         $<BUILD_INTERFACE:${BP_INCLUDE_DIR}>
