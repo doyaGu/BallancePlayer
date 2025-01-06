@@ -52,7 +52,7 @@ BP_EXPORT void bpDestroyGameConfig(BpGameConfig *config);
  * @param config The game configuration.
  * @return The configuration.
  */
-BP_EXPORT BpConfig *bpGameConfigGet(BpGameConfig *config);
+BP_EXPORT BpConfig *bpGameConfigGet(const BpGameConfig *config);
 
 /**
  * @brief Initialize the game configuration.

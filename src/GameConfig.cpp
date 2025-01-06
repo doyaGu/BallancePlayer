@@ -19,7 +19,7 @@ void bpDestroyGameConfig(BpGameConfig *config) {
     }
 }
 
-BpConfig *bpGameConfigGet(BpGameConfig *config) {
+BpConfig *bpGameConfigGet(const BpGameConfig *config) {
     if (!config || !config->Config)
         return nullptr;
     return config->Config;
