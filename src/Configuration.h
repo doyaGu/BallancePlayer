@@ -225,12 +225,12 @@ struct BpConfig {
 
     /**
      * @brief Reads the configuration data into the provided buffer.
-     * @param buffer The buffer to read the configuration data into.
+     * @param json The buffer containing the configuration data.
      * @param len The length of the buffer.
      * @param overwrite True to overwrite the existing data, false to append.
      * @return True if the read operation is successful, false otherwise.
      */
-    virtual bool Read(char *buffer, size_t len, bool overwrite) = 0;
+    virtual bool Read(const char *json, size_t len, bool overwrite) = 0;
 
     /**
      * @brief Writes the configuration data and returns it as a character buffer.

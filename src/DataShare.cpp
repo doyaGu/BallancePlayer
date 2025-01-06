@@ -78,7 +78,7 @@ using namespace bp;
 
 BpDataShare *bpGetDataShare(const char *name) {
     if (!name)
-        name = "Game";
+        name = BP_DEFAULT_NAME;
     return DataShare::GetInstance(name);
 }
 

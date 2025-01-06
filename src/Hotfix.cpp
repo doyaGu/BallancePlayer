@@ -317,7 +317,7 @@ static bool SkipOpeningAnimation(CKBehavior *defaultLevel, CKBehavior *synchToSc
     return true;
 }
 
-bool EditScript(CKLevel *level, const BpGameConfig &config) {
+bool EditScript(CKLevel *level, const BpGameConfig *config) {
     if (!level)
         return false;
 
@@ -328,13 +328,13 @@ bool EditScript(CKLevel *level, const BpGameConfig &config) {
     }
 
     // Set debug mode
-    if (config.Debug->GetBool()) {
+    if (config->Debug->GetBool()) {
         if (!SetDebugMode(scriptutils::GetBehavior(defaultLevel, "set DebugMode")))
             bpLogWarn("Failed to set debug mode");
     }
 
     // Bypass "Set Language" script and set our language id
-    if (!SetLanguage(scriptutils::GetBehavior(defaultLevel, "Set Language"), config.LangId->GetInt32()))
+    if (!SetLanguage(scriptutils::GetBehavior(defaultLevel, "Set Language"), config->LangId->GetInt32()))
         bpLogWarn("Failed to set language id");
 
     int i;
@@ -381,18 +381,18 @@ bool EditScript(CKLevel *level, const BpGameConfig &config) {
     if (!bbpFilter) {
         bpLogWarn("Failed to correct the bbp filter");
     } else {
-        scriptutils::SetInputParameterValue(bbpFilter, 2, config.Bpp->GetInt32());
+        scriptutils::SetInputParameterValue(bbpFilter, 2, config->Bpp->GetInt32());
     }
 
     // Unlock widescreen (Not 4:3)
-    if (config.UnlockWidescreen->GetBool()) {
+    if (config->UnlockWidescreen->GetBool()) {
         if (!UnlockWidescreen(sm, minWidth))
             bpLogWarn("Failed to unlock widescreen");
     }
 
     // Unlock high resolution
-    if (config.UnlockHighResolution->GetBool()) {
-        if (!UnlockHighResolution(sm, bbpFilter, minWidth, maxWidth, config.UnlockWidescreen->GetBool()))
+    if (config->UnlockHighResolution->GetBool()) {
+        if (!UnlockHighResolution(sm, bbpFilter, minWidth, maxWidth, config->UnlockWidescreen->GetBool()))
             bpLogWarn("Failed to unlock high resolution");
     }
 
@@ -403,7 +403,7 @@ bool EditScript(CKLevel *level, const BpGameConfig &config) {
     }
 
     // Unlock frame rate limitation
-    if (config.UnlockFramerate->GetBool()) {
+    if (config->UnlockFramerate->GetBool()) {
         if (!UnlockFramerate(sts))
             bpLogWarn("Failed to unlock frame rate limitation");
     }
@@ -413,7 +413,7 @@ bool EditScript(CKLevel *level, const BpGameConfig &config) {
         bpLogWarn("Failed to bypass 640x480 resolution test");
 
     // Skip Opening Animation
-    if (config.SkipOpening->GetBool()) {
+    if (config->SkipOpening->GetBool()) {
         if (!SkipOpeningAnimation(defaultLevel, sts))
             bpLogWarn("Failed to skip opening animation");
     }

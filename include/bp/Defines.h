@@ -32,6 +32,7 @@
 
 #define BP_ENABLE_IMGUI 1
 
+#define BP_DEFAULT_NAME "Player"
 #define BP_DEFAULT_WIDTH 640
 #define BP_DEFAULT_HEIGHT 480
 #define BP_DEFAULT_BPP 32

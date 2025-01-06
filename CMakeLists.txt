@@ -51,6 +51,7 @@ find_package(VirtoolsSDK REQUIRED)
 
 set(BP_VERSION ${CMAKE_PROJECT_VERSION})
 
+set(BP_NAME "Game" CACHE STRING "Player name default value" FORCE)
 set(BP_SCREEN_WIDTH 640 CACHE STRING "Player screen width default value" FORCE)
 set(BP_SCREEN_HEIGHT 480 CACHE STRING "Player screen height default value" FORCE)
 set(BP_SCREEN_BPP 32 CACHE STRING "Player screen bpp default value" FORCE)

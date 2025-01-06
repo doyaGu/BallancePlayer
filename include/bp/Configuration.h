@@ -344,7 +344,7 @@ BP_EXPORT void bpConfigClear(BpConfig *config);
  * @param overwrite Overwrite the existing configuration.
  * @return True if the read operation is successful, false otherwise.
  */
-BP_EXPORT bool bpConfigRead(BpConfig *config, char *json, size_t size, bool overwrite);
+BP_EXPORT bool bpConfigRead(BpConfig *config, const char *json, size_t size, bool overwrite);
 
 /**
  * @brief Write the configuration to a JSON string.

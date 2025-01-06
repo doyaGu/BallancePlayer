@@ -37,9 +37,10 @@ typedef struct BpGameConfig BpGameConfig;
 
 /**
  * @brief Create a new game configuration.
+ * @param name The name of the game configuration.
  * @return The game configuration.
  */
-BP_EXPORT BpGameConfig *bpCreateGameConfig();
+BP_EXPORT BpGameConfig *bpCreateGameConfig(const char *name);
 
 /**
  * @brief Destroy the game configuration.
@@ -55,6 +56,13 @@ BP_EXPORT void bpDestroyGameConfig(BpGameConfig *config);
 BP_EXPORT BpConfig *bpGameConfigGet(const BpGameConfig *config);
 
 /**
+ * @brief Check if the game configuration is initialized.
+ * @param config The game configuration.
+ * @return True if initialized, false otherwise.
+ */
+BP_EXPORT bool bpGameConfigIsInitialized(const BpGameConfig *config);
+
+/**
  * @brief Initialize the game configuration.
  * @param config The game configuration.
  * @return True if successful, false otherwise.
@@ -62,16 +70,10 @@ BP_EXPORT BpConfig *bpGameConfigGet(const BpGameConfig *config);
 BP_EXPORT bool bpGameConfigInit(BpGameConfig *config);
 
 /**
- * @brief Reset the game configuration.
+ * @brief Release the game configuration.
  * @param config The game configuration.
  */
-BP_EXPORT void bpGameConfigReset(BpGameConfig *config);
-
-/**
- * @brief Clear the game configuration.
- * @param config The game configuration.
- */
-BP_EXPORT void bpGameConfigClear(BpGameConfig *config);
+BP_EXPORT void bpGameConfigRelease(BpGameConfig *config);
 
 /**
  * @brief Read the game configuration from JSON.
@@ -80,7 +82,7 @@ BP_EXPORT void bpGameConfigClear(BpGameConfig *config);
  * @param size The size of the JSON string.
  * @return True if successful, false otherwise.
  */
-BP_EXPORT bool bpGameConfigRead(BpGameConfig *config, char *json, size_t size);
+BP_EXPORT bool bpGameConfigRead(BpGameConfig *config, const char *json, size_t size);
 
 /**
  * @brief Write the game configuration to JSON.
@@ -118,7 +120,7 @@ BP_EXPORT bool bpGameConfigSave(const BpGameConfig *config, const char *filename
  * @param category The path category.
  * @param path The path.
  */
-BP_EXPORT void bpSetGamePath(BpGameConfig *config, BpPathCategory category, const char *path);
+BP_EXPORT bool bpSetGamePath(BpGameConfig *config, BpPathCategory category, const char *path);
 
 /**
  * @brief Get the game path.
@@ -135,6 +137,14 @@ BP_EXPORT const char *bpGetGamePath(const BpGameConfig *config, BpPathCategory c
  * @return True if the path exists, false otherwise.
  */
 BP_EXPORT bool bpHasGamePath(const BpGameConfig *config, BpPathCategory category);
+
+/**
+ * @brief Reset the game path.
+ * @param config The game configuration.
+ * @param category The path category.
+ * @return True if successful, false otherwise.
+ */
+BP_EXPORT bool bpResetGamePath(BpGameConfig *config, BpPathCategory category);
 
 BP_END_CDECLS
 

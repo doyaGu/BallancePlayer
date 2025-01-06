@@ -1,11 +1,11 @@
-set(PLAYER_NAME "PlayerExecutable")
-set(LIBRARY_NAME "Player")
+set(PLAYER_NAME "Player")
+set(LIBRARY_NAME "Game")
 
 set(BP_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Version.h.in ${BP_INCLUDE_DIR}/bp/Version.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Defines.h.in ${BP_INCLUDE_DIR}/bp/Defines.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/PlayerDll.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/PlayerDll.rc)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Game.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/Game.rc)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/Player.rc)
 
 set(LIBRARY_HEADERS
@@ -30,7 +30,7 @@ set(LIBRARY_SOURCES
         Logger.cpp
         Variant.cpp
         Utils.cpp
-        PlayerDll.rc
+        Game.rc
 )
 
 set(IMGUI_HEADERS
@@ -101,10 +101,6 @@ add_executable(${PLAYER_NAME} WIN32
         Splash.cpp
         Splash.h
         Player.rc
-)
-
-set_target_properties(${PLAYER_NAME} PROPERTIES
-        OUTPUT_NAME "Player"
 )
 
 target_include_directories(${PLAYER_NAME}

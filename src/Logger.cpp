@@ -221,7 +221,7 @@ Logger *Logger::GetInstance(const std::string &name) {
 Logger *Logger::SetDefault(Logger *logger) {
     Logger *previous = s_DefaultLogger;
     if (!logger) {
-        s_DefaultLogger = GetInstance("Game");
+        s_DefaultLogger = GetInstance(BP_DEFAULT_NAME);
     }
     s_DefaultLogger = logger;
     return previous;
@@ -229,7 +229,7 @@ Logger *Logger::SetDefault(Logger *logger) {
 
 Logger *Logger::GetDefault() {
     if (!s_DefaultLogger) {
-        s_DefaultLogger = GetInstance("Game");
+        s_DefaultLogger = GetInstance(BP_DEFAULT_NAME);
     }
     return s_DefaultLogger;
 }

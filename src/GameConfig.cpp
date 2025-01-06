@@ -4,17 +4,45 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "VxMathDefines.h"
-
+#include "bp/Utils.h"
 #include "Configuration.h"
 
-BpGameConfig *bpCreateGameConfig() {
-    return new BpGameConfig();
+constexpr const char *const PathNames[] = {
+    "Config",
+    "Log",
+    "Cmo",
+    "Root",
+    "Plugin",
+    "RenderEngines",
+    "Managers",
+    "BuildingBlocks",
+    "Sounds",
+    "Textures",
+    "Data",
+    "Scripts",
+};
+
+constexpr const char *const DefaultPaths[] = {
+    "Player.json",
+    "Player.log",
+    "base.cmo",
+    "..\\",
+    "Plugins\\",
+    "RenderEngines\\",
+    "Managers\\",
+    "BuildingBlocks\\",
+    "Sounds\\",
+    "Textures\\",
+    "",
+    "Scripts\\",
+};
+
+BpGameConfig *bpCreateGameConfig(const char *name) {
+    return new BpGameConfig(name);
 }
 
 void bpDestroyGameConfig(BpGameConfig *config) {
     if (config) {
-        bpGameConfigClear(config);
         delete config;
     }
 }
@@ -25,17 +53,20 @@ BpConfig *bpGameConfigGet(const BpGameConfig *config) {
     return config->Config;
 }
 
-bool bpGameConfigInit(BpGameConfig *config) {
-    if (!config->Config) {
-        auto *cfg = bpGetConfig("Game");
-        if (!cfg)
-            return false;
+bool bpGameConfigIsInitialized(const BpGameConfig *config) {
+    if (!config)
+        return false;
+    return config->Initialized;
+}
 
-        config->Config = cfg;
-        config->Config->AddRef();
-    } else {
-        bpGameConfigReset(config);
-    }
+bool bpGameConfigInit(BpGameConfig *config) {
+    if (!config || !config->Config)
+        return false;
+
+    if (config->Initialized)
+        return true;
+
+    bpGameConfigRelease(config);
 
     auto *cfg = config->Config;
 
@@ -309,34 +340,29 @@ bool bpGameConfigInit(BpGameConfig *config) {
     }
     config->Rookie->AddRef();
 
-    constexpr const char *const PathNames[] = {
-        "Config",
-        "Log",
-        "Cmo",
-        "Root",
-        "Plugin",
-        "RenderEngines",
-        "Managers",
-        "BuildingBlocks",
-        "Sounds",
-        "Textures",
-        "Data",
-        "Scripts",
-    };
-
+    char szPath[MAX_PATH];
     for (int i = 0; i < BP_PATH_CATEGORY_COUNT; ++i) {
-        config->Paths[i] = cfg->AddEntryString(PathNames[i], "", "Paths");
+        const char *path;
+        if (i < BP_PATH_PLUGINS) {
+            path = DefaultPaths[i];
+        } else {
+            bpConcatPath(szPath, MAX_PATH, bpGetGamePath(config, BP_PATH_ROOT), DefaultPaths[i]);
+            path = szPath;
+        }
+
+        config->Paths[i] = cfg->AddEntryString(PathNames[i], path, "Paths");
         if (!config->Paths[i]) {
             return false;
         }
         config->Paths[i]->AddRef();
     }
 
+    config->Initialized = true;
     return true;
 }
 
-void bpGameConfigReset(BpGameConfig *config) {
-    if (!config)
+void bpGameConfigRelease(BpGameConfig *config) {
+    if (!config || !config->Initialized)
         return;
 
     if (config->LogMode) {
@@ -558,35 +584,19 @@ void bpGameConfigReset(BpGameConfig *config) {
         config->Rookie->Release();
         config->Rookie = nullptr;
     }
+
+    config->Initialized = false;
 }
 
-void bpGameConfigClear(BpGameConfig *config) {
-    if (!config)
-        return;
-
-    bpGameConfigReset(config);
-
-    if (config->Config) {
-        config->Config->Release();
-        config->Config = nullptr;
-    }
-}
-
-bool bpGameConfigRead(BpGameConfig *config, char *json, size_t size) {
-    if (!config)
+bool bpGameConfigRead(BpGameConfig *config, const char *json, size_t size) {
+    if (!config || !config->Config)
         return false;
-
-    if (!config->Config) {
-        bpGameConfigInit(config);
-    }
-
     return config->Config->Read(json, size, true);
 }
 
 char *bpWriteGameConfig(const BpGameConfig *config, size_t *size) {
     if (!config || !config->Config)
         return nullptr;
-
     return config->Config->Write(size);
 }
 
@@ -600,12 +610,11 @@ bool bpGameConfigLoad(BpGameConfig *config, const char *filename) {
     if (!config)
         return false;
 
+    if (!filename) {
+        filename = bpGetGamePath(config, BP_PATH_CONFIG);
+    }
     if (!filename || filename[0] == '\0') {
         return false;
-    }
-
-    if (!config->Config) {
-        bpGameConfigInit(config);
     }
 
     FILE *fp = fopen(filename, "rb");
@@ -662,20 +671,73 @@ bool bpGameConfigSave(const BpGameConfig *config, const char *filename) {
     return true;
 }
 
-void bpSetGamePath(BpGameConfig *config, BpPathCategory category, const char *path) {
+bool bpSetGamePath(BpGameConfig *config, BpPathCategory category, const char *path) {
     if (!config || category < 0 || category >= BP_PATH_CATEGORY_COUNT || !path)
-        return;
+        return false;
+
+    if (!config->Paths[category]) {
+        auto *cfg = config->Config;
+        if (!cfg) {
+            return false;
+        }
+        config->Paths[category] = cfg->AddEntryString(PathNames[category], path, "Paths");
+        if (!config->Paths[category]) {
+            return false;
+        }
+        config->Paths[category]->AddRef();
+        return true;
+    }
+
     config->Paths[category]->SetString(path);
+
+    return true;
 }
 
 const char *bpGetGamePath(const BpGameConfig *config, BpPathCategory category) {
     if (!config || category < 0 || category >= BP_PATH_CATEGORY_COUNT)
         return nullptr;
+
+    if (!config->Paths[category]) {
+        return nullptr;
+    }
+
     return config->Paths[category]->GetString();
 }
 
 bool bpHasGamePath(const BpGameConfig *config, BpPathCategory category) {
     if (!config || category < 0 || category >= BP_PATH_CATEGORY_COUNT)
         return false;
+
+    if (!config->Paths[category]) {
+        return false;
+    }
+
     return strcmp(config->Paths[category]->GetString(), "") != 0;
+}
+
+bool bpResetGamePath(BpGameConfig *config, BpPathCategory category) {
+    if (!config || category < 0 || category > BP_PATH_CATEGORY_COUNT)
+        return false;
+
+    if (category == BP_PATH_CATEGORY_COUNT) {
+        for (int i = 0; i < BP_PATH_CATEGORY_COUNT; ++i) {
+            if (i < BP_PATH_PLUGINS) {
+                bpSetGamePath(config, (BpPathCategory) i, DefaultPaths[i]);
+            } else {
+                char szPath[MAX_PATH];
+                bpConcatPath(szPath, MAX_PATH, bpGetGamePath(config, BP_PATH_ROOT), DefaultPaths[i]);
+                bpSetGamePath(config, (BpPathCategory) i, szPath);
+            }
+        }
+    } else {
+        if (category < BP_PATH_PLUGINS) {
+            bpSetGamePath(config, category, DefaultPaths[category]);
+        } else {
+            char szPath[MAX_PATH];
+            bpConcatPath(szPath, MAX_PATH, bpGetGamePath(config, BP_PATH_ROOT), DefaultPaths[category]);
+            bpSetGamePath(config, category, szPath);
+        }
+    }
+
+    return true;
 }

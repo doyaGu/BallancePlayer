@@ -5,63 +5,75 @@
 #include "Configuration.h"
 
 struct BpGameConfig {
-    BpConfig *Config;
+    BpConfig *Config = nullptr;
+    bool Initialized = false;
 
     // Startup Settings
-    BpConfigEntry *LogMode;
-    BpConfigEntry *Verbose;
-    BpConfigEntry *ManualSetup;
-    BpConfigEntry *LoadAllManagers;
-    BpConfigEntry *LoadAllBuildingBlocks;
-    BpConfigEntry *LoadAllPlugins;
+    BpConfigEntry *LogMode = nullptr;
+    BpConfigEntry *Verbose = nullptr;
+    BpConfigEntry *ManualSetup = nullptr;
+    BpConfigEntry *LoadAllManagers = nullptr;
+    BpConfigEntry *LoadAllBuildingBlocks = nullptr;
+    BpConfigEntry *LoadAllPlugins = nullptr;
 
     // Graphics
-    BpConfigEntry *Driver;
-    BpConfigEntry *ScreenMode;
-    BpConfigEntry *Width;
-    BpConfigEntry *Height;
-    BpConfigEntry *Bpp;
-    BpConfigEntry *Fullscreen;
+    BpConfigEntry *Driver = nullptr;
+    BpConfigEntry *ScreenMode = nullptr;
+    BpConfigEntry *Width = nullptr;
+    BpConfigEntry *Height = nullptr;
+    BpConfigEntry *Bpp = nullptr;
+    BpConfigEntry *Fullscreen = nullptr;
 
-    BpConfigEntry *DisablePerspectiveCorrection;
-    BpConfigEntry *ForceLinearFog;
-    BpConfigEntry *ForceSoftware;
-    BpConfigEntry *DisableFilter;
-    BpConfigEntry *EnsureVertexShader;
-    BpConfigEntry *UseIndexBuffers;
-    BpConfigEntry *DisableDithering;
-    BpConfigEntry *Antialias;
-    BpConfigEntry *DisableMipmap;
-    BpConfigEntry *DisableSpecular;
-    BpConfigEntry *EnableScreenDump;
-    BpConfigEntry *EnableDebugMode;
-    BpConfigEntry *VertexCache;
-    BpConfigEntry *TextureCacheManagement;
-    BpConfigEntry *SortTransparentObjects;
-    BpConfigEntry *TextureVideoFormat;
-    BpConfigEntry *SpriteVideoFormat;
+    BpConfigEntry *DisablePerspectiveCorrection = nullptr;
+    BpConfigEntry *ForceLinearFog = nullptr;
+    BpConfigEntry *ForceSoftware = nullptr;
+    BpConfigEntry *DisableFilter = nullptr;
+    BpConfigEntry *EnsureVertexShader = nullptr;
+    BpConfigEntry *UseIndexBuffers = nullptr;
+    BpConfigEntry *DisableDithering = nullptr;
+    BpConfigEntry *Antialias = nullptr;
+    BpConfigEntry *DisableMipmap = nullptr;
+    BpConfigEntry *DisableSpecular = nullptr;
+    BpConfigEntry *EnableScreenDump = nullptr;
+    BpConfigEntry *EnableDebugMode = nullptr;
+    BpConfigEntry *VertexCache = nullptr;
+    BpConfigEntry *TextureCacheManagement = nullptr;
+    BpConfigEntry *SortTransparentObjects = nullptr;
+    BpConfigEntry *TextureVideoFormat = nullptr;
+    BpConfigEntry *SpriteVideoFormat = nullptr;
 
     // Window Settings
-    BpConfigEntry *ChildWindowRendering;
-    BpConfigEntry *Borderless;
-    BpConfigEntry *ClipCursor;
-    BpConfigEntry *AlwaysHandleInput;
-    BpConfigEntry *PauseOnDeactivated;
-    BpConfigEntry *PosX;
-    BpConfigEntry *PosY;
+    BpConfigEntry *ChildWindowRendering = nullptr;
+    BpConfigEntry *Borderless = nullptr;
+    BpConfigEntry *ClipCursor = nullptr;
+    BpConfigEntry *AlwaysHandleInput = nullptr;
+    BpConfigEntry *PauseOnDeactivated = nullptr;
+    BpConfigEntry *PosX = nullptr;
+    BpConfigEntry *PosY = nullptr;
 
     // Game Settings
-    BpConfigEntry *ApplyHotfix;
-    BpConfigEntry *LangId;
-    BpConfigEntry *SkipOpening;
-    BpConfigEntry *UnlockFramerate;
-    BpConfigEntry *UnlockWidescreen;
-    BpConfigEntry *UnlockHighResolution;
-    BpConfigEntry *Debug;
-    BpConfigEntry *Rookie;
+    BpConfigEntry *ApplyHotfix = nullptr;
+    BpConfigEntry *LangId = nullptr;
+    BpConfigEntry *SkipOpening = nullptr;
+    BpConfigEntry *UnlockFramerate = nullptr;
+    BpConfigEntry *UnlockWidescreen = nullptr;
+    BpConfigEntry *UnlockHighResolution = nullptr;
+    BpConfigEntry *Debug = nullptr;
+    BpConfigEntry *Rookie = nullptr;
 
     // Paths
-    BpConfigEntry *Paths[BP_PATH_CATEGORY_COUNT];
+    BpConfigEntry *Paths[BP_PATH_CATEGORY_COUNT] = {nullptr};
+
+    explicit BpGameConfig(const char *name) {
+        Config = bpGetConfig(name);
+        Config->AddRef();
+    }
+
+    ~BpGameConfig() {
+        bpGameConfigRelease(this);
+        Config->Release();
+        Config = nullptr;
+    }
 };
 
 #endif // BP_GAMECONFIG_PRIVATE_H

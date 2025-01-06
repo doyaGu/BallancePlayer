@@ -25,19 +25,20 @@ struct BpGamePlayer {};
 class GamePlayer : public BpGamePlayer {
 public:
     static GamePlayer *Get(int id);
+    static GamePlayer *Get(const char *name);
     static GamePlayer *Get(HWND hWnd);
     static GamePlayer *Get(CKContext *context);
 
     GamePlayer(const GamePlayer &) = delete;
     GamePlayer(GamePlayer &&) = delete;
 
-    GamePlayer();
+    explicit GamePlayer(const char *name);
     ~GamePlayer();
 
     GamePlayer &operator=(const GamePlayer &) = delete;
     GamePlayer &operator=(GamePlayer &&) = delete;
 
-    bool Init(HINSTANCE hInstance, const BpGameConfig *config);
+    bool Init(BpGameConfig *config, HINSTANCE hInstance);
     bool Load(const char *filename = nullptr);
 
     void Run();
@@ -52,9 +53,10 @@ public:
     void Reset();
 
     int GetId() const { return m_Id; }
+    const char *GetName() const { return m_Name.c_str(); }
     BpGamePlayerState GetState() const { return m_State; }
     BpLogger *GetLogger() const { return m_Logger; }
-    BpGameConfig *GetGameConfig() { return &m_GameConfig; }
+    BpGameConfig *GetGameConfig() { return m_GameConfig; }
 
     HWND GetMainWindow() const { return m_MainWindow.GetHandle(); }
     HWND GetRenderWindow() const { return m_RenderWindow.GetHandle(); }
@@ -158,14 +160,17 @@ private:
     static BOOL CALLBACK AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     static int s_PlayerCount;
-    static std::unordered_map<int, GamePlayer *> s_Players;
+    static std::unordered_map<int, GamePlayer *> s_IdToPlayerMap;
+    static std::unordered_map<std::string, GamePlayer *> s_NameToPlayerMap;
     static std::unordered_map<HWND, GamePlayer *> s_WindowToPlayerMap;
     static std::unordered_map<CKContext *, GamePlayer *> s_CKContextToPlayerMap;
 
     int m_Id = -1;
+    std::string m_Name;
     BpLogger *m_Logger = nullptr;
-
+    BpGameConfig *m_GameConfig = nullptr;
     BpGamePlayerState m_State = BP_PLAYER_INITIAL;
+
     HINSTANCE m_hInstance = nullptr;
     HACCEL m_hAccelTable = nullptr;
     CWindow m_MainWindow;
@@ -199,7 +204,6 @@ private:
     CKMessageType m_MsgDoubleClick = -1;
 
     GameInfo *m_GameInfo = nullptr;
-    BpGameConfig m_GameConfig = {};
 };
 
 #endif // BP_GAMEPLAYER_PRIVATE_H

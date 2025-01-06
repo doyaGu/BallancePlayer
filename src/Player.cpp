@@ -64,7 +64,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         return 0;
     }
 
-    BpGameConfig *config = bpCreateGameConfig();
+    BpGameConfig *config = bpCreateGameConfig(nullptr);
     bpGameConfigInit(config);
 
     try {
@@ -75,12 +75,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         return -1;
     }
 
-    // Flush ini file if it doesn't exist
-    if (!bpFileOrDirectoryExists(bpGetGamePath(config, BP_PATH_CONFIG)))
-        bpGameConfigSave(config, nullptr);
+    if (bpFileOrDirectoryExists(bpGetGamePath(config, BP_PATH_CONFIG))) {
+        if (!bpGameConfigLoad(config, nullptr)) {
+            bpLoggerWarn(logger, "Failed to load game configuration from file!");
+        }
+    } else {
+        if (!bpGameConfigSave(config, nullptr)) {
+            bpLoggerWarn(logger, "Failed to save game configuration to file!");
+        }
+    }
 
-    // Load configurations
-    bpGameConfigLoad(config, bpGetGamePath(config, BP_PATH_CONFIG));
     try {
         LoadGameConfigFromCommandLine(config, result);
     } catch (const cxxopts::exceptions::option_has_no_value &e) {
@@ -93,9 +97,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     Splash splash(hInstance);
     splash.Show();
 
-    BpGamePlayer *player = bpCreateGamePlayer();
+    BpGamePlayer *player = bpCreateGamePlayer(nullptr);
 
-    if (!bpGamePlayerInit(player, hInstance, config)) {
+    if (!bpGamePlayerInit(player, config, hInstance)) {
         ::MessageBox(nullptr, TEXT("Failed to initialize player!"), TEXT("Error"), MB_OK);
         return -1;
     }
@@ -442,45 +446,15 @@ void LoadGamePathsFromCommandLine(BpGameConfig *config, const cxxopts::ParseResu
 }
 
 static void LoadGamePaths(BpGameConfig *config, const cxxopts::ParseResult &result) {
-    constexpr const char *const DefaultPaths[] = {
-        "Player.json",
-        "Player.log",
-        "base.cmo",
-        "..\\",
-        "Plugins\\",
-        "RenderEngines\\",
-        "Managers\\",
-        "BuildingBlocks\\",
-        "Sounds\\",
-        "Textures\\",
-        "",
-        "Scripts\\",
-    };
-
-    bool useDefault;
-
-    // Load paths
     LoadGamePathsFromCommandLine(config, result);
 
-    // Set default value for the path if it was not specified in command line
+    // Set default value for the path if the path is not set or the path does not exist
     for (int p = 0; p < BP_PATH_CATEGORY_COUNT; ++p) {
-        if (!bpHasGamePath(config, (BpPathCategory)p)) {
-            useDefault = true;
-        } else if (!bpDirectoryExists(bpGetGamePath(config, (BpPathCategory)p))) {
-            bpLogWarn("%s does not exist, using default path: %s", bpGetGamePath(config, (BpPathCategory)p), DefaultPaths[p]);
-            useDefault = true;
-        } else {
-            useDefault = false;
-        }
-
-        if (useDefault) {
-            if (p < BP_PATH_PLUGINS) {
-                bpSetGamePath(config, (BpPathCategory)p, DefaultPaths[p]);
-            } else {
-                char szPath[MAX_PATH];
-                bpConcatPath(szPath, MAX_PATH, bpGetGamePath(config, BP_PATH_ROOT), DefaultPaths[p]);
-                bpSetGamePath(config, (BpPathCategory)p, szPath);
-            }
+        if (!bpHasGamePath(config, (BpPathCategory) p)) {
+            bpResetGamePath(config, (BpPathCategory) p);
+        } else if (!bpDirectoryExists(bpGetGamePath(config, (BpPathCategory) p))) {
+            bpLogWarn("%s does not exist, resetting to default path", bpGetGamePath(config, (BpPathCategory) p));
+            bpResetGamePath(config, (BpPathCategory) p);
         }
     }
 }

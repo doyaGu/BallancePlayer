@@ -22,9 +22,10 @@ typedef enum BpGamePlayerState {
 
 /**
  * @brief Create a new game player.
+ * @param name The name of the game player.
  * @return The game player.
  */
-BP_EXPORT BpGamePlayer *bpCreateGamePlayer();
+BP_EXPORT BpGamePlayer *bpCreateGamePlayer(const char *name);
 
 /**
  * @brief Destroy the game player.
@@ -40,11 +41,25 @@ BP_EXPORT void bpDestroyGamePlayer(BpGamePlayer *player);
 BP_EXPORT BpGamePlayer *bpGetGamePlayerById(int id);
 
 /**
+ * @brief Get the game player by name.
+ * @param name The name of the game player.
+ * @return The game player.
+ */
+BP_EXPORT BpGamePlayer *bpGetGamePlayerByName(const char *name);
+
+/**
  * @brief Get the ID of the game player.
  * @param player The game player.
  * @return The ID of the game player.
  */
 BP_EXPORT int bpGamePlayerGetId(const BpGamePlayer *player);
+
+/**
+ * @brief Get the name of the game player.
+ * @param player The game player.
+ * @return The name of the game player.
+ */
+BP_EXPORT const char *bpGamePlayerGetName(const BpGamePlayer *player);
 
 /**
  * @brief Get the state of the game player.
@@ -84,11 +99,11 @@ BP_EXPORT void *bpGamePlayerGetRenderWindow(const BpGamePlayer *player);
 /**
  * @brief Initialize the game.
  * @param player The game player.
- * @param hInstance The instance handle.
  * @param config The game configuration.
+ * @param hInstance The instance handle.
  * @return True if successful, false otherwise.
  */
-BP_EXPORT bool bpGamePlayerInit(BpGamePlayer *player, void *hInstance, const BpGameConfig *config);
+BP_EXPORT bool bpGamePlayerInit(BpGamePlayer *player, BpGameConfig *config, void *hInstance);
 
 /**
  * @brief Load the game.

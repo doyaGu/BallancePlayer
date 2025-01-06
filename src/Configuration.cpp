@@ -68,7 +68,7 @@ namespace bp {
 
         void Clear() override;
 
-        bool Read(char *buffer, size_t len, bool overwrite) override;
+        bool Read(const char *json, size_t len, bool overwrite) override;
         char *Write(size_t *len) override;
 
         void Free(void *ptr) const override;
@@ -343,7 +343,7 @@ using namespace bp;
 
 BpConfig *bpGetConfig(const char *name) {
     if (!name)
-        name = "Game";
+        name = BP_DEFAULT_NAME;
     return bp::Config::GetInstance(name);
 }
 
@@ -509,7 +509,7 @@ void bpConfigClear(BpConfig *config) {
     config->Clear();
 }
 
-bool bpConfigRead(BpConfig *config, char *json, size_t size, bool overwrite) {
+bool bpConfigRead(BpConfig *config, const char *json, size_t size, bool overwrite) {
     if (!config || !json || size == 0)
         return false;
     return config->Read(json, size, overwrite);
@@ -1457,10 +1457,12 @@ void Config::Clear() {
     m_Root->Clear();
 }
 
-bool Config::Read(char *buffer, size_t len, bool overwrite) {
-    yyjson_read_flag flg = YYJSON_READ_ALLOW_COMMENTS | YYJSON_READ_ALLOW_INF_AND_NAN;
+bool Config::Read(const char *json, size_t len, bool overwrite) {
+    yyjson_read_flag flag = YYJSON_READ_STOP_WHEN_DONE |
+                            YYJSON_READ_ALLOW_COMMENTS |
+                            YYJSON_READ_ALLOW_INF_AND_NAN;
     yyjson_read_err err;
-    yyjson_doc *doc = yyjson_read_opts(buffer, len, flg, nullptr, &err);
+    yyjson_doc *doc = yyjson_read_opts(const_cast<char *>(json), len, flag, nullptr, &err);
     if (!doc)
         return false;
 
@@ -1536,10 +1538,19 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
                 auto *entry = section->GetEntry(yyjson_get_str(key));
                 if (entry) {
-                    if (overwrite)
-                        entry->SetUint64(yyjson_get_uint(val));
+                    if (overwrite) {
+                        auto value = yyjson_get_uint(val);
+                        if (value <= INT64_MAX)
+                            entry->SetInt64((int64_t) value);
+                        else
+                            entry->SetUint64(value);
+                    }
                 } else {
-                    section->AddEntryUint64(yyjson_get_str(key), yyjson_get_uint(val));
+                    auto value = yyjson_get_uint(val);
+                    if (value <= INT64_MAX)
+                        section->AddEntryInt64(yyjson_get_str(key), (int64_t) value);
+                    else
+                        section->AddEntryUint64(yyjson_get_str(key), value);
                 }
             }
                 break;
@@ -1620,10 +1631,19 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
                 auto *entry = section->GetEntry(buf);
                 if (entry) {
-                    if (overwrite)
-                        entry->SetUint64(yyjson_get_uint(val));
+                    if (overwrite) {
+                        auto value = yyjson_get_uint(val);
+                        if (value <= INT64_MAX)
+                            entry->SetInt64((int64_t) value);
+                        else
+                            entry->SetUint64(value);
+                    }
                 } else {
-                    section->AddEntryUint64(buf, yyjson_get_uint(val));
+                    auto value = yyjson_get_uint(val);
+                    if (value <= INT64_MAX)
+                        section->AddEntryInt64(buf, (int64_t) value);
+                    else
+                        section->AddEntryUint64(buf, value);
                 }
             }
                 break;
