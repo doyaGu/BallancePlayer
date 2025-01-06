@@ -5,7 +5,7 @@ set(BP_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Version.h.in ${BP_INCLUDE_DIR}/bp/Version.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Defines.h.in ${BP_INCLUDE_DIR}/bp/Defines.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Game.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/Game.rc)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/PlayerDll.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/PlayerDll.rc)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/Player.rc)
 
 set(LIBRARY_HEADERS
@@ -30,7 +30,7 @@ set(LIBRARY_SOURCES
         Logger.cpp
         Variant.cpp
         Utils.cpp
-        Game.rc
+        PlayerDll.rc
 )
 
 set(IMGUI_HEADERS
