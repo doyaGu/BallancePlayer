@@ -95,7 +95,7 @@ bool bpGameConfigIsInitialized(const BpGameConfig *config);
 bool bpGameConfigInit(BpGameConfig *config);
 void bpGameConfigRelease(BpGameConfig *config);
 bool bpGameConfigRead(BpGameConfig *config, const char *json, size_t size);
-char* bpGameConfigWrite(const BpGameConfig *config);
+char* bpGameConfigWrite(const BpGameConfig *config, size_t *size);
 void bpGameConfigFree(const BpGameConfig *config, char *json);
 bool bpGameConfigLoad(BpGameConfig *config, const char *filename);
 bool bpGameConfigSave(const BpGameConfig *config, const char *filename);
@@ -276,7 +276,7 @@ function GameConfig:read(jsonStr, size)
 end
 
 function GameConfig:write()
-    local jsonPtr = game.bpGameConfigWrite(self._config)
+    local jsonPtr = game.bpGameConfigWrite(self._config, nil)
     if jsonPtr == nil then
         error("Failed to write game config to JSON.")
     end

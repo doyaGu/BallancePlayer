@@ -594,7 +594,7 @@ bool bpGameConfigRead(BpGameConfig *config, const char *json, size_t size) {
     return config->Config->Read(json, size, true);
 }
 
-char *bpWriteGameConfig(const BpGameConfig *config, size_t *size) {
+char *bpGameConfigWrite(const BpGameConfig *config, size_t *size) {
     if (!config || !config->Config)
         return nullptr;
     return config->Config->Write(size);

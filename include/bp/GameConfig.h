@@ -89,7 +89,7 @@ BP_EXPORT bool bpGameConfigRead(BpGameConfig *config, const char *json, size_t s
  * @param config The game configuration.
  * @return The JSON string.
  */
-BP_EXPORT char *bpGameConfigWrite(const BpGameConfig *config);
+BP_EXPORT char *bpGameConfigWrite(const BpGameConfig *config, size_t *size);
 
 /**
  * @brief Free the JSON string.
