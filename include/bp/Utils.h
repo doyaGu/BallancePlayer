@@ -137,10 +137,9 @@ BP_EXPORT void bpCRC32(const void *key, size_t len, size_t seed, void *out);
 /**
  * @brief Convert a string to a pixel format.
  * @param str The string to convert.
- * @param max The maximum length of the string.
  * @return The pixel format.
  */
-BP_EXPORT int bpString2PixelFormat(const char *str, size_t max);
+BP_EXPORT int bpString2PixelFormat(const char *str);
 
 /**
  * @brief Convert a pixel format to a string.

@@ -235,9 +235,11 @@ void bpCRC32(const void *key, size_t len, size_t seed, void *out) {
     *(size_t *) out = crc;
 }
 
-int bpString2PixelFormat(const char *str, size_t max) {
-    if (!str || str[0] == '\0' || max == 0)
+int bpString2PixelFormat(const char *str) {
+    if (!str || str[0] == '\0')
         return UNKNOWN_PF;
+
+    size_t max = strlen(str);
 
     VX_PIXELFORMAT format = UNKNOWN_PF;
     if (strncmp(str, "_32_ARGB8888", max) == 0)
