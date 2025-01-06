@@ -55,7 +55,7 @@ set(IMGUI_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/cimgui.cpp
 )
 
-if (PLAYER_ENABLE_IMGUI)
+if (BP_ENABLE_IMGUI)
         list(APPEND LIBRARY_HEADERS ${IMGUI_HEADERS})
         list(APPEND LIBRARY_SOURCES ${IMGUI_SOURCES})
 endif ()
@@ -73,7 +73,7 @@ target_include_directories(${LIBRARY_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-if (PLAYER_ENABLE_IMGUI)
+if (BP_ENABLE_IMGUI)
         target_include_directories(${LIBRARY_NAME} PUBLIC ${IMGUI_SOURCE_DIR})
 endif ()
 
@@ -86,7 +86,7 @@ target_link_libraries(${LIBRARY_NAME}
 
 target_compile_definitions(${LIBRARY_NAME} PRIVATE "BP_EXPORTS")
 
-if (PLAYER_ENABLE_IMGUI)
+if (BP_ENABLE_IMGUI)
     target_compile_definitions(${LIBRARY_NAME} PRIVATE "IMGUI_EXPORT")
 endif ()
 
