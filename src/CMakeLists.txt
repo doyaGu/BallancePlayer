@@ -56,25 +56,28 @@ set(IMGUI_SOURCES
 )
 
 if (BP_ENABLE_IMGUI)
-        list(APPEND LIBRARY_HEADERS ${IMGUI_HEADERS})
-        list(APPEND LIBRARY_SOURCES ${IMGUI_SOURCES})
+    list(APPEND LIBRARY_HEADERS ${IMGUI_HEADERS})
+    list(APPEND LIBRARY_SOURCES ${IMGUI_SOURCES})
 endif ()
 
 add_library(${LIBRARY_NAME} SHARED
         ${LIBRARY_HEADERS} ${LIBRARY_SOURCES}
 )
 
+set_target_properties(${LIBRARY_NAME} PROPERTIES DEBUG_POSTFIX "d")
+
 target_include_directories(${LIBRARY_NAME}
         PUBLIC
         $<BUILD_INTERFACE:${BP_INCLUDE_DIR}>
-        $<BUILD_INTERFACE:${IMGUI_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 if (BP_ENABLE_IMGUI)
-        target_include_directories(${LIBRARY_NAME} PUBLIC ${IMGUI_SOURCE_DIR})
+    target_include_directories(${LIBRARY_NAME} PUBLIC
+            $<BUILD_INTERFACE:${IMGUI_SOURCE_DIR}>
+    )
 endif ()
 
 target_link_libraries(${LIBRARY_NAME}
@@ -91,7 +94,7 @@ if (BP_ENABLE_IMGUI)
 endif ()
 
 add_custom_command(TARGET ${LIBRARY_NAME} PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h" "${IMGUI_SOURCE_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h" ${IMGUI_SOURCE_DIR}
         VERBATIM
 )
 
@@ -116,12 +119,55 @@ target_link_libraries(${PLAYER_NAME}
         PRIVATE ${LIBRARY_NAME} cxxopts
 )
 
-install(TARGETS ${PLAYER_NAME} ${LIBRARY_NAME} RUNTIME DESTINATION Bin)
+install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+install(TARGETS ${LIBRARY_NAME} EXPORT BallanceTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+install(EXPORT BallanceTargets
+        NAMESPACE Ballance::
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake")
+
+install(DIRECTORY "${BP_INCLUDE_DIR}/bp" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+if (BP_ENABLE_IMGUI)
+    install(FILES
+            "${IMGUI_SOURCE_DIR}/imconfig.h"
+            "${IMGUI_SOURCE_DIR}/imgui.h"
+            "${IMGUI_SOURCE_DIR}/imgui_internal.h"
+            "${IMGUI_SOURCE_DIR}/imstb_rectpack.h"
+            "${IMGUI_SOURCE_DIR}/imstb_textedit.h"
+            "${IMGUI_SOURCE_DIR}/imstb_truetype.h"
+            "${CMAKE_CURRENT_SOURCE_DIR}/cimgui.h"
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+endif ()
+
+
+configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/BallanceConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/BallanceConfig.cmake"
+        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
+)
+
+write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/BallanceConfigVersion.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMinorVersion
+)
+
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/BallanceConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/BallanceConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
+)
+
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_VENDOR "Kakuty")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CMAKE_PROJECT_VERSION}")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME}")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_NAME})
+set(CPACK_SOURCE_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME})
 set(CPACK_GENERATOR "ZIP")
 include(CPack)
