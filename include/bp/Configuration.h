@@ -121,71 +121,80 @@ BP_EXPORT const char *bpConfigGetName(const BpConfig *config);
 /**
  * @brief Get the number of entries in the configuration.
  * @param config The configuration.
+ * @param parent The parent name of the entries.
  * @return The number of entries in the configuration.
  */
-BP_EXPORT size_t bpConfigGetNumberOfEntries(const BpConfig *config);
+BP_EXPORT size_t bpConfigGetNumberOfEntries(const BpConfig *config, const char *parent);
 
 /**
  * @brief Get the number of lists in the configuration.
  * @param config The configuration.
+ * @param parent The parent name of the lists.
  * @return The number of lists in the configuration.
  */
-BP_EXPORT size_t bpConfigGetNumberOfLists(const BpConfig *config);
+BP_EXPORT size_t bpConfigGetNumberOfLists(const BpConfig *config, const char *parent);
 
 /**
  * @brief Get the number of sections in the configuration.
  * @param config The configuration.
+ * @param parent The parent name of the sections.
  * @return The number of sections in the configuration.
  */
-BP_EXPORT size_t bpConfigGetNumberOfSections(const BpConfig *config);
+BP_EXPORT size_t bpConfigGetNumberOfSections(const BpConfig *config, const char *parent);
 
 /**
  * @brief Retrieves the configuration entry at the specified index.
  * @param config The configuration.
  * @param index The index of the entry to retrieve.
+ * @param parent The parent name of the entry.
  * @return The configuration entry if found, nullptr otherwise.
  */
-BP_EXPORT BpConfigEntry *bpConfigGetEntryByIndex(const BpConfig *config, size_t index);
+BP_EXPORT BpConfigEntry *bpConfigGetEntryByIndex(const BpConfig *config, size_t index, const char *parent);
 
 /**
  * @brief Retrieves the configuration list at the specified index.
  * @param config The configuration.
  * @param index The index of the list to retrieve.
+ * @param parent The parent name of the list.
  * @return The configuration list if found, nullptr otherwise.
  */
-BP_EXPORT BpConfigList *bpConfigGetListByIndex(const BpConfig *config, size_t index);
+BP_EXPORT BpConfigList *bpConfigGetListByIndex(const BpConfig *config, size_t index, const char *parent);
 
 /**
  * @brief Retrieves the configuration section at the specified index.
  * @param config The configuration.
  * @param index The index of the section to retrieve.
+ * @param parent The parent name of the section.
  * @return The configuration section if found, nullptr otherwise.
  */
-BP_EXPORT BpConfigSection *bpConfigGetSectionByIndex(const BpConfig *config, size_t index);
+BP_EXPORT BpConfigSection *bpConfigGetSectionByIndex(const BpConfig *config, size_t index, const char *parent);
 
 /**
  * @brief Retrieves the configuration entry with the specified name.
  * @param config The configuration.
  * @param name The name of the entry to retrieve.
+ * @param parent The parent name of the entry.
  * @return The configuration entry if found, nullptr otherwise.
  */
-BP_EXPORT BpConfigEntry *bpConfigGetEntry(const BpConfig *config, const char *name);
+BP_EXPORT BpConfigEntry *bpConfigGetEntry(const BpConfig *config, const char *name, const char *parent);
 
 /**
  * @brief Retrieves the configuration list with the specified name.
  * @param config The configuration.
  * @param name The name of the list to retrieve.
+ * @param parent The parent name of the list.
  * @return The configuration list if found, nullptr otherwise.
  */
-BP_EXPORT BpConfigList *bpConfigGetList(const BpConfig *config, const char *name);
+BP_EXPORT BpConfigList *bpConfigGetList(const BpConfig *config, const char *name, const char *parent);
 
 /**
  * @brief Retrieves the configuration section with the specified name.
  * @param config The configuration.
  * @param name The name of the section to retrieve.
+ * @param parent The parent name of the section.
  * @return The configuration section if found, nullptr otherwise.
  */
-BP_EXPORT BpConfigSection *bpConfigGetSection(const BpConfig *config, const char *name);
+BP_EXPORT BpConfigSection *bpConfigGetSection(const BpConfig *config, const char *name, const char *parent);
 
 /**
  * @brief Add an entry to the configuration.

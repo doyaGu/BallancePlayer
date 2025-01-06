@@ -29,65 +29,74 @@ struct BpConfig {
 
     /**
      * @brief Get the number of entries in the configuration.
+     * @param parent The parent section name or nullptr for the root section.
      * @return The number of entries.
      */
-    virtual size_t GetNumberOfEntries() const = 0;
+    virtual size_t GetNumberOfEntries(const char *parent) const = 0;
 
     /**
      * @brief Get the number of lists in the configuration.
+     * @param parent The parent section name or nullptr for the root section.
      * @return The number of lists.
      */
-    virtual size_t GetNumberOfLists() const = 0;
+    virtual size_t GetNumberOfLists(const char *parent) const = 0;
 
     /**
      * @brief Get the number of sections in the configuration.
+     * @param parent The parent section name or nullptr for the root section.
      * @return The number of sections.
      */
-    virtual size_t GetNumberOfSections() const = 0;
+    virtual size_t GetNumberOfSections(const char *parent) const = 0;
 
     /**
      * @brief Retrieves the configuration entry at the specified index.
      * @param index The index of the entry to retrieve.
+     * @param parent The parent section name or nullptr for the root section.
      * @return The configuration entry if found, nullptr otherwise.
      */
-    virtual BpConfigEntry *GetEntry(size_t index) const = 0;
+    virtual BpConfigEntry *GetEntry(size_t index, const char *parent) const = 0;
 
     /**
     * @brief Retrieves the configuration list at the specified index.
     * @param index The index of the list to retrieve.
+    * @param parent The parent section name or nullptr for the root section.
     * @return The configuration list if found, nullptr otherwise.
     */
-    virtual BpConfigList *GetList(size_t index) const = 0;
+    virtual BpConfigList *GetList(size_t index, const char *parent) const = 0;
 
     /**
      * @brief Retrieves the configuration section at the specified index.
      * @param index The index of the section to retrieve.
+     * @param parent The parent section name or nullptr for the root section.
      * @return The configuration section if found, nullptr otherwise.
      */
-    virtual BpConfigSection *GetSection(size_t index) const = 0;
+    virtual BpConfigSection *GetSection(size_t index, const char *parent) const = 0;
 
     /**
      * @brief Retrieves the configuration entry with the specified name.
      * @param name The name of the entry to retrieve.
+     * @param parent The parent section name or nullptr for the root section.
      * @return The configuration entry if found, nullptr otherwise.
      */
-    virtual BpConfigEntry *GetEntry(const char *name) const = 0;
+    virtual BpConfigEntry *GetEntry(const char *name, const char *parent) const = 0;
 
     /**
      * @brief Retrieves the configuration list with the specified name.
      *
      * @param name The name of the list to retrieve.
+     * @param parent The parent section name or nullptr for the root section.
      * @return The configuration list if found, nullptr otherwise.
      */
-    virtual BpConfigList *GetList(const char *name) const = 0;
+    virtual BpConfigList *GetList(const char *name, const char *parent) const = 0;
 
     /**
      * @brief Retrieves the configuration section with the specified name.
      *
      * @param name The name of the section to retrieve.
+     * @param parent The parent section name or nullptr for the root section.
      * @return The configuration section if found, nullptr otherwise.
      */
-    virtual BpConfigSection *GetSection(const char *name) const = 0;
+    virtual BpConfigSection *GetSection(const char *name, const char *parent) const = 0;
 
     /**
      * @brief Add an entry to the configuration.

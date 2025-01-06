@@ -38,17 +38,17 @@ namespace bp {
 
         const char *GetName() const override { return m_Name.c_str(); }
 
-        size_t GetNumberOfEntries() const override;
-        size_t GetNumberOfLists() const override;
-        size_t GetNumberOfSections() const override;
+        size_t GetNumberOfEntries(const char *parent) const override;
+        size_t GetNumberOfLists(const char *parent) const override;
+        size_t GetNumberOfSections(const char *parent) const override;
 
-        BpConfigEntry *GetEntry(size_t index) const override;
-        BpConfigList *GetList(size_t index) const override;
-        BpConfigSection *GetSection(size_t index) const override;
+        BpConfigEntry *GetEntry(size_t index, const char *parent) const override;
+        BpConfigList *GetList(size_t index, const char *parent) const override;
+        BpConfigSection *GetSection(size_t index, const char *parent) const override;
 
-        BpConfigEntry *GetEntry(const char *name) const override;
-        BpConfigList *GetList(const char *name) const override;
-        BpConfigSection *GetSection(const char *name) const override;
+        BpConfigEntry *GetEntry(const char *name, const char *parent) const override;
+        BpConfigList *GetList(const char *name, const char *parent) const override;
+        BpConfigSection *GetSection(const char *name, const char *parent) const override;
 
         BpConfigEntry *AddEntry(const char *name, const char *parent) override;
         BpConfigEntry *AddEntryBool(const char *name, bool value, const char *parent) override;
@@ -365,58 +365,58 @@ const char *bpConfigGetName(const BpConfig *config) {
     return config->GetName();
 }
 
-size_t bpConfigGetNumberOfEntries(const BpConfig *config) {
+size_t bpConfigGetNumberOfEntries(const BpConfig *config, const char *parent) {
     if (!config)
         return 0;
-    return config->GetNumberOfEntries();
+    return config->GetNumberOfEntries(parent);
 }
 
-size_t bpConfigGetNumberOfLists(const BpConfig *config) {
+size_t bpConfigGetNumberOfLists(const BpConfig *config, const char *parent) {
     if (!config)
         return 0;
-    return config->GetNumberOfLists();
+    return config->GetNumberOfLists(parent);
 }
 
-size_t bpConfigGetNumberOfSections(const BpConfig *config) {
+size_t bpConfigGetNumberOfSections(const BpConfig *config, const char *parent) {
     if (!config)
         return 0;
-    return config->GetNumberOfSections();
+    return config->GetNumberOfSections(parent);
 }
 
-BpConfigEntry *bpConfigGetEntryByIndex(const BpConfig *config, size_t index) {
+BpConfigEntry *bpConfigGetEntryByIndex(const BpConfig *config, size_t index, const char *parent) {
     if (!config)
         return nullptr;
-    return config->GetEntry(index);
+    return config->GetEntry(index, parent);
 }
 
-BpConfigList *bpConfigGetListByIndex(const BpConfig *config, size_t index) {
+BpConfigList *bpConfigGetListByIndex(const BpConfig *config, size_t index, const char *parent) {
     if (!config)
         return nullptr;
-    return config->GetList(index);
+    return config->GetList(index, parent);
 }
 
-BpConfigSection *bpConfigGetSectionByIndex(const BpConfig *config, size_t index) {
+BpConfigSection *bpConfigGetSectionByIndex(const BpConfig *config, size_t index, const char *parent) {
     if (!config)
         return nullptr;
-    return config->GetSection(index);
+    return config->GetSection(index, parent);
 }
 
-BpConfigEntry *bpConfigGetEntry(const BpConfig *config, const char *name) {
+BpConfigEntry *bpConfigGetEntry(const BpConfig *config, const char *name, const char *parent) {
     if (!config)
         return nullptr;
-    return config->GetEntry(name);
+    return config->GetEntry(name, parent);
 }
 
-BpConfigList *bpConfigGetList(const BpConfig *config, const char *name) {
+BpConfigList *bpConfigGetList(const BpConfig *config, const char *name, const char *parent) {
     if (!config)
         return nullptr;
-    return config->GetList(name);
+    return config->GetList(name, parent);
 }
 
-BpConfigSection *bpConfigGetSection(const BpConfig *config, const char *name) {
+BpConfigSection *bpConfigGetSection(const BpConfig *config, const char *name, const char *parent) {
     if (!config)
         return nullptr;
-    return config->GetSection(name);
+    return config->GetSection(name, parent);
 }
 
 BpConfigEntry *bpConfigAddEntry(BpConfig *config, const char *name, const char *parent) {
@@ -1246,46 +1246,91 @@ int Config::Release() const {
     return r;
 }
 
-size_t Config::GetNumberOfEntries() const {
-    return m_Root->GetNumberOfEntries();
+size_t Config::GetNumberOfEntries(const char *parent) const {
+    if (!parent)
+        return m_Root->GetNumberOfEntries();
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetNumberOfEntries();
+    return 0;
 }
 
-size_t Config::GetNumberOfLists() const {
-    return m_Root->GetNumberOfLists();
+size_t Config::GetNumberOfLists(const char *parent) const {
+    if (!parent)
+        return m_Root->GetNumberOfLists();
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetNumberOfLists();
+    return 0;
 }
 
-size_t Config::GetNumberOfSections() const {
-    return m_Root->GetNumberOfSections();
+size_t Config::GetNumberOfSections(const char *parent) const {
+    if (!parent)
+        return m_Root->GetNumberOfSections();
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetNumberOfSections();
+    return 0;
 }
 
-BpConfigEntry *Config::GetEntry(size_t index) const {
-    return m_Root->GetEntry(index);
+BpConfigEntry *Config::GetEntry(size_t index, const char *parent) const {
+    if (!parent)
+        return m_Root->GetEntry(index);
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetEntry(index);
+    return nullptr;
 }
 
-BpConfigList * Config::GetList(size_t index) const {
-    return m_Root->GetList(index);
+BpConfigList * Config::GetList(size_t index, const char *parent) const {
+    if (!parent)
+        return m_Root->GetList(index);
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetList(index);
+    return nullptr;
 }
 
-BpConfigSection *Config::GetSection(size_t index) const {
-    return m_Root->GetSection(index);
+BpConfigSection *Config::GetSection(size_t index, const char *parent) const {
+    if (!parent)
+        return m_Root->GetSection(index);
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetSection(index);
+    return nullptr;
 }
 
-BpConfigEntry *Config::GetEntry(const char *name) const {
-    return m_Root->GetEntry(name);
+BpConfigEntry *Config::GetEntry(const char *name, const char *parent) const {
+    if (!parent)
+        return m_Root->GetEntry(name);
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetEntry(name);
+    return nullptr;
 }
 
-BpConfigList * Config::GetList(const char *name) const {
-    return m_Root->GetList(name);
+BpConfigList * Config::GetList(const char *name, const char *parent) const {
+    if (!parent)
+        return m_Root->GetList(name);
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetList(name);
+    return nullptr;
 }
 
-BpConfigSection *Config::GetSection(const char *name) const {
-    return GetSection(m_Root, name);
+BpConfigSection *Config::GetSection(const char *name, const char *parent) const {
+    if (!parent)
+        return m_Root->GetSection(name);
+    auto *section = m_Root->GetSection(parent);
+    if (section)
+        return section->GetSection(name);
+    return nullptr;
 }
 
 BpConfigEntry *Config::AddEntry(const char *name, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntry(name);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntry(name);
     return nullptr;
@@ -1294,7 +1339,7 @@ BpConfigEntry *Config::AddEntry(const char *name, const char *parent) {
 BpConfigEntry *Config::AddEntryBool(const char *name, bool value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryBool(name, value);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntryBool(name, value);
     return nullptr;
@@ -1303,7 +1348,7 @@ BpConfigEntry *Config::AddEntryBool(const char *name, bool value, const char *pa
 BpConfigEntry *Config::AddEntryUint32(const char *name, uint32_t value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryUint32(name, value);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntryUint32(name, value);
     return nullptr;
@@ -1312,7 +1357,7 @@ BpConfigEntry *Config::AddEntryUint32(const char *name, uint32_t value, const ch
 BpConfigEntry *Config::AddEntryInt32(const char *name, int32_t value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryInt32(name, value);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntryInt32(name, value);
     return nullptr;
@@ -1321,7 +1366,7 @@ BpConfigEntry *Config::AddEntryInt32(const char *name, int32_t value, const char
 BpConfigEntry *Config::AddEntryUint64(const char *name, uint64_t value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryUint64(name, value);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntryUint64(name, value);
     return nullptr;
@@ -1330,7 +1375,7 @@ BpConfigEntry *Config::AddEntryUint64(const char *name, uint64_t value, const ch
 BpConfigEntry *Config::AddEntryInt64(const char *name, int64_t value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryInt64(name, value);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntryInt64(name, value);
     return nullptr;
@@ -1339,7 +1384,7 @@ BpConfigEntry *Config::AddEntryInt64(const char *name, int64_t value, const char
 BpConfigEntry *Config::AddEntryFloat(const char *name, float value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryFloat(name, value);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntryFloat(name, value);
     return nullptr;
@@ -1348,7 +1393,7 @@ BpConfigEntry *Config::AddEntryFloat(const char *name, float value, const char *
 BpConfigEntry *Config::AddEntryDouble(const char *name, double value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryDouble(name, value);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntryDouble(name, value);
     return nullptr;
@@ -1357,7 +1402,7 @@ BpConfigEntry *Config::AddEntryDouble(const char *name, double value, const char
 BpConfigEntry *Config::AddEntryString(const char *name, const char *value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryString(name, value);
-    BpConfigSection *section = GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section || (section = CreateSection(m_Root, parent)))
         return section->AddEntryString(name, value);
     return nullptr;
@@ -1366,7 +1411,7 @@ BpConfigEntry *Config::AddEntryString(const char *name, const char *value, const
 BpConfigList *Config::AddList(const char *name, const char *parent) {
     if (!parent)
         return m_Root->AddList(name);
-    auto *section = (ConfigSection *) m_Root->GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section)
         return section->AddList(name);
     return nullptr;
@@ -1375,7 +1420,7 @@ BpConfigList *Config::AddList(const char *name, const char *parent) {
 BpConfigSection *Config::AddSection(const char *name, const char *parent) {
     if (!parent)
         return m_Root->AddSection(name);
-    auto *section = (ConfigSection *) m_Root->GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section)
         return section->AddSection(name);
     return nullptr;
@@ -1384,7 +1429,7 @@ BpConfigSection *Config::AddSection(const char *name, const char *parent) {
 bool Config::RemoveEntry(const char *name, const char *parent) {
     if (!parent)
         return m_Root->RemoveEntry(name);
-    BpConfigSection *section = m_Root->GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section)
         return section->RemoveEntry(name);
     return false;
@@ -1393,7 +1438,7 @@ bool Config::RemoveEntry(const char *name, const char *parent) {
 bool Config::RemoveList(const char *name, const char *parent) {
     if (!parent)
         return m_Root->RemoveList(name);
-    BpConfigSection *section = m_Root->GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section)
         return section->RemoveList(name);
     return false;
@@ -1402,7 +1447,7 @@ bool Config::RemoveList(const char *name, const char *parent) {
 bool Config::RemoveSection(const char *name, const char *parent) {
     if (!parent)
         return m_Root->RemoveSection(name);
-    BpConfigSection *section = m_Root->GetSection(parent);
+    auto *section = m_Root->GetSection(parent);
     if (section)
         return section->RemoveSection(name);
     return false;
