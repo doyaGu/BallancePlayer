@@ -1,0 +1,41 @@
+#ifndef BP_DEFINES_H
+#define BP_DEFINES_H
+
+#include "Version.h"
+#include "Export.h"
+
+#ifndef BP_BEGIN_CDECLS
+#   ifdef __cplusplus
+#       define BP_BEGIN_CDECLS extern "C" {
+#   else
+#       define BP_BEGIN_CDECLS
+#   endif
+#endif // !BP_BEGIN_CDECLS
+
+#ifndef BP_END_CDECLS
+#   ifdef __cplusplus
+#       define BP_END_CDECLS }
+#   else
+#       define BP_END_CDECLS
+#   endif
+#endif // !BP_END_CDECLS
+
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
+
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
+#include <stdint.h>
+
+#cmakedefine01 BP_ENABLE_IMGUI
+
+#define BP_DEFAULT_WIDTH @BP_SCREEN_WIDTH@
+#define BP_DEFAULT_HEIGHT @BP_SCREEN_HEIGHT@
+#define BP_DEFAULT_BPP @BP_SCREEN_BPP@
+
+#define BP_DESCRIPTION "@CMAKE_PROJECT_DESCRIPTION@"
+
+#endif // BP_DEFINES_H

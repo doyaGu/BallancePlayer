@@ -1,5 +1,5 @@
-#ifndef PLAYER_SCRIPTUTILS_H
-#define PLAYER_SCRIPTUTILS_H
+#ifndef BP_SCRIPTUTILS_H
+#define BP_SCRIPTUTILS_H
 
 #include <cassert>
 
@@ -743,4 +743,4 @@ namespace scriptutils {
     }
 }
 
-#endif // PLAYER_SCRIPTUTILS_H
+#endif // BP_SCRIPTUTILS_H

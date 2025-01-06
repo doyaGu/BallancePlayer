@@ -1,5 +1,5 @@
-#ifndef PLAYER_LOCKGUARD_H
-#define PLAYER_LOCKGUARD_H
+#ifndef BP_LOCKGUARD_H
+#define BP_LOCKGUARD_H
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -27,4 +27,4 @@ private:
     HANDLE m_Mutex;
 };
 
-#endif // PLAYER_LOCKGUARD_H
+#endif // BP_LOCKGUARD_H

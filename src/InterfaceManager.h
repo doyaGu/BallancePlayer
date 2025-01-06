@@ -1,5 +1,5 @@
-#ifndef PLAYER_INTERFACEMANAGER_H
-#define PLAYER_INTERFACEMANAGER_H
+#ifndef BP_INTERFACEMANAGER_H
+#define BP_INTERFACEMANAGER_H
 
 #include "CKBaseManager.h"
 #include "CKContext.h"
@@ -93,4 +93,4 @@ protected:
     int m_ArrayList[4];
 };
 
-#endif // PLAYER_INTERFACEMANAGER_H
+#endif // BP_INTERFACEMANAGER_H

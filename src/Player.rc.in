@@ -78,7 +78,7 @@ BEGIN
             VALUE "FileDescription", "Ballance Player\0"
             VALUE "FileVersion", "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}.${PROJECT_VERSION_TWEAK}\0"
             VALUE "InternalName", "Player\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Player.exe\0"
             VALUE "PrivateBuild", "\0"

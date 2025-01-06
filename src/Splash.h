@@ -1,5 +1,5 @@
-#ifndef PLAYER_SPLASH_H
-#define PLAYER_SPLASH_H
+#ifndef BP_SPLASH_H
+#define BP_SPLASH_H
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -43,4 +43,4 @@ private:
     HINSTANCE m_hInstance;
 };
 
-#endif /* PLAYER_SPLASH_H */
+#endif /* BP_SPLASH_H */

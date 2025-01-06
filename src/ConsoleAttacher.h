@@ -1,5 +1,5 @@
-#ifndef PLAYER_CONSOLEATTACHER_H
-#define PLAYER_CONSOLEATTACHER_H
+#ifndef BP_CONSOLEATTACHER_H
+#define BP_CONSOLEATTACHER_H
 
 #include <cstdio>
 
@@ -28,12 +28,14 @@ public:
     ConsoleAttacher &operator=(ConsoleAttacher &&) = delete;
 
     void Release() {
-        if (m_Attached)
+        if (m_Attached) {
             ::FreeConsole();
+            m_Attached = false;
+        }
     }
 
 private:
     bool m_Attached;
 };
 
-#endif // PLAYER_CONSOLEATTACHER_H
+#endif // BP_CONSOLEATTACHER_H

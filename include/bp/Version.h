@@ -1,0 +1,10 @@
+#ifndef BP_VERSION_H
+#define BP_VERSION_H
+
+#define BP_VERSION_MAJOR 0
+#define BP_VERSION_MINOR 4
+#define BP_VERSION_PATCH 0
+#define BP_VERSION_TWEAK 0
+#define BP_VERSION "0.4.0.0"
+
+#endif // BP_VERSION_H

@@ -1,102 +1,67 @@
-#ifndef PLAYER_GAMECONFIG_H
-#define PLAYER_GAMECONFIG_H
+#ifndef BP_GAMECONFIG_PRIVATE_H
+#define BP_GAMECONFIG_PRIVATE_H
 
-#include "config.h"
+#include "bp/GameConfig.h"
+#include "Configuration.h"
 
-#include "VxMathDefines.h"
-#include "XString.h"
+struct BpGameConfig {
+    BpConfig *Config;
 
-#ifndef MAX_PATH
-#define MAX_PATH 260
-#endif
-
-enum PathCategory {
-    eConfigPath = 0,
-    eLogPath,
-    eCmoPath,
-    eRootPath,
-    ePluginPath,
-    eRenderEnginePath,
-    eManagerPath,
-    eBuildingBlockPath,
-    eSoundPath,
-    eBitmapPath,
-    eDataPath,
-    ePathCategoryCount
-};
-
-enum LogMode {
-    eLogAppend = 0,
-    eLogOverwrite,
-};
-
-class GameConfig {
-public:
     // Startup Settings
-    int logMode;
-    bool verbose;
-    bool manualSetup;
-    bool loadAllManagers;
-    bool loadAllBuildingBlocks;
-    bool loadAllPlugins;
+    BpConfigEntry *LogMode;
+    BpConfigEntry *Verbose;
+    BpConfigEntry *ManualSetup;
+    BpConfigEntry *LoadAllManagers;
+    BpConfigEntry *LoadAllBuildingBlocks;
+    BpConfigEntry *LoadAllPlugins;
 
     // Graphics
-    int driver;
-    int screenMode;
-    int bpp;
-    int width;
-    int height;
-    bool fullscreen;
+    BpConfigEntry *Driver;
+    BpConfigEntry *ScreenMode;
+    BpConfigEntry *Width;
+    BpConfigEntry *Height;
+    BpConfigEntry *Bpp;
+    BpConfigEntry *Fullscreen;
 
-    bool disablePerspectiveCorrection;
-    bool forceLinearFog;
-    bool forceSoftware;
-    bool disableFilter;
-    bool ensureVertexShader;
-    bool useIndexBuffers;
-    bool disableDithering;
-    int antialias;
-    bool disableMipmap;
-    bool disableSpecular;
-    bool enableScreenDump;
-    bool enableDebugMode;
-    int vertexCache;
-    bool textureCacheManagement;
-    bool sortTransparentObjects;
-    VX_PIXELFORMAT textureVideoFormat;
-    VX_PIXELFORMAT spriteVideoFormat;
+    BpConfigEntry *DisablePerspectiveCorrection;
+    BpConfigEntry *ForceLinearFog;
+    BpConfigEntry *ForceSoftware;
+    BpConfigEntry *DisableFilter;
+    BpConfigEntry *EnsureVertexShader;
+    BpConfigEntry *UseIndexBuffers;
+    BpConfigEntry *DisableDithering;
+    BpConfigEntry *Antialias;
+    BpConfigEntry *DisableMipmap;
+    BpConfigEntry *DisableSpecular;
+    BpConfigEntry *EnableScreenDump;
+    BpConfigEntry *EnableDebugMode;
+    BpConfigEntry *VertexCache;
+    BpConfigEntry *TextureCacheManagement;
+    BpConfigEntry *SortTransparentObjects;
+    BpConfigEntry *TextureVideoFormat;
+    BpConfigEntry *SpriteVideoFormat;
 
     // Window Settings
-    bool childWindowRendering;
-    bool borderless;
-    bool clipCursor;
-    bool alwaysHandleInput;
-    bool pauseOnDeactivated;
-    int posX;
-    int posY;
+    BpConfigEntry *ChildWindowRendering;
+    BpConfigEntry *Borderless;
+    BpConfigEntry *ClipCursor;
+    BpConfigEntry *AlwaysHandleInput;
+    BpConfigEntry *PauseOnDeactivated;
+    BpConfigEntry *PosX;
+    BpConfigEntry *PosY;
 
     // Game Settings
-    int langId;
-    bool skipOpening;
-    bool applyHotfix;
-    bool unlockFramerate;
-    bool unlockWidescreen;
-    bool unlockHighResolution;
-    bool debug;
-    bool rookie;
+    BpConfigEntry *LangId;
+    BpConfigEntry *SkipOpening;
+    BpConfigEntry *ApplyHotfix;
+    BpConfigEntry *UnlockFramerate;
+    BpConfigEntry *UnlockWidescreen;
+    BpConfigEntry *UnlockHighResolution;
+    BpConfigEntry *Debug;
+    BpConfigEntry *Rookie;
 
-    GameConfig();
-    GameConfig &operator=(const GameConfig &config);
-
-    void SetPath(PathCategory category, const char *path);
-    const char *GetPath(PathCategory category) const;
-    bool HasPath(PathCategory category) const;
-
-    void LoadFromIni(const char *filename = "");
-    void SaveToIni(const char *filename = "");
-
-private:
-    XString m_Paths[ePathCategoryCount];
+    // Paths
+    BpConfigEntry *Paths[BP_PATH_CATEGORY_COUNT];
 };
 
-#endif // PLAYER_GAMECONFIG_H
+#endif // BP_GAMECONFIG_PRIVATE_H

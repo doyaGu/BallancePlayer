@@ -1,6 +1,6 @@
 #include "CKAll.h"
 
-#include "Logger.h"
+#include "bp/Logger.h"
 #include "ScriptUtils.h"
 #include "InterfaceManager.h"
 #include "GameConfig.h"
@@ -317,41 +317,41 @@ static bool SkipOpeningAnimation(CKBehavior *defaultLevel, CKBehavior *synchToSc
     return true;
 }
 
-bool EditScript(CKLevel *level, const GameConfig &config) {
+bool EditScript(CKLevel *level, const BpGameConfig &config) {
     if (!level)
         return false;
 
     CKBehavior *defaultLevel = scriptutils::GetBehavior(level->ComputeObjectList(CKCID_BEHAVIOR), "Default Level");
     if (!defaultLevel) {
-        Logger::Get().Warn("Unable to find Default Level");
+        bpLogWarn("Unable to find Default Level");
         return false;
     }
 
     // Set debug mode
-    if (config.debug) {
+    if (config.Debug->GetBool()) {
         if (!SetDebugMode(scriptutils::GetBehavior(defaultLevel, "set DebugMode")))
-            Logger::Get().Warn("Failed to set debug mode");
+            bpLogWarn("Failed to set debug mode");
     }
 
     // Bypass "Set Language" script and set our language id
-    if (!SetLanguage(scriptutils::GetBehavior(defaultLevel, "Set Language"), config.langId))
-        Logger::Get().Warn("Failed to set language id");
+    if (!SetLanguage(scriptutils::GetBehavior(defaultLevel, "Set Language"), config.LangId->GetInt32()))
+        bpLogWarn("Failed to set language id");
 
     int i;
 
     CKBehavior *sm = scriptutils::GetBehavior(defaultLevel, "Screen Modes");
     if (!sm) {
-        Logger::Get().Warn("Unable to find script Screen Modes");
+        bpLogWarn("Unable to find script Screen Modes");
         return false;
     }
 
     if (!ReplaceListDriver(sm)) {
-        Logger::Get().Warn("Failed to set driver");
+        bpLogWarn("Failed to set driver");
         return false;
     }
 
     if (!ReplaceListScreenModes(sm)) {
-        Logger::Get().Warn("Failed to set screen mode");
+        bpLogWarn("Failed to set screen mode");
         return false;
     }
 
@@ -379,43 +379,43 @@ bool EditScript(CKLevel *level, const GameConfig &config) {
 
     // Correct the bbp filter
     if (!bbpFilter) {
-        Logger::Get().Warn("Failed to correct the bbp filter");
+        bpLogWarn("Failed to correct the bbp filter");
     } else {
-        scriptutils::SetInputParameterValue(bbpFilter, 2, config.bpp);
+        scriptutils::SetInputParameterValue(bbpFilter, 2, config.Bpp->GetInt32());
     }
 
     // Unlock widescreen (Not 4:3)
-    if (config.unlockWidescreen) {
+    if (config.UnlockWidescreen->GetBool()) {
         if (!UnlockWidescreen(sm, minWidth))
-            Logger::Get().Warn("Failed to unlock widescreen");
+            bpLogWarn("Failed to unlock widescreen");
     }
 
     // Unlock high resolution
-    if (config.unlockHighResolution) {
-        if (!UnlockHighResolution(sm, bbpFilter, minWidth, maxWidth, config.unlockWidescreen))
-            Logger::Get().Warn("Failed to unlock high resolution");
+    if (config.UnlockHighResolution->GetBool()) {
+        if (!UnlockHighResolution(sm, bbpFilter, minWidth, maxWidth, config.UnlockWidescreen->GetBool()))
+            bpLogWarn("Failed to unlock high resolution");
     }
 
     CKBehavior *sts = scriptutils::GetBehavior(defaultLevel, "Synch to Screen");
     if (!sts) {
-        Logger::Get().Warn("Unable to find script Synch to Screen");
+        bpLogWarn("Unable to find script Synch to Screen");
         return false;
     }
 
     // Unlock frame rate limitation
-    if (config.unlockFramerate) {
+    if (config.UnlockFramerate->GetBool()) {
         if (!UnlockFramerate(sts))
-            Logger::Get().Warn("Failed to unlock frame rate limitation");
+            bpLogWarn("Failed to unlock frame rate limitation");
     }
 
     // Make it not to test 640x480 resolution
     if (!SkipResolutionCheck(sts))
-        Logger::Get().Warn("Failed to bypass 640x480 resolution test");
+        bpLogWarn("Failed to bypass 640x480 resolution test");
 
     // Skip Opening Animation
-    if (config.skipOpening) {
+    if (config.SkipOpening->GetBool()) {
         if (!SkipOpeningAnimation(defaultLevel, sts))
-            Logger::Get().Warn("Failed to skip opening animation");
+            bpLogWarn("Failed to skip opening animation");
     }
 
     return true;

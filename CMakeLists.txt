@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(BallancePlayer
-        VERSION 0.3.3.0
+        VERSION 0.4.0.0
         DESCRIPTION "The brand-new player for Ballance"
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
         )
@@ -49,11 +49,13 @@ add_compile_definitions(
 
 find_package(VirtoolsSDK REQUIRED)
 
-set(PLAYER_VERSION ${CMAKE_PROJECT_VERSION})
+set(BP_VERSION ${CMAKE_PROJECT_VERSION})
 
-set(PLAYER_SCREEN_WIDTH 640 CACHE STRING "Player screen width default value" FORCE)
-set(PLAYER_SCREEN_HEIGHT 480 CACHE STRING "Player screen height default value" FORCE)
-set(PLAYER_SCREEN_BPP 32 CACHE STRING "Player screen bpp default value" FORCE)
+set(BP_SCREEN_WIDTH 640 CACHE STRING "Player screen width default value" FORCE)
+set(BP_SCREEN_HEIGHT 480 CACHE STRING "Player screen height default value" FORCE)
+set(BP_SCREEN_BPP 32 CACHE STRING "Player screen bpp default value" FORCE)
+
+option(BP_ENABLE_IMGUI "Build with ImGui" ON)
 
 add_subdirectory(deps)
 add_subdirectory(src)

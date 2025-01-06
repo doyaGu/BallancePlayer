@@ -1,5 +1,5 @@
-#ifndef PLAYER_WINDOW_H
-#define PLAYER_WINDOW_H
+#ifndef BP_WINDOW_H
+#define BP_WINDOW_H
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -12,7 +12,7 @@
 class CWindow
 {
 public:
-    CWindow() : m_Window(NULL) {}
+    CWindow() : m_Window(nullptr) {}
 
     explicit CWindow(HWND newWindow) : m_Window(newWindow) {}
 
@@ -29,7 +29,7 @@ public:
     HWND Detach()
     {
         HWND window = m_Window;
-        m_Window = NULL;
+        m_Window = nullptr;
         return window;
     }
 
@@ -42,7 +42,7 @@ public:
         m_Window = ::CreateWindow(className, windowName,
                                  style, x, y, width, height, parentWindow,
                                  idOrHMenu, instance, createParam);
-        return m_Window != NULL;
+        return m_Window != nullptr;
     }
 
     bool CreateEx(DWORD exStyle, LPCTSTR className,
@@ -54,16 +54,16 @@ public:
         m_Window = ::CreateWindowEx(exStyle, className, windowName,
                                     style, x, y, width, height, parentWindow,
                                     idOrHMenu, instance, createParam);
-        return m_Window != NULL;
+        return m_Window != nullptr;
     }
 
     bool Destroy()
     {
-        if (m_Window == NULL)
+        if (m_Window == nullptr)
             return true;
         bool result = ::DestroyWindow(m_Window) == TRUE;
         if (result)
-            m_Window = NULL;
+            m_Window = nullptr;
         return result;
     }
 
@@ -80,7 +80,7 @@ public:
 
     void ClientToScreen(LPRECT rect)
     {
-        if (rect == NULL)
+        if (rect == nullptr)
             return;
 
         POINT p1, p2;
@@ -99,7 +99,7 @@ public:
 
     void ScreenToClient(LPRECT rect)
     {
-        if (rect == NULL)
+        if (rect == nullptr)
             return;
 
         POINT p1, p2;
@@ -166,4 +166,4 @@ protected:
     HWND m_Window;
 };
 
-#endif // PLAYER_WINDOW_H
+#endif // BP_WINDOW_H
