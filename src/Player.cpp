@@ -101,11 +101,15 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     if (!bpGamePlayerInit(player, config, hInstance)) {
         ::MessageBox(nullptr, TEXT("Failed to initialize player!"), TEXT("Error"), MB_OK);
+        bpDestroyGamePlayer(player);
+        bpDestroyGameConfig(config);
         return -1;
     }
 
     if (!bpGamePlayerLoad(player, nullptr)) {
         ::MessageBox(nullptr, TEXT("Failed to load game composition!"), TEXT("Error"), MB_OK);
+        bpDestroyGamePlayer(player);
+        bpDestroyGameConfig(config);
         return -1;
     }
 

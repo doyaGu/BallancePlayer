@@ -580,8 +580,14 @@ static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *) {
     return CK_OK;
 }
 
+static void *GetSelfModuleHandle() {
+    MEMORY_BASIC_INFORMATION mbi;
+    return (::VirtualQuery((LPVOID) &GetSelfModuleHandle, &mbi, sizeof(mbi)) != 0)
+        ? (HMODULE) mbi.AllocationBase : nullptr;
+}
+
 bool GamePlayer::InitWindow(HINSTANCE hInstance) {
-    m_hInstance = hInstance ? hInstance : GetModuleHandle(nullptr);
+    m_hInstance = hInstance ? hInstance : (HINSTANCE) GetSelfModuleHandle();
     if (!m_hInstance) {
         m_Logger->Error("Failed to get the instance handle!");
         return false;

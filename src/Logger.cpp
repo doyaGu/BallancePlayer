@@ -180,6 +180,65 @@ void bpLoggerLogV(BpLogger *logger, BpLogLevel level, const char *format, va_lis
     logger->Log(level, format, args);
 }
 
+void bpLoggerTrace(BpLogger *logger, const char *format, ...) {
+    if (!logger)
+        return;
+
+    va_list args;
+    va_start(args, format);
+    logger->Log(BP_LOG_TRACE, format, args);
+    va_end(args);
+}
+
+void bpLoggerDebug(BpLogger *logger, const char *format, ...) {
+    if (!logger)
+        return;
+
+    va_list args;
+    va_start(args, format);
+    logger->Log(BP_LOG_DEBUG, format, args);
+    va_end(args);
+}
+
+void bpLoggerInfo(BpLogger *logger, const char *format, ...) {
+    if (!logger)
+        return;
+
+    va_list args;
+    va_start(args, format);
+    logger->Log(BP_LOG_INFO, format, args);
+    va_end(args);
+}
+
+void bpLoggerWarn(BpLogger *logger, const char *format, ...) {
+    if (!logger)
+        return;
+
+    va_list args;
+    va_start(args, format);
+    logger->Log(BP_LOG_WARN, format, args);
+    va_end(args);
+}
+
+void bpLoggerError(BpLogger *logger, const char *format, ...) {
+    if (!logger)
+        return;
+
+    va_list args;
+    va_start(args, format);
+    logger->Log(BP_LOG_ERROR, format, args);
+    va_end(args);
+}
+
+void bpLoggerFatal(BpLogger *logger, const char *format, ...) {
+    if (!logger)
+        return;
+
+    va_list args;
+    va_start(args, format);
+    logger->Log(BP_LOG_FATAL, format, args);
+}
+
 void bpLog(BpLogLevel level, const char *format, ...) {
     va_list args;
     va_start(args, format);
@@ -189,6 +248,48 @@ void bpLog(BpLogLevel level, const char *format, ...) {
 
 void bpLogV(BpLogLevel level, const char *format, va_list args) {
     Logger::GetDefault()->Log(level, format, args);
+}
+
+void bpLogTrace(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    Logger::GetDefault()->Log(BP_LOG_TRACE, format, args);
+    va_end(args);
+}
+
+void bpLogDebug(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    Logger::GetDefault()->Log(BP_LOG_DEBUG, format, args);
+    va_end(args);
+}
+
+void bpLogInfo(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    Logger::GetDefault()->Log(BP_LOG_INFO, format, args);
+    va_end(args);
+}
+
+void bpLogWarn(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    Logger::GetDefault()->Log(BP_LOG_WARN, format, args);
+    va_end(args);
+}
+
+void bpLogError(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    Logger::GetDefault()->Log(BP_LOG_ERROR, format, args);
+    va_end(args);
+}
+
+void bpLogFatal(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    Logger::GetDefault()->Log(BP_LOG_FATAL, format, args);
+    va_end(args);
 }
 
 static const char *g_LevelStrings[6] = {

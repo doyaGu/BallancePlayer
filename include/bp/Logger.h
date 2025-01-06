@@ -165,12 +165,7 @@ BP_EXPORT void bpLoggerLogV(BpLogger *logger, BpLogLevel level, const char *form
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLoggerTrace(BpLogger *logger, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLoggerLogV(logger, BP_LOG_TRACE, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLoggerTrace(BpLogger *logger, const char *format, ...);
 
 /**
  * @brief Log a debug message with the specified format and arguments.
@@ -178,12 +173,7 @@ static inline void bpLoggerTrace(BpLogger *logger, const char *format, ...) {
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLoggerDebug(BpLogger *logger, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLoggerLogV(logger, BP_LOG_DEBUG, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLoggerDebug(BpLogger *logger, const char *format, ...);
 
 /**
  * @brief Log an info message with the specified format and arguments.
@@ -191,12 +181,7 @@ static inline void bpLoggerDebug(BpLogger *logger, const char *format, ...) {
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLoggerInfo(BpLogger *logger, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLoggerLogV(logger, BP_LOG_INFO, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLoggerInfo(BpLogger *logger, const char *format, ...);
 
 /**
  * @brief Log a warning message with the specified format and arguments.
@@ -204,12 +189,7 @@ static inline void bpLoggerInfo(BpLogger *logger, const char *format, ...) {
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLoggerWarn(BpLogger *logger, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLoggerLogV(logger, BP_LOG_WARN, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLoggerWarn(BpLogger *logger, const char *format, ...);
 
 /**
  * @brief Log an error message with the specified format and arguments.
@@ -217,12 +197,7 @@ static inline void bpLoggerWarn(BpLogger *logger, const char *format, ...) {
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLoggerError(BpLogger *logger, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLoggerLogV(logger, BP_LOG_ERROR, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLoggerError(BpLogger *logger, const char *format, ...);
 
 /**
  * @brief Log a fatal error message with the specified format and arguments.
@@ -230,12 +205,7 @@ static inline void bpLoggerError(BpLogger *logger, const char *format, ...) {
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLoggerFatal(BpLogger *logger, const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLoggerLogV(logger, BP_LOG_FATAL, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLoggerFatal(BpLogger *logger, const char *format, ...);
 
 /**
  * @brief Log a message with the specified log level.
@@ -253,78 +223,47 @@ BP_EXPORT void bpLog(BpLogLevel level, const char *format, ...);
  */
 BP_EXPORT void bpLogV(BpLogLevel level, const char *format, va_list args);
 
-
 /**
  * @brief Log a trace message with the specified format and arguments.
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLogTrace(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLog(BP_LOG_TRACE, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLogTrace(const char *format, ...);
 
 /**
  * @brief Log a debug message with the specified format and arguments.
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLogDebug(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLog(BP_LOG_DEBUG, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLogDebug(const char *format, ...);
 
 /**
  * @brief Log an info message with the specified format and arguments.
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLogInfo(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLog(BP_LOG_INFO, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLogInfo(const char *format, ...);
 
 /**
  * @brief Log a warning message with the specified format and arguments.
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLogWarn(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLog(BP_LOG_WARN, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLogWarn(const char *format, ...);
 
 /**
  * @brief Log an error message with the specified format and arguments.
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLogError(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLog(BP_LOG_ERROR, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLogError(const char *format, ...);
 
 /**
  * @brief Log a fatal error message with the specified format and arguments.
  * @param format The format string of the message.
  * @param ... The variable arguments list for the format string.
  */
-static inline void bpLogFatal(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    bpLog(BP_LOG_FATAL, format, args);
-    va_end(args);
-}
+BP_EXPORT void bpLogFatal(const char *format, ...);
 
 BP_END_CDECLS
 
