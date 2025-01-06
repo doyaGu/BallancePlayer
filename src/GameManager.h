@@ -7,7 +7,7 @@
 class GamePlayer;
 
 #ifndef GAME_MANAGER_GUID
-#define GAME_MANAGER_GUID CKGUID(0x32a40332, 0x3bf12a51)
+#define GAME_MANAGER_GUID CKGUID(0x14886190, 0xf743cb1)
 #endif
 
 class GameManager : public CKBaseManager {
