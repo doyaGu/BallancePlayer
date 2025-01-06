@@ -1,5 +1,5 @@
-set(PLAYER_NAME "Player")
-set(LIBRARY_NAME "Game")
+set(PLAYER_NAME "PlayerExecutable")
+set(LIBRARY_NAME "Player")
 
 set(BP_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 
@@ -103,7 +103,9 @@ add_executable(${PLAYER_NAME} WIN32
         Player.rc
 )
 
-add_dependencies(${PLAYER_NAME} ${LIBRARY_NAME})
+set_target_properties(${PLAYER_NAME} PROPERTIES
+        OUTPUT_NAME "Player"
+)
 
 target_include_directories(${PLAYER_NAME}
         PUBLIC
@@ -143,7 +145,6 @@ if (BP_ENABLE_IMGUI)
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endif ()
-
 
 configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/BallanceConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/BallanceConfig.cmake"
