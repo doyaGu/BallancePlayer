@@ -629,6 +629,14 @@ BP_EXPORT bool bpConfigSectionRemoveCallback(BpConfigSection *section, BpConfigC
 BP_EXPORT void bpConfigSectionClearCallbacks(BpConfigSection *section, BpConfigCallbackType type);
 
 /**
+ * @brief Enable or disable callbacks of the specified type in the configuration section.
+ * @param section The configuration section.
+ * @param type The type of the configuration callback.
+ * @param enable True to enable the callbacks, false to disable.
+ */
+BP_EXPORT void bpConfigSectionEnableCallbacks(BpConfigSection *section, BpConfigCallbackType type, bool enable);
+
+/**
  * @brief Increase the reference count of the configuration list.
  * @param list The configuration list.
  * @return The new reference count.

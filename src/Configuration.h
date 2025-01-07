@@ -467,6 +467,13 @@ struct BpConfigSection {
     virtual void Clear() = 0;
 
     /**
+     * @brief Enable or disable callbacks for the specified event type.
+     * @param type The type of configuration callback event.
+     * @param enable True to enable callbacks, false to disable.
+     */
+    virtual void EnableCallbacks(BpConfigCallbackType type, bool enable) = 0;
+
+    /**
      * @brief Add a callback function to be triggered for the specified event type.
      * @param type The type of configuration callback event.
      * @param callback The callback function to be invoked.
@@ -475,6 +482,13 @@ struct BpConfigSection {
      */
     virtual bool AddCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) = 0;
 
+    /**
+     * @brief Remove a callback function from the specified event type.
+     * @param type The type of configuration callback event.
+     * @param callback The callback function to be removed.
+     * @param arg The additional argument passed to the callback function.
+     * @return True if the callback was removed successfully, false otherwise.
+     */
     virtual bool RemoveCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) = 0;
 
     /**

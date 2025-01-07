@@ -149,6 +149,7 @@ namespace bp {
         bool AddCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) override;
         bool RemoveCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) override;
         void ClearCallbacks(BpConfigCallbackType type) override;
+        void EnableCallbacks(BpConfigCallbackType type, bool enable) override;
         void InvokeCallbacks(BpConfigCallbackType type, const BpConfigItem &item) const;
 
     private:
@@ -173,7 +174,8 @@ namespace bp {
         std::unordered_map<std::string, ConfigEntry *> m_EntryMap;
         std::unordered_map<std::string, ConfigList *> m_ListMap;
         std::unordered_map<std::string, ConfigSection *> m_SectionMap;
-        std::vector<Callback> m_Callbacks[BP_CFG_CB_COUNT];
+        std::vector<Callback> m_Callbacks[BP_CFG_CB_COUNT] = {};
+        bool m_CallbacksEnabled[BP_CFG_CB_COUNT] = {false};
     };
 
     class ConfigList final : public BpConfigList {
@@ -723,6 +725,12 @@ void bpConfigSectionClearCallbacks(BpConfigSection *section, BpConfigCallbackTyp
     if (!section)
         return;
     section->ClearCallbacks(type);
+}
+
+void bpConfigSectionEnableCallbacks(BpConfigSection *section, BpConfigCallbackType type, bool enable) {
+    if (!section)
+        return;
+    section->EnableCallbacks(type, enable);
 }
 
 int bpConfigListAddRef(const BpConfigList *list) {
@@ -2218,11 +2226,19 @@ void ConfigSection::ClearCallbacks(BpConfigCallbackType type) {
         m_Callbacks[type].clear();
 }
 
+void ConfigSection::EnableCallbacks(BpConfigCallbackType type, bool enable) {
+    std::lock_guard<std::mutex> guard(m_RWLock);
+
+    if (type >= 0 && type < BP_CFG_CB_COUNT)
+        m_CallbacksEnabled[type] = enable;
+}
+
 void ConfigSection::InvokeCallbacks(BpConfigCallbackType type, const BpConfigItem &item) const {
-    assert(type >= 0 && type < BP_CFG_CB_COUNT);
-    const BpConfigCallbackArgument arg = {type, item};
-    for (const auto &cb: m_Callbacks[type]) {
-        cb.callback(&arg, cb.userdata);
+    if (type >= 0 && type < BP_CFG_CB_COUNT && m_CallbacksEnabled[type]) {
+        const BpConfigCallbackArgument arg = {type, item};
+        for (const auto &cb: m_Callbacks[type]) {
+            cb.callback(&arg, cb.userdata);
+        }
     }
 }
 
