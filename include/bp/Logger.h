@@ -160,6 +160,14 @@ BP_EXPORT void bpLoggerLog(BpLogger *logger, BpLogLevel level, const char *forma
 BP_EXPORT void bpLoggerLogV(BpLogger *logger, BpLogLevel level, const char *format, va_list args);
 
 /**
+ * @brief Log a string message.
+ * @param logger The logger.
+ * @param level The log level of the message.
+ * @param str The string message.
+ */
+BP_EXPORT void bpLoggerLogString(BpLogger *logger, BpLogLevel level, const char *str);
+
+/**
  * @brief Log a trace message with the specified format and arguments.
  * @param logger The logger.
  * @param format The format string of the message.
@@ -222,6 +230,13 @@ BP_EXPORT void bpLog(BpLogLevel level, const char *format, ...);
  * @param args The variable arguments list for the format string.
  */
 BP_EXPORT void bpLogV(BpLogLevel level, const char *format, va_list args);
+
+/**
+ * @brief Log a string message.
+ * @param level The log level of the message.
+ * @param str The string message.
+ */
+BP_EXPORT void bpLogString(BpLogLevel level, const char *str);
 
 /**
  * @brief Log a trace message with the specified format and arguments.

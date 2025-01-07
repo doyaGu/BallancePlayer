@@ -180,6 +180,12 @@ void bpLoggerLogV(BpLogger *logger, BpLogLevel level, const char *format, va_lis
     logger->Log(level, format, args);
 }
 
+void bpLoggerLogString(BpLogger *logger, BpLogLevel level, const char *str) {
+    if (!logger || !str)
+        return;
+    bpLoggerLog(logger, level, "%s", str);
+}
+
 void bpLoggerTrace(BpLogger *logger, const char *format, ...) {
     if (!logger)
         return;
@@ -248,6 +254,12 @@ void bpLog(BpLogLevel level, const char *format, ...) {
 
 void bpLogV(BpLogLevel level, const char *format, va_list args) {
     Logger::GetDefault()->Log(level, format, args);
+}
+
+void bpLogString(BpLogLevel level, const char *str) {
+    if (!str)
+        return;
+    bpLog(level, "%s", str);
 }
 
 void bpLogTrace(const char *format, ...) {
