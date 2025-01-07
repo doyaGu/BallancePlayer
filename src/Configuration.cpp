@@ -328,6 +328,7 @@ namespace bp {
 
         yyjson_mut_val *ToJsonKey(yyjson_mut_doc *doc);
         yyjson_mut_val *ToJsonValue(yyjson_mut_doc *doc);
+        void FromJsonValue(yyjson_val *val);
 
     private:
         void InvokeCallbacks(bool typeChanged, bool valueChanged);
@@ -1534,69 +1535,64 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
                 break;
             case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE:
             case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE: {
-                auto *entry = section->GetEntry(yyjson_get_str(key));
+                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
-                        entry->SetBool(yyjson_get_bool(val));
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntryBool(yyjson_get_str(key), yyjson_get_bool(val));
                 }
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
-                auto *entry = section->GetEntry(yyjson_get_str(key));
+                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
-                    if (overwrite) {
-                        auto value = yyjson_get_uint(val);
-                        if (value <= INT64_MAX)
-                            entry->SetInt64((int64_t) value);
-                        else
-                            entry->SetUint64(value);
-                    }
+                    if (overwrite)
+                        entry->FromJsonValue(val);
                 } else {
                     auto value = yyjson_get_uint(val);
                     if (value <= INT64_MAX)
-                        section->AddEntryInt64(yyjson_get_str(key), (int64_t) value);
+                        section->AddEntryInt64(yyjson_get_str(key), static_cast<int64_t>(value));
                     else
                         section->AddEntryUint64(yyjson_get_str(key), value);
                 }
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT: {
-                auto *entry = section->GetEntry(yyjson_get_str(key));
+                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
-                        entry->SetInt64(yyjson_get_sint(val));
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntryInt64(yyjson_get_str(key), yyjson_get_sint(val));
                 }
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL: {
-                auto *entry = section->GetEntry(yyjson_get_str(key));
+                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
-                        entry->SetDouble(yyjson_get_real(val));
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntryDouble(yyjson_get_str(key), yyjson_get_real(val));
                 }
             }
                 break;
             case YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE: {
-                auto *entry = section->GetEntry(yyjson_get_str(key));
+                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
-                        entry->SetString(yyjson_get_str(val));
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntryString(yyjson_get_str(key), yyjson_get_str(val));
                 }
             }
                 break;
             case YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE: {
-                auto *entry = section->GetEntry(yyjson_get_str(key));
+                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
-                        entry->Clear();
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntry(yyjson_get_str(key));
                 }
@@ -1627,69 +1623,64 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
                 break;
             case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE:
             case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE: {
-                auto *entry = section->GetEntry(buf);
+                auto *entry = (ConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
-                        entry->SetBool(yyjson_get_bool(val));
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntryBool(buf, yyjson_get_bool(val));
                 }
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
-                auto *entry = section->GetEntry(buf);
+                auto *entry = (ConfigEntry *) section->GetEntry(buf);
                 if (entry) {
-                    if (overwrite) {
-                        auto value = yyjson_get_uint(val);
-                        if (value <= INT64_MAX)
-                            entry->SetInt64((int64_t) value);
-                        else
-                            entry->SetUint64(value);
-                    }
+                    if (overwrite)
+                        entry->FromJsonValue(val);
                 } else {
                     auto value = yyjson_get_uint(val);
                     if (value <= INT64_MAX)
-                        section->AddEntryInt64(buf, (int64_t) value);
+                        section->AddEntryInt64(buf, static_cast<int64_t>(value));
                     else
                         section->AddEntryUint64(buf, value);
                 }
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT: {
-                auto *entry = section->GetEntry(buf);
+                auto *entry = (ConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
-                        entry->SetInt64(yyjson_get_sint(val));
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntryInt64(buf, yyjson_get_sint(val));
                 }
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL: {
-                auto *entry = section->GetEntry(buf);
+                auto *entry = (ConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
-                        entry->SetDouble(yyjson_get_real(val));
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntryDouble(buf, yyjson_get_real(val));
                 }
             }
                 break;
             case YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE: {
-                auto *entry = section->GetEntry(buf);
+                auto *entry = (ConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
-                        entry->SetString(yyjson_get_str(val));
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntryString(buf, yyjson_get_str(val));
                 }
             }
                 break;
             case YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE: {
-                auto *entry = section->GetEntry(buf);
+                auto *entry = (ConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
-                        entry->Clear();
+                        entry->FromJsonValue(val);
                 } else {
                     section->AddEntry(buf);
                 }
@@ -2872,6 +2863,151 @@ yyjson_mut_val *ConfigEntry::ToJsonValue(yyjson_mut_doc *doc) {
             return yyjson_mut_str(doc, GetString());
         default:
             return nullptr;
+    }
+}
+
+void ConfigEntry::FromJsonValue(yyjson_val *val) {
+    switch (yyjson_get_tag(val)) {
+        case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE:
+        case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE: {
+            auto value = yyjson_get_bool(val);
+            switch (GetType()) {
+                case BP_CFG_ENTRY_NONE:
+                case BP_CFG_ENTRY_BOOL:
+                    SetBool(value);
+                    break;
+                case BP_CFG_ENTRY_UINT:
+                    SetUint64(value);
+                    break;
+                case BP_CFG_ENTRY_INT:
+                    SetInt64(value);
+                    break;
+                case BP_CFG_ENTRY_REAL:
+                    SetDouble(value);
+                    break;
+                case BP_CFG_ENTRY_STR:
+                    SetString(value ? "true" : "false");
+                    break;
+                default:
+                    break;
+            }
+        }
+            break;
+        case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
+            auto value = yyjson_get_uint(val);
+            switch (GetType()) {
+                case BP_CFG_ENTRY_NONE:
+                    if (value <= INT64_MAX)
+                        SetInt64(static_cast<int64_t>(value));
+                    else
+                        SetUint64(value);
+                break;
+                case BP_CFG_ENTRY_BOOL:
+                    SetBool(value);
+                    break;
+                case BP_CFG_ENTRY_UINT:
+                    SetUint64(value);
+                    break;
+                case BP_CFG_ENTRY_INT:
+                    SetInt64(static_cast<int64_t>(value));
+                    break;
+                case BP_CFG_ENTRY_REAL:
+                    SetDouble(static_cast<double>(value));
+                    break;
+                case BP_CFG_ENTRY_STR: {
+                    auto str = std::to_string(value);
+                    SetString(str.c_str());
+                }
+                    break;
+                default:
+                    break;
+            }
+        }
+            break;
+        case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT: {
+            auto value = yyjson_get_int(val);
+            switch (GetType()) {
+                case BP_CFG_ENTRY_BOOL:
+                    SetBool(value);
+                    break;
+                case BP_CFG_ENTRY_UINT:
+                    SetUint64(value);
+                    break;
+                case BP_CFG_ENTRY_NONE:
+                case BP_CFG_ENTRY_INT:
+                    SetInt64(value);
+                    break;
+                case BP_CFG_ENTRY_REAL:
+                    SetDouble(value);
+                    break;
+                case BP_CFG_ENTRY_STR: {
+                    auto str = std::to_string(value);
+                    SetString(str.c_str());
+                }
+                    break;
+                default:
+                    break;
+            }
+        }
+            break;
+        case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL: {
+            auto value = yyjson_get_real(val);
+            switch (GetType()) {
+            case BP_CFG_ENTRY_BOOL:
+                SetBool(std::fabs(value) < std::numeric_limits<double>::epsilon());
+                break;
+            case BP_CFG_ENTRY_UINT:
+                SetUint64(static_cast<uint64_t>(value));
+                break;
+            case BP_CFG_ENTRY_INT:
+                SetInt64(static_cast<int64_t>(value));
+                break;
+            case BP_CFG_ENTRY_NONE:
+            case BP_CFG_ENTRY_REAL:
+                SetDouble(value);
+                break;
+            case BP_CFG_ENTRY_STR: {
+                auto str = std::to_string(value);
+                SetString(str.c_str());
+            }
+                break;
+            default:
+                break;
+            }
+        }
+            break;
+        case YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE: {
+            auto str = yyjson_get_str(val);
+            switch (GetType()) {
+            case BP_CFG_ENTRY_BOOL:
+                SetBool(std::strcmp(str, "true") == 0 ||
+                        std::strcmp(str, "yes") == 0 ||
+                        std::strcmp(str, "on") == 0 ||
+                        std::strcmp(str, "1") == 0);
+                break;
+            case BP_CFG_ENTRY_UINT:
+                SetUint64(std::strtoull(str, nullptr, 10));
+                break;
+            case BP_CFG_ENTRY_INT:
+                SetInt64(std::strtoll(str, nullptr, 10));
+                break;
+            case BP_CFG_ENTRY_REAL:
+                SetDouble(std::strtod(str, nullptr));
+                break;
+            case BP_CFG_ENTRY_NONE:
+            case BP_CFG_ENTRY_STR:
+                SetString(str);
+                break;
+            default:
+                break;
+            }
+        }
+            break;
+        case YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE:
+            Clear();
+            break;
+        default:
+            break;
     }
 }
 
