@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #endif
 
+#include <stddef.h>
 #include <stdint.h>
 
 #define BP_ENABLE_IMGUI 1
