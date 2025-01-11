@@ -91,7 +91,7 @@ private:
     void ShutdownImGuiContext();
 #endif
 
-    bool FinishLoad();
+    bool FinishLoad(const char *filename);
     void ReportMissingGuids(CKFile *file, const char *resolvedFile);
 
     bool InitPlugins(CKPluginManager *pluginManager);

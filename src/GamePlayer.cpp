@@ -433,28 +433,7 @@ bool GamePlayer::Load(const char *filename) {
     m_CKContext->DeleteCKFile(f);
     DeleteCKObjectArray(array);
 
-    auto *man = (InterfaceManager *) m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
-    if (man) {
-        int driver = m_GameConfig->Driver->GetInt32();
-        int screenMode = m_GameConfig->ScreenMode->GetInt32();
-        bool rookie = m_GameConfig->Rookie->GetBool();
-        man->SetDriver(driver);
-        man->SetScreenMode(screenMode);
-        man->SetRookie(rookie);
-        man->SetTaskSwitchEnabled(true);
-
-        if (m_GameInfo) {
-            delete m_GameInfo;
-            m_GameInfo = nullptr;
-        }
-
-        m_GameInfo = new GameInfo;
-        strcpy(m_GameInfo->path, ".");
-        strcpy(m_GameInfo->fileName, filename);
-        man->SetGameInfo(m_GameInfo);
-    }
-
-    return FinishLoad();
+    return FinishLoad(filename);
 }
 
 void GamePlayer::Run() {
@@ -927,7 +906,28 @@ void GamePlayer::ShutdownImGuiContext() {
 }
 #endif
 
-bool GamePlayer::FinishLoad() {
+bool GamePlayer::FinishLoad(const char *filename) {
+    auto *man = (InterfaceManager *) m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
+    if (man) {
+        int driver = m_GameConfig->Driver->GetInt32();
+        int screenMode = m_GameConfig->ScreenMode->GetInt32();
+        bool rookie = m_GameConfig->Rookie->GetBool();
+        man->SetDriver(driver);
+        man->SetScreenMode(screenMode);
+        man->SetRookie(rookie);
+        man->SetTaskSwitchEnabled(true);
+
+        if (m_GameInfo) {
+            delete m_GameInfo;
+            m_GameInfo = nullptr;
+        }
+
+        m_GameInfo = new GameInfo;
+        strcpy(m_GameInfo->path, ".");
+        strcpy(m_GameInfo->fileName, filename);
+        man->SetGameInfo(m_GameInfo);
+    }
+
     // Retrieve the level
     CKLevel *level = m_CKContext->GetCurrentLevel();
     if (!level) {
