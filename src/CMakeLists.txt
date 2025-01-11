@@ -125,7 +125,7 @@ install(TARGETS ${LIBRARY_NAME} EXPORT BallanceTargets
 
 install(EXPORT BallanceTargets
         NAMESPACE Ballance::
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Ballance")
 
 install(DIRECTORY "${BP_INCLUDE_DIR}/bp" DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
@@ -144,7 +144,7 @@ endif ()
 
 configure_package_config_file("${PROJECT_SOURCE_DIR}/cmake/BallanceConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/BallanceConfig.cmake"
-        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
+        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Ballance"
 )
 
 write_basic_package_version_file(
@@ -156,7 +156,7 @@ write_basic_package_version_file(
 install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/BallanceConfig.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/BallanceConfigVersion.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/Ballance"
 )
 
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
