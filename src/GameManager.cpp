@@ -11,99 +11,99 @@ GameManager::GameManager(CKContext *context) : CKBaseManager(context, GAME_MANAG
 GameManager::~GameManager() = default;
 
 CKERROR GameManager::PreClearAll() {
-    return CKBaseManager::PreClearAll();
+    return CK_OK;
 }
 
 CKERROR GameManager::PostClearAll() {
-    return CKBaseManager::PostClearAll();
+    return CK_OK;
 }
 
 CKERROR GameManager::PreProcess() {
-    return CKBaseManager::PreProcess();
+    return CK_OK;
 }
 
 CKERROR GameManager::PostProcess() {
-    return CKBaseManager::PostProcess();
+    return CK_OK;
 }
 
 CKERROR GameManager::SequenceAddedToScene(CKScene *scn, CK_ID *objids, int count) {
-    return CKBaseManager::SequenceAddedToScene(scn, objids, count);
+    return CK_OK;
 }
 
 CKERROR GameManager::SequenceRemovedFromScene(CKScene *scn, CK_ID *objids, int count) {
-    return CKBaseManager::SequenceRemovedFromScene(scn, objids, count);
+    return CK_OK;
 }
 
 CKERROR GameManager::PreLaunchScene(CKScene *OldScene, CKScene *NewScene) {
-    return CKBaseManager::PreLaunchScene(OldScene, NewScene);
+    return CK_OK;
 }
 
 CKERROR GameManager::PostLaunchScene(CKScene *OldScene, CKScene *NewScene) {
-    return CKBaseManager::PostLaunchScene(OldScene, NewScene);
+    return CK_OK;
 }
 
 CKERROR GameManager::OnCKInit() {
-    return CKBaseManager::OnCKInit();
+    return CK_OK;
 }
 
 CKERROR GameManager::OnCKEnd() {
-    return CKBaseManager::OnCKEnd();
+    return CK_OK;
 }
 
 CKERROR GameManager::OnCKReset() {
-    return CKBaseManager::OnCKReset();
+    return CK_OK;
 }
 
 CKERROR GameManager::OnCKPostReset() {
-    return CKBaseManager::OnCKPostReset();
+    return CK_OK;
 }
 
 CKERROR GameManager::OnCKPause() {
-    return CKBaseManager::OnCKPause();
+    return CK_OK;
 }
 
 CKERROR GameManager::OnCKPlay() {
-    return CKBaseManager::OnCKPlay();
+    return CK_OK;
 }
 
 CKERROR GameManager::SequenceToBeDeleted(CK_ID *objids, int count) {
-    return CKBaseManager::SequenceToBeDeleted(objids, count);
+    return CK_OK;
 }
 
 CKERROR GameManager::SequenceDeleted(CK_ID *objids, int count) {
-    return CKBaseManager::SequenceDeleted(objids, count);
+    return CK_OK;
 }
 
 CKERROR GameManager::PreLoad() {
-    return CKBaseManager::PreLoad();
+    return CK_OK;
 }
 
 CKERROR GameManager::PostLoad() {
-    return CKBaseManager::PostLoad();
+    return CK_OK;
 }
 
 CKERROR GameManager::PreSave() {
-    return CKBaseManager::PreSave();
+    return CK_OK;
 }
 
 CKERROR GameManager::PostSave() {
-    return CKBaseManager::PostSave();
+    return CK_OK;
 }
 
 CKERROR GameManager::OnPreCopy(CKDependenciesContext &context) {
-    return CKBaseManager::OnPreCopy(context);
+    return CK_OK;
 }
 
 CKERROR GameManager::OnPostCopy(CKDependenciesContext &context) {
-    return CKBaseManager::OnPostCopy(context);
+    return CK_OK;
 }
 
 CKERROR GameManager::OnPreRender(CKRenderContext *dev) {
-    return CKBaseManager::OnPreRender(dev);
+    return CK_OK;
 }
 
 CKERROR GameManager::OnPostRender(CKRenderContext *dev) {
-    return CKBaseManager::OnPostRender(dev);
+    return CK_OK;
 }
 
 CKERROR GameManager::OnPostSpriteRender(CKRenderContext *dev) {

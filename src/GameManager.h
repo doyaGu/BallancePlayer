@@ -79,7 +79,7 @@ public:
     }
 
 private:
-    GamePlayer *m_Player;
+    GamePlayer *m_Player = nullptr;
 };
 
 #endif // BP_GAMEMANAGER_H
