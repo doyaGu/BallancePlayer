@@ -238,13 +238,13 @@ bool bpGameConfigInit(BpGameConfig *config) {
     }
     config->SortTransparentObjects->AddRef();
 
-    config->TextureVideoFormat = cfg->AddEntryString("TextureVideoFormat", "UNKNOWN_PF", "Graphics");
+    config->TextureVideoFormat = cfg->AddEntryString("TextureVideoFormat", "_16_ARGB1555", "Graphics");
     if (!config->TextureVideoFormat) {
         return false;
     }
     config->TextureVideoFormat->AddRef();
 
-    config->SpriteVideoFormat = cfg->AddEntryString("SpriteVideoFormat", "UNKNOWN_PF", "Graphics");
+    config->SpriteVideoFormat = cfg->AddEntryString("SpriteVideoFormat", "_16_ARGB1555", "Graphics");
     if (!config->SpriteVideoFormat) {
         return false;
     }
