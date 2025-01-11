@@ -56,12 +56,12 @@ public:
     const char *GetName() const { return m_Name.c_str(); }
     BpGamePlayerState GetState() const { return m_State; }
     BpLogger *GetLogger() const { return m_Logger; }
-    BpGameConfig *GetGameConfig() { return m_GameConfig; }
+    BpGameConfig *GetGameConfig() const { return m_GameConfig; }
 
     HWND GetMainWindow() const { return m_MainWindow.GetHandle(); }
     HWND GetRenderWindow() const { return m_RenderWindow.GetHandle(); }
 
-    CKContext *GetCKContext() { return m_CKContext; }
+    CKContext *GetCKContext() const { return m_CKContext; }
     CKRenderContext *GetRenderContext() const { return m_RenderContext; }
 
     CKPluginManager *GetPluginManager() const { return m_PluginManager; }
