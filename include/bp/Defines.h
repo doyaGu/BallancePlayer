@@ -4,20 +4,25 @@
 #include "Version.h"
 #include "Export.h"
 
+#ifdef SWIG
+#define BP_BEGIN_CDECLS
+#define BP_END_CDECLS
+#endif
+
 #ifndef BP_BEGIN_CDECLS
-#   ifdef __cplusplus
-#       define BP_BEGIN_CDECLS extern "C" {
-#   else
-#       define BP_BEGIN_CDECLS
-#   endif
+#ifdef __cplusplus
+#define BP_BEGIN_CDECLS extern "C" {
+#else
+#define BP_BEGIN_CDECLS
+#endif
 #endif // !BP_BEGIN_CDECLS
 
 #ifndef BP_END_CDECLS
-#   ifdef __cplusplus
-#       define BP_END_CDECLS }
-#   else
-#       define BP_END_CDECLS
-#   endif
+#ifdef __cplusplus
+#define BP_END_CDECLS }
+#else
+#define BP_END_CDECLS
+#endif
 #endif // !BP_END_CDECLS
 
 #ifndef MAX_PATH
