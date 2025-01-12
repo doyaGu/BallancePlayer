@@ -163,6 +163,10 @@ void bpGamePlayerReset(BpGamePlayer *player) {
     p->Reset();
 }
 
+BpGamePlayer *bpGetGamePlayerByContext(CKContext *context) {
+    return GamePlayer::Get(context);
+}
+
 CKContext *bpGetCKContext(BpGamePlayer *player) {
     if (!player)
         return nullptr;

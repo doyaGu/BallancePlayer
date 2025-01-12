@@ -27,6 +27,13 @@ typedef struct CKPathManager CKPathManager;
 BP_BEGIN_CDECLS
 
 /**
+ * @brief Get the game player by context.
+ * @param context The CK context.
+ * @return The game player.
+ */
+BP_EXPORT BpGamePlayer *bpGetGamePlayerByContext(CKContext *context);
+
+/**
  * @brief Get the CK context of the game player.
  * @param player The game player.
  * @return The CK context.
