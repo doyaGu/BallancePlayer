@@ -698,7 +698,7 @@ bool GamePlayer::InitEngine(CWindow &mainWindow) {
         return false;
     }
 
-    int renderEngine = InitRenderEngines(pluginManager);
+    int renderEngine = FindRenderEngine(pluginManager);
     if (renderEngine == -1) {
         m_Logger->Error("Failed to initialize render engine.");
         CKShutdown();
@@ -1173,7 +1173,7 @@ bool GamePlayer::LoadPlugins(CKPluginManager *pluginManager) {
     return true;
 }
 
-int GamePlayer::InitRenderEngines(CKPluginManager *pluginManager) {
+int GamePlayer::FindRenderEngine(CKPluginManager *pluginManager) {
     if (!pluginManager)
         return -1;
 

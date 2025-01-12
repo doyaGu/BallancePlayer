@@ -99,7 +99,7 @@ private:
     bool LoadManagers(CKPluginManager *pluginManager);
     bool LoadBuildingBlocks(CKPluginManager *pluginManager);
     bool LoadPlugins(CKPluginManager *pluginManager);
-    int InitRenderEngines(CKPluginManager *pluginManager);
+    int FindRenderEngine(CKPluginManager *pluginManager);
     bool UnloadPlugins(CKPluginManager *pluginManager, CK_PLUGIN_TYPE type, CKGUID guid);
 
     bool SetupManagers();
