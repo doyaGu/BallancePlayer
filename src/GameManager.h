@@ -42,31 +42,32 @@ public:
     CKERROR OnPostSpriteRender(CKRenderContext* dev) override;
 
     CKDWORD GetValidFunctionsMask() override {
-        return CKMANAGER_FUNC_OnSequenceToBeDeleted |
-               CKMANAGER_FUNC_OnSequenceDeleted |
-               CKMANAGER_FUNC_PreProcess |
-               CKMANAGER_FUNC_PostProcess |
-               CKMANAGER_FUNC_PreClearAll |
-               CKMANAGER_FUNC_PostClearAll |
-               CKMANAGER_FUNC_OnCKInit |
-               CKMANAGER_FUNC_OnCKEnd |
-               CKMANAGER_FUNC_OnCKPlay |
-               CKMANAGER_FUNC_OnCKReset |
-               CKMANAGER_FUNC_OnCKPostReset |
-               CKMANAGER_FUNC_OnCKPause |
-               CKMANAGER_FUNC_PreLoad |
-               CKMANAGER_FUNC_PostLoad |
-               CKMANAGER_FUNC_PreSave |
-               CKMANAGER_FUNC_PostSave |
-               CKMANAGER_FUNC_OnSequenceAddedToScene |
-               CKMANAGER_FUNC_OnSequenceRemovedFromScene |
-               CKMANAGER_FUNC_PreLaunchScene |
-               CKMANAGER_FUNC_PostLaunchScene |
-               CKMANAGER_FUNC_OnPreCopy |
-               CKMANAGER_FUNC_OnPostCopy |
-               CKMANAGER_FUNC_OnPreRender |
-               CKMANAGER_FUNC_OnPostRender |
-               CKMANAGER_FUNC_OnPostSpriteRender;
+        // return CKMANAGER_FUNC_OnSequenceToBeDeleted |
+        //        CKMANAGER_FUNC_OnSequenceDeleted |
+        //        CKMANAGER_FUNC_PreProcess |
+        //        CKMANAGER_FUNC_PostProcess |
+        //        CKMANAGER_FUNC_PreClearAll |
+        //        CKMANAGER_FUNC_PostClearAll |
+        //        CKMANAGER_FUNC_OnCKInit |
+        //        CKMANAGER_FUNC_OnCKEnd |
+        //        CKMANAGER_FUNC_OnCKPlay |
+        //        CKMANAGER_FUNC_OnCKReset |
+        //        CKMANAGER_FUNC_OnCKPostReset |
+        //        CKMANAGER_FUNC_OnCKPause |
+        //        CKMANAGER_FUNC_PreLoad |
+        //        CKMANAGER_FUNC_PostLoad |
+        //        CKMANAGER_FUNC_PreSave |
+        //        CKMANAGER_FUNC_PostSave |
+        //        CKMANAGER_FUNC_OnSequenceAddedToScene |
+        //        CKMANAGER_FUNC_OnSequenceRemovedFromScene |
+        //        CKMANAGER_FUNC_PreLaunchScene |
+        //        CKMANAGER_FUNC_PostLaunchScene |
+        //        CKMANAGER_FUNC_OnPreCopy |
+        //        CKMANAGER_FUNC_OnPostCopy |
+        //        CKMANAGER_FUNC_OnPreRender |
+        //        CKMANAGER_FUNC_OnPostRender |
+        //        CKMANAGER_FUNC_OnPostSpriteRender;
+        return CKMANAGER_FUNC_OnPostSpriteRender;
     }
 
     int GetFunctionPriority(CKMANAGER_FUNCTIONS Function) override {
