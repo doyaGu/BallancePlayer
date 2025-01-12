@@ -546,19 +546,6 @@ void GamePlayer::Reset() {
     m_Logger->Debug("Game is reset.");
 }
 
-static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *) {
-    if (cbStruct.Reason == CKUIM_OUTTOCONSOLE ||
-        cbStruct.Reason == CKUIM_OUTTOINFOBAR ||
-        cbStruct.Reason == CKUIM_DEBUGMESSAGESEND) {
-        static XString text = "";
-        if (text.Compare(cbStruct.ConsoleString)) {
-            bpGetLogger(nullptr)->Info(cbStruct.ConsoleString);
-            text = cbStruct.ConsoleString;
-        }
-    }
-    return CK_OK;
-}
-
 static void *GetSelfModuleHandle() {
     MEMORY_BASIC_INFORMATION mbi;
     return (::VirtualQuery((LPVOID) &GetSelfModuleHandle, &mbi, sizeof(mbi)) != 0)
@@ -688,6 +675,14 @@ void GamePlayer::ShutdownWindow() {
     }
 }
 
+static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *data) {
+    if (cbStruct.Reason == CKUIM_OUTTOCONSOLE || cbStruct.Reason == CKUIM_OUTTOINFOBAR) {
+        auto *logger = (BpLogger *) data;
+        logger->Info(cbStruct.ConsoleString);
+    }
+    return CK_OK;
+}
+
 bool GamePlayer::InitEngine(CWindow &mainWindow) {
     if (CKStartUp() != CK_OK) {
         m_Logger->Error("CK Engine can not start up!");
@@ -726,7 +721,7 @@ bool GamePlayer::InitEngine(CWindow &mainWindow) {
 
     RegisterContext(m_CKContext);
     m_CKContext->SetVirtoolsVersion(CK_VIRTOOLS_DEV, 0x2000043);
-    m_CKContext->SetInterfaceMode(FALSE, LogRedirect, nullptr);
+    m_CKContext->SetInterfaceMode(FALSE, LogRedirect, m_Logger);
 
     if (!SetupManagers()) {
         m_Logger->Error("Failed to setup managers.");
