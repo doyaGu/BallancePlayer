@@ -15,6 +15,8 @@
 
 #include "resource.h"
 
+extern HMODULE g_ModuleHandle;
+
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
 
@@ -550,14 +552,8 @@ void GamePlayer::Reset() {
     m_Logger->Debug("Game is reset.");
 }
 
-static void *GetSelfModuleHandle() {
-    MEMORY_BASIC_INFORMATION mbi;
-    return (::VirtualQuery((LPVOID) &GetSelfModuleHandle, &mbi, sizeof(mbi)) != 0)
-        ? (HMODULE) mbi.AllocationBase : nullptr;
-}
-
 bool GamePlayer::InitWindow(HINSTANCE hInstance) {
-    m_hInstance = hInstance ? hInstance : (HINSTANCE) GetSelfModuleHandle();
+    m_hInstance = hInstance ? hInstance : g_ModuleHandle;
     if (!m_hInstance) {
         m_Logger->Error("Failed to get the instance handle!");
         return false;

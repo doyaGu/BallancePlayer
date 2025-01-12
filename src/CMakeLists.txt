@@ -21,6 +21,7 @@ set(LIBRARY_HEADERS
 )
 
 set(LIBRARY_SOURCES
+        Game.cpp
         GamePlayer.cpp
         GameManager.cpp
         GameConfig.cpp
