@@ -757,11 +757,6 @@ void GamePlayer::ShutdownEngine() {
             m_RenderContext = nullptr;
         }
 
-        if (m_GameManager) {
-            delete m_GameManager;
-            m_GameManager = nullptr;
-        }
-
         CKCloseContext(m_CKContext);
         UnregisterContext(m_CKContext);
         m_CKContext = nullptr;
@@ -779,6 +774,7 @@ void GamePlayer::ShutdownEngine() {
         m_RenderManager = nullptr;
         m_ParameterManager = nullptr;
         m_PathManager = nullptr;
+        m_GameManager = nullptr;
 
         CKShutdown();
     }
@@ -892,7 +888,7 @@ bool GamePlayer::InitImGuiContext() {
 }
 
 void GamePlayer::ShutdownImGuiContext() {
-    if (m_ImGuiContext != nullptr) {
+    if (m_ImGuiContext) {
         ImGui_ImplCK2_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
