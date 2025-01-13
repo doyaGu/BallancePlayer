@@ -364,7 +364,7 @@ public:
     }
 
     char GetChar() const {
-        m_Value.c;
+        return m_Value.c;
     }
 
     uint8_t GetUint8() const {
