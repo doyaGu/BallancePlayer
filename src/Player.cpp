@@ -453,7 +453,7 @@ static void LoadGamePaths(BpGameConfig *config, const cxxopts::ParseResult &resu
     LoadGamePathsFromCommandLine(config, result);
 
     // Set default value for the path if the path is not set or the path does not exist
-    for (int p = 0; p < BP_PATH_CATEGORY_COUNT; ++p) {
+    for (int p = BP_PATH_PLUGINS; p < BP_PATH_CATEGORY_COUNT; ++p) {
         if (!bpHasGamePath(config, (BpPathCategory) p)) {
             bpResetGamePath(config, (BpPathCategory) p);
         } else if (!bpDirectoryExists(bpGetGamePath(config, (BpPathCategory) p))) {
