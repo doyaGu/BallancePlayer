@@ -113,6 +113,12 @@ namespace bp {
         BpConfigSection *GetParent() const override { return m_Parent; }
         void SetParent(ConfigSection *parent) { m_Parent = parent; }
 
+        uint32_t GetFlags() const override { return m_Flags; }
+        void SetFlags(uint32_t flags) override { m_Flags = flags; }
+
+        bool IsReadOnly() const { return (m_Flags & BP_CFG_FLAG_READONLY) != 0; }
+        bool IsDynamic() const { return (m_Flags & BP_CFG_FLAG_DYNAMIC) != 0; }
+
         size_t GetNumberOfEntries() const override;
         size_t GetNumberOfLists() const override;
         size_t GetNumberOfSections() const override;
@@ -167,6 +173,7 @@ namespace bp {
         mutable std::mutex m_RWLock;
         ConfigSection *m_Parent;
         std::string m_Name;
+        uint32_t m_Flags;
         std::vector<BpConfigItem> m_Items;
         std::vector<ConfigEntry *> m_Entries;
         std::vector<ConfigList *> m_Lists;
@@ -197,6 +204,12 @@ namespace bp {
 
         BpConfigSection *GetParent() const override { return m_Parent; }
         void SetParent(ConfigSection *parent) { m_Parent = parent; }
+
+        uint32_t GetFlags() const override { return m_Flags; }
+        void SetFlags(uint32_t flags) override { m_Flags = flags; }
+
+        bool IsReadOnly() const { return (m_Flags & BP_CFG_FLAG_READONLY) != 0; }
+        bool IsDynamic() const { return (m_Flags & BP_CFG_FLAG_DYNAMIC) != 0; }
 
         size_t GetNumberOfValues() const override;
 
@@ -256,6 +269,7 @@ namespace bp {
         mutable std::mutex m_RWLock;
         ConfigSection *m_Parent;
         std::string m_Name;
+        uint32_t m_Flags;
         std::vector<Variant> m_Values;
     };
 
@@ -286,6 +300,12 @@ namespace bp {
 
         BpConfigSection *GetParent() const override { return m_Parent; }
         void SetParent(ConfigSection *parent) { m_Parent = parent; }
+
+        uint32_t GetFlags() const override { return m_Flags; }
+        void SetFlags(uint32_t flags) override { m_Flags = flags; }
+
+        bool IsReadOnly() const { return (m_Flags & BP_CFG_FLAG_READONLY) != 0; }
+        bool IsDynamic() const { return (m_Flags & BP_CFG_FLAG_DYNAMIC) != 0; }
 
         BpConfigEntryType GetType() const override;
         size_t GetSize() const override;
@@ -337,6 +357,7 @@ namespace bp {
         mutable std::mutex m_RWLock;
         ConfigSection *m_Parent;
         std::string m_Name;
+        uint32_t m_Flags;
         Variant m_Value;
         size_t m_Hash = 0;
     };
@@ -566,6 +587,18 @@ BpConfigSection *bpConfigSectionGetParent(const BpConfigSection *section) {
     return section->GetParent();
 }
 
+uint32_t bpConfigSectionGetFlags(const BpConfigSection *section) {
+    if (!section)
+        return 0;
+    return section->GetFlags();
+}
+
+void bpConfigSectionSetFlags(BpConfigSection *section, uint32_t flags) {
+    if (!section)
+        return;
+    section->SetFlags(flags);
+}
+
 size_t bpConfigSectionGetNumberOfEntries(const BpConfigSection *section) {
     if (!section)
         return 0;
@@ -756,6 +789,18 @@ BpConfigSection *bpConfigListGetParent(const BpConfigList *list) {
     if (!list)
         return nullptr;
     return list->GetParent();
+}
+
+uint32_t bpConfigListGetFlags(const BpConfigList *list) {
+    if (!list)
+        return 0;
+    return list->GetFlags();
+}
+
+void bpConfigListSetFlags(BpConfigList *list, uint32_t flags) {
+    if (!list)
+        return;
+    list->SetFlags(flags);
 }
 
 size_t bpConfigListGetNumberOfValues(const BpConfigList *list) {
@@ -1016,6 +1061,17 @@ BpConfigSection *bpConfigEntryGetParent(const BpConfigEntry *entry) {
     return entry->GetParent();
 }
 
+uint32_t bpConfigEntryGetFlags(const BpConfigEntry *entry) {
+    if (!entry)
+        return 0;
+    return entry->GetFlags();
+}
+
+void bpConfigEntrySetFlags(BpConfigEntry *entry, uint32_t flags) {
+    if (!entry)
+        return;
+    entry->SetFlags(flags);
+}
 
 BpConfigEntryType bpConfigEntryGetType(const BpConfigEntry *entry) {
     if (!entry)
@@ -1524,11 +1580,15 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
     if (!yyjson_is_obj(obj))
         return;
 
-    yyjson_val *key, *val;
+    const bool readonly = section->IsReadOnly();
+    if (readonly)
+        section->SetFlags(section->GetFlags() & ~BP_CFG_FLAG_READONLY);
+
+    yyjson_val *key;
     yyjson_obj_iter iter;
     yyjson_obj_iter_init(obj, &iter);
     while ((key = yyjson_obj_iter_next(&iter))) {
-        val = yyjson_obj_iter_get_val(key);
+        yyjson_val *val = yyjson_obj_iter_get_val(key);
         switch (yyjson_get_tag(val)) {
             case YYJSON_TYPE_OBJ | YYJSON_SUBTYPE_NONE:
                 ConvertObjectToSection(val, (ConfigSection *) section->AddSection(yyjson_get_str(key)), overwrite);
@@ -1605,11 +1665,18 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
                 break;
         }
     }
+
+    if (readonly)
+        section->SetFlags(section->GetFlags() | BP_CFG_FLAG_READONLY);
 }
 
 void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool overwrite) {
     if (!yyjson_is_arr(arr))
         return;
+
+    const bool readonly = section->IsReadOnly();
+    if (readonly)
+        section->SetFlags(section->GetFlags() & ~BP_CFG_FLAG_READONLY);
 
     size_t idx = 0;
     yyjson_val *val;
@@ -1694,6 +1761,9 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
         }
         ++idx;
     }
+
+    if (readonly)
+        section->SetFlags(section->GetFlags() | BP_CFG_FLAG_READONLY);
 }
 
 ConfigSection *Config::CreateSection(ConfigSection *root, const char *name) {
@@ -1704,8 +1774,7 @@ ConfigSection *Config::GetSection(ConfigSection *root, const char *name) {
     return (ConfigSection *) root->GetSection(name);
 }
 
-ConfigSection::ConfigSection(ConfigSection *parent, const char *name)
-    : m_Parent(parent), m_Name(name) {
+ConfigSection::ConfigSection(ConfigSection *parent, const char *name) : m_Parent(parent), m_Name(name) {
     assert(name != nullptr);
 }
 
@@ -1800,6 +1869,9 @@ BpConfigEntry *ConfigSection::AddEntry(const char *name) {
     if (entry)
         return entry;
 
+    if (IsReadOnly())
+        return nullptr;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     entry = new ConfigEntry(this, name);
@@ -1820,6 +1892,9 @@ BpConfigEntry *ConfigSection::AddEntryBool(const char *name, bool value) {
         entry->SetDefaultBool(value);
         return entry;
     }
+
+    if (IsReadOnly())
+        return nullptr;
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
@@ -1842,6 +1917,9 @@ BpConfigEntry *ConfigSection::AddEntryUint32(const char *name, uint32_t value) {
         return entry;
     }
 
+    if (IsReadOnly())
+        return nullptr;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     entry = new ConfigEntry(this, name, value);
@@ -1862,6 +1940,9 @@ BpConfigEntry *ConfigSection::AddEntryInt32(const char *name, int32_t value) {
         entry->SetDefaultInt32(value);
         return entry;
     }
+
+    if (IsReadOnly())
+        return nullptr;
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
@@ -1884,6 +1965,9 @@ BpConfigEntry *ConfigSection::AddEntryUint64(const char *name, uint64_t value) {
         return entry;
     }
 
+    if (IsReadOnly())
+        return nullptr;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     entry = new ConfigEntry(this, name, value);
@@ -1904,6 +1988,9 @@ BpConfigEntry *ConfigSection::AddEntryInt64(const char *name, int64_t value) {
         entry->SetDefaultInt64(value);
         return entry;
     }
+
+    if (IsReadOnly())
+        return nullptr;
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
@@ -1926,6 +2013,9 @@ BpConfigEntry *ConfigSection::AddEntryFloat(const char *name, float value) {
         return entry;
     }
 
+    if (IsReadOnly())
+        return nullptr;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     entry = new ConfigEntry(this, name, value);
@@ -1946,6 +2036,9 @@ BpConfigEntry *ConfigSection::AddEntryDouble(const char *name, double value) {
         entry->SetDefaultDouble(value);
         return entry;
     }
+
+    if (IsReadOnly())
+        return nullptr;
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
@@ -1971,6 +2064,9 @@ BpConfigEntry *ConfigSection::AddEntryString(const char *name, const char *value
         return entry;
     }
 
+    if (IsReadOnly())
+        return nullptr;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     entry = new ConfigEntry(this, name, value);
@@ -1989,6 +2085,9 @@ BpConfigList * ConfigSection::AddList(const char *name) {
     auto *list = (ConfigList *) GetList(name);
     if (list)
         return list;
+
+    if (IsReadOnly())
+        return nullptr;
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
@@ -2009,6 +2108,9 @@ BpConfigSection *ConfigSection::AddSection(const char *name) {
     if (section)
         return section;
 
+    if (IsReadOnly())
+        return nullptr;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     section = new ConfigSection(this, name);
@@ -2022,6 +2124,9 @@ BpConfigSection *ConfigSection::AddSection(const char *name) {
 
 bool ConfigSection::RemoveEntry(const char *name) {
     if (!name)
+        return false;
+
+    if (IsReadOnly())
         return false;
 
     auto it = m_EntryMap.find(name);
@@ -2049,6 +2154,9 @@ bool ConfigSection::RemoveList(const char *name) {
     if (!name)
         return false;
 
+    if (IsReadOnly())
+        return false;
+
     auto it = m_ListMap.find(name);
     if (it == m_ListMap.end())
         return false;
@@ -2074,6 +2182,9 @@ bool ConfigSection::RemoveSection(const char *name) {
     if (!name)
         return false;
 
+    if (IsReadOnly())
+        return false;
+
     auto it = m_SectionMap.find(name);
     if (it == m_SectionMap.end())
         return false;
@@ -2096,6 +2207,9 @@ bool ConfigSection::RemoveSection(const char *name) {
 }
 
 void ConfigSection::Clear() {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     for (auto &pair: m_EntryMap) {
@@ -2137,7 +2251,7 @@ yyjson_mut_val *ConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
         switch (e.type) {
             case BP_CFG_TYPE_ENTRY: {
                 auto *entry = (ConfigEntry *) e.data.entry;
-                if (entry) {
+                if (entry && !entry->IsDynamic()) {
                     yyjson_mut_val *key = entry->ToJsonKey(doc);
                     yyjson_mut_val *val = entry->ToJsonValue(doc);
                     if (val)
@@ -2147,7 +2261,7 @@ yyjson_mut_val *ConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
             break;
             case BP_CFG_TYPE_LIST: {
                 auto *list = (ConfigList *) e.data.list;
-                if (list) {
+                if (list && !list->IsDynamic()) {
                     yyjson_mut_val *key = list->ToJsonKey(doc);
                     yyjson_mut_val *val = list->ToJsonArray(doc);
                     if (val)
@@ -2156,7 +2270,7 @@ yyjson_mut_val *ConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
             }
             case BP_CFG_TYPE_SECTION: {
                 auto *section = (ConfigSection *) e.data.section;
-                if (section) {
+                if (section && !section->IsDynamic()) {
                     yyjson_mut_val *key = section->ToJsonKey(doc);
                     yyjson_mut_val *val = section->ToJsonObject(doc);
                     if (val)
@@ -2321,118 +2435,193 @@ const char *ConfigList::GetString(size_t index) const {
 }
 
 void ConfigList::SetBool(size_t index, bool value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values[index] = value;
 }
 
 void ConfigList::SetUint32(size_t index, uint32_t value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values[index] = value;
 }
 
 void ConfigList::SetInt32(size_t index, int32_t value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values[index] = value;
 }
 
 void ConfigList::SetUint64(size_t index, uint64_t value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values[index] = value;
 }
 
 void ConfigList::SetInt64(size_t index, int64_t value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values[index] = value;
 }
 
 void ConfigList::SetFloat(size_t index, float value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values[index] = value;
 }
 
 void ConfigList::SetDouble(size_t index, double value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values[index] = value;
 }
 
 void ConfigList::SetString(size_t index, const char *value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values[index] = value;
 }
 
 void ConfigList::InsertBool(size_t index, bool value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
 void ConfigList::InsertUint32(size_t index, uint32_t value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
 void ConfigList::InsertInt32(size_t index, int32_t value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
 void ConfigList::InsertUint64(size_t index, uint64_t value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
 void ConfigList::InsertInt64(size_t index, int64_t value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
 void ConfigList::InsertFloat(size_t index, float value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
 void ConfigList::InsertDouble(size_t index, double value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
 void ConfigList::InsertString(size_t index, const char *value) {
+    if (IsReadOnly())
+        return;
+
     if (index < m_Values.size())
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
 void ConfigList::AppendBool(bool value) {
+    if (IsReadOnly())
+        return;
+
     m_Values.emplace_back(value);
 }
 
 void ConfigList::AppendUint32(uint32_t value) {
+    if (IsReadOnly())
+        return;
+
     m_Values.emplace_back(value);
 }
 
 void ConfigList::AppendInt32(int32_t value) {
+    if (IsReadOnly())
+        return;
+
     m_Values.emplace_back(value);
 }
 
 void ConfigList::AppendUint64(uint64_t value) {
+    if (IsReadOnly())
+        return;
+
     m_Values.emplace_back(value);
 }
 
 void ConfigList::AppendInt64(int64_t value) {
+    if (IsReadOnly())
+        return;
+
     m_Values.emplace_back(value);
 }
 
 void ConfigList::AppendFloat(float value) {
+    if (IsReadOnly())
+        return;
+
     m_Values.emplace_back(value);
 }
 
 void ConfigList::AppendDouble(double value) {
+    if (IsReadOnly())
+        return;
+
     m_Values.emplace_back(value);
 }
 
 void ConfigList::AppendString(const char *value) {
+    if (IsReadOnly())
+        return;
+
     m_Values.emplace_back(value);
 }
 
 bool ConfigList::Remove(size_t index) {
+    if (IsReadOnly())
+        return false;
+
     if (index == -1) {
         m_Values.pop_back();
         return true;
@@ -2442,18 +2631,28 @@ bool ConfigList::Remove(size_t index) {
         m_Values.erase(m_Values.begin() + static_cast<int>(index));
         return true;
     }
+
     return false;
 }
 
 void ConfigList::Clear() {
+    if (IsReadOnly())
+        return;
+
     m_Values.clear();
 }
 
 void ConfigList::Resize(size_t size) {
+    if (IsReadOnly())
+        return;
+
     m_Values.resize(size);
 }
 
 void ConfigList::Reserve(size_t size) {
+    if (IsReadOnly())
+        return;
+
     m_Values.reserve(size);
 }
 
@@ -2564,6 +2763,9 @@ size_t ConfigEntry::GetSize() const {
 }
 
 void ConfigEntry::SetBool(bool value) {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     bool v = false;
@@ -2585,6 +2787,9 @@ void ConfigEntry::SetBool(bool value) {
 }
 
 void ConfigEntry::SetUint32(uint32_t value) {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     bool v = false;
@@ -2606,6 +2811,9 @@ void ConfigEntry::SetUint32(uint32_t value) {
 }
 
 void ConfigEntry::SetInt32(int32_t value) {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     bool v = false;
@@ -2627,6 +2835,9 @@ void ConfigEntry::SetInt32(int32_t value) {
 }
 
 void ConfigEntry::SetUint64(uint64_t value) {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     bool v = false;
@@ -2648,6 +2859,9 @@ void ConfigEntry::SetUint64(uint64_t value) {
 }
 
 void ConfigEntry::SetInt64(int64_t value) {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     bool v = false;
@@ -2669,6 +2883,9 @@ void ConfigEntry::SetInt64(int64_t value) {
 }
 
 void ConfigEntry::SetFloat(float value) {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     bool v = false;
@@ -2690,6 +2907,9 @@ void ConfigEntry::SetFloat(float value) {
 }
 
 void ConfigEntry::SetDouble(double value) {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     bool v = false;
@@ -2723,6 +2943,9 @@ static inline size_t HashString(const char *str) {
 
 void ConfigEntry::SetString(const char *value) {
     if (!value)
+        return;
+
+    if (IsReadOnly())
         return;
 
     std::lock_guard<std::mutex> guard(m_RWLock);
@@ -2803,6 +3026,9 @@ void ConfigEntry::SetDefaultString(const char *value) {
 }
 
 void ConfigEntry::CopyValue(BpConfigEntry *entry) {
+    if (IsReadOnly())
+        return;
+
     std::lock_guard<std::mutex> guard(m_RWLock);
     switch (entry->GetType()) {
         case BP_CFG_ENTRY_BOOL:
@@ -2835,6 +3061,9 @@ void ConfigEntry::CopyValue(BpConfigEntry *entry) {
 }
 
 void ConfigEntry::Clear() {
+    if (IsReadOnly())
+        return;
+
     m_Value.Clear();
 }
 

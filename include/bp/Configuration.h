@@ -13,7 +13,7 @@ typedef struct BpConfigEntry BpConfigEntry;
 /**
  * @brief Enumeration of configuration types.
  *
- * This enumeration defines the available types for configuration objects.
+ * This enumeration defines the available types for configuration.
  */
 typedef enum BpConfigType {
     BP_CFG_TYPE_NONE, /**< No configuration type. */
@@ -21,6 +21,17 @@ typedef enum BpConfigType {
     BP_CFG_TYPE_LIST, /**< Configuration list type. */
     BP_CFG_TYPE_SECTION, /**< Configuration section type. */
 } BpConfigurationType;
+
+/**
+ * @brief Enumeration of configuration flags.
+ *
+ * This enumeration defines the available flags for configuration.
+ */
+typedef enum BpConfigFlag {
+    BP_CFG_FLAG_NONE = 0, /**< No configuration flag. */
+    BP_CFG_FLAG_READONLY = 1 << 0, /**< Read-only configuration flag. */
+    BP_CFG_FLAG_DYNAMIC = 1 << 1, /**< Dynamic configuration flag. */
+} BpConfigFlag;
 
 /**
  * @brief Enumeration of configuration entry types.
@@ -407,6 +418,20 @@ BP_EXPORT const char *bpConfigSectionGetName(const BpConfigSection *section);
 BP_EXPORT BpConfigSection *bpConfigSectionGetParent(const BpConfigSection *section);
 
 /**
+ * @brief Get the flags of the configuration section.
+ * @param section The configuration section.
+ * @return The flags of the configuration section.
+ */
+BP_EXPORT uint32_t bpConfigSectionGetFlags(const BpConfigSection *section);
+
+/**
+ * @brief Set the flags of the configuration section.
+ * @param section The configuration section.
+ * @param flags The flags to set.
+ */
+BP_EXPORT void bpConfigSectionSetFlags(BpConfigSection *section, uint32_t flags);
+
+/**
  * @brief Get the number of entries in the configuration section.
  * @param section The configuration section.
  * @return The number of entries in the configuration section.
@@ -663,6 +688,20 @@ BP_EXPORT const char *bpConfigListGetName(const BpConfigList *list);
  * @return The parent configuration section of the list.
  */
 BP_EXPORT BpConfigSection *bpConfigListGetParent(const BpConfigList *list);
+
+/**
+ * @brief Get the flags of the configuration list.
+ * @param list The configuration list.
+ * @return The flags of the configuration list.
+ */
+BP_EXPORT uint32_t bpConfigListGetFlags(const BpConfigList *list);
+
+/**
+ * @brief Set the flags of the configuration list.
+ * @param list The configuration list.
+ * @param flags The flags to set.
+ */
+BP_EXPORT void bpConfigListSetFlags(BpConfigList *list, uint32_t flags);
 
 /**
  * @brief Get the number of values in the configuration list.
@@ -990,6 +1029,20 @@ BP_EXPORT const char *bpConfigEntryGetName(const BpConfigEntry *entry);
  * @return The parent configuration section of the entry.
  */
 BP_EXPORT BpConfigSection *bpConfigEntryGetParent(const BpConfigEntry *entry);
+
+/**
+ * @brief Get the flags of the configuration entry.
+ * @param entry The configuration entry.
+ * @return The flags of the configuration entry.
+ */
+BP_EXPORT uint32_t bpConfigEntryGetFlags(const BpConfigEntry *entry);
+
+/**
+ * @brief Set the flags of the configuration entry.
+ * @param entry The configuration entry.
+ * @param flags The flags to set.
+ */
+BP_EXPORT void bpConfigEntrySetFlags(BpConfigEntry *entry, uint32_t flags);
 
 /**
  * @brief Get the type of the configuration entry.

@@ -296,6 +296,18 @@ struct BpConfigSection {
     virtual BpConfigSection *GetParent() const = 0;
 
     /**
+     * @brief Get the flags of the configuration section.
+     * @return The flags of the configuration section.
+     */
+    virtual uint32_t GetFlags() const = 0;
+
+    /**
+     * @brief Set the flags of the configuration section.
+     * @param flags The flags to set.
+     */
+    virtual void SetFlags(uint32_t flags) = 0;
+
+    /**
      * @brief Get the number of entries in the section.
      * @return The number of entries in the section.
      */
@@ -530,6 +542,18 @@ struct BpConfigList {
      * @return The parent configuration section of the entry.
      */
     virtual BpConfigSection *GetParent() const = 0;
+
+    /**
+     * @brief Get the flags of the configuration list.
+     * @return The flags of the configuration list.
+     */
+    virtual uint32_t GetFlags() const = 0;
+
+    /**
+     * @brief Set the flags of the configuration list.
+     * @param flags The flags to set.
+     */
+    virtual void SetFlags(uint32_t flags) = 0;
 
     /**
      * @brief Get the number of values in the list.
@@ -823,6 +847,18 @@ public:
      * @return The parent configuration section of the entry.
      */
     virtual BpConfigSection *GetParent() const = 0;
+
+    /**
+     * @brief Get the flags of the configuration entry.
+     * @return The flags of the configuration entry.
+     */
+    virtual uint32_t GetFlags() const = 0;
+
+    /**
+     * @brief Set the flags of the configuration entry.
+     * @param flags The flags to set.
+     */
+    virtual void SetFlags(uint32_t flags) = 0;
 
     /**
      * @brief Get the type of the configuration entry.
