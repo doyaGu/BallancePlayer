@@ -79,6 +79,7 @@ namespace bp {
     private:
         void ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, bool overwrite);
         void ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool overwrite);
+        void ConvertArrayToList(yyjson_val *arr, ConfigList *list, bool overwrite);
 
         static ConfigSection *CreateSection(ConfigSection *root, const char *name);
         static ConfigSection *GetSection(ConfigSection *root, const char *name);
@@ -1659,7 +1660,7 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
             }
                 break;
             case YYJSON_TYPE_ARR | YYJSON_SUBTYPE_NONE:
-                ConvertArrayToSection(val, (ConfigSection *) section->AddSection(yyjson_get_str(key)), overwrite);
+                ConvertArrayToList(val, (ConfigList *) section->AddList(yyjson_get_str(key)), overwrite);
                 break;
             default:
                 break;
@@ -1764,6 +1765,62 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
 
     if (readonly)
         section->SetFlags(section->GetFlags() | BP_CFG_FLAG_READONLY);
+}
+
+void Config::ConvertArrayToList(yyjson_val *arr, ConfigList *list, bool overwrite) {
+    if (!yyjson_is_arr(arr))
+        return;
+
+    const bool readonly = list->IsReadOnly();
+    if (readonly)
+        list->SetFlags(list->GetFlags() & ~BP_CFG_FLAG_READONLY);
+
+    if (overwrite)
+        list->Clear();
+
+    size_t idx = 0;
+    yyjson_val *val;
+    yyjson_arr_iter iter = yyjson_arr_iter_with(arr);
+    while ((val = yyjson_arr_iter_next(&iter))) {
+        char buf[32];
+        snprintf(buf, 32, "%u", idx);
+        switch (yyjson_get_tag(val)) {
+                break;
+            case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE:
+            case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE: {
+                list->AppendBool(yyjson_get_bool(val));
+            }
+                break;
+            case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
+                list->AppendUint64(yyjson_get_uint(val));
+            }
+                break;
+            case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT: {
+                list->AppendInt64(yyjson_get_sint(val));
+            }
+                break;
+            case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL: {
+                list->AppendDouble(yyjson_get_real(val));
+            }
+                break;
+            case YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE: {
+                list->AppendString(yyjson_get_str(val));
+            }
+                break;
+            case YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE: {
+                list->AppendUint64(0);
+            }
+                break;
+            case YYJSON_TYPE_OBJ | YYJSON_SUBTYPE_NONE: // Skip object
+            case YYJSON_TYPE_ARR | YYJSON_SUBTYPE_NONE: // Skip array
+            default:
+                break;
+        }
+        ++idx;
+    }
+
+    if (readonly)
+        list->SetFlags(list->GetFlags() | BP_CFG_FLAG_READONLY);
 }
 
 ConfigSection *Config::CreateSection(ConfigSection *root, const char *name) {
