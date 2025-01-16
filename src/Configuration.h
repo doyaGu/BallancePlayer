@@ -171,7 +171,7 @@ private:
     mutable std::mutex m_RWLock;
     BpConfigSection *m_Parent;
     std::string m_Name;
-    uint32_t m_Flags;
+    uint32_t m_Flags = 0;
     std::vector<BpConfigItem> m_Items;
     std::vector<BpConfigEntry *> m_Entries;
     std::vector<BpConfigList *> m_Lists;
@@ -266,7 +266,7 @@ private:
     mutable std::mutex m_RWLock;
     BpConfigSection *m_Parent;
     std::string m_Name;
-    uint32_t m_Flags;
+    uint32_t m_Flags = 0;
     std::vector<Variant> m_Values;
 };
 
@@ -353,7 +353,7 @@ private:
     mutable std::mutex m_RWLock;
     BpConfigSection *m_Parent;
     std::string m_Name;
-    uint32_t m_Flags;
+    uint32_t m_Flags = 0;
     Variant m_Value;
     size_t m_Hash = 0;
 };
