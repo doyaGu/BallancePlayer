@@ -2,374 +2,11 @@
 
 #include <cassert>
 #include <utility>
-#include <mutex>
-#include <string>
-#include <vector>
-#include <unordered_map>
-
-#include <yyjson.h>
-
-#include "bp/Configuration.h"
-#include "DataBox.h"
-#include "RefCount.h"
-#include "Variant.h"
-
-namespace bp {
-    class ConfigSection;
-    class ConfigList;
-    class ConfigEntry;
-
-    class Config final : public BpConfig {
-    public:
-        static Config *GetInstance(const std::string &name);
-
-        explicit Config(std::string name);
-
-        Config(const Config &rhs) = delete;
-        Config(Config &&rhs) noexcept = delete;
-
-        ~Config() override;
-
-        Config &operator=(const Config &rhs) = delete;
-        Config &operator=(Config &&rhs) noexcept = delete;
-
-        int AddRef() const override;
-        int Release() const override;
-
-        const char *GetName() const override { return m_Name.c_str(); }
-
-        size_t GetNumberOfEntries(const char *parent) const override;
-        size_t GetNumberOfLists(const char *parent) const override;
-        size_t GetNumberOfSections(const char *parent) const override;
-
-        BpConfigEntry *GetEntry(size_t index, const char *parent) const override;
-        BpConfigList *GetList(size_t index, const char *parent) const override;
-        BpConfigSection *GetSection(size_t index, const char *parent) const override;
-
-        BpConfigEntry *GetEntry(const char *name, const char *parent) const override;
-        BpConfigList *GetList(const char *name, const char *parent) const override;
-        BpConfigSection *GetSection(const char *name, const char *parent) const override;
-
-        BpConfigEntry *AddEntry(const char *name, const char *parent) override;
-        BpConfigEntry *AddEntryBool(const char *name, bool value, const char *parent) override;
-        BpConfigEntry *AddEntryUint32(const char *name, uint32_t value, const char *parent) override;
-        BpConfigEntry *AddEntryInt32(const char *name, int32_t value, const char *parent) override;
-        BpConfigEntry *AddEntryUint64(const char *name, uint64_t value, const char *parent) override;
-        BpConfigEntry *AddEntryInt64(const char *name, int64_t value, const char *parent) override;
-        BpConfigEntry *AddEntryFloat(const char *name, float value, const char *parent) override;
-        BpConfigEntry *AddEntryDouble(const char *name, double value, const char *parent) override;
-        BpConfigEntry *AddEntryString(const char *name, const char *value, const char *parent) override;
-        BpConfigList *AddList(const char *name, const char *parent) override;
-        BpConfigSection *AddSection(const char *name, const char *parent) override;
-
-        bool RemoveEntry(const char *name, const char *parent) override;
-        bool RemoveList(const char *name, const char *parent) override;
-        bool RemoveSection(const char *name, const char *parent) override;
-
-        void Clear() override;
-
-        bool Read(const char *json, size_t len, bool overwrite) override;
-        char *Write(size_t *len) override;
-
-        void Free(void *ptr) const override;
-
-        void *GetUserData(size_t type) const override;
-        void *SetUserData(void *data, size_t type) override;
-
-    private:
-        void ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, bool overwrite);
-        void ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool overwrite);
-        void ConvertArrayToList(yyjson_val *arr, ConfigList *list, bool overwrite);
-
-        static ConfigSection *CreateSection(ConfigSection *root, const char *name);
-        static ConfigSection *GetSection(ConfigSection *root, const char *name);
-
-        mutable RefCount m_RefCount;
-        mutable std::mutex m_RWLock;
-        std::string m_Name;
-        ConfigSection *m_Root;
-        DataBox m_UserData;
-
-        static std::mutex s_MapMutex;
-        static std::unordered_map<std::string, Config *> s_Configs;
-    };
-
-    class ConfigSection final : public BpConfigSection {
-    public:
-        ConfigSection(ConfigSection *parent, const char *name);
-
-        ConfigSection(const ConfigSection &rhs) = delete;
-        ConfigSection(ConfigSection &&rhs) noexcept = delete;
-
-        ~ConfigSection() override;
-
-        ConfigSection &operator=(const ConfigSection &rhs) = delete;
-        ConfigSection &operator=(ConfigSection &&rhs) noexcept = delete;
-
-        int AddRef() const override;
-        int Release() const override;
-
-        const char *GetName() const override { return m_Name.c_str(); }
-
-        BpConfigSection *GetParent() const override { return m_Parent; }
-        void SetParent(ConfigSection *parent) { m_Parent = parent; }
-
-        uint32_t GetFlags() const override { return m_Flags; }
-        void SetFlags(uint32_t flags) override { m_Flags = flags; }
-
-        bool IsReadOnly() const { return (m_Flags & BP_CFG_FLAG_READONLY) != 0; }
-        bool IsDynamic() const { return (m_Flags & BP_CFG_FLAG_DYNAMIC) != 0; }
-
-        size_t GetNumberOfEntries() const override;
-        size_t GetNumberOfLists() const override;
-        size_t GetNumberOfSections() const override;
-
-        BpConfigEntry *GetEntry(size_t index) const override;
-        BpConfigList *GetList(size_t index) const override;
-        BpConfigSection *GetSection(size_t index) const override;
-
-        BpConfigEntry *GetEntry(const char *name) const override;
-        BpConfigList *GetList(const char *name) const override;
-        BpConfigSection *GetSection(const char *name) const override;
-
-        BpConfigEntry *AddEntry(const char *name) override;
-        BpConfigEntry *AddEntryBool(const char *name, bool value) override;
-        BpConfigEntry *AddEntryUint32(const char *name, uint32_t value) override;
-        BpConfigEntry *AddEntryInt32(const char *name, int32_t value) override;
-        BpConfigEntry *AddEntryUint64(const char *name, uint64_t value) override;
-        BpConfigEntry *AddEntryInt64(const char *name, int64_t value) override;
-        BpConfigEntry *AddEntryFloat(const char *name, float value) override;
-        BpConfigEntry *AddEntryDouble(const char *name, double value) override;
-        BpConfigEntry *AddEntryString(const char *name, const char *value) override;
-        BpConfigList *AddList(const char *name) override;
-        BpConfigSection *AddSection(const char *name) override;
-
-        bool RemoveEntry(const char *name) override;
-        bool RemoveList(const char *name) override;
-        bool RemoveSection(const char *name) override;
-
-        void Clear() override;
-
-        yyjson_mut_val *ToJsonKey(yyjson_mut_doc *doc);
-        yyjson_mut_val *ToJsonObject(yyjson_mut_doc *doc);
-
-        bool AddCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) override;
-        bool RemoveCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) override;
-        void ClearCallbacks(BpConfigCallbackType type) override;
-        void EnableCallbacks(BpConfigCallbackType type, bool enable) override;
-        void InvokeCallbacks(BpConfigCallbackType type, const BpConfigItem &item) const;
-
-    private:
-        struct Callback {
-            BpConfigCallback callback;
-            void *userdata;
-
-            Callback(BpConfigCallback cb, void *data) : callback(cb), userdata(data) {}
-
-            bool operator==(const Callback &rhs) const { return callback == rhs.callback && userdata == rhs.userdata; }
-            bool operator!=(const Callback &rhs) const { return !(rhs == *this); }
-        };
-
-        mutable RefCount m_RefCount;
-        mutable std::mutex m_RWLock;
-        ConfigSection *m_Parent;
-        std::string m_Name;
-        uint32_t m_Flags;
-        std::vector<BpConfigItem> m_Items;
-        std::vector<ConfigEntry *> m_Entries;
-        std::vector<ConfigList *> m_Lists;
-        std::vector<ConfigSection *> m_Sections;
-        std::unordered_map<std::string, ConfigEntry *> m_EntryMap;
-        std::unordered_map<std::string, ConfigList *> m_ListMap;
-        std::unordered_map<std::string, ConfigSection *> m_SectionMap;
-        std::vector<Callback> m_Callbacks[BP_CFG_CB_COUNT] = {};
-        bool m_CallbacksEnabled[BP_CFG_CB_COUNT] = {false};
-    };
-
-    class ConfigList final : public BpConfigList {
-    public:
-        ConfigList(ConfigSection *parent, const char *name);
-
-        ConfigList(const ConfigList &rhs) = delete;
-        ConfigList(ConfigList &&rhs) noexcept = delete;
-
-        ~ConfigList() override;
-
-        ConfigList &operator=(const ConfigList &rhs) = delete;
-        ConfigList &operator=(ConfigList &&rhs) noexcept = delete;
-
-        int AddRef() const override;
-        int Release() const override;
-
-        const char *GetName() const override { return m_Name.c_str(); }
-
-        BpConfigSection *GetParent() const override { return m_Parent; }
-        void SetParent(ConfigSection *parent) { m_Parent = parent; }
-
-        uint32_t GetFlags() const override { return m_Flags; }
-        void SetFlags(uint32_t flags) override { m_Flags = flags; }
-
-        bool IsReadOnly() const { return (m_Flags & BP_CFG_FLAG_READONLY) != 0; }
-        bool IsDynamic() const { return (m_Flags & BP_CFG_FLAG_DYNAMIC) != 0; }
-
-        size_t GetNumberOfValues() const override;
-
-        BpConfigEntryType GetType(size_t index) const override;
-        size_t GetSize(size_t index) const override;
-
-        bool GetBool(size_t index) const override;
-        uint32_t GetUint32(size_t index) const override;
-        int32_t GetInt32(size_t index) const override;
-        uint64_t GetUint64(size_t index) const override;
-        int64_t GetInt64(size_t index) const override;
-        float GetFloat(size_t index) const override;
-        double GetDouble(size_t index) const override;
-        const char *GetString(size_t index) const override;
-
-        void *GetValue(size_t index) { return &m_Values[index].GetValue(); }
-
-        void SetBool(size_t index, bool value) override;
-        void SetUint32(size_t index, uint32_t value) override;
-        void SetInt32(size_t index, int32_t value) override;
-        void SetUint64(size_t index, uint64_t value) override;
-        void SetInt64(size_t index, int64_t value) override;
-        void SetFloat(size_t index, float value) override;
-        void SetDouble(size_t index, double value) override;
-        void SetString(size_t index, const char *value) override;
-
-        void InsertBool(size_t index, bool value) override;
-        void InsertUint32(size_t index, uint32_t value) override;
-        void InsertInt32(size_t index, int32_t value) override;
-        void InsertUint64(size_t index, uint64_t value) override;
-        void InsertInt64(size_t index, int64_t value) override;
-        void InsertFloat(size_t index, float value) override;
-        void InsertDouble(size_t index, double value) override;
-        void InsertString(size_t index, const char *value) override;
-
-        void AppendBool(bool value) override;
-        void AppendUint32(uint32_t value) override;
-        void AppendInt32(int32_t value) override;
-        void AppendUint64(uint64_t value) override;
-        void AppendInt64(int64_t value) override;
-        void AppendFloat(float value) override;
-        void AppendDouble(double value) override;
-        void AppendString(const char *value) override;
-
-        bool Remove(size_t index) override;
-
-        void Clear() override;
-
-        void Resize(size_t size) override;
-        void Reserve(size_t size) override;
-
-        yyjson_mut_val *ToJsonKey(yyjson_mut_doc *doc);
-        yyjson_mut_val *ToJsonArray(yyjson_mut_doc *doc);
-
-    private:
-        mutable RefCount m_RefCount;
-        mutable std::mutex m_RWLock;
-        ConfigSection *m_Parent;
-        std::string m_Name;
-        uint32_t m_Flags;
-        std::vector<Variant> m_Values;
-    };
-
-    class ConfigEntry final : public BpConfigEntry {
-    public:
-        ConfigEntry(ConfigSection *parent, const char *name);
-        ConfigEntry(ConfigSection *parent, const char *name, bool value);
-        ConfigEntry(ConfigSection *parent, const char *name, uint32_t value);
-        ConfigEntry(ConfigSection *parent, const char *name, int32_t value);
-        ConfigEntry(ConfigSection *parent, const char *name, uint64_t value);
-        ConfigEntry(ConfigSection *parent, const char *name, int64_t value);
-        ConfigEntry(ConfigSection *parent, const char *name, float value);
-        ConfigEntry(ConfigSection *parent, const char *name, double value);
-        ConfigEntry(ConfigSection *parent, const char *name, const char *value);
-
-        ConfigEntry(const ConfigEntry &rhs) = delete;
-        ConfigEntry(ConfigEntry &&rhs) noexcept = delete;
-
-        ~ConfigEntry() override;
-
-        ConfigEntry &operator=(const ConfigEntry &rhs) = delete;
-        ConfigEntry &operator=(ConfigEntry &&rhs) noexcept = delete;
-
-        int AddRef() const override;
-        int Release() const override;
-
-        const char *GetName() const override { return m_Name.c_str(); }
-
-        BpConfigSection *GetParent() const override { return m_Parent; }
-        void SetParent(ConfigSection *parent) { m_Parent = parent; }
-
-        uint32_t GetFlags() const override { return m_Flags; }
-        void SetFlags(uint32_t flags) override { m_Flags = flags; }
-
-        bool IsReadOnly() const { return (m_Flags & BP_CFG_FLAG_READONLY) != 0; }
-        bool IsDynamic() const { return (m_Flags & BP_CFG_FLAG_DYNAMIC) != 0; }
-
-        BpConfigEntryType GetType() const override;
-        size_t GetSize() const override;
-
-        bool IsNull() const { return m_Value.GetType() == VAR_TYPE_NONE; }
-
-        bool GetBool() const override { return m_Value.GetBool(); }
-        uint32_t GetUint32() const override { return static_cast<uint32_t>(m_Value.GetUint64()); }
-        int32_t GetInt32() const override { return static_cast<int32_t>(m_Value.GetInt64()); }
-        uint64_t GetUint64() const override { return m_Value.GetUint64(); }
-        int64_t GetInt64() const override { return m_Value.GetInt64(); }
-        float GetFloat() const override { return static_cast<float>(m_Value.GetFloat64()); }
-        double GetDouble() const override { return m_Value.GetFloat64(); }
-        const char *GetString() const override { return m_Value.GetString(); }
-        size_t GetHash() const override { return m_Value.IsString() ? m_Hash : m_Value.GetUint32(); }
-
-        void *GetValue() { return &m_Value.GetValue(); }
-
-        void SetBool(bool value) override;
-        void SetUint32(uint32_t value) override;
-        void SetInt32(int32_t value) override;
-        void SetUint64(uint64_t value) override;
-        void SetInt64(int64_t value) override;
-        void SetFloat(float value) override;
-        void SetDouble(double value) override;
-        void SetString(const char *value) override;
-
-        void SetDefaultBool(bool value) override;
-        void SetDefaultUint32(uint32_t value) override;
-        void SetDefaultInt32(int32_t value) override;
-        void SetDefaultUint64(uint64_t value) override;
-        void SetDefaultInt64(int64_t value) override;
-        void SetDefaultFloat(float value) override;
-        void SetDefaultDouble(double value) override;
-        void SetDefaultString(const char *value) override;
-
-        void CopyValue(BpConfigEntry *entry) override;
-
-        void Clear() override;
-
-        yyjson_mut_val *ToJsonKey(yyjson_mut_doc *doc);
-        yyjson_mut_val *ToJsonValue(yyjson_mut_doc *doc);
-        void FromJsonValue(yyjson_val *val);
-
-    private:
-        void InvokeCallbacks(bool typeChanged, bool valueChanged);
-
-        mutable RefCount m_RefCount;
-        mutable std::mutex m_RWLock;
-        ConfigSection *m_Parent;
-        std::string m_Name;
-        uint32_t m_Flags;
-        Variant m_Value;
-        size_t m_Hash = 0;
-    };
-}
-
-using namespace bp;
 
 BpConfig *bpGetConfig(const char *name) {
     if (!name)
         name = BP_DEFAULT_NAME;
-    return bp::Config::GetInstance(name);
+    return BpConfig::GetInstance(name);
 }
 
 int bpConfigAddRef(const BpConfig *config) {
@@ -1248,8 +885,8 @@ void bpConfigEntryClear(BpConfigEntry *entry) {
     entry->Clear();
 }
 
-std::mutex Config::s_MapMutex;
-std::unordered_map<std::string, Config *> Config::s_Configs;
+std::mutex BpConfig::s_MapMutex;
+std::unordered_map<std::string, BpConfig *> BpConfig::s_BpConfigs;
 
 BpConfigEntryType GetValueType(const Variant &value) {
     switch (value.GetType()) {
@@ -1277,42 +914,42 @@ BpConfigEntryType GetValueType(const Variant &value) {
     return BP_CFG_ENTRY_NONE;
 }
 
-Config *Config::GetInstance(const std::string &name) {
-    auto it = s_Configs.find(name);
-    if (it == s_Configs.end()) {
-        return new Config(name);
+BpConfig *BpConfig::GetInstance(const std::string &name) {
+    auto it = s_BpConfigs.find(name);
+    if (it == s_BpConfigs.end()) {
+        return new BpConfig(name);
     }
     return it->second;
 }
 
-Config::Config(std::string name)
-    : m_Name(std::move(name)), m_Root(new ConfigSection(nullptr, "root")) {
+BpConfig::BpConfig(std::string name)
+    : m_Name(std::move(name)), m_Root(new BpConfigSection(nullptr, "root")) {
     std::lock_guard<std::mutex> lock{s_MapMutex};
-    s_Configs[m_Name] = this;
+    s_BpConfigs[m_Name] = this;
 }
 
-Config::~Config() {
+BpConfig::~BpConfig() {
     Clear();
     m_Root->Release();
 
     std::lock_guard<std::mutex> lock{s_MapMutex};
-    s_Configs.erase(m_Name);
+    s_BpConfigs.erase(m_Name);
 }
 
-int Config::AddRef() const {
+int BpConfig::AddRef() const {
     return m_RefCount.AddRef();
 }
 
-int Config::Release() const {
+int BpConfig::Release() const {
     int r = m_RefCount.Release();
     if (r == 0) {
         std::atomic_thread_fence(std::memory_order_acquire);
-        delete const_cast<Config *>(this);
+        delete const_cast<BpConfig *>(this);
     }
     return r;
 }
 
-size_t Config::GetNumberOfEntries(const char *parent) const {
+size_t BpConfig::GetNumberOfEntries(const char *parent) const {
     if (!parent)
         return m_Root->GetNumberOfEntries();
     auto *section = m_Root->GetSection(parent);
@@ -1321,7 +958,7 @@ size_t Config::GetNumberOfEntries(const char *parent) const {
     return 0;
 }
 
-size_t Config::GetNumberOfLists(const char *parent) const {
+size_t BpConfig::GetNumberOfLists(const char *parent) const {
     if (!parent)
         return m_Root->GetNumberOfLists();
     auto *section = m_Root->GetSection(parent);
@@ -1330,7 +967,7 @@ size_t Config::GetNumberOfLists(const char *parent) const {
     return 0;
 }
 
-size_t Config::GetNumberOfSections(const char *parent) const {
+size_t BpConfig::GetNumberOfSections(const char *parent) const {
     if (!parent)
         return m_Root->GetNumberOfSections();
     auto *section = m_Root->GetSection(parent);
@@ -1339,7 +976,7 @@ size_t Config::GetNumberOfSections(const char *parent) const {
     return 0;
 }
 
-BpConfigEntry *Config::GetEntry(size_t index, const char *parent) const {
+BpConfigEntry *BpConfig::GetEntry(size_t index, const char *parent) const {
     if (!parent)
         return m_Root->GetEntry(index);
     auto *section = m_Root->GetSection(parent);
@@ -1348,7 +985,7 @@ BpConfigEntry *Config::GetEntry(size_t index, const char *parent) const {
     return nullptr;
 }
 
-BpConfigList * Config::GetList(size_t index, const char *parent) const {
+BpConfigList * BpConfig::GetList(size_t index, const char *parent) const {
     if (!parent)
         return m_Root->GetList(index);
     auto *section = m_Root->GetSection(parent);
@@ -1357,7 +994,7 @@ BpConfigList * Config::GetList(size_t index, const char *parent) const {
     return nullptr;
 }
 
-BpConfigSection *Config::GetSection(size_t index, const char *parent) const {
+BpConfigSection *BpConfig::GetSection(size_t index, const char *parent) const {
     if (!parent)
         return m_Root->GetSection(index);
     auto *section = m_Root->GetSection(parent);
@@ -1366,7 +1003,7 @@ BpConfigSection *Config::GetSection(size_t index, const char *parent) const {
     return nullptr;
 }
 
-BpConfigEntry *Config::GetEntry(const char *name, const char *parent) const {
+BpConfigEntry *BpConfig::GetEntry(const char *name, const char *parent) const {
     if (!parent)
         return m_Root->GetEntry(name);
     auto *section = m_Root->GetSection(parent);
@@ -1375,7 +1012,7 @@ BpConfigEntry *Config::GetEntry(const char *name, const char *parent) const {
     return nullptr;
 }
 
-BpConfigList * Config::GetList(const char *name, const char *parent) const {
+BpConfigList * BpConfig::GetList(const char *name, const char *parent) const {
     if (!parent)
         return m_Root->GetList(name);
     auto *section = m_Root->GetSection(parent);
@@ -1384,7 +1021,7 @@ BpConfigList * Config::GetList(const char *name, const char *parent) const {
     return nullptr;
 }
 
-BpConfigSection *Config::GetSection(const char *name, const char *parent) const {
+BpConfigSection *BpConfig::GetSection(const char *name, const char *parent) const {
     if (!parent)
         return m_Root->GetSection(name);
     auto *section = m_Root->GetSection(parent);
@@ -1393,7 +1030,7 @@ BpConfigSection *Config::GetSection(const char *name, const char *parent) const 
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntry(const char *name, const char *parent) {
+BpConfigEntry *BpConfig::AddEntry(const char *name, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntry(name);
     auto *section = m_Root->GetSection(parent);
@@ -1402,7 +1039,7 @@ BpConfigEntry *Config::AddEntry(const char *name, const char *parent) {
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntryBool(const char *name, bool value, const char *parent) {
+BpConfigEntry *BpConfig::AddEntryBool(const char *name, bool value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryBool(name, value);
     auto *section = m_Root->GetSection(parent);
@@ -1411,7 +1048,7 @@ BpConfigEntry *Config::AddEntryBool(const char *name, bool value, const char *pa
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntryUint32(const char *name, uint32_t value, const char *parent) {
+BpConfigEntry *BpConfig::AddEntryUint32(const char *name, uint32_t value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryUint32(name, value);
     auto *section = m_Root->GetSection(parent);
@@ -1420,7 +1057,7 @@ BpConfigEntry *Config::AddEntryUint32(const char *name, uint32_t value, const ch
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntryInt32(const char *name, int32_t value, const char *parent) {
+BpConfigEntry *BpConfig::AddEntryInt32(const char *name, int32_t value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryInt32(name, value);
     auto *section = m_Root->GetSection(parent);
@@ -1429,7 +1066,7 @@ BpConfigEntry *Config::AddEntryInt32(const char *name, int32_t value, const char
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntryUint64(const char *name, uint64_t value, const char *parent) {
+BpConfigEntry *BpConfig::AddEntryUint64(const char *name, uint64_t value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryUint64(name, value);
     auto *section = m_Root->GetSection(parent);
@@ -1438,7 +1075,7 @@ BpConfigEntry *Config::AddEntryUint64(const char *name, uint64_t value, const ch
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntryInt64(const char *name, int64_t value, const char *parent) {
+BpConfigEntry *BpConfig::AddEntryInt64(const char *name, int64_t value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryInt64(name, value);
     auto *section = m_Root->GetSection(parent);
@@ -1447,7 +1084,7 @@ BpConfigEntry *Config::AddEntryInt64(const char *name, int64_t value, const char
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntryFloat(const char *name, float value, const char *parent) {
+BpConfigEntry *BpConfig::AddEntryFloat(const char *name, float value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryFloat(name, value);
     auto *section = m_Root->GetSection(parent);
@@ -1456,7 +1093,7 @@ BpConfigEntry *Config::AddEntryFloat(const char *name, float value, const char *
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntryDouble(const char *name, double value, const char *parent) {
+BpConfigEntry *BpConfig::AddEntryDouble(const char *name, double value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryDouble(name, value);
     auto *section = m_Root->GetSection(parent);
@@ -1465,7 +1102,7 @@ BpConfigEntry *Config::AddEntryDouble(const char *name, double value, const char
     return nullptr;
 }
 
-BpConfigEntry *Config::AddEntryString(const char *name, const char *value, const char *parent) {
+BpConfigEntry *BpConfig::AddEntryString(const char *name, const char *value, const char *parent) {
     if (parent == nullptr)
         return m_Root->AddEntryString(name, value);
     auto *section = m_Root->GetSection(parent);
@@ -1474,7 +1111,7 @@ BpConfigEntry *Config::AddEntryString(const char *name, const char *value, const
     return nullptr;
 }
 
-BpConfigList *Config::AddList(const char *name, const char *parent) {
+BpConfigList *BpConfig::AddList(const char *name, const char *parent) {
     if (!parent)
         return m_Root->AddList(name);
     auto *section = m_Root->GetSection(parent);
@@ -1483,7 +1120,7 @@ BpConfigList *Config::AddList(const char *name, const char *parent) {
     return nullptr;
 }
 
-BpConfigSection *Config::AddSection(const char *name, const char *parent) {
+BpConfigSection *BpConfig::AddSection(const char *name, const char *parent) {
     if (!parent)
         return m_Root->AddSection(name);
     auto *section = m_Root->GetSection(parent);
@@ -1492,7 +1129,7 @@ BpConfigSection *Config::AddSection(const char *name, const char *parent) {
     return nullptr;
 }
 
-bool Config::RemoveEntry(const char *name, const char *parent) {
+bool BpConfig::RemoveEntry(const char *name, const char *parent) {
     if (!parent)
         return m_Root->RemoveEntry(name);
     auto *section = m_Root->GetSection(parent);
@@ -1501,7 +1138,7 @@ bool Config::RemoveEntry(const char *name, const char *parent) {
     return false;
 }
 
-bool Config::RemoveList(const char *name, const char *parent) {
+bool BpConfig::RemoveList(const char *name, const char *parent) {
     if (!parent)
         return m_Root->RemoveList(name);
     auto *section = m_Root->GetSection(parent);
@@ -1510,7 +1147,7 @@ bool Config::RemoveList(const char *name, const char *parent) {
     return false;
 }
 
-bool Config::RemoveSection(const char *name, const char *parent) {
+bool BpConfig::RemoveSection(const char *name, const char *parent) {
     if (!parent)
         return m_Root->RemoveSection(name);
     auto *section = m_Root->GetSection(parent);
@@ -1519,11 +1156,11 @@ bool Config::RemoveSection(const char *name, const char *parent) {
     return false;
 }
 
-void Config::Clear() {
+void BpConfig::Clear() {
     m_Root->Clear();
 }
 
-bool Config::Read(const char *json, size_t len, bool overwrite) {
+bool BpConfig::Read(const char *json, size_t len, bool overwrite) {
     yyjson_read_flag flag = YYJSON_READ_STOP_WHEN_DONE |
                             YYJSON_READ_ALLOW_COMMENTS |
                             YYJSON_READ_ALLOW_INF_AND_NAN;
@@ -1541,7 +1178,7 @@ bool Config::Read(const char *json, size_t len, bool overwrite) {
     return true;
 }
 
-char *Config::Write(size_t *len) {
+char *BpConfig::Write(size_t *len) {
     yyjson_mut_doc *doc = yyjson_mut_doc_new(nullptr);
     if (!doc) {
         *len = 0;
@@ -1565,19 +1202,19 @@ char *Config::Write(size_t *len) {
     return json;
 }
 
-void Config::Free(void *ptr) const {
+void BpConfig::Free(void *ptr) const {
     free(ptr);
 }
 
-void *Config::GetUserData(size_t type) const {
+void *BpConfig::GetUserData(size_t type) const {
     return m_UserData.GetData(type);
 }
 
-void *Config::SetUserData(void *data, size_t type) {
+void *BpConfig::SetUserData(void *data, size_t type) {
     return m_UserData.SetData(data, type);
 }
 
-void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, bool overwrite) {
+void BpConfig::ConvertObjectToSection(yyjson_val *obj, BpConfigSection *section, bool overwrite) {
     if (!yyjson_is_obj(obj))
         return;
 
@@ -1592,11 +1229,11 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
         yyjson_val *val = yyjson_obj_iter_get_val(key);
         switch (yyjson_get_tag(val)) {
             case YYJSON_TYPE_OBJ | YYJSON_SUBTYPE_NONE:
-                ConvertObjectToSection(val, (ConfigSection *) section->AddSection(yyjson_get_str(key)), overwrite);
+                ConvertObjectToSection(val, (BpConfigSection *) section->AddSection(yyjson_get_str(key)), overwrite);
                 break;
             case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE:
             case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE: {
-                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
+                auto *entry = (BpConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1606,7 +1243,7 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
-                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
+                auto *entry = (BpConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1620,7 +1257,7 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT: {
-                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
+                auto *entry = (BpConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1630,7 +1267,7 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL: {
-                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
+                auto *entry = (BpConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1640,7 +1277,7 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
             }
                 break;
             case YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE: {
-                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
+                auto *entry = (BpConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1650,7 +1287,7 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
             }
                 break;
             case YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE: {
-                auto *entry = (ConfigEntry *) section->GetEntry(yyjson_get_str(key));
+                auto *entry = (BpConfigEntry *) section->GetEntry(yyjson_get_str(key));
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1660,7 +1297,7 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
             }
                 break;
             case YYJSON_TYPE_ARR | YYJSON_SUBTYPE_NONE:
-                ConvertArrayToList(val, (ConfigList *) section->AddList(yyjson_get_str(key)), overwrite);
+                ConvertArrayToList(val, (BpConfigList *) section->AddList(yyjson_get_str(key)), overwrite);
                 break;
             default:
                 break;
@@ -1671,7 +1308,7 @@ void Config::ConvertObjectToSection(yyjson_val *obj, ConfigSection *section, boo
         section->SetFlags(section->GetFlags() | BP_CFG_FLAG_READONLY);
 }
 
-void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool overwrite) {
+void BpConfig::ConvertArrayToSection(yyjson_val *arr, BpConfigSection *section, bool overwrite) {
     if (!yyjson_is_arr(arr))
         return;
 
@@ -1687,11 +1324,11 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
         snprintf(buf, 32, "%u", idx);
         switch (yyjson_get_tag(val)) {
             case YYJSON_TYPE_OBJ | YYJSON_SUBTYPE_NONE:
-                ConvertObjectToSection(val, (ConfigSection *) section->AddSection(buf), overwrite);
+                ConvertObjectToSection(val, (BpConfigSection *) section->AddSection(buf), overwrite);
                 break;
             case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE:
             case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE: {
-                auto *entry = (ConfigEntry *) section->GetEntry(buf);
+                auto *entry = (BpConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1701,7 +1338,7 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_UINT: {
-                auto *entry = (ConfigEntry *) section->GetEntry(buf);
+                auto *entry = (BpConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1715,7 +1352,7 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_SINT: {
-                auto *entry = (ConfigEntry *) section->GetEntry(buf);
+                auto *entry = (BpConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1725,7 +1362,7 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
             }
                 break;
             case YYJSON_TYPE_NUM | YYJSON_SUBTYPE_REAL: {
-                auto *entry = (ConfigEntry *) section->GetEntry(buf);
+                auto *entry = (BpConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1735,7 +1372,7 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
             }
                 break;
             case YYJSON_TYPE_STR | YYJSON_SUBTYPE_NONE: {
-                auto *entry = (ConfigEntry *) section->GetEntry(buf);
+                auto *entry = (BpConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1745,7 +1382,7 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
             }
                 break;
             case YYJSON_TYPE_NULL | YYJSON_SUBTYPE_NONE: {
-                auto *entry = (ConfigEntry *) section->GetEntry(buf);
+                auto *entry = (BpConfigEntry *) section->GetEntry(buf);
                 if (entry) {
                     if (overwrite)
                         entry->FromJsonValue(val);
@@ -1755,7 +1392,7 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
             }
                 break;
             case YYJSON_TYPE_ARR | YYJSON_SUBTYPE_NONE:
-                ConvertArrayToSection(val, (ConfigSection *) section->AddSection(buf), overwrite);
+                ConvertArrayToSection(val, (BpConfigSection *) section->AddSection(buf), overwrite);
                 break;
             default:
                 break;
@@ -1767,7 +1404,7 @@ void Config::ConvertArrayToSection(yyjson_val *arr, ConfigSection *section, bool
         section->SetFlags(section->GetFlags() | BP_CFG_FLAG_READONLY);
 }
 
-void Config::ConvertArrayToList(yyjson_val *arr, ConfigList *list, bool overwrite) {
+void BpConfig::ConvertArrayToList(yyjson_val *arr, BpConfigList *list, bool overwrite) {
     if (!yyjson_is_arr(arr))
         return;
 
@@ -1823,72 +1460,72 @@ void Config::ConvertArrayToList(yyjson_val *arr, ConfigList *list, bool overwrit
         list->SetFlags(list->GetFlags() | BP_CFG_FLAG_READONLY);
 }
 
-ConfigSection *Config::CreateSection(ConfigSection *root, const char *name) {
-    return (ConfigSection *) root->AddSection(name);
+BpConfigSection *BpConfig::CreateSection(BpConfigSection *root, const char *name) {
+    return (BpConfigSection *) root->AddSection(name);
 }
 
-ConfigSection *Config::GetSection(ConfigSection *root, const char *name) {
-    return (ConfigSection *) root->GetSection(name);
+BpConfigSection *BpConfig::GetSection(BpConfigSection *root, const char *name) {
+    return (BpConfigSection *) root->GetSection(name);
 }
 
-ConfigSection::ConfigSection(ConfigSection *parent, const char *name) : m_Parent(parent), m_Name(name) {
+BpConfigSection::BpConfigSection(BpConfigSection *parent, const char *name) : m_Parent(parent), m_Name(name) {
     assert(name != nullptr);
 }
 
-ConfigSection::~ConfigSection() {
+BpConfigSection::~BpConfigSection() {
     Clear();
     if (m_Parent) {
         m_Parent->RemoveSection(m_Name.c_str());
     }
 }
 
-int ConfigSection::AddRef() const {
+int BpConfigSection::AddRef() const {
     return m_RefCount.AddRef();
 }
 
-int ConfigSection::Release() const {
+int BpConfigSection::Release() const {
     int r = m_RefCount.Release();
     if (r == 0) {
         std::atomic_thread_fence(std::memory_order_acquire);
-        delete const_cast<ConfigSection *>(this);
+        delete const_cast<BpConfigSection *>(this);
     }
     return r;
 }
 
-size_t ConfigSection::GetNumberOfEntries() const {
+size_t BpConfigSection::GetNumberOfEntries() const {
     return m_Entries.size();
 }
 
-size_t ConfigSection::GetNumberOfLists() const {
+size_t BpConfigSection::GetNumberOfLists() const {
     return m_Lists.size();
 }
 
-size_t ConfigSection::GetNumberOfSections() const {
+size_t BpConfigSection::GetNumberOfSections() const {
     return m_Sections.size();
 }
 
-BpConfigEntry *ConfigSection::GetEntry(size_t index) const {
+BpConfigEntry *BpConfigSection::GetEntry(size_t index) const {
     if (index >= m_Entries.size())
         return nullptr;
 
     return m_Entries[index];
 }
 
-BpConfigList * ConfigSection::GetList(size_t index) const {
+BpConfigList * BpConfigSection::GetList(size_t index) const {
     if (index >= m_Lists.size())
         return nullptr;
 
     return m_Lists[index];
 }
 
-BpConfigSection *ConfigSection::GetSection(size_t index) const {
+BpConfigSection *BpConfigSection::GetSection(size_t index) const {
     if (index >= m_Sections.size())
         return nullptr;
 
     return m_Sections[index];
 }
 
-BpConfigEntry *ConfigSection::GetEntry(const char *name) const {
+BpConfigEntry *BpConfigSection::GetEntry(const char *name) const {
     if (!name)
         return nullptr;
 
@@ -1898,7 +1535,7 @@ BpConfigEntry *ConfigSection::GetEntry(const char *name) const {
     return it->second;
 }
 
-BpConfigList * ConfigSection::GetList(const char *name) const {
+BpConfigList * BpConfigSection::GetList(const char *name) const {
     if (!name)
         return nullptr;
 
@@ -1908,7 +1545,7 @@ BpConfigList * ConfigSection::GetList(const char *name) const {
     return it->second;
 }
 
-BpConfigSection *ConfigSection::GetSection(const char *name) const {
+BpConfigSection *BpConfigSection::GetSection(const char *name) const {
     if (!name)
         return nullptr;
 
@@ -1918,11 +1555,11 @@ BpConfigSection *ConfigSection::GetSection(const char *name) const {
     return it->second;
 }
 
-BpConfigEntry *ConfigSection::AddEntry(const char *name) {
+BpConfigEntry *BpConfigSection::AddEntry(const char *name) {
     if (!name)
         return nullptr;
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry)
         return entry;
 
@@ -1931,7 +1568,7 @@ BpConfigEntry *ConfigSection::AddEntry(const char *name) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name);
+    entry = new BpConfigEntry(this, name);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -1940,11 +1577,11 @@ BpConfigEntry *ConfigSection::AddEntry(const char *name) {
     return entry;
 }
 
-BpConfigEntry *ConfigSection::AddEntryBool(const char *name, bool value) {
+BpConfigEntry *BpConfigSection::AddEntryBool(const char *name, bool value) {
     if (!name)
         return nullptr;
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry) {
         entry->SetDefaultBool(value);
         return entry;
@@ -1955,7 +1592,7 @@ BpConfigEntry *ConfigSection::AddEntryBool(const char *name, bool value) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name, value);
+    entry = new BpConfigEntry(this, name, value);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -1964,11 +1601,11 @@ BpConfigEntry *ConfigSection::AddEntryBool(const char *name, bool value) {
     return entry;
 }
 
-BpConfigEntry *ConfigSection::AddEntryUint32(const char *name, uint32_t value) {
+BpConfigEntry *BpConfigSection::AddEntryUint32(const char *name, uint32_t value) {
     if (!name)
         return nullptr;
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry) {
         entry->SetDefaultUint32(value);
         return entry;
@@ -1979,7 +1616,7 @@ BpConfigEntry *ConfigSection::AddEntryUint32(const char *name, uint32_t value) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name, value);
+    entry = new BpConfigEntry(this, name, value);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -1988,11 +1625,11 @@ BpConfigEntry *ConfigSection::AddEntryUint32(const char *name, uint32_t value) {
     return entry;
 }
 
-BpConfigEntry *ConfigSection::AddEntryInt32(const char *name, int32_t value) {
+BpConfigEntry *BpConfigSection::AddEntryInt32(const char *name, int32_t value) {
     if (!name)
         return nullptr;
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry) {
         entry->SetDefaultInt32(value);
         return entry;
@@ -2003,7 +1640,7 @@ BpConfigEntry *ConfigSection::AddEntryInt32(const char *name, int32_t value) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name, value);
+    entry = new BpConfigEntry(this, name, value);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -2012,11 +1649,11 @@ BpConfigEntry *ConfigSection::AddEntryInt32(const char *name, int32_t value) {
     return entry;
 }
 
-BpConfigEntry *ConfigSection::AddEntryUint64(const char *name, uint64_t value) {
+BpConfigEntry *BpConfigSection::AddEntryUint64(const char *name, uint64_t value) {
     if (!name)
         return nullptr;
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry) {
         entry->SetDefaultUint64(value);
         return entry;
@@ -2027,7 +1664,7 @@ BpConfigEntry *ConfigSection::AddEntryUint64(const char *name, uint64_t value) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name, value);
+    entry = new BpConfigEntry(this, name, value);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -2036,11 +1673,11 @@ BpConfigEntry *ConfigSection::AddEntryUint64(const char *name, uint64_t value) {
     return entry;
 }
 
-BpConfigEntry *ConfigSection::AddEntryInt64(const char *name, int64_t value) {
+BpConfigEntry *BpConfigSection::AddEntryInt64(const char *name, int64_t value) {
     if (!name)
         return nullptr;
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry) {
         entry->SetDefaultInt64(value);
         return entry;
@@ -2051,7 +1688,7 @@ BpConfigEntry *ConfigSection::AddEntryInt64(const char *name, int64_t value) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name, value);
+    entry = new BpConfigEntry(this, name, value);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -2060,11 +1697,11 @@ BpConfigEntry *ConfigSection::AddEntryInt64(const char *name, int64_t value) {
     return entry;
 }
 
-BpConfigEntry *ConfigSection::AddEntryFloat(const char *name, float value) {
+BpConfigEntry *BpConfigSection::AddEntryFloat(const char *name, float value) {
     if (!name)
         return nullptr;
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry) {
         entry->SetDefaultFloat(value);
         return entry;
@@ -2075,7 +1712,7 @@ BpConfigEntry *ConfigSection::AddEntryFloat(const char *name, float value) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name, value);
+    entry = new BpConfigEntry(this, name, value);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -2084,11 +1721,11 @@ BpConfigEntry *ConfigSection::AddEntryFloat(const char *name, float value) {
     return entry;
 }
 
-BpConfigEntry *ConfigSection::AddEntryDouble(const char *name, double value) {
+BpConfigEntry *BpConfigSection::AddEntryDouble(const char *name, double value) {
     if (!name)
         return nullptr;
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry) {
         entry->SetDefaultDouble(value);
         return entry;
@@ -2099,7 +1736,7 @@ BpConfigEntry *ConfigSection::AddEntryDouble(const char *name, double value) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name, value);
+    entry = new BpConfigEntry(this, name, value);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -2108,14 +1745,14 @@ BpConfigEntry *ConfigSection::AddEntryDouble(const char *name, double value) {
     return entry;
 }
 
-BpConfigEntry *ConfigSection::AddEntryString(const char *name, const char *value) {
+BpConfigEntry *BpConfigSection::AddEntryString(const char *name, const char *value) {
     if (!name)
         return nullptr;
 
     if (!value)
         value = "";
 
-    auto *entry = (ConfigEntry *) GetEntry(name);
+    auto *entry = (BpConfigEntry *) GetEntry(name);
     if (entry) {
         entry->SetDefaultString(value);
         return entry;
@@ -2126,7 +1763,7 @@ BpConfigEntry *ConfigSection::AddEntryString(const char *name, const char *value
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    entry = new ConfigEntry(this, name, value);
+    entry = new BpConfigEntry(this, name, value);
     m_Items.emplace_back(entry);
     m_Entries.emplace_back(entry);
     m_EntryMap[entry->GetName()] = entry;
@@ -2135,11 +1772,11 @@ BpConfigEntry *ConfigSection::AddEntryString(const char *name, const char *value
     return entry;
 }
 
-BpConfigList * ConfigSection::AddList(const char *name) {
+BpConfigList * BpConfigSection::AddList(const char *name) {
     if (!name)
         return nullptr;
 
-    auto *list = (ConfigList *) GetList(name);
+    auto *list = (BpConfigList *) GetList(name);
     if (list)
         return list;
 
@@ -2148,7 +1785,7 @@ BpConfigList * ConfigSection::AddList(const char *name) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    list = new ConfigList(this, name);
+    list = new BpConfigList(this, name);
     m_Items.emplace_back(list);
     m_Lists.emplace_back(list);
     m_ListMap[list->GetName()] = list;
@@ -2157,11 +1794,11 @@ BpConfigList * ConfigSection::AddList(const char *name) {
     return list;
 }
 
-BpConfigSection *ConfigSection::AddSection(const char *name) {
+BpConfigSection *BpConfigSection::AddSection(const char *name) {
     if (!name)
         return nullptr;
 
-    auto *section = (ConfigSection *) GetSection(name);
+    auto *section = (BpConfigSection *) GetSection(name);
     if (section)
         return section;
 
@@ -2170,7 +1807,7 @@ BpConfigSection *ConfigSection::AddSection(const char *name) {
 
     std::lock_guard<std::mutex> guard(m_RWLock);
 
-    section = new ConfigSection(this, name);
+    section = new BpConfigSection(this, name);
     m_Items.emplace_back(section);
     m_Sections.emplace_back(section);
     m_SectionMap[section->GetName()] = section;
@@ -2179,7 +1816,7 @@ BpConfigSection *ConfigSection::AddSection(const char *name) {
     return section;
 }
 
-bool ConfigSection::RemoveEntry(const char *name) {
+bool BpConfigSection::RemoveEntry(const char *name) {
     if (!name)
         return false;
 
@@ -2207,7 +1844,7 @@ bool ConfigSection::RemoveEntry(const char *name) {
     return true;
 }
 
-bool ConfigSection::RemoveList(const char *name) {
+bool BpConfigSection::RemoveList(const char *name) {
     if (!name)
         return false;
 
@@ -2235,7 +1872,7 @@ bool ConfigSection::RemoveList(const char *name) {
     return true;
 }
 
-bool ConfigSection::RemoveSection(const char *name) {
+bool BpConfigSection::RemoveSection(const char *name) {
     if (!name)
         return false;
 
@@ -2263,7 +1900,7 @@ bool ConfigSection::RemoveSection(const char *name) {
     return true;
 }
 
-void ConfigSection::Clear() {
+void BpConfigSection::Clear() {
     if (IsReadOnly())
         return;
 
@@ -2290,13 +1927,13 @@ void ConfigSection::Clear() {
     m_Items.clear();
 }
 
-yyjson_mut_val *ConfigSection::ToJsonKey(yyjson_mut_doc *doc) {
+yyjson_mut_val *BpConfigSection::ToJsonKey(yyjson_mut_doc *doc) {
     if (!doc)
         return nullptr;
     return yyjson_mut_str(doc, m_Name.c_str());
 }
 
-yyjson_mut_val *ConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
+yyjson_mut_val *BpConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
     if (!doc)
         return nullptr;
 
@@ -2307,7 +1944,7 @@ yyjson_mut_val *ConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
     for (auto &e: m_Items) {
         switch (e.type) {
             case BP_CFG_TYPE_ENTRY: {
-                auto *entry = (ConfigEntry *) e.data.entry;
+                auto *entry = (BpConfigEntry *) e.data.entry;
                 if (entry && !entry->IsDynamic()) {
                     yyjson_mut_val *key = entry->ToJsonKey(doc);
                     yyjson_mut_val *val = entry->ToJsonValue(doc);
@@ -2317,7 +1954,7 @@ yyjson_mut_val *ConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
             }
             break;
             case BP_CFG_TYPE_LIST: {
-                auto *list = (ConfigList *) e.data.list;
+                auto *list = (BpConfigList *) e.data.list;
                 if (list && !list->IsDynamic()) {
                     yyjson_mut_val *key = list->ToJsonKey(doc);
                     yyjson_mut_val *val = list->ToJsonArray(doc);
@@ -2326,7 +1963,7 @@ yyjson_mut_val *ConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
                 }
             }
             case BP_CFG_TYPE_SECTION: {
-                auto *section = (ConfigSection *) e.data.section;
+                auto *section = (BpConfigSection *) e.data.section;
                 if (section && !section->IsDynamic()) {
                     yyjson_mut_val *key = section->ToJsonKey(doc);
                     yyjson_mut_val *val = section->ToJsonObject(doc);
@@ -2343,7 +1980,7 @@ yyjson_mut_val *ConfigSection::ToJsonObject(yyjson_mut_doc *doc) {
     return obj;
 }
 
-bool ConfigSection::AddCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) {
+bool BpConfigSection::AddCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) {
     if (type < 0 || type >= BP_CFG_CB_COUNT)
         return false;
 
@@ -2362,7 +1999,7 @@ bool ConfigSection::AddCallback(BpConfigCallbackType type, BpConfigCallback call
     return true;
 }
 
-bool ConfigSection::RemoveCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) {
+bool BpConfigSection::RemoveCallback(BpConfigCallbackType type, BpConfigCallback callback, void *arg) {
     if (type < 0 || type >= BP_CFG_CB_COUNT)
         return false;
 
@@ -2381,21 +2018,21 @@ bool ConfigSection::RemoveCallback(BpConfigCallbackType type, BpConfigCallback c
     return true;
 }
 
-void ConfigSection::ClearCallbacks(BpConfigCallbackType type) {
+void BpConfigSection::ClearCallbacks(BpConfigCallbackType type) {
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     if (type >= 0 && type < BP_CFG_CB_COUNT)
         m_Callbacks[type].clear();
 }
 
-void ConfigSection::EnableCallbacks(BpConfigCallbackType type, bool enable) {
+void BpConfigSection::EnableCallbacks(BpConfigCallbackType type, bool enable) {
     std::lock_guard<std::mutex> guard(m_RWLock);
 
     if (type >= 0 && type < BP_CFG_CB_COUNT)
         m_CallbacksEnabled[type] = enable;
 }
 
-void ConfigSection::InvokeCallbacks(BpConfigCallbackType type, const BpConfigItem &item) const {
+void BpConfigSection::InvokeCallbacks(BpConfigCallbackType type, const BpConfigItem &item) const {
     if (type >= 0 && type < BP_CFG_CB_COUNT && m_CallbacksEnabled[type]) {
         const BpConfigCallbackArgument arg = {type, item};
         for (const auto &cb: m_Callbacks[type]) {
@@ -2404,94 +2041,94 @@ void ConfigSection::InvokeCallbacks(BpConfigCallbackType type, const BpConfigIte
     }
 }
 
-ConfigList::ConfigList(ConfigSection *parent, const char *name) : m_Parent(parent), m_Name(name) {
+BpConfigList::BpConfigList(BpConfigSection *parent, const char *name) : m_Parent(parent), m_Name(name) {
     assert(name != nullptr);
 }
 
-ConfigList::~ConfigList() {
+BpConfigList::~BpConfigList() {
     if (m_Parent) {
         m_Parent->RemoveEntry(m_Name.c_str());
     }
 }
 
-int ConfigList::AddRef() const {
+int BpConfigList::AddRef() const {
     return m_RefCount.AddRef();
 }
 
-int ConfigList::Release() const {
+int BpConfigList::Release() const {
     int r = m_RefCount.Release();
     if (r == 0) {
         std::atomic_thread_fence(std::memory_order_acquire);
-        delete const_cast<ConfigList *>(this);
+        delete const_cast<BpConfigList *>(this);
     }
     return r;
 }
 
-size_t ConfigList::GetNumberOfValues() const {
+size_t BpConfigList::GetNumberOfValues() const {
     return m_Values.size();
 }
 
-BpConfigEntryType ConfigList::GetType(size_t index) const {
+BpConfigEntryType BpConfigList::GetType(size_t index) const {
     if (index >= m_Values.size())
         return BP_CFG_ENTRY_NONE;
     return GetValueType(m_Values[index]);
 }
 
-size_t ConfigList::GetSize(size_t index) const {
+size_t BpConfigList::GetSize(size_t index) const {
     if (index >= m_Values.size())
         return 0;
     return m_Values[index].GetSize();
 }
 
-bool ConfigList::GetBool(size_t index) const {
+bool BpConfigList::GetBool(size_t index) const {
     if (index >= m_Values.size())
         return false;
     return m_Values[index].GetBool();
 }
 
-uint32_t ConfigList::GetUint32(size_t index) const {
+uint32_t BpConfigList::GetUint32(size_t index) const {
     if (index >= m_Values.size())
         return 0;
     return m_Values[index].GetUint32();
 }
 
-int32_t ConfigList::GetInt32(size_t index) const {
+int32_t BpConfigList::GetInt32(size_t index) const {
     if (index >= m_Values.size())
         return 0;
     return m_Values[index].GetInt32();
 }
 
-uint64_t ConfigList::GetUint64(size_t index) const {
+uint64_t BpConfigList::GetUint64(size_t index) const {
     if (index >= m_Values.size())
         return 0;
     return m_Values[index].GetUint64();
 }
 
-int64_t ConfigList::GetInt64(size_t index) const {
+int64_t BpConfigList::GetInt64(size_t index) const {
     if (index >= m_Values.size())
         return 0;
     return m_Values[index].GetInt64();
 }
 
-float ConfigList::GetFloat(size_t index) const {
+float BpConfigList::GetFloat(size_t index) const {
     if (index >= m_Values.size())
         return 0;
     return m_Values[index].GetFloat32();
 }
 
-double ConfigList::GetDouble(size_t index) const {
+double BpConfigList::GetDouble(size_t index) const {
     if (index >= m_Values.size())
         return 0;
     return m_Values[index].GetFloat64();
 }
 
-const char *ConfigList::GetString(size_t index) const {
+const char *BpConfigList::GetString(size_t index) const {
     if (index >= m_Values.size())
         return nullptr;
     return m_Values[index].GetString();
 }
 
-void ConfigList::SetBool(size_t index, bool value) {
+void BpConfigList::SetBool(size_t index, bool value) {
     if (IsReadOnly())
         return;
 
@@ -2499,7 +2136,7 @@ void ConfigList::SetBool(size_t index, bool value) {
         m_Values[index] = value;
 }
 
-void ConfigList::SetUint32(size_t index, uint32_t value) {
+void BpConfigList::SetUint32(size_t index, uint32_t value) {
     if (IsReadOnly())
         return;
 
@@ -2507,7 +2144,7 @@ void ConfigList::SetUint32(size_t index, uint32_t value) {
         m_Values[index] = value;
 }
 
-void ConfigList::SetInt32(size_t index, int32_t value) {
+void BpConfigList::SetInt32(size_t index, int32_t value) {
     if (IsReadOnly())
         return;
 
@@ -2515,7 +2152,7 @@ void ConfigList::SetInt32(size_t index, int32_t value) {
         m_Values[index] = value;
 }
 
-void ConfigList::SetUint64(size_t index, uint64_t value) {
+void BpConfigList::SetUint64(size_t index, uint64_t value) {
     if (IsReadOnly())
         return;
 
@@ -2523,7 +2160,7 @@ void ConfigList::SetUint64(size_t index, uint64_t value) {
         m_Values[index] = value;
 }
 
-void ConfigList::SetInt64(size_t index, int64_t value) {
+void BpConfigList::SetInt64(size_t index, int64_t value) {
     if (IsReadOnly())
         return;
 
@@ -2531,7 +2168,7 @@ void ConfigList::SetInt64(size_t index, int64_t value) {
         m_Values[index] = value;
 }
 
-void ConfigList::SetFloat(size_t index, float value) {
+void BpConfigList::SetFloat(size_t index, float value) {
     if (IsReadOnly())
         return;
 
@@ -2539,7 +2176,7 @@ void ConfigList::SetFloat(size_t index, float value) {
         m_Values[index] = value;
 }
 
-void ConfigList::SetDouble(size_t index, double value) {
+void BpConfigList::SetDouble(size_t index, double value) {
     if (IsReadOnly())
         return;
 
@@ -2547,7 +2184,7 @@ void ConfigList::SetDouble(size_t index, double value) {
         m_Values[index] = value;
 }
 
-void ConfigList::SetString(size_t index, const char *value) {
+void BpConfigList::SetString(size_t index, const char *value) {
     if (IsReadOnly())
         return;
 
@@ -2555,7 +2192,7 @@ void ConfigList::SetString(size_t index, const char *value) {
         m_Values[index] = value;
 }
 
-void ConfigList::InsertBool(size_t index, bool value) {
+void BpConfigList::InsertBool(size_t index, bool value) {
     if (IsReadOnly())
         return;
 
@@ -2563,7 +2200,7 @@ void ConfigList::InsertBool(size_t index, bool value) {
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
-void ConfigList::InsertUint32(size_t index, uint32_t value) {
+void BpConfigList::InsertUint32(size_t index, uint32_t value) {
     if (IsReadOnly())
         return;
 
@@ -2571,7 +2208,7 @@ void ConfigList::InsertUint32(size_t index, uint32_t value) {
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
-void ConfigList::InsertInt32(size_t index, int32_t value) {
+void BpConfigList::InsertInt32(size_t index, int32_t value) {
     if (IsReadOnly())
         return;
 
@@ -2579,7 +2216,7 @@ void ConfigList::InsertInt32(size_t index, int32_t value) {
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
-void ConfigList::InsertUint64(size_t index, uint64_t value) {
+void BpConfigList::InsertUint64(size_t index, uint64_t value) {
     if (IsReadOnly())
         return;
 
@@ -2587,7 +2224,7 @@ void ConfigList::InsertUint64(size_t index, uint64_t value) {
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
-void ConfigList::InsertInt64(size_t index, int64_t value) {
+void BpConfigList::InsertInt64(size_t index, int64_t value) {
     if (IsReadOnly())
         return;
 
@@ -2595,7 +2232,7 @@ void ConfigList::InsertInt64(size_t index, int64_t value) {
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
-void ConfigList::InsertFloat(size_t index, float value) {
+void BpConfigList::InsertFloat(size_t index, float value) {
     if (IsReadOnly())
         return;
 
@@ -2603,7 +2240,7 @@ void ConfigList::InsertFloat(size_t index, float value) {
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
-void ConfigList::InsertDouble(size_t index, double value) {
+void BpConfigList::InsertDouble(size_t index, double value) {
     if (IsReadOnly())
         return;
 
@@ -2611,7 +2248,7 @@ void ConfigList::InsertDouble(size_t index, double value) {
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
-void ConfigList::InsertString(size_t index, const char *value) {
+void BpConfigList::InsertString(size_t index, const char *value) {
     if (IsReadOnly())
         return;
 
@@ -2619,63 +2256,63 @@ void ConfigList::InsertString(size_t index, const char *value) {
         m_Values.insert(m_Values.begin() + static_cast<int>(index), value);
 }
 
-void ConfigList::AppendBool(bool value) {
+void BpConfigList::AppendBool(bool value) {
     if (IsReadOnly())
         return;
 
     m_Values.emplace_back(value);
 }
 
-void ConfigList::AppendUint32(uint32_t value) {
+void BpConfigList::AppendUint32(uint32_t value) {
     if (IsReadOnly())
         return;
 
     m_Values.emplace_back(value);
 }
 
-void ConfigList::AppendInt32(int32_t value) {
+void BpConfigList::AppendInt32(int32_t value) {
     if (IsReadOnly())
         return;
 
     m_Values.emplace_back(value);
 }
 
-void ConfigList::AppendUint64(uint64_t value) {
+void BpConfigList::AppendUint64(uint64_t value) {
     if (IsReadOnly())
         return;
 
     m_Values.emplace_back(value);
 }
 
-void ConfigList::AppendInt64(int64_t value) {
+void BpConfigList::AppendInt64(int64_t value) {
     if (IsReadOnly())
         return;
 
     m_Values.emplace_back(value);
 }
 
-void ConfigList::AppendFloat(float value) {
+void BpConfigList::AppendFloat(float value) {
     if (IsReadOnly())
         return;
 
     m_Values.emplace_back(value);
 }
 
-void ConfigList::AppendDouble(double value) {
+void BpConfigList::AppendDouble(double value) {
     if (IsReadOnly())
         return;
 
     m_Values.emplace_back(value);
 }
 
-void ConfigList::AppendString(const char *value) {
+void BpConfigList::AppendString(const char *value) {
     if (IsReadOnly())
         return;
 
     m_Values.emplace_back(value);
 }
 
-bool ConfigList::Remove(size_t index) {
+bool BpConfigList::Remove(size_t index) {
     if (IsReadOnly())
         return false;
 
@@ -2692,34 +2329,34 @@ bool ConfigList::Remove(size_t index) {
     return false;
 }
 
-void ConfigList::Clear() {
+void BpConfigList::Clear() {
     if (IsReadOnly())
         return;
 
     m_Values.clear();
 }
 
-void ConfigList::Resize(size_t size) {
+void BpConfigList::Resize(size_t size) {
     if (IsReadOnly())
         return;
 
     m_Values.resize(size);
 }
 
-void ConfigList::Reserve(size_t size) {
+void BpConfigList::Reserve(size_t size) {
     if (IsReadOnly())
         return;
 
     m_Values.reserve(size);
 }
 
-yyjson_mut_val *ConfigList::ToJsonKey(yyjson_mut_doc *doc) {
+yyjson_mut_val *BpConfigList::ToJsonKey(yyjson_mut_doc *doc) {
     if (!doc)
         return nullptr;
     return yyjson_mut_str(doc, m_Name.c_str());
 }
 
-yyjson_mut_val *ConfigList::ToJsonArray(yyjson_mut_doc *doc) {
+yyjson_mut_val *BpConfigList::ToJsonArray(yyjson_mut_doc *doc) {
     if (!doc)
         return nullptr;
 
@@ -2747,79 +2384,79 @@ yyjson_mut_val *ConfigList::ToJsonArray(yyjson_mut_doc *doc) {
     return arr;
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name)
     : m_Parent(parent), m_Name(name) {
     assert(name != nullptr);
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name, bool value)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name, bool value)
     : m_Parent(parent), m_Name(name), m_Value(value) {
     assert(name != nullptr);
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name, uint32_t value)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name, uint32_t value)
     : m_Parent(parent), m_Name(name), m_Value(static_cast<uint64_t>(value)) {
     assert(name != nullptr);
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name, int32_t value)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name, int32_t value)
     : m_Parent(parent), m_Name(name), m_Value(static_cast<int64_t>(value)) {
     assert(name != nullptr);
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name, uint64_t value)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name, uint64_t value)
     : m_Parent(parent), m_Name(name), m_Value(value) {
     assert(name != nullptr);
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name, int64_t value)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name, int64_t value)
     : m_Parent(parent), m_Name(name), m_Value(value) {
     assert(name != nullptr);
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name, float value)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name, float value)
     : m_Parent(parent), m_Name(name), m_Value(static_cast<double>(value)) {
     assert(name != nullptr);
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name, double value)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name, double value)
     : m_Parent(parent), m_Name(name), m_Value(value) {
     assert(name != nullptr);
 }
 
-ConfigEntry::ConfigEntry(ConfigSection *parent, const char *name, const char *value)
+BpConfigEntry::BpConfigEntry(BpConfigSection *parent, const char *name, const char *value)
     : m_Parent(parent), m_Name(name), m_Value(value) {
     assert(name != nullptr);
 }
 
-ConfigEntry::~ConfigEntry() {
+BpConfigEntry::~BpConfigEntry() {
     if (m_Parent) {
         m_Parent->RemoveEntry(m_Name.c_str());
     }
 }
 
-int ConfigEntry::AddRef() const {
+int BpConfigEntry::AddRef() const {
     return m_RefCount.AddRef();
 }
 
-int ConfigEntry::Release() const {
+int BpConfigEntry::Release() const {
     int r = m_RefCount.Release();
     if (r == 0) {
         std::atomic_thread_fence(std::memory_order_acquire);
-        delete const_cast<ConfigEntry *>(this);
+        delete const_cast<BpConfigEntry *>(this);
     }
     return r;
 }
 
-BpConfigEntryType ConfigEntry::GetType() const {
+BpConfigEntryType BpConfigEntry::GetType() const {
     return GetValueType(m_Value);
 }
 
-size_t ConfigEntry::GetSize() const {
+size_t BpConfigEntry::GetSize() const {
     return m_Value.GetSize();
 }
 
-void ConfigEntry::SetBool(bool value) {
+void BpConfigEntry::SetBool(bool value) {
     if (IsReadOnly())
         return;
 
@@ -2843,7 +2480,7 @@ void ConfigEntry::SetBool(bool value) {
     InvokeCallbacks(t, v);
 }
 
-void ConfigEntry::SetUint32(uint32_t value) {
+void BpConfigEntry::SetUint32(uint32_t value) {
     if (IsReadOnly())
         return;
 
@@ -2867,7 +2504,7 @@ void ConfigEntry::SetUint32(uint32_t value) {
     InvokeCallbacks(t, v);
 }
 
-void ConfigEntry::SetInt32(int32_t value) {
+void BpConfigEntry::SetInt32(int32_t value) {
     if (IsReadOnly())
         return;
 
@@ -2891,7 +2528,7 @@ void ConfigEntry::SetInt32(int32_t value) {
     InvokeCallbacks(t, v);
 }
 
-void ConfigEntry::SetUint64(uint64_t value) {
+void BpConfigEntry::SetUint64(uint64_t value) {
     if (IsReadOnly())
         return;
 
@@ -2915,7 +2552,7 @@ void ConfigEntry::SetUint64(uint64_t value) {
     InvokeCallbacks(t, v);
 }
 
-void ConfigEntry::SetInt64(int64_t value) {
+void BpConfigEntry::SetInt64(int64_t value) {
     if (IsReadOnly())
         return;
 
@@ -2939,7 +2576,7 @@ void ConfigEntry::SetInt64(int64_t value) {
     InvokeCallbacks(t, v);
 }
 
-void ConfigEntry::SetFloat(float value) {
+void BpConfigEntry::SetFloat(float value) {
     if (IsReadOnly())
         return;
 
@@ -2963,7 +2600,7 @@ void ConfigEntry::SetFloat(float value) {
     InvokeCallbacks(t, v);
 }
 
-void ConfigEntry::SetDouble(double value) {
+void BpConfigEntry::SetDouble(double value) {
     if (IsReadOnly())
         return;
 
@@ -2998,7 +2635,7 @@ static inline size_t HashString(const char *str) {
     return hash;
 }
 
-void ConfigEntry::SetString(const char *value) {
+void BpConfigEntry::SetString(const char *value) {
     if (!value)
         return;
 
@@ -3026,63 +2663,63 @@ void ConfigEntry::SetString(const char *value) {
     InvokeCallbacks(t, v);
 }
 
-void ConfigEntry::SetDefaultBool(bool value) {
+void BpConfigEntry::SetDefaultBool(bool value) {
     std::lock_guard<std::mutex> guard(m_RWLock);
     if (GetType() != BP_CFG_ENTRY_BOOL) {
         m_Value = value;
     }
 }
 
-void ConfigEntry::SetDefaultUint32(uint32_t value) {
+void BpConfigEntry::SetDefaultUint32(uint32_t value) {
     std::lock_guard<std::mutex> guard(m_RWLock);
     if (GetType() != BP_CFG_ENTRY_UINT) {
         m_Value = value;
     }
 }
 
-void ConfigEntry::SetDefaultInt32(int32_t value) {
+void BpConfigEntry::SetDefaultInt32(int32_t value) {
     std::lock_guard<std::mutex> guard(m_RWLock);
     if (GetType() != BP_CFG_ENTRY_INT) {
         m_Value = value;
     }
 }
 
-void ConfigEntry::SetDefaultUint64(uint64_t value) {
+void BpConfigEntry::SetDefaultUint64(uint64_t value) {
     std::lock_guard<std::mutex> guard(m_RWLock);
     if (GetType() != BP_CFG_ENTRY_UINT) {
         m_Value = value;
     }
 }
 
-void ConfigEntry::SetDefaultInt64(int64_t value) {
+void BpConfigEntry::SetDefaultInt64(int64_t value) {
     std::lock_guard<std::mutex> guard(m_RWLock);
     if (GetType() != BP_CFG_ENTRY_INT) {
         m_Value = value;
     }
 }
 
-void ConfigEntry::SetDefaultFloat(float value) {
+void BpConfigEntry::SetDefaultFloat(float value) {
     std::lock_guard<std::mutex> guard(m_RWLock);
     if (GetType() != BP_CFG_ENTRY_REAL) {
         m_Value = value;
     }
 }
 
-void ConfigEntry::SetDefaultDouble(double value) {
+void BpConfigEntry::SetDefaultDouble(double value) {
     std::lock_guard<std::mutex> guard(m_RWLock);
     if (GetType() != BP_CFG_ENTRY_REAL) {
         m_Value = value;
     }
 }
 
-void ConfigEntry::SetDefaultString(const char *value) {
+void BpConfigEntry::SetDefaultString(const char *value) {
     std::lock_guard<std::mutex> guard(m_RWLock);
     if (value && GetType() != BP_CFG_ENTRY_STR) {
         m_Value = value;
     }
 }
 
-void ConfigEntry::CopyValue(BpConfigEntry *entry) {
+void BpConfigEntry::CopyValue(BpConfigEntry *entry) {
     if (IsReadOnly())
         return;
 
@@ -3117,20 +2754,20 @@ void ConfigEntry::CopyValue(BpConfigEntry *entry) {
     }
 }
 
-void ConfigEntry::Clear() {
+void BpConfigEntry::Clear() {
     if (IsReadOnly())
         return;
 
     m_Value.Clear();
 }
 
-yyjson_mut_val *ConfigEntry::ToJsonKey(yyjson_mut_doc *doc) {
+yyjson_mut_val *BpConfigEntry::ToJsonKey(yyjson_mut_doc *doc) {
     if (!doc)
         return nullptr;
     return yyjson_mut_str(doc, m_Name.c_str());
 }
 
-yyjson_mut_val *ConfigEntry::ToJsonValue(yyjson_mut_doc *doc) {
+yyjson_mut_val *BpConfigEntry::ToJsonValue(yyjson_mut_doc *doc) {
     if (!doc)
         return nullptr;
 
@@ -3152,7 +2789,7 @@ yyjson_mut_val *ConfigEntry::ToJsonValue(yyjson_mut_doc *doc) {
     }
 }
 
-void ConfigEntry::FromJsonValue(yyjson_val *val) {
+void BpConfigEntry::FromJsonValue(yyjson_val *val) {
     switch (yyjson_get_tag(val)) {
         case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_TRUE:
         case YYJSON_TYPE_BOOL | YYJSON_SUBTYPE_FALSE: {
@@ -3297,7 +2934,7 @@ void ConfigEntry::FromJsonValue(yyjson_val *val) {
     }
 }
 
-void ConfigEntry::InvokeCallbacks(bool typeChanged, bool valueChanged) {
+void BpConfigEntry::InvokeCallbacks(bool typeChanged, bool valueChanged) {
     if (!m_Parent)
         return;
 

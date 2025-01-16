@@ -3,111 +3,19 @@
 #include <cassert>
 #include <cstdio>
 #include <ctime>
-#include <string>
-#include <unordered_map>
-#include <mutex>
-
-#include "RefCount.h"
-
-namespace bp {
-    class Logger : public BpLogger {
-    public:
-        static Logger *GetInstance(const std::string &name);
-        static Logger *GetDefault();
-        static Logger *SetDefault(Logger *logger);
-
-        explicit Logger(std::string name, BpLogLevel level = BP_LOG_INFO);
-
-        Logger(const Logger &rhs) = delete;
-        Logger(Logger &&rhs) noexcept = delete;
-
-        ~Logger() override;
-
-        Logger &operator=(const Logger &rhs) = delete;
-        Logger &operator=(Logger &&rhs) noexcept = delete;
-
-        int AddRef() const override;
-        int Release() const override;
-
-        const char *GetName() const override { return m_Name.c_str(); }
-
-        BpLogLevel GetLevel() const override { return m_Level; }
-        const char *GetLevelString(BpLogLevel level) const override;
-
-        void SetLevel(BpLogLevel level) override {
-            if (level >= BP_LOG_TRACE && level <= BP_LOG_OFF)
-                m_Level = level;
-        }
-
-        void SetLock(BpLogLockFunction func, void *userdata) override {
-            m_LockFunction = func;
-            m_Userdata = userdata;
-        }
-
-        bool AddCallback(BpLogCallback callback, void *userdata, BpLogLevel level) override;
-        void ClearCallbacks() override { m_Callbacks.clear(); }
-        size_t GetCallbackCount() const { return m_Callbacks.size(); }
-
-        void Log(BpLogLevel level, const char *format, va_list args) override;
-
-    private:
-        struct Callback {
-            BpLogCallback callback;
-            void *userdata;
-            BpLogLevel level;
-
-            Callback(BpLogCallback cb, void *data, BpLogLevel lvl) : callback(cb), userdata(data), level(lvl) {}
-
-            bool operator==(const Callback &rhs) const {
-                return callback == rhs.callback &&
-                       userdata == rhs.userdata &&
-                       level == rhs.level;
-            }
-
-            bool operator!=(const Callback &rhs) const {
-                return !(rhs == *this);
-            }
-        };
-
-        void Lock() {
-            if (m_LockFunction) { m_LockFunction(true, m_Userdata); }
-        }
-
-        void Unlock() {
-            if (m_LockFunction) { m_LockFunction(false, m_Userdata); }
-        }
-
-        static void InitLogInfo(BpLogInfo *info, void *userdata);
-
-        mutable RefCount m_RefCount;
-        std::mutex m_Mutex;
-
-        std::string m_Name;
-        BpLogLevel m_Level;
-
-        BpLogLockFunction m_LockFunction = nullptr;
-        void *m_Userdata = nullptr;
-        std::vector<Callback> m_Callbacks;
-
-        static Logger *s_DefaultLogger;
-        static std::unordered_map<std::string, Logger *> s_Loggers;
-    };
-}
-
-using namespace bp;
 
 BpLogger *bpGetLogger(const char *name) {
     if (!name)
-        return Logger::GetDefault();
-    return Logger::GetInstance(name);
+        return BpLogger::GetDefault();
+    return BpLogger::GetInstance(name);
 }
 
 BpLogger *bpGetDefaultLogger() {
-    return Logger::GetDefault();
+    return BpLogger::GetDefault();
 }
 
-void bpSetDefaultLogger(BpLogger *logger) {
-    Logger::SetDefault((Logger *) logger);
+void bpSetDefaultBpLogger(BpLogger *logger) {
+    BpLogger::SetDefault((BpLogger *) logger);
 }
 
 int bpLoggerAddRef(BpLogger *logger) {
@@ -248,12 +156,12 @@ void bpLoggerFatal(BpLogger *logger, const char *format, ...) {
 void bpLog(BpLogLevel level, const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Logger::GetDefault()->Log(level, format, args);
+    BpLogger::GetDefault()->Log(level, format, args);
     va_end(args);
 }
 
 void bpLogV(BpLogLevel level, const char *format, va_list args) {
-    Logger::GetDefault()->Log(level, format, args);
+    BpLogger::GetDefault()->Log(level, format, args);
 }
 
 void bpLogString(BpLogLevel level, const char *str) {
@@ -265,42 +173,42 @@ void bpLogString(BpLogLevel level, const char *str) {
 void bpLogTrace(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Logger::GetDefault()->Log(BP_LOG_TRACE, format, args);
+    BpLogger::GetDefault()->Log(BP_LOG_TRACE, format, args);
     va_end(args);
 }
 
 void bpLogDebug(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Logger::GetDefault()->Log(BP_LOG_DEBUG, format, args);
+    BpLogger::GetDefault()->Log(BP_LOG_DEBUG, format, args);
     va_end(args);
 }
 
 void bpLogInfo(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Logger::GetDefault()->Log(BP_LOG_INFO, format, args);
+    BpLogger::GetDefault()->Log(BP_LOG_INFO, format, args);
     va_end(args);
 }
 
 void bpLogWarn(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Logger::GetDefault()->Log(BP_LOG_WARN, format, args);
+    BpLogger::GetDefault()->Log(BP_LOG_WARN, format, args);
     va_end(args);
 }
 
 void bpLogError(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Logger::GetDefault()->Log(BP_LOG_ERROR, format, args);
+    BpLogger::GetDefault()->Log(BP_LOG_ERROR, format, args);
     va_end(args);
 }
 
 void bpLogFatal(const char *format, ...) {
     va_list args;
     va_start(args, format);
-    Logger::GetDefault()->Log(BP_LOG_FATAL, format, args);
+    BpLogger::GetDefault()->Log(BP_LOG_FATAL, format, args);
     va_end(args);
 }
 
@@ -320,57 +228,57 @@ static void StdoutCallback(BpLogInfo *info) {
     fflush(fp);
 }
 
-Logger *Logger::s_DefaultLogger = nullptr;
-std::unordered_map<std::string, Logger *> Logger::s_Loggers;
+BpLogger *BpLogger::s_DefaultBpLogger = nullptr;
+std::unordered_map<std::string, BpLogger *> BpLogger::s_BpLoggers;
 
-Logger *Logger::GetInstance(const std::string &name) {
-    auto it = s_Loggers.find(name);
-    if (it == s_Loggers.end()) {
-        return new Logger(name);
+BpLogger *BpLogger::GetInstance(const std::string &name) {
+    auto it = s_BpLoggers.find(name);
+    if (it == s_BpLoggers.end()) {
+        return new BpLogger(name);
     }
     return it->second;
 }
 
-Logger *Logger::SetDefault(Logger *logger) {
-    Logger *previous = s_DefaultLogger;
+BpLogger *BpLogger::SetDefault(BpLogger *logger) {
+    BpLogger *previous = s_DefaultBpLogger;
     if (!logger) {
-        s_DefaultLogger = GetInstance(BP_DEFAULT_NAME);
+        s_DefaultBpLogger = GetInstance(BP_DEFAULT_NAME);
     }
-    s_DefaultLogger = logger;
+    s_DefaultBpLogger = logger;
     return previous;
 }
 
-Logger *Logger::GetDefault() {
-    if (!s_DefaultLogger) {
-        s_DefaultLogger = GetInstance(BP_DEFAULT_NAME);
+BpLogger *BpLogger::GetDefault() {
+    if (!s_DefaultBpLogger) {
+        s_DefaultBpLogger = GetInstance(BP_DEFAULT_NAME);
     }
-    return s_DefaultLogger;
+    return s_DefaultBpLogger;
 }
 
-Logger::Logger(std::string name, BpLogLevel level) : m_Name(std::move(name)), m_Level(level) {}
+BpLogger::BpLogger(std::string name, BpLogLevel level) : m_Name(std::move(name)), m_Level(level) {}
 
-Logger::~Logger() = default;
+BpLogger::~BpLogger() = default;
 
-int Logger::AddRef() const {
+int BpLogger::AddRef() const {
     return m_RefCount.AddRef();
 }
 
-int Logger::Release() const {
+int BpLogger::Release() const {
     int r = m_RefCount.Release();
     if (r == 0) {
         std::atomic_thread_fence(std::memory_order_acquire);
-        delete const_cast<Logger *>(this);
+        delete const_cast<BpLogger *>(this);
     }
     return r;
 }
 
-const char *Logger::GetLevelString(BpLogLevel level) const {
+const char *BpLogger::GetLevelString(BpLogLevel level) const {
     if (level < BP_LOG_TRACE || level > BP_LOG_FATAL)
         return nullptr;
     return g_LevelStrings[level];
 }
 
-bool Logger::AddCallback(BpLogCallback callback, void *userdata, BpLogLevel level) {
+bool BpLogger::AddCallback(BpLogCallback callback, void *userdata, BpLogLevel level) {
     if (!callback)
         return false;
 
@@ -385,7 +293,7 @@ bool Logger::AddCallback(BpLogCallback callback, void *userdata, BpLogLevel leve
     return true;
 }
 
-void Logger::Log(BpLogLevel level, const char *format, va_list args) {
+void BpLogger::Log(BpLogLevel level, const char *format, va_list args) {
     Lock();
 
     BpLogInfo info = {this, level, args, format, nullptr, nullptr};
@@ -405,7 +313,7 @@ void Logger::Log(BpLogLevel level, const char *format, va_list args) {
     Unlock();
 }
 
-void Logger::InitLogInfo(BpLogInfo *info, void *userdata) {
+void BpLogger::InitLogInfo(BpLogInfo *info, void *userdata) {
     if (!info->time) {
         time_t t = time(nullptr);
         info->time = localtime(&t);

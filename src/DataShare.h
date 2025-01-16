@@ -1,97 +1,74 @@
 #ifndef BP_DATASHARE_PRIVATE_H
 #define BP_DATASHARE_PRIVATE_H
 
+#include <mutex>
+#include <string>
+#include <unordered_map>
+
 #include "bp/DataShare.h"
 
-/**
- * @brief The interface for data sharing.
- */
-struct BpDataShare {
-    /**
-     * @brief Increase the reference count of the data share object.
-     * @return The new reference count.
-     */
-    virtual int AddRef() const = 0;
+#include "DataBox.h"
+#include "RefCount.h"
 
-    /**
-     * @brief Decrease the reference count of the data share object.
-     * @return The new reference count.
-     */
-    virtual int Release() const = 0;
+struct BpDataShare final {
+    static BpDataShare *GetInstance(const std::string &name);
 
-    /**
-     * @brief Gets the name of the data share object.
-     * @return The name as a null-terminated string.
-     */
-    virtual const char *GetName() const = 0;
+    explicit BpDataShare(std::string name);
 
-    /**
-     * @brief Requests data associated with the specified key.
-     * @param key The key associated with the requested data.
-     * @param callback The callback function to be called when the data is available.
-     * @param userdata A pointer to user-defined data to be passed to the callback function.
-     */
-    virtual void Request(const char *key, BpDataShareCallback callback, void *userdata) const = 0;
+    BpDataShare(const BpDataShare &rhs) = delete;
+    BpDataShare(BpDataShare &&rhs) noexcept = delete;
 
-    /**
-     * @brief Retrieves data associated with the specified key.
-     * @param key The key associated with the data.
-     * @param size A pointer to a size_t to store the size of the retrieved data.
-     * @return A pointer to the data, or nullptr if not found.
-     */
-    virtual const void *Get(const char *key, size_t *size = nullptr) const = 0;
+    ~BpDataShare();
 
-    /**
-     * @brief Copies data associated with the specified key into the provided buffer.
-     * @param key The key associated with the data.
-     * @param buf The buffer to copy the data into.
-     * @param size The size of the buffer.
-     * @return True if the data was copied successfully, false otherwise.
-     */
-    virtual bool Copy(const char *key, void *buf, size_t size) const = 0;
+    BpDataShare &operator=(const BpDataShare &rhs) = delete;
+    BpDataShare &operator=(BpDataShare &&rhs) noexcept = delete;
 
-    /**
-     * @brief Sets the data associated with the specified key.
-     * @param key The key associated with the data.
-     * @param buf A pointer to the data to be set.
-     * @param size The size of the data.
-     * @return True if the data was set successfully, false otherwise.
-     */
-    virtual bool Set(const char *key, const void *buf, size_t size) = 0;
+    int AddRef() const;
+    int Release() const;
 
-    /**
-     * @brief Puts the data associated with the specified key. If data already exists, returns false.
-     * @param key The key associated with the data.
-     * @param buf A pointer to the data to be put.
-     * @param size The size of the data.
-     * @return True if the data was put successfully, false otherwise.
-     */
-    virtual bool Put(const char *key, const void *buf, size_t size) = 0;
+    const char *GetName() const;
 
-    /**
-     * @brief Removes data associated with the specified key.
-     * @param key The key associated with the data to be removed.
-     * @return True if the data was removed successfully, false otherwise.
-     */
-    virtual bool Remove(const char *key) = 0;
+    void Request(const char *key, BpDataShareCallback callback, void *userdata) const;
 
-    /**
-     * @brief Retrieves the user data associated with the specified type.
-     * @param type The type of the user data to retrieve.
-     * @return A pointer to the user data, or nullptr if not found.
-     */
-    virtual void *GetUserData(size_t type = 0) const = 0;
+    const void *Get(const char *key, size_t *size) const;
+    bool Copy(const char *key, void *buf, size_t size) const;
+    bool Set(const char *key, const void *buf, size_t size);
+    bool Put(const char *key, const void *buf, size_t size);
+    bool Remove(const char *key);
 
-    /**
-     * @brief Sets the user data associated with the specified type.
-     * @param data A pointer to the user data to set.
-     * @param type The type of the user data to set.
-     * @return A pointer to the previous user data associated with the type, or nullptr if not found.
-     */
-    virtual void *SetUserData(void *data, size_t type = 0) = 0;
+    void *GetUserData(size_t type) const;
+    void *SetUserData(void *data, size_t type);
 
-protected:
-    virtual ~BpDataShare() = default;
+private:
+    struct Callback {
+        BpDataShareCallback callback;
+        void *userdata;
+
+        Callback(BpDataShareCallback cb, void *data) : callback(cb), userdata(data) {}
+
+        bool operator==(const Callback &rhs) const {
+            return callback == rhs.callback && userdata == rhs.userdata;
+        }
+
+        bool operator!=(const Callback &rhs) const {
+            return !(rhs == *this);
+        }
+    };
+
+    bool AddCallbacks(const char *key, BpDataShareCallback callback, void *userdata) const;
+    void TriggerCallbacks(const char *key, const void *data, size_t size) const;
+
+    static bool ValidateKey(const char *key);
+
+    std::string m_Name;
+    mutable RefCount m_RefCount;
+    mutable std::mutex m_RWLock;
+    std::unordered_map<std::string, std::vector<uint8_t>> m_DataMap;
+    mutable std::unordered_map<std::string, std::vector<Callback>> m_CallbackMap;
+    DataBox m_UserData;
+
+    static std::mutex s_MapMutex;
+    static std::unordered_map<std::string, BpDataShare *> s_DataShares;
 };
 
 #endif // BP_DATASHARE_PRIVATE_H
