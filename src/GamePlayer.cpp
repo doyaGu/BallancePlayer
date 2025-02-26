@@ -1795,8 +1795,6 @@ int GamePlayer::OnChangeScreenMode(int driver, int screenMode) {
 }
 
 void GamePlayer::OnGoFullscreen() {
-    Pause();
-
     ::ClipCursor(nullptr);
 
     if (GoFullscreen()) {
@@ -1819,13 +1817,9 @@ void GamePlayer::OnGoFullscreen() {
         if (childWindowRendering)
             m_RenderWindow.Update();
     }
-
-    Play();
 }
 
 void GamePlayer::OnStopFullscreen() {
-    Pause();
-
     if (StopFullscreen()) {
         int x = m_GameConfig[BP_CONFIG_X].GetInt32();
         int y = m_GameConfig[BP_CONFIG_Y].GetInt32();
@@ -1855,8 +1849,6 @@ void GamePlayer::OnStopFullscreen() {
     }
 
     ClipCursor();
-
-    Play();
 }
 
 void GamePlayer::OnSwitchFullscreen() {
