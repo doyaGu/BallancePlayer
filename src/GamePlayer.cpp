@@ -24,7 +24,7 @@ extern HMODULE g_ModuleHandle;
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 #endif
 
-extern bool EditScript(CKLevel *level, const BpGameConfig *config);
+extern bool EditScript(CKLevel *level, const BpGameConfig &config);
 
 BpGamePlayer *bpCreateGamePlayer(const char *name) {
     return new GamePlayer(name);
@@ -77,7 +77,7 @@ BpGameConfig *bpGamePlayerGetConfig(const BpGamePlayer *player) {
     if (!player)
         return nullptr;
     auto *p = (GamePlayer *) player;
-    return p->GetGameConfig();
+    return &p->GetGameConfig();
 }
 
 void *bpGamePlayerGetMainWindow(const BpGamePlayer *player) {
@@ -94,11 +94,11 @@ void *bpGamePlayerGetRenderWindow(const BpGamePlayer *player) {
     return p->GetRenderWindow();
 }
 
-bool bpGamePlayerInit(BpGamePlayer *player, BpGameConfig *config, void *hInstance) {
+bool bpGamePlayerInit(BpGamePlayer *player, void *hInstance) {
     if (!player)
         return false;
     auto *p = (GamePlayer *) player;
-    return p->Init(config, (HINSTANCE) hInstance);
+    return p->Init((HINSTANCE) hInstance);
 }
 
 bool bpGamePlayerLoad(BpGamePlayer *player, const char *filename) {
@@ -320,15 +320,9 @@ GamePlayer::~GamePlayer() {
     UnregisterPlayer(this);
 }
 
-bool GamePlayer::Init(BpGameConfig *config, HINSTANCE hInstance) {
-    if (!config)
-        return false;
-
+bool GamePlayer::Init(HINSTANCE hInstance) {
     if (m_State != BP_PLAYER_INITIAL)
         return true;
-
-    m_GameConfig = config;
-    bpGameConfigInit(m_GameConfig);
 
     if (!InitWindow(hInstance)) {
         m_Logger->Error("Failed to initialize window!");
@@ -347,12 +341,12 @@ bool GamePlayer::Init(BpGameConfig *config, HINSTANCE hInstance) {
         return false;
     }
 
-    int driver = m_GameConfig->Driver->GetInt32();
-    int bpp = m_GameConfig->Bpp->GetInt32();
-    int width = m_GameConfig->Width->GetInt32();
-    int height = m_GameConfig->Height->GetInt32();
-    bool fullscreen = m_GameConfig->Fullscreen->GetBool();
-    bool childWindowRendering = m_GameConfig->ChildWindowRendering->GetBool();
+    int driver = m_GameConfig[BP_CONFIG_DRIVER].GetInt32();
+    int bpp = m_GameConfig[BP_CONFIG_BPP].GetInt32();
+    int width = m_GameConfig[BP_CONFIG_WIDTH].GetInt32();
+    int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
+    bool fullscreen = m_GameConfig[BP_CONFIG_FULLSCREEN].GetBool();
+    bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
 
     RECT rc;
     m_MainWindow.GetClientRect(&rc);
@@ -394,7 +388,7 @@ bool GamePlayer::Load(const char *filename) {
         return false;
 
     if (!filename || filename[0] == '\0') {
-        filename = bpGetGamePath(m_GameConfig, BP_PATH_CMO);
+        filename = bpGetGamePath(&m_GameConfig, BP_PATH_CMO);
     }
 
     if (!m_CKContext)
@@ -526,7 +520,6 @@ void GamePlayer::Shutdown() {
     ShutdownEngine();
     ShutdownWindow();
 
-    m_GameConfig = nullptr;
     if (m_State != BP_PLAYER_INITIAL) {
         m_State = BP_PLAYER_INITIAL;
         m_Logger->Debug("Game is shut down.");
@@ -566,11 +559,11 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
 
     m_Logger->Debug("Main window class registered.");
 
-    int width = m_GameConfig->Width->GetInt32();
-    int height = m_GameConfig->Height->GetInt32();
-    bool fullscreen = m_GameConfig->Fullscreen->GetBool();
-    bool borderless = m_GameConfig->Borderless->GetBool();
-    bool childWindowRendering = m_GameConfig->ChildWindowRendering->GetBool();
+    int width = m_GameConfig[BP_CONFIG_WIDTH].GetInt32();
+    int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
+    bool fullscreen = m_GameConfig[BP_CONFIG_FULLSCREEN].GetBool();
+    bool borderless = m_GameConfig[BP_CONFIG_BORDERLESS].GetBool();
+    bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
 
     if (childWindowRendering) {
         if (!RegisterRenderWindowClass(hInstance)) {
@@ -594,10 +587,10 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
     int screenWidth = ::GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = ::GetSystemMetrics(SM_CYSCREEN);
 
-    int x = m_GameConfig->PosX->GetInt32();
+    int x = m_GameConfig[BP_CONFIG_X].GetInt32();
     if (x <= -windowWidth || x >= screenWidth)
         x = (screenWidth - windowWidth) / 2;
-    int y = m_GameConfig->PosY->GetInt32();
+    int y = m_GameConfig[BP_CONFIG_Y].GetInt32();
     if (y <= -windowHeight || y >= screenHeight)
         y = (screenHeight - windowHeight) / 2;
 
@@ -650,8 +643,8 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
         return false;
     }
 
-    m_GameConfig->PosX->SetInt32(x);
-    m_GameConfig->PosY->SetInt32(y);
+    m_GameConfig[BP_CONFIG_X] = x;
+    m_GameConfig[BP_CONFIG_Y] = y;
 
     return true;
 }
@@ -793,22 +786,22 @@ bool GamePlayer::InitDriver() {
         m_Logger->Debug("Found %s render drivers", driverCount);
     }
 
-    if (m_GameConfig->ManualSetup->GetBool())
+    if (m_GameConfig[BP_CONFIG_MANUAL_SETUP] == true)
         OpenSetupDialog();
 
-    m_GameConfig->ManualSetup->SetBool(false);
+    m_GameConfig[BP_CONFIG_MANUAL_SETUP] = false;
     bool tryFailed = false;
 
-    int driver = m_GameConfig->Driver->GetInt32();
+    int driver = m_GameConfig[BP_CONFIG_DRIVER].GetInt32();
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(driver);
     if (!drDesc) {
         m_Logger->Error("Unable to find driver %d", driver);
-        m_GameConfig->Driver->SetInt32(0);
+        m_GameConfig[BP_CONFIG_DRIVER] = 0;
         tryFailed = true;
         if (!OpenSetupDialog()) {
             SetDefaultValuesForDriver();
         }
-        driver = m_GameConfig->Driver->GetInt32();
+        driver = m_GameConfig[BP_CONFIG_DRIVER].GetInt32();
     }
 
     if (tryFailed) {
@@ -819,10 +812,10 @@ bool GamePlayer::InitDriver() {
         }
     }
 
-    driver = m_GameConfig->Driver->GetInt32();
-    int width = m_GameConfig->Width->GetInt32();
-    int height = m_GameConfig->Height->GetInt32();
-    int bpp = m_GameConfig->Bpp->GetInt32();
+    driver = m_GameConfig[BP_CONFIG_DRIVER].GetInt32();
+    int width = m_GameConfig[BP_CONFIG_WIDTH].GetInt32();
+    int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
+    int bpp = m_GameConfig[BP_CONFIG_BPP].GetInt32();
 
     m_Logger->Debug("Render Driver ID: %d", driver);
     m_Logger->Debug("Render Driver Name: %s", drDesc->DriverName);
@@ -847,7 +840,7 @@ bool GamePlayer::InitDriver() {
         }
     }
 
-    m_GameConfig->ScreenMode->SetInt32(screenMode);
+    m_GameConfig[BP_CONFIG_SCREEN_MODE] = screenMode;
     m_Logger->Debug("Screen Mode: %d x %d x %d", width, height, bpp);
 
     return true;
@@ -900,9 +893,9 @@ void GamePlayer::ShutdownImGuiContext() {
 bool GamePlayer::FinishLoad(const char *filename) {
     auto *man = (InterfaceManager *) m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
     if (man) {
-        int driver = m_GameConfig->Driver->GetInt32();
-        int screenMode = m_GameConfig->ScreenMode->GetInt32();
-        bool rookie = m_GameConfig->Rookie->GetBool();
+        int driver = m_GameConfig[BP_CONFIG_DRIVER].GetInt32();
+        int screenMode = m_GameConfig[BP_CONFIG_SCREEN_MODE].GetInt32();
+        bool rookie = m_GameConfig[BP_CONFIG_ROOKIE].GetBool();
         man->SetDriver(driver);
         man->SetScreenMode(screenMode);
         man->SetRookie(rookie);
@@ -944,7 +937,7 @@ bool GamePlayer::FinishLoad(const char *filename) {
             mesh->Show(CKHIDE);
     }
 
-    if (m_GameConfig->ApplyHotfix->GetBool() && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != nullptr) {
+    if (m_GameConfig[BP_CONFIG_APPLY_HOTFIX] == true && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != nullptr) {
         if (!EditScript(level, m_GameConfig)) {
             m_Logger->Warn("Failed to apply hotfixes on script!");
         }
@@ -1011,7 +1004,7 @@ bool GamePlayer::LoadRenderEngines(CKPluginManager *pluginManager) {
     if (!pluginManager)
         return false;
 
-    const char *path = bpGetGamePath(m_GameConfig, BP_PATH_RENDER_ENGINES);
+    const char *path = bpGetGamePath(&m_GameConfig, BP_PATH_RENDER_ENGINES);
     if (!bpDirectoryExists(path) || pluginManager->ParsePlugins((CKSTRING) (path)) == 0) {
         m_Logger->Error("Render engine parse error.");
         return false;
@@ -1032,7 +1025,7 @@ bool GamePlayer::LoadManagers(CKPluginManager *pluginManager) {
     if (!pluginManager)
         return false;
 
-    const char *path = bpGetGamePath(m_GameConfig, BP_PATH_MANAGERS);
+    const char *path = bpGetGamePath(&m_GameConfig, BP_PATH_MANAGERS);
     if (!bpDirectoryExists(path)) {
         m_Logger->Error("Managers directory does not exist!");
         return false;
@@ -1040,7 +1033,7 @@ bool GamePlayer::LoadManagers(CKPluginManager *pluginManager) {
 
     m_Logger->Debug("Loading managers from %s", path);
 
-    if (m_GameConfig->LoadAllManagers->GetBool()) {
+    if (m_GameConfig[BP_CONFIG_LOAD_ALL_MANAGERS] == true) {
         if (pluginManager->ParsePlugins((CKSTRING) path) == 0) {
             m_Logger->Error("Managers parse error.");
             return false;
@@ -1090,7 +1083,7 @@ bool GamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager) {
     if (!pluginManager)
         return false;
 
-    const char *path = bpGetGamePath(m_GameConfig, BP_PATH_BUILDING_BLOCKS);
+    const char *path = bpGetGamePath(&m_GameConfig, BP_PATH_BUILDING_BLOCKS);
     if (!bpDirectoryExists(path)) {
         m_Logger->Error("BuildingBlocks directory does not exist!");
         return false;
@@ -1098,7 +1091,7 @@ bool GamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager) {
 
     m_Logger->Debug("Loading building blocks from %s", path);
 
-    if (m_GameConfig->LoadAllBuildingBlocks->GetBool()) {
+    if (m_GameConfig[BP_CONFIG_LOAD_ALL_BUILDING_BLOCKS] == true) {
         if (pluginManager->ParsePlugins((CKSTRING) path) == 0) {
             m_Logger->Error("Behaviors parse error.");
             return false;
@@ -1140,7 +1133,7 @@ bool GamePlayer::LoadPlugins(CKPluginManager *pluginManager) {
     if (!pluginManager)
         return false;
 
-    const char *path = bpGetGamePath(m_GameConfig, BP_PATH_PLUGINS);
+    const char *path = bpGetGamePath(&m_GameConfig, BP_PATH_PLUGINS);
     if (!bpDirectoryExists(path)) {
         m_Logger->Error("Plugins directory does not exist!");
         return false;
@@ -1148,7 +1141,7 @@ bool GamePlayer::LoadPlugins(CKPluginManager *pluginManager) {
 
     m_Logger->Debug("Loading plugins from %s", path);
 
-    if (m_GameConfig->LoadAllPlugins->GetBool()) {
+    if (m_GameConfig[BP_CONFIG_LOAD_ALL_PLUGINS] == true) {
         if (pluginManager->ParsePlugins((CKSTRING) path) == 0) {
             m_Logger->Error("Plugins parse error.");
             return false;
@@ -1278,25 +1271,25 @@ bool GamePlayer::SetupManagers() {
         return false;
     }
 
-    m_RenderManager->SetRenderOptions((CKSTRING) "DisablePerspectiveCorrection", m_GameConfig->DisablePerspectiveCorrection->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "ForceLinearFog", m_GameConfig->ForceLinearFog->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "ForceSoftware", m_GameConfig->ForceSoftware->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "DisableFilter", m_GameConfig->DisableFilter->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "EnsureVertexShader", m_GameConfig->EnsureVertexShader->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "UseIndexBuffers", m_GameConfig->UseIndexBuffers->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "DisableDithering", m_GameConfig->DisableDithering->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "Antialias", m_GameConfig->Antialias->GetInt32());
-    m_RenderManager->SetRenderOptions((CKSTRING) "DisableMipmap", m_GameConfig->DisableMipmap->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "DisableSpecular", m_GameConfig->DisableSpecular->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "EnableScreenDump", m_GameConfig->EnableScreenDump->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "EnableDebugMode", m_GameConfig->EnableDebugMode->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "VertexCache", m_GameConfig->VertexCache->GetInt32());
-    m_RenderManager->SetRenderOptions((CKSTRING) "TextureCacheManagement", m_GameConfig->TextureCacheManagement->GetBool());
-    m_RenderManager->SetRenderOptions((CKSTRING) "SortTransparentObjects", m_GameConfig->SortTransparentObjects->GetBool());
-    auto textureVideoFormat = bpString2PixelFormat(m_GameConfig->TextureVideoFormat->GetString());
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisablePerspectiveCorrection", m_GameConfig[BP_CONFIG_DISABLE_PERSPECTIVE_CORRECTION].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "ForceLinearFog", m_GameConfig[BP_CONFIG_FORCE_LINEAR_FOG].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "ForceSoftware", m_GameConfig[BP_CONFIG_FORCE_SOFTWARE].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisableFilter", m_GameConfig[BP_CONFIG_DISABLE_FILTER].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "EnsureVertexShader", m_GameConfig[BP_CONFIG_ENSURE_VERTEX_SHADER].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "UseIndexBuffers", m_GameConfig[BP_CONFIG_USE_INDEX_BUFFERS].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisableDithering", m_GameConfig[BP_CONFIG_DISABLE_DITHERING].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "Antialias", m_GameConfig[BP_CONFIG_ANTIALIAS].GetInt32());
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisableMipmap", m_GameConfig[BP_CONFIG_DISABLE_MIPMAP].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "DisableSpecular", m_GameConfig[BP_CONFIG_DISABLE_SPECULAR].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "EnableScreenDump", m_GameConfig[BP_CONFIG_ENABLE_SCREEN_DUMP].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "EnableDebugMode", m_GameConfig[BP_CONFIG_ENABLE_DEBUG_MODE].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "VertexCache", m_GameConfig[BP_CONFIG_VERTEX_CACHE].GetInt32());
+    m_RenderManager->SetRenderOptions((CKSTRING) "TextureCacheManagement", m_GameConfig[BP_CONFIG_TEXTURE_CACHE_MANAGEMENT].GetBool());
+    m_RenderManager->SetRenderOptions((CKSTRING) "SortTransparentObjects", m_GameConfig[BP_CONFIG_SORT_TRANSPARENT_OBJECTS].GetBool());
+    auto textureVideoFormat = m_GameConfig[BP_CONFIG_TEXTURE_VIDEO_FORMAT].GetInt32();
     if (textureVideoFormat != UNKNOWN_PF)
         m_RenderManager->SetRenderOptions((CKSTRING) "TextureVideoFormat", textureVideoFormat);
-    auto spriteVideoFormat = bpString2PixelFormat(m_GameConfig->SpriteVideoFormat->GetString());
+    auto spriteVideoFormat = m_GameConfig[BP_CONFIG_SPRITE_VIDEO_FORMAT].GetInt32();
     if (spriteVideoFormat != UNKNOWN_PF)
         m_RenderManager->SetRenderOptions((CKSTRING) "SpriteVideoFormat", spriteVideoFormat);
 
@@ -1328,35 +1321,35 @@ bool GamePlayer::SetupPaths() {
     char dir[MAX_PATH];
     ::GetCurrentDirectoryA(MAX_PATH, dir);
 
-    if (!bpDirectoryExists(bpGetGamePath(m_GameConfig, BP_PATH_DATA))) {
+    if (!bpDirectoryExists(bpGetGamePath(&m_GameConfig, BP_PATH_DATA))) {
         m_Logger->Error("Data path is not found.");
         return false;
     }
-    _snprintf(path, MAX_PATH, "%s\\%s", dir, bpGetGamePath(m_GameConfig, BP_PATH_DATA));
+    _snprintf(path, MAX_PATH, "%s\\%s", dir, bpGetGamePath(&m_GameConfig, BP_PATH_DATA));
     XString dataPath = path;
     pm->AddPath(DATA_PATH_IDX, dataPath);
     m_Logger->Debug("Data path: %s", dataPath.CStr());
 
-    if (!bpDirectoryExists(bpGetGamePath(m_GameConfig, BP_PATH_SOUNDS))) {
+    if (!bpDirectoryExists(bpGetGamePath(&m_GameConfig, BP_PATH_SOUNDS))) {
         m_Logger->Error("Sounds path is not found.");
         return false;
     }
-    _snprintf(path, MAX_PATH, "%s\\%s", dir, bpGetGamePath(m_GameConfig, BP_PATH_SOUNDS));
+    _snprintf(path, MAX_PATH, "%s\\%s", dir, bpGetGamePath(&m_GameConfig, BP_PATH_SOUNDS));
     XString soundPath = path;
     pm->AddPath(SOUND_PATH_IDX, soundPath);
     m_Logger->Debug("Sounds path: %s", soundPath.CStr());
 
-    if (!bpDirectoryExists(bpGetGamePath(m_GameConfig, BP_PATH_TEXTURES))) {
+    if (!bpDirectoryExists(bpGetGamePath(&m_GameConfig, BP_PATH_TEXTURES))) {
         m_Logger->Error("Textures path is not found.");
         return false;
     }
-    _snprintf(path, MAX_PATH, "%s\\%s", dir, bpGetGamePath(m_GameConfig, BP_PATH_TEXTURES));
+    _snprintf(path, MAX_PATH, "%s\\%s", dir, bpGetGamePath(&m_GameConfig, BP_PATH_TEXTURES));
     XString bitmapPath = path;
     pm->AddPath(BITMAP_PATH_IDX, bitmapPath);
     m_Logger->Debug("Textures path: %s", bitmapPath.CStr());
 
-    if (bpDirectoryExists(bpGetGamePath(m_GameConfig, BP_PATH_SCRIPTS))) {
-        _snprintf(path, MAX_PATH, "%s\\%s", dir, bpGetGamePath(m_GameConfig, BP_PATH_SCRIPTS));
+    if (bpDirectoryExists(bpGetGamePath(&m_GameConfig, BP_PATH_SCRIPTS))) {
+        _snprintf(path, MAX_PATH, "%s\\%s", dir, bpGetGamePath(&m_GameConfig, BP_PATH_SCRIPTS));
         XString scriptPath = path;
         XString category = "Script Paths";
         int catIdx = pm->GetCategoryIndex(category);
@@ -1372,13 +1365,13 @@ bool GamePlayer::SetupPaths() {
 }
 
 void GamePlayer::ResizeWindow() {
-    int width = m_GameConfig->Width->GetInt32();
-    int height = m_GameConfig->Height->GetInt32();
+    int width = m_GameConfig[BP_CONFIG_WIDTH].GetInt32();
+    int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
 
     RECT rc = {0, 0, width, height};
     ::AdjustWindowRect(&rc, m_MainWindow.GetStyle(), FALSE);
     m_MainWindow.SetPos(nullptr, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
-    if (m_GameConfig->ChildWindowRendering->GetBool())
+    if (m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool())
         m_RenderWindow.SetPos(nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
 }
 
@@ -1443,10 +1436,10 @@ bool GamePlayer::GetDisplayMode(int &width, int &height, int &bpp, int driver, i
 }
 
 void GamePlayer::SetDefaultValuesForDriver() {
-    m_GameConfig->Driver->SetInt32(0);
-    m_GameConfig->Width->SetInt32(BP_DEFAULT_WIDTH);
-    m_GameConfig->Height->SetInt32(BP_DEFAULT_HEIGHT);
-    m_GameConfig->Bpp->SetInt32(BP_DEFAULT_BPP);
+    m_GameConfig[BP_CONFIG_DRIVER] = 0;
+    m_GameConfig[BP_CONFIG_WIDTH] = BP_DEFAULT_WIDTH;
+    m_GameConfig[BP_CONFIG_HEIGHT] = BP_DEFAULT_HEIGHT;
+    m_GameConfig[BP_CONFIG_BPP] = BP_DEFAULT_BPP;
 }
 
 bool GamePlayer::IsRenderFullscreen() const {
@@ -1459,9 +1452,9 @@ bool GamePlayer::GoFullscreen() {
     if (!m_RenderContext || IsRenderFullscreen())
         return false;
 
-    m_GameConfig->Fullscreen->SetBool(true);
-    if (m_RenderContext->GoFullScreen(m_GameConfig->Width->GetInt32(), m_GameConfig->Height->GetInt32(), m_GameConfig->Bpp->GetInt32(), m_GameConfig->Driver->GetInt32()) != CK_OK) {
-        m_GameConfig->Fullscreen->SetBool(false);
+    m_GameConfig[BP_CONFIG_FULLSCREEN] = true;
+    if (m_RenderContext->GoFullScreen(m_GameConfig[BP_CONFIG_WIDTH].GetInt32(), m_GameConfig[BP_CONFIG_HEIGHT].GetInt32(), m_GameConfig[BP_CONFIG_BPP].GetInt32(), m_GameConfig[BP_CONFIG_SCREEN_MODE].GetInt32()) != CK_OK) {
+        m_GameConfig[BP_CONFIG_FULLSCREEN] = false;
         m_Logger->Debug("GoFullScreen Failed");
         return false;
     }
@@ -1478,7 +1471,7 @@ bool GamePlayer::StopFullscreen() {
         return false;
     }
 
-    m_GameConfig->Fullscreen->SetBool(false);
+    m_GameConfig[BP_CONFIG_FULLSCREEN] = false;
     return true;
 }
 
@@ -1547,7 +1540,7 @@ bool GamePlayer::UnregisterContext(CKContext *context) {
 }
 
 bool GamePlayer::ClipCursor() {
-    if (m_GameConfig->ClipCursor->GetBool()) {
+    if (m_GameConfig[BP_CONFIG_CLIP_CURSOR] == true) {
         RECT rect;
         m_MainWindow.GetClientRect(&rect);
         m_MainWindow.ClientToScreen(&rect);
@@ -1570,11 +1563,11 @@ void GamePlayer::OnDestroy() {
 }
 
 void GamePlayer::OnMove() {
-    if (!m_GameConfig->Fullscreen->GetBool()) {
+    if (m_GameConfig[BP_CONFIG_FULLSCREEN] == false) {
         RECT rect;
         m_MainWindow.GetWindowRect(&rect);
-        m_GameConfig->PosX->SetInt32(rect.left);
-        m_GameConfig->PosY->SetInt32(rect.top);
+        m_GameConfig[BP_CONFIG_X] = rect.left;
+        m_GameConfig[BP_CONFIG_Y] = rect.top;
     }
 }
 
@@ -1583,7 +1576,7 @@ void GamePlayer::OnSize() {
 }
 
 void GamePlayer::OnPaint() {
-    if (m_RenderContext && !m_GameConfig->Fullscreen->GetBool())
+    if (m_RenderContext && m_GameConfig[BP_CONFIG_FULLSCREEN] == false)
         Render();
 }
 
@@ -1599,17 +1592,14 @@ void GamePlayer::OnActivateApp(bool active) {
     if (m_State == BP_PLAYER_INITIAL)
         return;
 
-    bool pauseOnDeactivated = m_GameConfig->PauseOnDeactivated->GetBool();
-    bool alwaysHandleInput = m_GameConfig->AlwaysHandleInput->GetBool();
-
     if (!active) {
         if (m_CKContext) {
             if (firstDeActivate)
                 wasPlaying = m_CKContext->IsPlaying() == TRUE;
 
-            if (pauseOnDeactivated)
+            if (m_GameConfig[BP_CONFIG_PAUSE_ON_DEACTIVATED] == true)
                 Pause();
-            else if (!alwaysHandleInput)
+            else if (m_GameConfig[BP_CONFIG_ALWAYS_HANDLE_INPUT] == false)
                 m_InputManager->Pause(TRUE);
 
             ::ClipCursor(nullptr);
@@ -1621,7 +1611,7 @@ void GamePlayer::OnActivateApp(bool active) {
                 OnStopFullscreen();
 
                 Pause();
-                if (wasPlaying && !pauseOnDeactivated)
+                if (wasPlaying && m_GameConfig[BP_CONFIG_PAUSE_ON_DEACTIVATED] == false)
                     Play();
             } else if (firstDeActivate) {
                 wasFullscreen = false;
@@ -1635,7 +1625,7 @@ void GamePlayer::OnActivateApp(bool active) {
 
         ClipCursor();
 
-        if (!alwaysHandleInput)
+        if (m_GameConfig[BP_CONFIG_ALWAYS_HANDLE_INPUT] == false)
             m_InputManager->Pause(FALSE);
 
         if (wasPlaying)
@@ -1683,7 +1673,7 @@ void GamePlayer::OnClick(bool dblClk) {
 
     POINT pt;
     ::GetCursorPos(&pt);
-    if (m_GameConfig->ChildWindowRendering->GetBool())
+    if (m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING] == true)
         m_RenderWindow.ScreenToClient(&pt);
     else
         m_MainWindow.ScreenToClient(&pt);
@@ -1765,9 +1755,9 @@ bool GamePlayer::OnLoadCMO(const char *filename) {
 }
 
 void GamePlayer::OnExitToSystem() {
-    bool fullscreen = m_GameConfig->Fullscreen->GetBool();
+    bool fullscreen = m_GameConfig[BP_CONFIG_FULLSCREEN].GetBool();
     OnStopFullscreen();
-    m_GameConfig->Fullscreen->SetBool(fullscreen);
+    m_GameConfig[BP_CONFIG_FULLSCREEN] = fullscreen;
 
     m_MainWindow.PostMsg(WM_CLOSE, 0, 0);
 }
@@ -1781,17 +1771,17 @@ int GamePlayer::OnChangeScreenMode(int driver, int screenMode) {
         return 0;
     }
 
-    bool fullscreen = m_GameConfig->Fullscreen->GetBool();
+    bool fullscreen = m_GameConfig[BP_CONFIG_FULLSCREEN].GetBool();
     if (fullscreen)
         StopFullscreen();
 
     ClipCursor();
 
-    m_GameConfig->Driver->SetInt32(driver);
-    m_GameConfig->ScreenMode->SetInt32(screenMode);
-    m_GameConfig->Width->SetInt32(width);
-    m_GameConfig->Height->SetInt32(height);
-    m_GameConfig->Bpp->SetInt32(bpp);
+    m_GameConfig[BP_CONFIG_DRIVER] = driver;
+    m_GameConfig[BP_CONFIG_SCREEN_MODE] = screenMode;
+    m_GameConfig[BP_CONFIG_WIDTH] = width;
+    m_GameConfig[BP_CONFIG_HEIGHT] = height;
+    m_GameConfig[BP_CONFIG_BPP] = bpp;
 
     InterfaceManager *im = (InterfaceManager *) m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
     im->SetDriver(driver);
@@ -1812,9 +1802,9 @@ void GamePlayer::OnGoFullscreen() {
     ::ClipCursor(nullptr);
 
     if (GoFullscreen()) {
-        int width = m_GameConfig->Width->GetInt32();
-        int height = m_GameConfig->Height->GetInt32();
-        bool childWindowRendering = m_GameConfig->ChildWindowRendering->GetBool();
+        int width = m_GameConfig[BP_CONFIG_WIDTH].GetInt32();
+        int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
+        bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
 
         m_MainWindow.SetStyle(WS_POPUP);
         m_MainWindow.SetPos(nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
@@ -1839,12 +1829,12 @@ void GamePlayer::OnStopFullscreen() {
     Pause();
 
     if (StopFullscreen()) {
-        int x = m_GameConfig->PosX->GetInt32();
-        int y = m_GameConfig->PosY->GetInt32();
-        int width = m_GameConfig->Width->GetInt32();
-        int height = m_GameConfig->Height->GetInt32();
-        bool childWindowRendering = m_GameConfig->ChildWindowRendering->GetBool();
-        bool borderless = m_GameConfig->Borderless->GetBool();
+        int x = m_GameConfig[BP_CONFIG_X].GetInt32();
+        int y = m_GameConfig[BP_CONFIG_Y].GetInt32();
+        int width = m_GameConfig[BP_CONFIG_WIDTH].GetInt32();
+        int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
+        bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
+        bool borderless = m_GameConfig[BP_CONFIG_BORDERLESS].GetBool();
 
         LONG style = (borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
         RECT rc = {0, 0, width, height};
@@ -1895,7 +1885,7 @@ bool GamePlayer::FillDriverList(HWND hWnd) {
 #endif
         int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_ADDSTRING, 0, (LPARAM) driverName);
         ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETITEMDATA, index, i);
-        if (i == m_GameConfig->Driver->GetInt32())
+        if (i == m_GameConfig[BP_CONFIG_DRIVER].GetInt32())
             ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETCURSEL, index, 0);
     }
 
@@ -1936,7 +1926,7 @@ bool GamePlayer::FillScreenModeList(HWND hWnd, int driver) {
                 sprintf(buffer, "%d x %d x %d x %dHz", dm[i].Width, dm[i].Height, dm[i].Bpp, dm[i].RefreshRate);
                 int index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_ADDSTRING, 0, (LPARAM) buffer);
                 ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETITEMDATA, index, i);
-                if (i == m_GameConfig->ScreenMode->GetInt32()) {
+                if (i == m_GameConfig[BP_CONFIG_SCREEN_MODE].GetInt32()) {
                     ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETCURSEL, index, 0);
                     ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETTOPINDEX, index, 0);
                 }
@@ -2094,13 +2084,13 @@ BOOL GamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
     if (!player)
         return FALSE;
 
-    BpGameConfig *config = player->GetGameConfig();
+    BpGameConfig &config = player->GetGameConfig();
 
     switch (uMsg) {
         case WM_INITDIALOG: {
             if (!player->FillDriverList(hWnd))
                 ::EndDialog(hWnd, IDCANCEL);
-            if (!player->FillScreenModeList(hWnd, config->Driver->GetInt32()))
+            if (!player->FillScreenModeList(hWnd, config[BP_CONFIG_DRIVER].GetInt32()))
                 ::EndDialog(hWnd, IDCANCEL);
             return TRUE;
         }
@@ -2123,7 +2113,7 @@ BOOL GamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
                         return TRUE;
                     }
                     int driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
-                    config->Driver->SetInt32(driver);
+                    config[BP_CONFIG_DRIVER] = driver;
 
                     index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETCURSEL, 0, 0);
                     if (index == LB_ERR) {
@@ -2131,14 +2121,14 @@ BOOL GamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
                         return TRUE;
                     }
                     int screenMode = SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0);
-                    config->ScreenMode->SetInt32(screenMode);
+                    config[BP_CONFIG_SCREEN_MODE] = screenMode;
 
-                    VxDriverDesc *drDesc = player->GetRenderManager()->GetRenderDriverDescription(config->Driver->GetInt32());
+                    VxDriverDesc *drDesc = player->GetRenderManager()->GetRenderDriverDescription(config[BP_CONFIG_DRIVER].GetInt32());
                     if (drDesc) {
-                        const VxDisplayMode &dm = drDesc->DisplayModes[config->ScreenMode->GetInt32()];
-                        config->Width->SetInt32(dm.Width);
-                        config->Height->SetInt32(dm.Height);
-                        config->Bpp->SetInt32(dm.Bpp);
+                        const VxDisplayMode &dm = drDesc->DisplayModes[config[BP_CONFIG_SCREEN_MODE].GetInt32()];
+                        config[BP_CONFIG_WIDTH] = dm.Width;
+                        config[BP_CONFIG_HEIGHT] = dm.Height;
+                        config[BP_CONFIG_BPP] = dm.Bpp;
                     }
                 }
 

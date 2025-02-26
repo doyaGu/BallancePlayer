@@ -38,7 +38,7 @@ public:
     GamePlayer &operator=(const GamePlayer &) = delete;
     GamePlayer &operator=(GamePlayer &&) = delete;
 
-    bool Init(BpGameConfig *config, HINSTANCE hInstance);
+    bool Init(HINSTANCE hInstance);
     bool Load(const char *filename = nullptr);
 
     void Run();
@@ -56,7 +56,7 @@ public:
     const char *GetName() const { return m_Name.c_str(); }
     BpGamePlayerState GetState() const { return m_State; }
     BpLogger *GetLogger() const { return m_Logger; }
-    BpGameConfig *GetGameConfig() const { return m_GameConfig; }
+    BpGameConfig &GetGameConfig() { return m_GameConfig; }
 
     HWND GetMainWindow() const { return m_MainWindow.GetHandle(); }
     HWND GetRenderWindow() const { return m_RenderWindow.GetHandle(); }
@@ -173,7 +173,7 @@ private:
     int m_Id = -1;
     std::string m_Name;
     BpLogger *m_Logger = nullptr;
-    BpGameConfig *m_GameConfig = nullptr;
+    BpGameConfig m_GameConfig;
     BpGamePlayerState m_State = BP_PLAYER_INITIAL;
 
     HINSTANCE m_hInstance = nullptr;

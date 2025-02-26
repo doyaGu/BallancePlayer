@@ -2,78 +2,58 @@
 #define BP_GAMECONFIG_PRIVATE_H
 
 #include "bp/GameConfig.h"
-#include "Configuration.h"
+#include "bp/Value.h"
 
 struct BpGameConfig {
-    BpConfig *Config = nullptr;
-    bool Initialized = false;
+    BpValue Values[BP_CONFIG_COUNT];
+    BpValue Paths[BP_PATH_CATEGORY_COUNT];
 
-    // Startup Settings
-    BpConfigEntry *LogMode = nullptr;
-    BpConfigEntry *Verbose = nullptr;
-    BpConfigEntry *ManualSetup = nullptr;
-    BpConfigEntry *LoadAllManagers = nullptr;
-    BpConfigEntry *LoadAllBuildingBlocks = nullptr;
-    BpConfigEntry *LoadAllPlugins = nullptr;
+    BpGameConfig();
 
-    // Graphics
-    BpConfigEntry *Driver = nullptr;
-    BpConfigEntry *ScreenMode = nullptr;
-    BpConfigEntry *Width = nullptr;
-    BpConfigEntry *Height = nullptr;
-    BpConfigEntry *Bpp = nullptr;
-    BpConfigEntry *Fullscreen = nullptr;
+    void Reset();
 
-    BpConfigEntry *DisablePerspectiveCorrection = nullptr;
-    BpConfigEntry *ForceLinearFog = nullptr;
-    BpConfigEntry *ForceSoftware = nullptr;
-    BpConfigEntry *DisableFilter = nullptr;
-    BpConfigEntry *EnsureVertexShader = nullptr;
-    BpConfigEntry *UseIndexBuffers = nullptr;
-    BpConfigEntry *DisableDithering = nullptr;
-    BpConfigEntry *Antialias = nullptr;
-    BpConfigEntry *DisableMipmap = nullptr;
-    BpConfigEntry *DisableSpecular = nullptr;
-    BpConfigEntry *EnableScreenDump = nullptr;
-    BpConfigEntry *EnableDebugMode = nullptr;
-    BpConfigEntry *VertexCache = nullptr;
-    BpConfigEntry *TextureCacheManagement = nullptr;
-    BpConfigEntry *SortTransparentObjects = nullptr;
-    BpConfigEntry *TextureVideoFormat = nullptr;
-    BpConfigEntry *SpriteVideoFormat = nullptr;
+    bool Load(const char *filename);
+    bool Save(const char *filename) const;
 
-    // Window Settings
-    BpConfigEntry *ChildWindowRendering = nullptr;
-    BpConfigEntry *Borderless = nullptr;
-    BpConfigEntry *ClipCursor = nullptr;
-    BpConfigEntry *AlwaysHandleInput = nullptr;
-    BpConfigEntry *PauseOnDeactivated = nullptr;
-    BpConfigEntry *PosX = nullptr;
-    BpConfigEntry *PosY = nullptr;
-
-    // Game Settings
-    BpConfigEntry *ApplyHotfix = nullptr;
-    BpConfigEntry *LangId = nullptr;
-    BpConfigEntry *SkipOpening = nullptr;
-    BpConfigEntry *UnlockFramerate = nullptr;
-    BpConfigEntry *UnlockWidescreen = nullptr;
-    BpConfigEntry *UnlockHighResolution = nullptr;
-    BpConfigEntry *Debug = nullptr;
-    BpConfigEntry *Rookie = nullptr;
-
-    // Paths
-    BpConfigEntry *Paths[BP_PATH_CATEGORY_COUNT] = {nullptr};
-
-    explicit BpGameConfig(const char *name) {
-        Config = bpGetConfig(name);
-        Config->AddRef();
+    const BpValue &operator[](BpConfigType type) const {
+        return Get(type);
     }
 
-    ~BpGameConfig() {
-        bpGameConfigRelease(this);
-        Config->Release();
-        Config = nullptr;
+    BpValue &operator[](BpConfigType type) {
+        return Get(type);
     }
+
+    const BpValue &Get(BpConfigType type) const {
+        if (type < 0 || type >= BP_CONFIG_COUNT)
+            return Values[BP_CONFIG_RESERVED];
+        return Values[type];
+    }
+
+    BpValue &Get(BpConfigType type) {
+        if (type < 0 || type >= BP_CONFIG_COUNT)
+            return Values[BP_CONFIG_RESERVED];
+        return Values[type];
+    }
+
+    bool HasPath(BpPathCategory category) const {
+        if (category < 0 || category >= BP_PATH_CATEGORY_COUNT)
+            return false;
+        return !Paths[category].IsNone();
+    }
+
+    const char *GetPath(BpPathCategory category) const {
+        if (category < 0 || category >= BP_PATH_CATEGORY_COUNT)
+            return nullptr;
+        return Paths[category].GetString();
+    }
+
+    void SetPath(BpPathCategory category, const char *path) {
+        if (category < 0 || category >= BP_PATH_CATEGORY_COUNT)
+            return;
+        Paths[category] = path;
+    }
+
+    bool ResetPath(BpPathCategory category);
 };
 
 #endif // BP_GAMECONFIG_PRIVATE_H

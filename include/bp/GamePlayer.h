@@ -99,11 +99,10 @@ BP_EXPORT void *bpGamePlayerGetRenderWindow(const BpGamePlayer *player);
 /**
  * @brief Initialize the game.
  * @param player The game player.
- * @param config The game configuration.
  * @param hInstance The instance handle.
  * @return True if successful, false otherwise.
  */
-BP_EXPORT bool bpGamePlayerInit(BpGamePlayer *player, BpGameConfig *config, void *hInstance);
+BP_EXPORT bool bpGamePlayerInit(BpGamePlayer *player, void *hInstance);
 
 /**
  * @brief Load the game.

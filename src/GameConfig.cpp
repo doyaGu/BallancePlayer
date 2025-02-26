@@ -1,11 +1,10 @@
 #include "GameConfig.h"
 
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 
+#include "VxMathDefines.h"
+
 #include "bp/Utils.h"
-#include "Configuration.h"
 
 constexpr const char *const PathNames[] = {
     "Config",
@@ -23,7 +22,7 @@ constexpr const char *const PathNames[] = {
 };
 
 constexpr const char *const DefaultPaths[] = {
-    "Player.json",
+    "Player.ini",
     "Player.log",
     "base.cmo",
     "..\\",
@@ -37,705 +36,322 @@ constexpr const char *const DefaultPaths[] = {
     "Scripts\\",
 };
 
-BpGameConfig *bpCreateGameConfig(const char *name) {
-    return new BpGameConfig(name);
-}
-
-void bpDestroyGameConfig(BpGameConfig *config) {
-    if (config) {
-        delete config;
-    }
-}
-
-BpConfig *bpGameConfigGet(const BpGameConfig *config) {
-    if (!config || !config->Config)
-        return nullptr;
-    return config->Config;
-}
-
-bool bpGameConfigIsInitialized(const BpGameConfig *config) {
-    if (!config)
-        return false;
-    return config->Initialized;
-}
-
-bool bpGameConfigInit(BpGameConfig *config) {
-    if (!config || !config->Config)
-        return false;
-
-    if (config->Initialized)
-        return true;
-
-    bpGameConfigRelease(config);
-
-    auto *cfg = config->Config;
-
-    config->LogMode = cfg->AddEntryInt32("LogMode", BP_LOG_MODE_OVERWRITE, "Startup");
-    if (!config->LogMode) {
-        return false;
-    }
-    config->LogMode->AddRef();
-
-    config->Verbose = cfg->AddEntryBool("Verbose", false, "Startup");
-    if (!config->Verbose) {
-        return false;
-    }
-    config->Verbose->AddRef();
-
-    config->ManualSetup = cfg->AddEntryBool("ManualSetup", false, "Startup");
-    if (!config->ManualSetup) {
-        return false;
-    }
-    config->ManualSetup->AddRef();
-
-    config->LoadAllManagers = cfg->AddEntryBool("LoadAllManagers", true, "Startup");
-    if (!config->LoadAllManagers) {
-        return false;
-    }
-    config->LoadAllManagers->AddRef();
-
-    config->LoadAllBuildingBlocks = cfg->AddEntryBool("LoadAllBuildingBlocks", true, "Startup");
-    if (!config->LoadAllBuildingBlocks) {
-        return false;
-    }
-    config->LoadAllBuildingBlocks->AddRef();
-
-    config->LoadAllPlugins = cfg->AddEntryBool("LoadAllPlugins", true, "Startup");
-    if (!config->LoadAllPlugins) {
-        return false;
-    }
-    config->LoadAllPlugins->AddRef();
-
-    config->Driver = cfg->AddEntryInt32("Driver", 0, "Graphics");
-    if (!config->Driver) {
-        return false;
-    }
-    config->Driver->AddRef();
-
-    config->ScreenMode = cfg->AddEntryInt32("ScreenMode", -1, "Graphics");
-    if (!config->ScreenMode) {
-        return false;
-    }
-    config->ScreenMode->AddRef();
-
-    config->Width = cfg->AddEntryInt32("Width", BP_DEFAULT_WIDTH, "Graphics");
-    if (!config->Width) {
-        return false;
-    }
-    config->Width->AddRef();
-
-    config->Height = cfg->AddEntryInt32("Height", BP_DEFAULT_HEIGHT, "Graphics");
-    if (!config->Height) {
-        return false;
-    }
-    config->Height->AddRef();
-
-    config->Bpp = cfg->AddEntryInt32("BitsPerPixel", BP_DEFAULT_BPP, "Graphics");
-    if (!config->Bpp) {
-        return false;
-    }
-    config->Bpp->AddRef();
-
-    config->Fullscreen = cfg->AddEntryBool("Fullscreen", false, "Graphics");
-    if (!config->Fullscreen) {
-        return false;
-    }
-    config->Fullscreen->AddRef();
-
-    config->DisablePerspectiveCorrection = cfg->AddEntryBool("DisablePerspectiveCorrection", false, "Graphics");
-    if (!config->DisablePerspectiveCorrection) {
-        return false;
-    }
-    config->DisablePerspectiveCorrection->AddRef();
-
-    config->ForceLinearFog = cfg->AddEntryBool("ForceLinearFog", false, "Graphics");
-    if (!config->ForceLinearFog) {
-        return false;
-    }
-    config->ForceLinearFog->AddRef();
-
-    config->ForceLinearFog = cfg->AddEntryBool("ForceLinearFog", false, "Graphics");
-    if (!config->ForceLinearFog) {
-        return false;
-    }
-    config->ForceLinearFog->AddRef();
-
-    config->ForceSoftware = cfg->AddEntryBool("ForceSoftware", false, "Graphics");
-    if (!config->ForceSoftware) {
-        return false;
-    }
-    config->ForceSoftware->AddRef();
-
-    config->DisableFilter = cfg->AddEntryBool("DisableFilter", false, "Graphics");
-    if (!config->DisableFilter) {
-        return false;
-    }
-    config->DisableFilter->AddRef();
-
-    config->EnsureVertexShader = cfg->AddEntryBool("EnsureVertexShader", false, "Graphics");
-    if (!config->EnsureVertexShader) {
-        return false;
-    }
-    config->EnsureVertexShader->AddRef();
-
-    config->UseIndexBuffers = cfg->AddEntryBool("UseIndexBuffers", false, "Graphics");
-    if (!config->UseIndexBuffers) {
-        return false;
-    }
-    config->UseIndexBuffers->AddRef();
-
-    config->DisableDithering = cfg->AddEntryBool("DisableDithering", false, "Graphics");
-    if (!config->DisableDithering) {
-        return false;
-    }
-    config->DisableDithering->AddRef();
-
-    config->Antialias = cfg->AddEntryInt32("Antialias", 0, "Graphics");
-    if (!config->Antialias) {
-        return false;
-    }
-    config->Antialias->AddRef();
-
-    config->DisableMipmap = cfg->AddEntryBool("DisableMipmap", false, "Graphics");
-    if (!config->DisableMipmap) {
-        return false;
-    }
-    config->DisableMipmap->AddRef();
-
-    config->DisableSpecular = cfg->AddEntryBool("DisableSpecular", false, "Graphics");
-    if (!config->DisableSpecular) {
-        return false;
-    }
-    config->DisableSpecular->AddRef();
-
-    config->EnableScreenDump = cfg->AddEntryBool("EnableScreenDump", false, "Graphics");
-    if (!config->EnableScreenDump) {
-        return false;
-    }
-    config->EnableScreenDump->AddRef();
-
-    config->EnableDebugMode = cfg->AddEntryBool("EnableDebugMode", false, "Graphics");
-    if (!config->EnableDebugMode) {
-        return false;
-    }
-    config->EnableDebugMode->AddRef();
-
-    config->VertexCache = cfg->AddEntryInt32("VertexCache", 16, "Graphics");
-    if (!config->VertexCache) {
-        return false;
-    }
-    config->VertexCache->AddRef();
-
-    config->TextureCacheManagement = cfg->AddEntryBool("TextureCacheManagement", true, "Graphics");
-    if (!config->TextureCacheManagement) {
-        return false;
-    }
-    config->TextureCacheManagement->AddRef();
-
-    config->SortTransparentObjects = cfg->AddEntryBool("SortTransparentObjects", true, "Graphics");
-    if (!config->SortTransparentObjects) {
-        return false;
-    }
-    config->SortTransparentObjects->AddRef();
-
-    config->TextureVideoFormat = cfg->AddEntryString("TextureVideoFormat", "_16_ARGB1555", "Graphics");
-    if (!config->TextureVideoFormat) {
-        return false;
-    }
-    config->TextureVideoFormat->AddRef();
-
-    config->SpriteVideoFormat = cfg->AddEntryString("SpriteVideoFormat", "_16_ARGB1555", "Graphics");
-    if (!config->SpriteVideoFormat) {
-        return false;
-    }
-    config->SpriteVideoFormat->AddRef();
-
-    config->ChildWindowRendering = cfg->AddEntryBool("ChildWindowRendering", false, "Window");
-    if (!config->ChildWindowRendering) {
-        return false;
-    }
-    config->ChildWindowRendering->AddRef();
-
-    config->Borderless = cfg->AddEntryBool("Borderless", false, "Window");
-    if (!config->Borderless) {
-        return false;
-    }
-    config->Borderless->AddRef();
-
-    config->ClipCursor = cfg->AddEntryBool("ClipCursor", false, "Window");
-    if (!config->ClipCursor) {
-        return false;
-    }
-    config->ClipCursor->AddRef();
-
-    config->AlwaysHandleInput = cfg->AddEntryBool("AlwaysHandleInput", false, "Window");
-    if (!config->AlwaysHandleInput) {
-        return false;
-    }
-    config->AlwaysHandleInput->AddRef();
-
-    config->PauseOnDeactivated = cfg->AddEntryBool("PauseOnDeactivated", false, "Window");
-    if (!config->PauseOnDeactivated) {
-        return false;
-    }
-    config->PauseOnDeactivated->AddRef();
-
-    config->PosX = cfg->AddEntryInt32("X", 2147483647, "Window");
-    if (!config->PosX) {
-        return false;
-    }
-    config->PosX->AddRef();
-
-    config->PosY = cfg->AddEntryInt32("Y", 2147483647, "Window");
-    if (!config->PosY) {
-        return false;
-    }
-    config->PosY->AddRef();
-
-    config->ApplyHotfix = cfg->AddEntryBool("ApplyHotfix", true, "Game");
-    if (!config->ApplyHotfix) {
-        return false;
-    }
-    config->ApplyHotfix->AddRef();
-
-    config->LangId = cfg->AddEntryInt32("LangId", 1, "Game");
-    if (!config->LangId) {
-        return false;
-    }
-    config->LangId->AddRef();
-
-    config->SkipOpening = cfg->AddEntryBool("SkipOpening", false, "Game");
-    if (!config->SkipOpening) {
-        return false;
-    }
-    config->SkipOpening->AddRef();
-
-    config->UnlockFramerate = cfg->AddEntryBool("UnlockFramerate", false, "Game");
-    if (!config->UnlockFramerate) {
-        return false;
-    }
-    config->UnlockFramerate->AddRef();
-
-    config->UnlockWidescreen = cfg->AddEntryBool("UnlockWidescreen", false, "Game");
-    if (!config->UnlockWidescreen) {
-        return false;
-    }
-    config->UnlockWidescreen->AddRef();
-
-    config->UnlockHighResolution = cfg->AddEntryBool("UnlockHighResolution", false, "Game");
-    if (!config->UnlockHighResolution) {
-        return false;
-    }
-    config->UnlockHighResolution->AddRef();
-
-    config->Debug = cfg->AddEntryBool("Debug", false, "Game");
-    if (!config->Debug) {
-        return false;
-    }
-    config->Debug->AddRef();
-
-    config->Rookie = cfg->AddEntryBool("Rookie", false, "Game");
-    if (!config->Rookie) {
-        return false;
-    }
-    config->Rookie->AddRef();
-
-    char szPath[MAX_PATH];
-    for (int i = 0; i < BP_PATH_CATEGORY_COUNT; ++i) {
-        const char *path;
-        if (i < BP_PATH_PLUGINS) {
-            path = DefaultPaths[i];
-        } else {
-            bpConcatPath(szPath, MAX_PATH, bpGetGamePath(config, BP_PATH_ROOT), DefaultPaths[i]);
-            path = szPath;
-        }
-
-        config->Paths[i] = cfg->AddEntryString(PathNames[i], path, "Paths");
-        if (!config->Paths[i]) {
-            return false;
-        }
-        config->Paths[i]->AddRef();
-    }
-
-    config->Initialized = true;
-    return true;
-}
-
-void bpGameConfigRelease(BpGameConfig *config) {
-    if (!config || !config->Initialized)
-        return;
-
-    if (config->LogMode) {
-        config->LogMode->Release();
-        config->LogMode = nullptr;
-    }
-
-    if (config->Verbose) {
-        config->Verbose->Release();
-        config->Verbose = nullptr;
-    }
-
-    if (config->ManualSetup) {
-        config->ManualSetup->Release();
-        config->ManualSetup = nullptr;
-    }
-
-    if (config->LoadAllManagers) {
-        config->LoadAllManagers->Release();
-        config->LoadAllManagers = nullptr;
-    }
-
-    if (config->LoadAllBuildingBlocks) {
-        config->LoadAllBuildingBlocks->Release();
-        config->LoadAllBuildingBlocks = nullptr;
-    }
-
-    if (config->LoadAllPlugins) {
-        config->LoadAllPlugins->Release();
-        config->LoadAllPlugins = nullptr;
-    }
-
-    if (config->Driver) {
-        config->Driver->Release();
-        config->Driver = nullptr;
-    }
-
-    if (config->ScreenMode) {
-        config->ScreenMode->Release();
-        config->ScreenMode = nullptr;
-    }
-
-    if (config->Width) {
-        config->Width->Release();
-        config->Width = nullptr;
-    }
-
-    if (config->Height) {
-        config->Height->Release();
-        config->Height = nullptr;
-    }
-
-    if (config->Bpp) {
-        config->Bpp->Release();
-        config->Bpp = nullptr;
-    }
-
-    if (config->Fullscreen) {
-        config->Fullscreen->Release();
-        config->Fullscreen = nullptr;
-    }
-
-    if (config->DisablePerspectiveCorrection) {
-        config->DisablePerspectiveCorrection->Release();
-        config->DisablePerspectiveCorrection = nullptr;
-    }
-
-    if (config->ForceLinearFog) {
-        config->ForceLinearFog->Release();
-        config->ForceLinearFog = nullptr;
-    }
-
-    if (config->ForceSoftware) {
-        config->ForceSoftware->Release();
-        config->ForceSoftware = nullptr;
-    }
-
-    if (config->DisableFilter) {
-        config->DisableFilter->Release();
-        config->DisableFilter = nullptr;
-    }
-
-    if (config->EnsureVertexShader) {
-        config->EnsureVertexShader->Release();
-        config->EnsureVertexShader = nullptr;
-    }
-
-    if (config->UseIndexBuffers) {
-        config->UseIndexBuffers->Release();
-        config->UseIndexBuffers = nullptr;
-    }
-
-    if (config->DisableDithering) {
-        config->DisableDithering->Release();
-        config->DisableDithering = nullptr;
-    }
-
-    if (config->Antialias) {
-        config->Antialias->Release();
-        config->Antialias = nullptr;
-    }
-
-    if (config->DisableMipmap) {
-        config->DisableMipmap->Release();
-        config->DisableMipmap = nullptr;
-    }
-
-    if (config->DisableSpecular) {
-        config->DisableSpecular->Release();
-        config->DisableSpecular = nullptr;
-    }
-
-    if (config->EnableScreenDump) {
-        config->EnableScreenDump->Release();
-        config->EnableScreenDump = nullptr;
-    }
-
-    if (config->EnableDebugMode) {
-        config->EnableDebugMode->Release();
-        config->EnableDebugMode = nullptr;
-    }
-
-    if (config->VertexCache) {
-        config->VertexCache->Release();
-        config->VertexCache = nullptr;
-    }
-
-    if (config->TextureCacheManagement) {
-        config->TextureCacheManagement->Release();
-        config->TextureCacheManagement = nullptr;
-    }
-
-    if (config->SortTransparentObjects) {
-        config->SortTransparentObjects->Release();
-        config->SortTransparentObjects = nullptr;
-    }
-
-    if (config->TextureVideoFormat) {
-        config->TextureVideoFormat->Release();
-        config->TextureVideoFormat = nullptr;
-    }
-
-    if (config->SpriteVideoFormat) {
-        config->SpriteVideoFormat->Release();
-        config->SpriteVideoFormat = nullptr;
-    }
-
-    if (config->ChildWindowRendering) {
-        config->ChildWindowRendering->Release();
-        config->ChildWindowRendering = nullptr;
-    }
-
-    if (config->Borderless) {
-        config->Borderless->Release();
-        config->Borderless = nullptr;
-    }
-
-    if (config->ClipCursor) {
-        config->ClipCursor->Release();
-        config->ClipCursor = nullptr;
-    }
-
-    if (config->AlwaysHandleInput) {
-        config->AlwaysHandleInput->Release();
-        config->AlwaysHandleInput = nullptr;
-    }
-
-    if (config->PauseOnDeactivated) {
-        config->PauseOnDeactivated->Release();
-        config->PauseOnDeactivated = nullptr;
-    }
-
-    if (config->PosX) {
-        config->PosX->Release();
-        config->PosX = nullptr;
-    }
-
-    if (config->PosY) {
-        config->PosY->Release();
-        config->PosY = nullptr;
-    }
-
-    if (config->ApplyHotfix) {
-        config->ApplyHotfix->Release();
-        config->ApplyHotfix = nullptr;
-    }
-
-    if (config->LangId) {
-        config->LangId->Release();
-        config->LangId = nullptr;
-    }
-
-    if (config->SkipOpening) {
-        config->SkipOpening->Release();
-        config->SkipOpening = nullptr;
-    }
-
-    if (config->UnlockFramerate) {
-        config->UnlockFramerate->Release();
-        config->UnlockFramerate = nullptr;
-    }
-
-    if (config->UnlockWidescreen) {
-        config->UnlockWidescreen->Release();
-        config->UnlockWidescreen = nullptr;
-    }
-
-    if (config->UnlockHighResolution) {
-        config->UnlockHighResolution->Release();
-        config->UnlockHighResolution = nullptr;
-    }
-
-    if (config->Debug) {
-        config->Debug->Release();
-        config->Debug = nullptr;
-    }
-
-    if (config->Rookie) {
-        config->Rookie->Release();
-        config->Rookie = nullptr;
-    }
-
-    config->Initialized = false;
-}
-
-bool bpGameConfigRead(BpGameConfig *config, const char *json, size_t size) {
-    if (!config || !config->Config)
-        return false;
-    return config->Config->Read(json, size, true);
-}
-
-char *bpGameConfigWrite(const BpGameConfig *config, size_t *size) {
-    if (!config || !config->Config)
-        return nullptr;
-    return config->Config->Write(size);
-}
-
-void bpGameConfigFree(const BpGameConfig *config, char *json) {
-    if (!config || !config->Config || !json)
-        return;
-    config->Config->Free(json);
+void bpGameConfigReset(BpGameConfig *config) {
+    if (config)
+        config->Reset();
 }
 
 bool bpGameConfigLoad(BpGameConfig *config, const char *filename) {
     if (!config)
         return false;
-
-    if (!filename) {
-        filename = bpGetGamePath(config, BP_PATH_CONFIG);
-    }
-    if (!filename || filename[0] == '\0') {
-        return false;
-    }
-
-    FILE *fp = fopen(filename, "rb");
-    if (!fp) {
-        return false;
-    }
-
-    size_t size = 0;
-    fseek(fp, 0, SEEK_END);
-    size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    char *json = new char[size + 1];
-    fread(json, 1, size, fp);
-    json[size] = '\0';
-    fclose(fp);
-
-    if (!config->Config->Read(json, size, true)) {
-        delete[] json;
-        return false;
-    }
-
-    delete[] json;
-    return true;
+    return config->Load(filename);
 }
 
 bool bpGameConfigSave(const BpGameConfig *config, const char *filename) {
-    if (!config || !config->Config)
+    if (!config)
+        return false;
+    return config->Save(filename);
+}
+
+BpValue *bpGameConfigGetValue(BpGameConfig *config, BpConfigType type) {
+    if (!config)
+        return nullptr;
+    return &config->Get(type);
+}
+
+bool bpHasGamePath(const BpGameConfig *config, BpPathCategory category) {
+    if (!config)
+        return false;
+    return config->HasPath(category);
+}
+
+const char *bpGetGamePath(const BpGameConfig *config, BpPathCategory category) {
+    if (!config)
+        return nullptr;
+    return config->GetPath(category);
+}
+
+bool bpSetGamePath(BpGameConfig *config, BpPathCategory category, const char *path) {
+    if (!config)
+        return false;
+    config->SetPath(category, path);
+    return true;
+}
+
+bool bpResetGamePath(BpGameConfig *config, BpPathCategory category) {
+    if (!config)
+        return false;
+    return config->ResetPath(category);
+}
+
+BpGameConfig::BpGameConfig() {
+    Reset();
+}
+
+void BpGameConfig::Reset() {
+    Values[BP_CONFIG_VERBOSE] = false;
+    Values[BP_CONFIG_LOG_MODE] = BP_LOG_MODE_OVERWRITE;
+    Values[BP_CONFIG_MANUAL_SETUP] = false;
+    Values[BP_CONFIG_LOAD_ALL_MANAGERS] = true;
+    Values[BP_CONFIG_LOAD_ALL_BUILDING_BLOCKS] = true;
+    Values[BP_CONFIG_LOAD_ALL_PLUGINS] = true;
+
+    Values[BP_CONFIG_DRIVER] = 0;
+    Values[BP_CONFIG_SCREEN_MODE] = -1;
+    Values[BP_CONFIG_BPP] = BP_DEFAULT_BPP;
+    Values[BP_CONFIG_WIDTH] = BP_DEFAULT_WIDTH;
+    Values[BP_CONFIG_HEIGHT] = BP_DEFAULT_HEIGHT;
+    Values[BP_CONFIG_FULLSCREEN] = false;
+
+    Values[BP_CONFIG_DISABLE_PERSPECTIVE_CORRECTION] = false;
+    Values[BP_CONFIG_FORCE_LINEAR_FOG] = false;
+    Values[BP_CONFIG_FORCE_SOFTWARE] = false;
+    Values[BP_CONFIG_DISABLE_FILTER] = false;
+    Values[BP_CONFIG_ENSURE_VERTEX_SHADER] = false;
+    Values[BP_CONFIG_USE_INDEX_BUFFERS] = false;
+    Values[BP_CONFIG_DISABLE_DITHERING] = false;
+    Values[BP_CONFIG_ANTIALIAS] = 0;
+    Values[BP_CONFIG_DISABLE_MIPMAP] = false;
+    Values[BP_CONFIG_DISABLE_SPECULAR] = false;
+    Values[BP_CONFIG_ENABLE_SCREEN_DUMP] = false;
+    Values[BP_CONFIG_ENABLE_DEBUG_MODE] = false;
+    Values[BP_CONFIG_VERTEX_CACHE] = 16;
+    Values[BP_CONFIG_TEXTURE_CACHE_MANAGEMENT] = true;
+    Values[BP_CONFIG_SORT_TRANSPARENT_OBJECTS] = true;
+    Values[BP_CONFIG_TEXTURE_VIDEO_FORMAT] = _16_ARGB1555;
+    Values[BP_CONFIG_SPRITE_VIDEO_FORMAT] = _16_ARGB1555;
+
+    Values[BP_CONFIG_CHILD_WINDOW_RENDERING] = false;
+    Values[BP_CONFIG_BORDERLESS] = false;
+    Values[BP_CONFIG_CLIP_CURSOR] = false;
+    Values[BP_CONFIG_ALWAYS_HANDLE_INPUT] = false;
+    Values[BP_CONFIG_PAUSE_ON_DEACTIVATED] = false;
+    Values[BP_CONFIG_X] = 2147483647;
+    Values[BP_CONFIG_Y] = 2147483647;
+
+    Values[BP_CONFIG_APPLY_HOTFIX] = true;
+    Values[BP_CONFIG_LANG_ID] = 1;
+    Values[BP_CONFIG_SKIP_OPENING] = false;
+    Values[BP_CONFIG_UNLOCK_FRAMERATE] = false;
+    Values[BP_CONFIG_UNLOCK_WIDESCREEN] = false;
+    Values[BP_CONFIG_UNLOCK_HIGH_RESOLUTION] = false;
+    Values[BP_CONFIG_DEBUG] = false;
+    Values[BP_CONFIG_ROOKIE] = false;
+
+    ResetPath(BP_PATH_CATEGORY_COUNT);
+}
+
+bool IniGetInteger(BpValue &value, const char *section, const char *key, const char *filename) {
+    if (!filename || filename[0] == '\0')
         return false;
 
+    int v;
+    if (!bpIniGetInteger(section, key, &v, filename))
+        return false;
+
+    value = v;
+    return true;
+}
+
+bool IniGetBoolean(BpValue &value, const char *section, const char *key, const char *filename) {
+    if (!filename || filename[0] == '\0')
+        return false;
+
+    bool v;
+    if (!bpIniGetBoolean(section, key, &v, filename))
+        return false;
+
+    value = v;
+    return true;
+}
+
+bool IniGetPixelFormat(BpValue &value, const char *section, const char *key, const char *filename) {
+    if (!filename || filename[0] == '\0')
+        return false;
+
+    int v;
+    if (!bpIniGetPixelFormat(section, key, &v, filename))
+        return false;
+
+    value = v;
+    return true;
+}
+
+bool IniSetInteger(const BpValue &value, const char *section, const char *key, const char *filename) {
+    if (!filename || filename[0] == '\0')
+        return false;
+
+    return bpIniSetInteger(section, key, value.GetInt32(), filename);
+}
+
+bool IniSetBoolean(const BpValue &value, const char *section, const char *key, const char *filename) {
+    if (!filename || filename[0] == '\0')
+        return false;
+
+    return bpIniSetBoolean(section, key, value.GetBool(), filename);
+}
+
+bool IniSetPixelFormat(const BpValue &value, const char *section, const char *key, const char *filename) {
+    if (!filename || filename[0] == '\0')
+        return false;
+
+    return bpIniSetPixelFormat(section, key, value.GetInt32(), filename);
+}
+
+bool BpGameConfig::Load(const char *filename) {
     if (!filename) {
-        filename = bpGetGamePath(config, BP_PATH_CONFIG);
+        filename = GetPath(BP_PATH_CONFIG);
     }
     if (!filename || filename[0] == '\0') {
         return false;
     }
 
-    size_t size;
-    char *json = config->Config->Write(&size);
-    if (!json) {
-        return false;
+    char path[MAX_PATH];
+    if (!bpIsAbsolutePath(filename)) {
+        bpGetCurrentDirectory(path, MAX_PATH);
+        bpConcatPath(path, MAX_PATH, path, filename);
+        filename = path;
     }
 
-    FILE *fp = fopen(filename, "wb");
-    if (!fp) {
-        config->Config->Free(json);
-        return false;
-    }
+    IniGetBoolean(Values[BP_CONFIG_VERBOSE], "Startup", "Verbose", filename);
+    IniGetInteger(Values[BP_CONFIG_LOG_MODE], "Startup", "LogMode", filename);
+    IniGetBoolean(Values[BP_CONFIG_MANUAL_SETUP], "Startup", "ManualSetup", filename);
+    IniGetBoolean(Values[BP_CONFIG_LOAD_ALL_MANAGERS], "Startup", "LoadAllManagers", filename);
+    IniGetBoolean(Values[BP_CONFIG_LOAD_ALL_BUILDING_BLOCKS], "Startup", "LoadAllBuildingBlocks", filename);
+    IniGetBoolean(Values[BP_CONFIG_LOAD_ALL_PLUGINS], "Startup", "LoadAllPlugins", filename);
 
-    fwrite(json, 1, size, fp);
-    config->Config->Free(json);
-    fclose(fp);
+    IniGetInteger(Values[BP_CONFIG_DRIVER], "Graphics", "Driver", filename);
+    IniGetInteger(Values[BP_CONFIG_SCREEN_MODE], "Graphics", "ScreenMode", filename);
+    IniGetInteger(Values[BP_CONFIG_BPP], "Graphics", "BitsPerPixel", filename);
+    IniGetInteger(Values[BP_CONFIG_WIDTH], "Graphics", "Width", filename);
+    IniGetInteger(Values[BP_CONFIG_HEIGHT], "Graphics", "Height", filename);
+    IniGetBoolean(Values[BP_CONFIG_FULLSCREEN], "Graphics", "FullScreen", filename);
+
+    IniGetBoolean(Values[BP_CONFIG_DISABLE_PERSPECTIVE_CORRECTION], "Graphics", "DisablePerspectiveCorrection", filename);
+    IniGetBoolean(Values[BP_CONFIG_FORCE_LINEAR_FOG], "Graphics", "ForceLinearFog", filename);
+    IniGetBoolean(Values[BP_CONFIG_FORCE_SOFTWARE], "Graphics", "ForceSoftware", filename);
+    IniGetBoolean(Values[BP_CONFIG_DISABLE_FILTER], "Graphics", "DisableFilter", filename);
+    IniGetBoolean(Values[BP_CONFIG_ENSURE_VERTEX_SHADER], "Graphics", "EnsureVertexShader", filename);
+    IniGetBoolean(Values[BP_CONFIG_USE_INDEX_BUFFERS], "Graphics", "UseIndexBuffers", filename);
+    IniGetBoolean(Values[BP_CONFIG_DISABLE_DITHERING], "Graphics", "DisableDithering", filename);
+    IniGetInteger(Values[BP_CONFIG_ANTIALIAS], "Graphics", "Antialias", filename);
+    IniGetBoolean(Values[BP_CONFIG_DISABLE_MIPMAP], "Graphics", "DisableMipmap", filename);
+    IniGetBoolean(Values[BP_CONFIG_DISABLE_SPECULAR], "Graphics", "DisableSpecular", filename);
+    IniGetBoolean(Values[BP_CONFIG_ENABLE_SCREEN_DUMP], "Graphics", "EnableScreenDump", filename);
+    IniGetBoolean(Values[BP_CONFIG_ENABLE_DEBUG_MODE], "Graphics", "EnableDebugMode", filename);
+    IniGetInteger(Values[BP_CONFIG_VERTEX_CACHE], "Graphics", "VertexCache", filename);
+    IniGetBoolean(Values[BP_CONFIG_TEXTURE_CACHE_MANAGEMENT], "Graphics", "TextureCacheManagement", filename);
+    IniGetBoolean(Values[BP_CONFIG_SORT_TRANSPARENT_OBJECTS], "Graphics", "SortTransparentObjects", filename);
+    IniGetPixelFormat(Values[BP_CONFIG_TEXTURE_VIDEO_FORMAT], "Graphics", "TextureVideoFormat", filename);
+    IniGetPixelFormat(Values[BP_CONFIG_SPRITE_VIDEO_FORMAT], "Graphics", "SpriteVideoFormat", filename);
+
+    IniGetBoolean(Values[BP_CONFIG_CHILD_WINDOW_RENDERING], "Window", "ChildWindowRendering", filename);
+    IniGetBoolean(Values[BP_CONFIG_BORDERLESS], "Window", "Borderless", filename);
+    IniGetBoolean(Values[BP_CONFIG_CLIP_CURSOR], "Window", "ClipCursor", filename);
+    IniGetBoolean(Values[BP_CONFIG_ALWAYS_HANDLE_INPUT], "Window", "AlwaysHandleInput", filename);
+    IniGetBoolean(Values[BP_CONFIG_PAUSE_ON_DEACTIVATED], "Window", "PauseOnDeactivated", filename);
+    IniGetInteger(Values[BP_CONFIG_X], "Window", "X", filename);
+    IniGetInteger(Values[BP_CONFIG_Y], "Window", "Y", filename);
+
+    IniGetInteger(Values[BP_CONFIG_LANG_ID], "Game", "Language", filename);
+    IniGetBoolean(Values[BP_CONFIG_SKIP_OPENING], "Game", "SkipOpening", filename);
+    IniGetBoolean(Values[BP_CONFIG_APPLY_HOTFIX], "Game", "ApplyHotfix", filename);
+    IniGetBoolean(Values[BP_CONFIG_UNLOCK_FRAMERATE], "Game", "UnlockFramerate", filename);
+    IniGetBoolean(Values[BP_CONFIG_UNLOCK_WIDESCREEN], "Game", "UnlockWidescreen", filename);
+    IniGetBoolean(Values[BP_CONFIG_UNLOCK_HIGH_RESOLUTION], "Game", "UnlockHighResolution", filename);
+    IniGetBoolean(Values[BP_CONFIG_DEBUG], "Game", "Debug", filename);
+    IniGetBoolean(Values[BP_CONFIG_ROOKIE], "Game", "Rookie", filename);
 
     return true;
 }
 
-bool bpSetGamePath(BpGameConfig *config, BpPathCategory category, const char *path) {
-    if (!config || category < 0 || category >= BP_PATH_CATEGORY_COUNT || !path)
+bool BpGameConfig::Save(const char *filename) const {
+    if (!filename) {
+        filename = GetPath(BP_PATH_CONFIG);
+    }
+    if (!filename || filename[0] == '\0') {
         return false;
-
-    if (!config->Paths[category]) {
-        auto *cfg = config->Config;
-        if (!cfg) {
-            return false;
-        }
-        config->Paths[category] = cfg->AddEntryString(PathNames[category], path, "Paths");
-        if (!config->Paths[category]) {
-            return false;
-        }
-        config->Paths[category]->AddRef();
-        return true;
     }
 
-    config->Paths[category]->SetString(path);
+    char path[MAX_PATH];
+    if (!bpIsAbsolutePath(filename)) {
+        bpGetCurrentDirectory(path, MAX_PATH);
+        bpConcatPath(path, MAX_PATH, path, filename);
+        filename = path;
+    }
+
+    IniSetBoolean(Values[BP_CONFIG_VERBOSE], "Startup", "Verbose", filename);
+    IniSetInteger(Values[BP_CONFIG_LOG_MODE], "Startup", "LogMode", filename);
+    IniSetBoolean(Values[BP_CONFIG_MANUAL_SETUP], "Startup", "ManualSetup", filename);
+    IniSetBoolean(Values[BP_CONFIG_LOAD_ALL_MANAGERS], "Startup", "LoadAllManagers", filename);
+    IniSetBoolean(Values[BP_CONFIG_LOAD_ALL_BUILDING_BLOCKS], "Startup", "LoadAllBuildingBlocks", filename);
+    IniSetBoolean(Values[BP_CONFIG_LOAD_ALL_PLUGINS], "Startup", "LoadAllPlugins", filename);
+
+    IniSetInteger(Values[BP_CONFIG_DRIVER], "Graphics", "Driver", filename);
+    IniSetInteger(Values[BP_CONFIG_BPP], "Graphics", "BitsPerPixel", filename);
+    IniSetInteger(Values[BP_CONFIG_WIDTH], "Graphics", "Width", filename);
+    IniSetInteger(Values[BP_CONFIG_HEIGHT], "Graphics", "Height", filename);
+    IniSetBoolean(Values[BP_CONFIG_FULLSCREEN], "Graphics", "FullScreen", filename);
+
+    IniSetBoolean(Values[BP_CONFIG_DISABLE_PERSPECTIVE_CORRECTION], "Graphics", "DisablePerspectiveCorrection", filename);
+    IniSetBoolean(Values[BP_CONFIG_FORCE_LINEAR_FOG], "Graphics", "ForceLinearFog", filename);
+    IniSetBoolean(Values[BP_CONFIG_FORCE_SOFTWARE], "Graphics", "ForceSoftware", filename);
+    IniSetBoolean(Values[BP_CONFIG_DISABLE_FILTER], "Graphics", "DisableFilter", filename);
+    IniSetBoolean(Values[BP_CONFIG_ENSURE_VERTEX_SHADER], "Graphics", "EnsureVertexShader", filename);
+    IniSetBoolean(Values[BP_CONFIG_USE_INDEX_BUFFERS], "Graphics", "UseIndexBuffers", filename);
+    IniSetBoolean(Values[BP_CONFIG_DISABLE_DITHERING], "Graphics", "DisableDithering", filename);
+    IniSetInteger(Values[BP_CONFIG_ANTIALIAS], "Graphics", "Antialias", filename);
+    IniSetBoolean(Values[BP_CONFIG_DISABLE_MIPMAP], "Graphics", "DisableMipmap", filename);
+    IniSetBoolean(Values[BP_CONFIG_DISABLE_SPECULAR], "Graphics", "DisableSpecular", filename);
+    IniSetBoolean(Values[BP_CONFIG_ENABLE_SCREEN_DUMP], "Graphics", "EnableScreenDump", filename);
+    IniSetBoolean(Values[BP_CONFIG_ENABLE_DEBUG_MODE], "Graphics", "EnableDebugMode", filename);
+    IniSetInteger(Values[BP_CONFIG_VERTEX_CACHE], "Graphics", "VertexCache", filename);
+    IniSetBoolean(Values[BP_CONFIG_TEXTURE_CACHE_MANAGEMENT], "Graphics", "TextureCacheManagement", filename);
+    IniSetBoolean(Values[BP_CONFIG_SORT_TRANSPARENT_OBJECTS], "Graphics", "SortTransparentObjects", filename);
+    IniSetPixelFormat(Values[BP_CONFIG_TEXTURE_VIDEO_FORMAT], "Graphics", "TextureVideoFormat", filename);
+    IniSetPixelFormat(Values[BP_CONFIG_SPRITE_VIDEO_FORMAT], "Graphics", "SpriteVideoFormat", filename);
+
+    IniSetBoolean(Values[BP_CONFIG_CHILD_WINDOW_RENDERING], "Window", "ChildWindowRendering", filename);
+    IniSetBoolean(Values[BP_CONFIG_BORDERLESS], "Window", "Borderless", filename);
+    IniSetBoolean(Values[BP_CONFIG_CLIP_CURSOR], "Window", "ClipCursor", filename);
+    IniSetBoolean(Values[BP_CONFIG_ALWAYS_HANDLE_INPUT], "Window", "AlwaysHandleInput", filename);
+    IniSetBoolean(Values[BP_CONFIG_PAUSE_ON_DEACTIVATED], "Window", "PauseOnDeactivated", filename);
+    IniSetInteger(Values[BP_CONFIG_X], "Window", "X", filename);
+    IniSetInteger(Values[BP_CONFIG_Y], "Window", "Y", filename);
+
+    IniSetInteger(Values[BP_CONFIG_LANG_ID], "Game", "Language", filename);
+    IniSetBoolean(Values[BP_CONFIG_SKIP_OPENING], "Game", "SkipOpening", filename);
+    IniSetBoolean(Values[BP_CONFIG_APPLY_HOTFIX], "Game", "ApplyHotfix", filename);
+    IniSetBoolean(Values[BP_CONFIG_UNLOCK_FRAMERATE], "Game", "UnlockFramerate", filename);
+    IniSetBoolean(Values[BP_CONFIG_UNLOCK_WIDESCREEN], "Game", "UnlockWidescreen", filename);
+    IniSetBoolean(Values[BP_CONFIG_UNLOCK_HIGH_RESOLUTION], "Game", "UnlockHighResolution", filename);
+    IniSetBoolean(Values[BP_CONFIG_DEBUG], "Game", "Debug", filename);
+    IniSetBoolean(Values[BP_CONFIG_ROOKIE], "Game", "Rookie", filename);
 
     return true;
 }
 
-const char *bpGetGamePath(const BpGameConfig *config, BpPathCategory category) {
-    if (!config || category < 0 || category >= BP_PATH_CATEGORY_COUNT)
-        return nullptr;
-
-    if (!config->Paths[category]) {
-        return nullptr;
-    }
-
-    return config->Paths[category]->GetString();
-}
-
-bool bpHasGamePath(const BpGameConfig *config, BpPathCategory category) {
-    if (!config || category < 0 || category >= BP_PATH_CATEGORY_COUNT)
-        return false;
-
-    if (!config->Paths[category]) {
-        return false;
-    }
-
-    return strcmp(config->Paths[category]->GetString(), "") != 0;
-}
-
-bool bpResetGamePath(BpGameConfig *config, BpPathCategory category) {
-    if (!config || category < 0 || category > BP_PATH_CATEGORY_COUNT)
+bool BpGameConfig::ResetPath(BpPathCategory category) {
+    if (category < 0 || category > BP_PATH_CATEGORY_COUNT)
         return false;
 
     if (category == BP_PATH_CATEGORY_COUNT) {
         for (int i = 0; i < BP_PATH_CATEGORY_COUNT; ++i) {
             if (i < BP_PATH_PLUGINS) {
-                bpSetGamePath(config, (BpPathCategory) i, DefaultPaths[i]);
+                SetPath((BpPathCategory) i, DefaultPaths[i]);
             } else {
                 char szPath[MAX_PATH];
-                bpConcatPath(szPath, MAX_PATH, bpGetGamePath(config, BP_PATH_ROOT), DefaultPaths[i]);
-                bpSetGamePath(config, (BpPathCategory) i, szPath);
+                bpConcatPath(szPath, MAX_PATH, GetPath(BP_PATH_ROOT), DefaultPaths[i]);
+                SetPath((BpPathCategory) i, szPath);
             }
         }
     } else {
         if (category < BP_PATH_PLUGINS) {
-            bpSetGamePath(config, category, DefaultPaths[category]);
+            SetPath(category, DefaultPaths[category]);
         } else {
             char szPath[MAX_PATH];
-            bpConcatPath(szPath, MAX_PATH, bpGetGamePath(config, BP_PATH_ROOT), DefaultPaths[category]);
-            bpSetGamePath(config, category, szPath);
+            bpConcatPath(szPath, MAX_PATH, GetPath(BP_PATH_ROOT), DefaultPaths[category]);
+            SetPath(category, szPath);
         }
     }
 

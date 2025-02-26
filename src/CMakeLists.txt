@@ -14,7 +14,6 @@ set(LIBRARY_HEADERS
         GameConfig.h
         ScriptUtils.h
         Window.h
-        Configuration.h
         Logger.h
 )
 
@@ -24,9 +23,8 @@ set(LIBRARY_SOURCES
         GameManager.cpp
         GameConfig.cpp
         Hotfix.cpp
-        Configuration.cpp
         Logger.cpp
-        Variant.cpp
+        Value.cpp
         Utils.cpp
         Game.rc
 )
@@ -79,8 +77,6 @@ endif ()
 target_link_libraries(${LIBRARY_NAME}
         PUBLIC
         CK2 VxMath
-        PRIVATE
-        zip yyjson utf8
 )
 
 target_compile_definitions(${LIBRARY_NAME} PRIVATE "BP_EXPORTS")
@@ -98,6 +94,8 @@ add_executable(${PLAYER_NAME} WIN32
         Player.cpp
         Splash.cpp
         Splash.h
+        CmdlineParser.cpp
+        CmdlineParser.h
         Player.rc
 )
 
@@ -109,9 +107,7 @@ target_include_directories(${PLAYER_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-target_link_libraries(${PLAYER_NAME}
-        PRIVATE ${LIBRARY_NAME} cxxopts
-)
+target_link_libraries(${PLAYER_NAME} PRIVATE ${LIBRARY_NAME})
 
 install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 

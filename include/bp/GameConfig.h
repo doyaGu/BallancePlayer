@@ -2,9 +2,62 @@
 #define BP_GAMECONFIG_H
 
 #include "Defines.h"
-#include "Configuration.h"
+
+#include "Value.h"
 
 BP_BEGIN_CDECLS
+
+/**
+ * @brief The game configuration.
+ */
+typedef enum BpConfigType {
+    BP_CONFIG_RESERVED = 0,
+    BP_CONFIG_VERBOSE,
+    BP_CONFIG_LOG_MODE,
+    BP_CONFIG_MANUAL_SETUP,
+    BP_CONFIG_LOAD_ALL_MANAGERS,
+    BP_CONFIG_LOAD_ALL_BUILDING_BLOCKS,
+    BP_CONFIG_LOAD_ALL_PLUGINS,
+    BP_CONFIG_DRIVER,
+    BP_CONFIG_SCREEN_MODE,
+    BP_CONFIG_WIDTH,
+    BP_CONFIG_HEIGHT,
+    BP_CONFIG_BPP,
+    BP_CONFIG_FULLSCREEN,
+    BP_CONFIG_DISABLE_PERSPECTIVE_CORRECTION,
+    BP_CONFIG_FORCE_LINEAR_FOG,
+    BP_CONFIG_FORCE_SOFTWARE,
+    BP_CONFIG_DISABLE_FILTER,
+    BP_CONFIG_ENSURE_VERTEX_SHADER,
+    BP_CONFIG_USE_INDEX_BUFFERS,
+    BP_CONFIG_DISABLE_DITHERING,
+    BP_CONFIG_ANTIALIAS,
+    BP_CONFIG_DISABLE_MIPMAP,
+    BP_CONFIG_DISABLE_SPECULAR,
+    BP_CONFIG_ENABLE_SCREEN_DUMP,
+    BP_CONFIG_ENABLE_DEBUG_MODE,
+    BP_CONFIG_VERTEX_CACHE,
+    BP_CONFIG_TEXTURE_CACHE_MANAGEMENT,
+    BP_CONFIG_SORT_TRANSPARENT_OBJECTS,
+    BP_CONFIG_TEXTURE_VIDEO_FORMAT,
+    BP_CONFIG_SPRITE_VIDEO_FORMAT,
+    BP_CONFIG_CHILD_WINDOW_RENDERING,
+    BP_CONFIG_BORDERLESS,
+    BP_CONFIG_CLIP_CURSOR,
+    BP_CONFIG_ALWAYS_HANDLE_INPUT,
+    BP_CONFIG_PAUSE_ON_DEACTIVATED,
+    BP_CONFIG_X,
+    BP_CONFIG_Y,
+    BP_CONFIG_APPLY_HOTFIX,
+    BP_CONFIG_LANG_ID,
+    BP_CONFIG_SKIP_OPENING,
+    BP_CONFIG_UNLOCK_FRAMERATE,
+    BP_CONFIG_UNLOCK_WIDESCREEN,
+    BP_CONFIG_UNLOCK_HIGH_RESOLUTION,
+    BP_CONFIG_DEBUG,
+    BP_CONFIG_ROOKIE,
+    BP_CONFIG_COUNT,
+} BpConfigType;
 
 /**
  * @brief The path category.
@@ -36,67 +89,10 @@ typedef enum BpLogMode {
 typedef struct BpGameConfig BpGameConfig;
 
 /**
- * @brief Create a new game configuration.
- * @param name The name of the game configuration.
- * @return The game configuration.
- */
-BP_EXPORT BpGameConfig *bpCreateGameConfig(const char *name);
-
-/**
- * @brief Destroy the game configuration.
+ * @brief Reset the game configuration.
  * @param config The game configuration.
  */
-BP_EXPORT void bpDestroyGameConfig(BpGameConfig *config);
-
-/**
- * @brief Get the game configuration.
- * @param config The game configuration.
- * @return The configuration.
- */
-BP_EXPORT BpConfig *bpGameConfigGet(const BpGameConfig *config);
-
-/**
- * @brief Check if the game configuration is initialized.
- * @param config The game configuration.
- * @return True if initialized, false otherwise.
- */
-BP_EXPORT bool bpGameConfigIsInitialized(const BpGameConfig *config);
-
-/**
- * @brief Initialize the game configuration.
- * @param config The game configuration.
- * @return True if successful, false otherwise.
- */
-BP_EXPORT bool bpGameConfigInit(BpGameConfig *config);
-
-/**
- * @brief Release the game configuration.
- * @param config The game configuration.
- */
-BP_EXPORT void bpGameConfigRelease(BpGameConfig *config);
-
-/**
- * @brief Read the game configuration from JSON.
- * @param config The game configuration.
- * @param json The JSON string.
- * @param size The size of the JSON string.
- * @return True if successful, false otherwise.
- */
-BP_EXPORT bool bpGameConfigRead(BpGameConfig *config, const char *json, size_t size);
-
-/**
- * @brief Write the game configuration to JSON.
- * @param config The game configuration.
- * @return The JSON string.
- */
-BP_EXPORT char *bpGameConfigWrite(const BpGameConfig *config, size_t *size);
-
-/**
- * @brief Free the JSON string.
- * @param config The game configuration.
- * @param json The JSON string.
- */
-BP_EXPORT void bpGameConfigFree(const BpGameConfig *config, char *json);
+BP_EXPORT void bpGameConfigReset(BpGameConfig *config);
 
 /**
  * @brief Load the game configuration from a file.
@@ -115,12 +111,20 @@ BP_EXPORT bool bpGameConfigLoad(BpGameConfig *config, const char *filename);
 BP_EXPORT bool bpGameConfigSave(const BpGameConfig *config, const char *filename);
 
 /**
- * @brief Set the game path.
+ * @brief Get the game configuration.
+ * @param config The game configuration.
+ * @param type The configuration type.
+ * @return The game configuration.
+ */
+BP_EXPORT BpValue *bpGameConfigGetValue(BpGameConfig *config, BpConfigType type);
+
+/**
+ * @brief Check if the game path exists.
  * @param config The game configuration.
  * @param category The path category.
- * @param path The path.
+ * @return True if the path exists, false otherwise.
  */
-BP_EXPORT bool bpSetGamePath(BpGameConfig *config, BpPathCategory category, const char *path);
+BP_EXPORT bool bpHasGamePath(const BpGameConfig *config, BpPathCategory category);
 
 /**
  * @brief Get the game path.
@@ -131,12 +135,12 @@ BP_EXPORT bool bpSetGamePath(BpGameConfig *config, BpPathCategory category, cons
 BP_EXPORT const char *bpGetGamePath(const BpGameConfig *config, BpPathCategory category);
 
 /**
- * @brief Check if the game path exists.
+ * @brief Set the game path.
  * @param config The game configuration.
  * @param category The path category.
- * @return True if the path exists, false otherwise.
+ * @param path The path.
  */
-BP_EXPORT bool bpHasGamePath(const BpGameConfig *config, BpPathCategory category);
+BP_EXPORT bool bpSetGamePath(BpGameConfig *config, BpPathCategory category, const char *path);
 
 /**
  * @brief Reset the game path.

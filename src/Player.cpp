@@ -1,27 +1,21 @@
-#include <cstdio>
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
 
-#include <cxxopts.hpp>
-
 #include "bp/GamePlayer.h"
 #include "bp/GameConfig.h"
 #include "bp/Utils.h"
 #include "Splash.h"
+#include "CmdlineParser.h"
 #include "ConsoleAttacher.h"
 #include "FileLogger.h"
 #include "LockGuard.h"
 
 static HANDLE CreatNamedMutex();
-
-static void AddCommandLineOptions(cxxopts::Options &options);
-static void LoadGameConfigFromCommandLine(BpGameConfig *config, const cxxopts::ParseResult &result);
-static void LoadGamePathsFromCommandLine(BpGameConfig *config, const cxxopts::ParseResult &result);
-static void LoadGamePaths(BpGameConfig *config, const cxxopts::ParseResult &result);
-static void InitLogger(BpLogger *logger, const BpGameConfig *config);
+static void ParseConfigsFromCmdline(CmdlineParser &parser, BpGameConfig *config);
+static void ParsePathsFromCmdline(CmdlineParser &parser, BpGameConfig *config);
+static void InitLogger(BpLogger *logger, BpGameConfig *config);
 
 static FileLogger g_FileLogger;
 
@@ -38,42 +32,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     auto *logger = bpGetDefaultLogger();
 
-    cxxopts::Options options("Player", BP_DESCRIPTION);
-    try {
-        AddCommandLineOptions(options);
-    } catch (const cxxopts::exceptions::specification &e) {
-        bpLoggerError(logger, "Error adding command line options: %s", e.what());
+    BpGamePlayer *player = bpCreateGamePlayer(nullptr);
+    if (!player) {
+        ::MessageBox(nullptr, TEXT("Failed to create player!"), TEXT("Error"), MB_OK);
         return -1;
     }
 
-    cxxopts::ParseResult result;
-    try {
-        result = std::move(options.parse(__argc, __argv));
-    } catch (const cxxopts::exceptions::parsing &e) {
-        bpLoggerError(logger, "Error parsing command line: %s", e.what());
-        return -1;
-    }
+    BpGameConfig *config = bpGamePlayerGetConfig(player);
 
-    if (result.contains("help")) {
-        const auto help = options.help();
-        puts(help.c_str());
-        return 0;
-    }
-    if (result.contains("version")) {
-        puts(BP_VERSION);
-        return 0;
-    }
-
-    BpGameConfig *config = bpCreateGameConfig(nullptr);
-    bpGameConfigInit(config);
-
-    try {
-        // Load paths from command line
-        LoadGamePaths(config, result);
-    } catch (const cxxopts::exceptions::option_has_no_value &e) {
-        bpLoggerError(logger, "Error parsing command line: %s", e.what());
-        return -1;
-    }
+    CmdlineParser parser(__argc, __argv);
+    ParsePathsFromCmdline(parser, config);
 
     if (bpFileOrDirectoryExists(bpGetGamePath(config, BP_PATH_CONFIG))) {
         if (!bpGameConfigLoad(config, nullptr)) {
@@ -85,42 +53,33 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
         }
     }
 
-    try {
-        LoadGameConfigFromCommandLine(config, result);
-    } catch (const cxxopts::exceptions::option_has_no_value &e) {
-        bpLoggerError(logger, "Error parsing command line: %s", e.what());
-        return -1;
-    }
+    ParseConfigsFromCmdline(parser, config);
 
     InitLogger(logger, config);
 
     Splash splash(hInstance);
     splash.Show();
 
-    BpGamePlayer *player = bpCreateGamePlayer(nullptr);
-
-    if (!bpGamePlayerInit(player, config, hInstance)) {
+    if (!bpGamePlayerInit(player, hInstance)) {
         ::MessageBox(nullptr, TEXT("Failed to initialize player!"), TEXT("Error"), MB_OK);
         bpDestroyGamePlayer(player);
-        bpDestroyGameConfig(config);
         return -1;
     }
 
     if (!bpGamePlayerLoad(player, nullptr)) {
         ::MessageBox(nullptr, TEXT("Failed to load game composition!"), TEXT("Error"), MB_OK);
         bpDestroyGamePlayer(player);
-        bpDestroyGameConfig(config);
         return -1;
     }
 
     bpGamePlayerPlay(player);
     bpGamePlayerRun(player);
     bpGamePlayerShutdown(player);
-    bpDestroyGamePlayer(player);
 
-    // Save settings
+    // Save settings before destroying the player
     bpGameConfigSave(config, nullptr);
-    bpDestroyGameConfig(config);
+    // Destroy the player
+    bpDestroyGamePlayer(player);
 
     return 0;
 }
@@ -143,343 +102,375 @@ static HANDLE CreatNamedMutex() {
     return hMutex;
 }
 
-void AddCommandLineOptions(cxxopts::Options &options) {
-    options.add_options()
-            ("verbose", "Enable verbose mode")
-            ("m,manual-setup", "Enable manual setup")
-            ("load-required-managers", "Load required managers only")
-            ("load-required-building-blocks", "Load required building blocks only")
-            ("load-required-plugins", "Load required plugins only")
-            ("video-driver", "Set video driver", cxxopts::value<long>())
-            ("width", "Set window width", cxxopts::value<long>())
-            ("height", "Set window height", cxxopts::value<long>())
-            ("bpp", "Set bits per pixel", cxxopts::value<long>())
-            ("fullscreen", "Enable fullscreen mode")
-            ("disable-perspective-correction", "Disable perspective correction")
-            ("force-linear-fog", "Force linear fog")
-            ("force-software", "Force software rendering")
-            ("disable-filter", "Disable filter")
-            ("ensure-vertex-shader", "Ensure vertex shader")
-            ("use-index-buffers", "Use index buffers")
-            ("disable-dithering", "Disable dithering")
-            ("antialias", "Set antialias level", cxxopts::value<long>())
-            ("disable-mipmap", "Disable mipmap")
-            ("disable-specular", "Disable specular")
-            ("enable-screen-dump", "Enable screen dump")
-            ("enable-debug-mode", "Enable debug mode")
-            ("vertex-cache", "Set vertex cache size", cxxopts::value<long>())
-            ("disable-texture-cache-management", "Disable texture cache management")
-            ("disable-sort-transparent-objects", "Disable sort transparent objects")
-            ("texture-video-format", "Set texture video format", cxxopts::value<std::string>())
-            ("sprite-video-format", "Set sprite video format", cxxopts::value<std::string>())
-            ("child-window-rendering", "Enable child window rendering")
-            ("borderless", "Enable borderless mode")
-            ("clip-cursor", "Enable clip cursor")
-            ("always-handle-input", "Always handle input")
-            ("pause-on-deactivated", "Pause on deactivated")
-            ("x,position-x", "Set window position x", cxxopts::value<long>())
-            ("y,position-y", "Set window position y", cxxopts::value<long>())
-            ("disable-hotfix", "Disable hotfix")
-            ("l,lang", "Set language id", cxxopts::value<long>())
-            ("skip-opening", "Skip opening")
-            ("unlock-framerate", "Unlock framerate")
-            ("unlock-widescreen", "Unlock widescreen")
-            ("unlock-high-resolution", "Unlock high resolution")
-            ("debug", "Enable debug mode")
-            ("rookie", "Enable rookie mode")
-            ("config", "Set config file path", cxxopts::value<std::string>())
-            ("log", "Set log file path", cxxopts::value<std::string>())
-            ("cmo", "Set cmo file path", cxxopts::value<std::string>())
-            ("root-path", "Set root path", cxxopts::value<std::string>())
-            ("plugins-path", "Set plugins path", cxxopts::value<std::string>())
-            ("render-engines-path", "Set render engines path", cxxopts::value<std::string>())
-            ("managers-path", "Set managers path", cxxopts::value<std::string>())
-            ("building-blocks-path", "Set building blocks path", cxxopts::value<std::string>())
-            ("sounds-path", "Set sounds path", cxxopts::value<std::string>())
-            ("textures-path", "Set textures path", cxxopts::value<std::string>())
-            ("data-path", "Set data path", cxxopts::value<std::string>())
-            ("scripts-path", "Set scripts path", cxxopts::value<std::string>())
-            ("v,version", "Print version")
-            ("h,help", "Print usage");
-}
-
-void LoadGameConfigFromCommandLine(BpGameConfig *config, const cxxopts::ParseResult &result) {
-    auto *cfg = bpGameConfigGet(config);
-    if (!cfg)
+static void ParseConfigsFromCmdline(CmdlineParser &parser, BpGameConfig *config) {
+    if (!config)
         return;
 
-    if (result.contains("verbose")) {
-        auto *entry = bpConfigGetEntry(cfg, "Verbose", "Startup");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["verbose"].as<bool>());
-    }
-    if (result.contains("manual-setup")) {
-        auto *entry = bpConfigGetEntry(cfg, "ManualSetup", "Startup");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["manual-setup"].as<bool>());
-    }
-    if (result.contains("load-required-managers")) {
-        auto *entry = bpConfigGetEntry(cfg, "LoadAllManagers", "Startup");
-        if (entry)
-            bpConfigEntrySetBool(entry, !result["load-required-managers"].as<bool>());
-    }
-    if (result.contains("load-required-building-blocks")) {
-        auto *entry = bpConfigGetEntry(cfg, "LoadAllBuildingBlocks", "Startup");
-        if (entry)
-            bpConfigEntrySetBool(entry, !result["load-required-building-blocks"].as<bool>());
-    }
-    if (result.contains("load-required-plugins")) {
-        auto *entry = bpConfigGetEntry(cfg, "LoadAllPlugins", "Startup");
-        if (entry)
-            bpConfigEntrySetBool(entry, !result["load-required-plugins"].as<bool>());
-    }
-    if (result.contains("video-driver")) {
-        auto *entry = bpConfigGetEntry(cfg, "VideoDriver", "Graphics");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["video-driver"].as<int>());
-    }
-    if (result.contains("width")) {
-        auto *entry = bpConfigGetEntry(cfg, "Width", "Graphics");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["width"].as<int>());
-    }
-    if (result.contains("height")) {
-        auto *entry = bpConfigGetEntry(cfg, "Height", "Graphics");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["height"].as<int>());
-    }
-    if (result.contains("bpp")) {
-        auto *entry = bpConfigGetEntry(cfg, "BitsPerPixel", "Graphics");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["bpp"].as<int>());
-    }
-    if (result.contains("fullscreen")) {
-        auto *entry = bpConfigGetEntry(cfg, "Fullscreen", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["fullscreen"].as<bool>());
-    }
-    if (result.contains("disable-perspective-correction")) {
-        auto *entry = bpConfigGetEntry(cfg, "DisablePerspectiveCorrection", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["disable-perspective-correction"].as<bool>());
-    }
-    if (result.contains("force-linear-fog")) {
-        auto *entry = bpConfigGetEntry(cfg, "ForceLinearFog", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["force-linear-fog"].as<bool>());
-    }
-    if (result.contains("force-software")) {
-        auto *entry = bpConfigGetEntry(cfg, "ForceSoftware", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["force-software"].as<bool>());
-    }
-    if (result.contains("disable-filter")) {
-        auto *entry = bpConfigGetEntry(cfg, "DisableFilter", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["disable-filter"].as<bool>());
-    }
-    if (result.contains("ensure-vertex-shader")) {
-        auto *entry = bpConfigGetEntry(cfg, "EnsureVertexShader", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["ensure-vertex-shader"].as<bool>());
-    }
-    if (result.contains("use-index-buffers")) {
-        auto *entry = bpConfigGetEntry(cfg, "UseIndexBuffers", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["use-index-buffers"].as<bool>());
-    }
-    if (result.contains("disable-dithering")) {
-        auto *entry = bpConfigGetEntry(cfg, "DisableDithering", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["disable-dithering"].as<bool>());
-    }
-    if (result.contains("antialias")) {
-        auto *entry = bpConfigGetEntry(cfg, "Antialias", "Graphics");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["antialias"].as<int>());
-    }
-    if (result.contains("disable-mipmap")) {
-        auto *entry = bpConfigGetEntry(cfg, "DisableMipmap", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["disable-mipmap"].as<bool>());
-    }
-    if (result.contains("disable-specular")) {
-        auto *entry = bpConfigGetEntry(cfg, "DisableSpecular", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["disable-specular"].as<bool>());
-    }
-    if (result.contains("enable-screen-dump")) {
-        auto *entry = bpConfigGetEntry(cfg, "EnableScreenDump", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["enable-screen-dump"].as<bool>());
-    }
-    if (result.contains("enable-debug-mode")) {
-        auto *entry = bpConfigGetEntry(cfg, "EnableDebugMode", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["enable-debug-mode"].as<bool>());
-    }
-    if (result.contains("vertex-cache")) {
-        auto *entry = bpConfigGetEntry(cfg, "VertexCache", "Graphics");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["vertex-cache"].as<int>());
-    }
-    if (result.contains("disable-texture-cache-management")) {
-        auto *entry = bpConfigGetEntry(cfg, "TextureCacheManagement", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, !result["disable-texture-cache-management"].as<bool>());
-    }
-    if (result.contains("disable-sort-transparent-objects")) {
-        auto *entry = bpConfigGetEntry(cfg, "SortTransparentObjects", "Graphics");
-        if (entry)
-            bpConfigEntrySetBool(entry, !result["disable-sort-transparent-objects"].as<bool>());
-    }
-    if (result.contains("texture-video-format")) {
-        const auto &format = result["texture-video-format"].as<std::string>();
-        auto *entry = bpConfigGetEntry(cfg, "TextureVideoFormat", "Graphics");
-        if (entry)
-            bpConfigEntrySetString(entry, format.c_str());
-    }
-    if (result.contains("sprite-video-format")) {
-        const auto &format = result["sprite-video-format"].as<std::string>();
-        auto *entry = bpConfigGetEntry(cfg, "SpriteVideoFormat", "Graphics");
-        if (entry)
-            bpConfigEntrySetString(entry, format.c_str());
-    }
-    if (result.contains("child-window-rendering")) {
-        auto *entry = bpConfigGetEntry(cfg, "ChildWindowRendering", "Window");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["child-window-rendering"].as<bool>());
-    }
-    if (result.contains("borderless")) {
-        auto *entry = bpConfigGetEntry(cfg, "Borderless", "Window");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["borderless"].as<bool>());
-    }
-    if (result.contains("clip-cursor")) {
-        auto *entry = bpConfigGetEntry(cfg, "ClipCursor", "Window");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["clip-cursor"].as<bool>());
-    }
-    if (result.contains("always-handle-input")) {
-        auto *entry = bpConfigGetEntry(cfg, "AlwaysHandleInput", "Window");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["always-handle-input"].as<bool>());
-    }
-    if (result.contains("pause-on-deactivated")) {
-        auto *entry = bpConfigGetEntry(cfg, "PauseOnDeactivated", "Window");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["pause-on-deactivated"].as<bool>());
-    }
-    if (result.contains("position-x")) {
-        auto *entry = bpConfigGetEntry(cfg, "X", "Window");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["position-x"].as<int>());
-    }
-    if (result.contains("position-y")) {
-        auto *entry = bpConfigGetEntry(cfg, "Y", "Window");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["position-y"].as<int>());
-    }
-    if (result.contains("disable-hotfix")) {
-        auto *entry = bpConfigGetEntry(cfg, "ApplyHotfix", "Game");
-        if (entry)
-            bpConfigEntrySetBool(entry, !result["disable-hotfix"].as<bool>());
-    }
-    if (result.contains("lang")) {
-        auto *entry = bpConfigGetEntry(cfg, "LangId", "Game");
-        if (entry)
-            bpConfigEntrySetInt32(entry, result["lang"].as<int>());
-    }
-    if (result.contains("skip-opening")) {
-        auto *entry = bpConfigGetEntry(cfg, "SkipOpening", "Game");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["skip-opening"].as<bool>());
-    }
-    if (result.contains("unlock-framerate")) {
-        auto *entry = bpConfigGetEntry(cfg, "UnlockFramerate", "Game");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["unlock-framerate"].as<bool>());
-    }
-    if (result.contains("unlock-widescreen")) {
-        auto *entry = bpConfigGetEntry(cfg, "UnlockWidescreen", "Game");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["unlock-widescreen"].as<bool>());
-    }
-    if (result.contains("unlock-high-resolution")) {
-        auto *entry = bpConfigGetEntry(cfg, "UnlockHighResolution", "Game");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["unlock-high-resolution"].as<bool>());
-    }
-    if (result.contains("debug")) {
-        auto *entry = bpConfigGetEntry(cfg, "Debug", "Game");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["debug"].as<bool>());
-    }
-    if (result.contains("rookie")) {
-        auto *entry = bpConfigGetEntry(cfg, "Rookie", "Game");
-        if (entry)
-            bpConfigEntrySetBool(entry, result["rookie"].as<bool>());
-    }
-}
+    CmdlineArg arg;
+    long value = 0;
+    XString str;
 
-void LoadGamePathsFromCommandLine(BpGameConfig *config, const cxxopts::ParseResult &result) {
-    if (result.contains("config"))
-        bpSetGamePath(config, BP_PATH_CONFIG, result["config"].as<std::string>().c_str());
-    if (result.contains("log"))
-        bpSetGamePath(config, BP_PATH_LOG, result["log"].as<std::string>().c_str());
-    if (result.contains("cmo"))
-        bpSetGamePath(config, BP_PATH_CMO, result["cmo"].as<std::string>().c_str());
-    if (result.contains("root-path"))
-        bpSetGamePath(config, BP_PATH_ROOT, result["root-path"].as<std::string>().c_str());
-    if (result.contains("plugins-path"))
-        bpSetGamePath(config, BP_PATH_PLUGINS, result["plugins-path"].as<std::string>().c_str());
-    if (result.contains("render-engines-path"))
-        bpSetGamePath(config, BP_PATH_RENDER_ENGINES, result["render-engines-path"].as<std::string>().c_str());
-    if (result.contains("managers-path"))
-        bpSetGamePath(config, BP_PATH_MANAGERS, result["managers-path"].as<std::string>().c_str());
-    if (result.contains("building-blocks-path"))
-        bpSetGamePath(config, BP_PATH_BUILDING_BLOCKS, result["building-blocks-path"].as<std::string>().c_str());
-    if (result.contains("sounds-path"))
-        bpSetGamePath(config, BP_PATH_SOUNDS, result["sounds-path"].as<std::string>().c_str());
-    if (result.contains("textures-path"))
-        bpSetGamePath(config, BP_PATH_TEXTURES, result["textures-path"].as<std::string>().c_str());
-    if (result.contains("data-path"))
-        bpSetGamePath(config, BP_PATH_DATA, result["data-path"].as<std::string>().c_str());
-    if (result.contains("scripts-path"))
-        bpSetGamePath(config, BP_PATH_SCRIPTS, result["scripts-path"].as<std::string>().c_str());
-}
-
-static void LoadGamePaths(BpGameConfig *config, const cxxopts::ParseResult &result) {
-    LoadGamePathsFromCommandLine(config, result);
-
-    // Set default value for the path if the path is not set or the path does not exist
-    for (int p = BP_PATH_PLUGINS; p < BP_PATH_CATEGORY_COUNT; ++p) {
-        if (!bpHasGamePath(config, (BpPathCategory) p)) {
-            bpResetGamePath(config, (BpPathCategory) p);
-        } else if (!bpDirectoryExists(bpGetGamePath(config, (BpPathCategory) p))) {
-            bpLogWarn("%s does not exist, resetting to default path", bpGetGamePath(config, (BpPathCategory) p));
-            bpResetGamePath(config, (BpPathCategory) p);
+    while (!parser.Done()) {
+        if (parser.Next(arg, "--verbose", '\0')) {
+            BpValue *verbose = bpGameConfigGetValue(config, BP_CONFIG_VERBOSE);
+            if (verbose)
+                *verbose = true;
+            continue;
         }
+        if (parser.Next(arg, "--manual-setup", 'm')) {
+            BpValue *manualSetup = bpGameConfigGetValue(config, BP_CONFIG_MANUAL_SETUP);
+            if (manualSetup)
+                *manualSetup = true;
+            continue;
+        }
+        if (parser.Next(arg, "--load-required-managers", '\0')) {
+            BpValue *loadAllManagers = bpGameConfigGetValue(config, BP_CONFIG_LOAD_ALL_MANAGERS);
+            if (loadAllManagers)
+                *loadAllManagers = false;
+            continue;
+        }
+        if (parser.Next(arg, "--load-required-building-blocks", '\0')) {
+            BpValue *loadAllBuildingBlocks = bpGameConfigGetValue(config, BP_CONFIG_LOAD_ALL_BUILDING_BLOCKS);
+            if (loadAllBuildingBlocks)
+                *loadAllBuildingBlocks = false;
+            continue;
+        }
+        if (parser.Next(arg, "--load-required-plugins", '\0')) {
+            BpValue *loadAllPlugins = bpGameConfigGetValue(config, BP_CONFIG_LOAD_ALL_PLUGINS);
+            if (loadAllPlugins)
+                *loadAllPlugins = false;
+            continue;
+        }
+        if (parser.Next(arg, "--video-driver", 'v', 1)) {
+            if (arg.GetValue(0, value)) {
+                BpValue *driver = bpGameConfigGetValue(config, BP_CONFIG_DRIVER);
+                if (driver)
+                    *driver = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--bpp", 'b', 1)) {
+            if (arg.GetValue(0, value)) {
+                BpValue *bpp = bpGameConfigGetValue(config, BP_CONFIG_BPP);
+                if (bpp)
+                    *bpp = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--width", 'w', 1)) {
+            if (arg.GetValue(0, value)) {
+                BpValue *width = bpGameConfigGetValue(config, BP_CONFIG_WIDTH);
+                if (width)
+                    *width = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--height", 'h', 1)) {
+            if (arg.GetValue(0, value)) {
+                BpValue *height = bpGameConfigGetValue(config, BP_CONFIG_HEIGHT);
+                if (height)
+                    *height = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--fullscreen", 'f')) {
+            BpValue *fullscreen = bpGameConfigGetValue(config, BP_CONFIG_FULLSCREEN);
+            if (fullscreen)
+                *fullscreen = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable--perspective-correction", '\0')) {
+            BpValue *disablePerspectiveCorrection = bpGameConfigGetValue(
+                config, BP_CONFIG_DISABLE_PERSPECTIVE_CORRECTION);
+            if (disablePerspectiveCorrection)
+                *disablePerspectiveCorrection = true;
+            continue;
+        }
+        if (parser.Next(arg, "--force-linear-fog", '\0')) {
+            BpValue *forceLinearFog = bpGameConfigGetValue(config, BP_CONFIG_FORCE_LINEAR_FOG);
+            if (forceLinearFog)
+                *forceLinearFog = true;
+            continue;
+        }
+        if (parser.Next(arg, "--force-software", '\0')) {
+            BpValue *forceSoftware = bpGameConfigGetValue(config, BP_CONFIG_FORCE_SOFTWARE);
+            if (forceSoftware)
+                *forceSoftware = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-filter", '\0')) {
+            BpValue *disableFilter = bpGameConfigGetValue(config, BP_CONFIG_DISABLE_FILTER);
+            if (disableFilter)
+                *disableFilter = true;
+            continue;
+        }
+        if (parser.Next(arg, "--ensure-vertex-shader", '\0')) {
+            BpValue *ensureVertexShader = bpGameConfigGetValue(config, BP_CONFIG_ENSURE_VERTEX_SHADER);
+            if (ensureVertexShader)
+                *ensureVertexShader = true;
+            continue;
+        }
+        if (parser.Next(arg, "--use-index-buffers", '\0')) {
+            BpValue *useIndexBuffers = bpGameConfigGetValue(config, BP_CONFIG_USE_INDEX_BUFFERS);
+            if (useIndexBuffers)
+                *useIndexBuffers = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-dithering", '\0')) {
+            BpValue *disableDithering = bpGameConfigGetValue(config, BP_CONFIG_DISABLE_DITHERING);
+            if (disableDithering)
+                *disableDithering = true;
+            continue;
+        }
+        if (parser.Next(arg, "--antialias", '\0', 1)) {
+            if (arg.GetValue(0, value)) {
+                BpValue *antialias = bpGameConfigGetValue(config, BP_CONFIG_ANTIALIAS);
+                if (antialias)
+                    *antialias = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--disable-mipmap", '\0')) {
+            BpValue *disableMipmap = bpGameConfigGetValue(config, BP_CONFIG_DISABLE_MIPMAP);
+            if (disableMipmap)
+                *disableMipmap = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-specular", '\0')) {
+            BpValue *disableSpecular = bpGameConfigGetValue(config, BP_CONFIG_DISABLE_SPECULAR);
+            if (disableSpecular)
+                *disableSpecular = true;
+            continue;
+        }
+        if (parser.Next(arg, "--enable-screen-dump", '\0')) {
+            BpValue *enableScreenDump = bpGameConfigGetValue(config, BP_CONFIG_ENABLE_SCREEN_DUMP);
+            if (enableScreenDump)
+                *enableScreenDump = true;
+            continue;
+        }
+        if (parser.Next(arg, "--enable-debug-mode", '\0')) {
+            BpValue *enableDebugMode = bpGameConfigGetValue(config, BP_CONFIG_ENABLE_DEBUG_MODE);
+            if (enableDebugMode)
+                *enableDebugMode = true;
+            continue;
+        }
+        if (parser.Next(arg, "--vertex-cache", '\0', 1)) {
+            if (arg.GetValue(0, value)) {
+                BpValue *vertexCache = bpGameConfigGetValue(config, BP_CONFIG_VERTEX_CACHE);
+                if (vertexCache)
+                    *vertexCache = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--disable-texture-cache-management", 's')) {
+            BpValue *disableTextureCacheManagement = bpGameConfigGetValue(config, BP_CONFIG_TEXTURE_CACHE_MANAGEMENT);
+            if (disableTextureCacheManagement)
+                *disableTextureCacheManagement = false;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-sort-transparent-objects", 's')) {
+            BpValue *disableSortTransparentObjects = bpGameConfigGetValue(config, BP_CONFIG_SORT_TRANSPARENT_OBJECTS);
+            if (disableSortTransparentObjects)
+                *disableSortTransparentObjects = false;
+            continue;
+        }
+        if (parser.Next(arg, "--texture-video-format", '\0', 1)) {
+            if (arg.GetValue(0, str)) {
+                BpValue *textureVideoFormat = bpGameConfigGetValue(config, BP_CONFIG_TEXTURE_VIDEO_FORMAT);
+                if (textureVideoFormat)
+                    *textureVideoFormat = bpString2PixelFormat(str.CStr());
+            }
+            break;
+        }
+        if (parser.Next(arg, "--sprite-video-format", '\0', 1)) {
+            if (arg.GetValue(0, str)) {
+                BpValue *spriteVideoFormat = bpGameConfigGetValue(config, BP_CONFIG_SPRITE_VIDEO_FORMAT);
+                if (spriteVideoFormat)
+                    *spriteVideoFormat = bpString2PixelFormat(str.CStr());
+            }
+            break;
+        }
+        if (parser.Next(arg, "--child-window-rendering", 's')) {
+            BpValue *childWindowRendering = bpGameConfigGetValue(config, BP_CONFIG_CHILD_WINDOW_RENDERING);
+            if (childWindowRendering)
+                *childWindowRendering = true;
+            continue;
+        }
+        if (parser.Next(arg, "--borderless", 'c')) {
+            BpValue *borderless = bpGameConfigGetValue(config, BP_CONFIG_BORDERLESS);
+            if (borderless)
+                *borderless = true;
+            continue;
+        }
+        if (parser.Next(arg, "--clip-cursor", '\0')) {
+            BpValue *clipCursor = bpGameConfigGetValue(config, BP_CONFIG_CLIP_CURSOR);
+            if (clipCursor)
+                *clipCursor = true;
+            continue;
+        }
+        if (parser.Next(arg, "--always-handle-input", '\0')) {
+            BpValue *alwaysHandleInput = bpGameConfigGetValue(config, BP_CONFIG_ALWAYS_HANDLE_INPUT);
+            if (alwaysHandleInput)
+                *alwaysHandleInput = true;
+            continue;
+        }
+        if (parser.Next(arg, "--pause-on-deactivated", 'p')) {
+            BpValue *pauseOnDeactivated = bpGameConfigGetValue(config, BP_CONFIG_PAUSE_ON_DEACTIVATED);
+            if (pauseOnDeactivated)
+                *pauseOnDeactivated = true;
+            continue;
+        }
+        if (parser.Next(arg, "--position-x", 'x', 1)) {
+            if (arg.GetValue(0, value)) {
+                BpValue *posX = bpGameConfigGetValue(config, BP_CONFIG_X);
+                if (posX)
+                    *posX = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--position-y", 'y', 1)) {
+            if (arg.GetValue(0, value)) {
+                BpValue *posY = bpGameConfigGetValue(config, BP_CONFIG_Y);
+                if (posY)
+                    *posY = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--lang", 'l')) {
+            if (arg.GetValue(0, value)) {
+                BpValue *langId = bpGameConfigGetValue(config, BP_CONFIG_LANG_ID);
+                if (langId)
+                    *langId = value;
+            }
+            continue;
+        }
+        if (parser.Next(arg, "--skip-opening", '\0')) {
+            BpValue *skipOpening = bpGameConfigGetValue(config, BP_CONFIG_SKIP_OPENING);
+            if (skipOpening)
+                *skipOpening = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-hotfix", '\0')) {
+            BpValue *applyHotfix = bpGameConfigGetValue(config, BP_CONFIG_APPLY_HOTFIX);
+            if (applyHotfix)
+                *applyHotfix = false;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-framerate", 'u')) {
+            BpValue *unlockFramerate = bpGameConfigGetValue(config, BP_CONFIG_UNLOCK_FRAMERATE);
+            if (unlockFramerate)
+                *unlockFramerate = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-widescreen", '\0')) {
+            BpValue *unlockWidescreen = bpGameConfigGetValue(config, BP_CONFIG_UNLOCK_WIDESCREEN);
+            if (unlockWidescreen)
+                *unlockWidescreen = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-high-resolution", '\0')) {
+            BpValue *unlockHighResolution = bpGameConfigGetValue(config, BP_CONFIG_UNLOCK_HIGH_RESOLUTION);
+            if (unlockHighResolution)
+                *unlockHighResolution = true;
+            continue;
+        }
+        if (parser.Next(arg, "--debug", 'd')) {
+            BpValue *debug = bpGameConfigGetValue(config, BP_CONFIG_DEBUG);
+            if (debug)
+                *debug = true;
+            continue;
+        }
+        if (parser.Next(arg, "--rookie", 'r')) {
+            BpValue *rookie = bpGameConfigGetValue(config, BP_CONFIG_ROOKIE);
+            if (rookie)
+                *rookie = true;
+            continue;
+        }
+        parser.Skip();
     }
+    parser.Reset();
 }
 
-void InitLogger(BpLogger *logger, const BpGameConfig *config) {
+static void ParsePathsFromCmdline(CmdlineParser &parser, BpGameConfig *config) {
+    if (!config)
+        return;
+
+    CmdlineArg arg;
+    XString path;
+    while (!parser.Done()) {
+        if (parser.Next(arg, "--config", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_CONFIG, path.CStr());
+            break;
+        }
+        if (parser.Next(arg, "--log", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_LOG, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--cmo", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_CMO, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--root-path", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_ROOT, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--plugin-path", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_PLUGINS, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--render-engine-path", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_RENDER_ENGINES, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--manager-path", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_MANAGERS, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--building-block-path", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_BUILDING_BLOCKS, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--sound-path", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_SOUNDS, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--bitmap-path", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_TEXTURES, path.CStr());
+            continue;
+        }
+        if (parser.Next(arg, "--data-path", '\0', 1)) {
+            if (arg.GetValue(0, path))
+                bpSetGamePath(config, BP_PATH_DATA, path.CStr());
+            continue;
+        }
+        parser.Skip();
+    }
+    parser.Reset();
+}
+
+void InitLogger(BpLogger *logger, BpGameConfig *config) {
     if (!logger)
         return;
 
-    BpConfig *cfg = bpGameConfigGet(config);
-    if (!cfg)
-        return;
-
-    auto *verboseEntry = bpConfigGetEntry(cfg, "Verbose", "Startup");
-    if (verboseEntry && bpConfigEntryGetBool(verboseEntry))
+    BpValue *verbose = bpGameConfigGetValue(config, BP_CONFIG_VERBOSE);
+    if (verbose && bpValueGetBool(verbose)) {
         bpLoggerSetLevel(logger, BP_LOG_DEBUG);
+    }
 
     bool overwrite = true;
-
-    auto *logModeEntry = bpConfigGetEntry(cfg, "LogMode", "Startup");
-    if (logModeEntry && bpConfigEntryGetInt32(logModeEntry) == BP_LOG_MODE_APPEND)
-        overwrite = false;
+    BpValue *logMode = bpGameConfigGetValue(config, BP_CONFIG_LOG_MODE);
+    if (logMode)
+        overwrite = bpValueGetInt32(logMode) == BP_LOG_MODE_OVERWRITE;
 
     g_FileLogger.Attach(logger, bpGetGamePath(config, BP_PATH_LOG), overwrite);
 }
