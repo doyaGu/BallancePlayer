@@ -30,7 +30,6 @@ struct BpLogger {
     const char *GetName() const { return m_Name.c_str(); }
 
     BpLogLevel GetLevel() const { return m_Level; }
-    const char *GetLevelString(BpLogLevel level) const;
 
     void SetLevel(BpLogLevel level) {
         if (level >= BP_LOG_TRACE && level <= BP_LOG_OFF)
@@ -43,8 +42,8 @@ struct BpLogger {
     }
 
     bool AddCallback(BpLogCallback callback, void *userdata, BpLogLevel level);
-    void ClearCallbacks() { m_Callbacks.clear(); }
-    size_t GetCallbackCount() const { return m_Callbacks.size(); }
+    void ClearCallbacks();
+    size_t GetCallbackCount() const;
 
     void Log(BpLogLevel level, const char *format, va_list args);
 
@@ -90,6 +89,8 @@ struct BpLogger {
         va_end(args);
     }
 
+    static const char *GetLevelString(BpLogLevel level);
+
 private:
     struct Callback {
         BpLogCallback callback;
@@ -120,7 +121,7 @@ private:
     static void InitLogInfo(BpLogInfo *info, void *userdata);
 
     mutable RefCount m_RefCount;
-    std::mutex m_Mutex;
+    mutable std::mutex m_Mutex;
 
     std::string m_Name;
     BpLogLevel m_Level;

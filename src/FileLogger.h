@@ -37,7 +37,7 @@ public:
             buf[strftime(buf, sizeof(buf), "%H:%M:%S", info->time)] = '\0';
 
             FILE *fp = (FILE *) info->userdata;
-            fprintf(fp, "[%s] [%s/%s]: ", buf, bpLoggerGetName(info->self), bpLoggerGetLevelString(info->self, info->level));
+            fprintf(fp, "[%s] [%s/%s]: ", buf, bpLoggerGetName(info->self), bpGetLogLevelString(info->level));
 
             vfprintf(fp, info->format, info->args);
             fprintf(fp, "\n");

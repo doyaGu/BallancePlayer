@@ -15,7 +15,7 @@ BpLogger *bpGetDefaultLogger() {
 }
 
 void bpSetDefaultBpLogger(BpLogger *logger) {
-    BpLogger::SetDefault((BpLogger *) logger);
+    BpLogger::SetDefault(logger);
 }
 
 int bpLoggerAddRef(BpLogger *logger) {
@@ -42,10 +42,8 @@ BpLogLevel bpLoggerGetLevel(BpLogger *logger) {
     return logger->GetLevel();
 }
 
-const char *bpLoggerGetLevelString(BpLogger *logger, BpLogLevel level) {
-    if (!logger)
-        return nullptr;
-    return logger->GetLevelString(level);
+const char *bpGetLogLevelString(BpLogLevel level) {
+    return BpLogger::GetLevelString(level);
 }
 
 void bpLoggerSetLevel(BpLogger *logger, BpLogLevel level) {
@@ -264,18 +262,12 @@ int BpLogger::AddRef() const {
 }
 
 int BpLogger::Release() const {
-    int r = m_RefCount.Release();
+    const int r = m_RefCount.Release();
     if (r == 0) {
         std::atomic_thread_fence(std::memory_order_acquire);
         delete const_cast<BpLogger *>(this);
     }
     return r;
-}
-
-const char *BpLogger::GetLevelString(BpLogLevel level) const {
-    if (level < BP_LOG_TRACE || level > BP_LOG_FATAL)
-        return nullptr;
-    return g_LevelStrings[level];
 }
 
 bool BpLogger::AddCallback(BpLogCallback callback, void *userdata, BpLogLevel level) {
@@ -291,6 +283,16 @@ bool BpLogger::AddCallback(BpLogCallback callback, void *userdata, BpLogLevel le
 
     m_Callbacks.emplace_back(cb);
     return true;
+}
+
+void BpLogger::ClearCallbacks() {
+    std::lock_guard<std::mutex> lock{m_Mutex};
+    m_Callbacks.clear();
+}
+
+size_t BpLogger::GetCallbackCount() const {
+    std::lock_guard<std::mutex> lock{m_Mutex};
+    return m_Callbacks.size();
 }
 
 void BpLogger::Log(BpLogLevel level, const char *format, va_list args) {
@@ -311,6 +313,12 @@ void BpLogger::Log(BpLogLevel level, const char *format, va_list args) {
     }
 
     Unlock();
+}
+
+const char *BpLogger::GetLevelString(BpLogLevel level) {
+    if (level < BP_LOG_TRACE || level > BP_LOG_FATAL)
+        return nullptr;
+    return g_LevelStrings[level];
 }
 
 void BpLogger::InitLogInfo(BpLogInfo *info, void *userdata) {

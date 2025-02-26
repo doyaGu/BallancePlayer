@@ -104,11 +104,10 @@ BP_EXPORT BpLogLevel bpLoggerGetLevel(BpLogger *logger);
 
 /**
  * @brief Get the string representation of a log level.
- * @param logger The logger.
  * @param level The log level to get the string representation of.
  * @return The string representation of the log level.
  */
-BP_EXPORT const char *bpLoggerGetLevelString(BpLogger *logger, BpLogLevel level);
+BP_EXPORT const char *bpGetLogLevelString(BpLogLevel level);
 
 /**
  * @brief Set the log level of the logger.
