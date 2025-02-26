@@ -1,6 +1,7 @@
 #include "bp/Utils.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -33,6 +34,12 @@ char *bpCopyBuffer(const char *buffer, size_t size) {
 void bpDestroyBuffer(char *buffer) {
     if (buffer)
         delete[] buffer;
+}
+
+bool bpGetCurrentDirectory(char *buffer, size_t size) {
+    if (!buffer || size == 0)
+        return false;
+    return ::GetCurrentDirectoryA(size, buffer) != 0;
 }
 
 bool bpFileOrDirectoryExists(const char *file) {
@@ -241,7 +248,7 @@ int bpString2PixelFormat(const char *str) {
 
     size_t max = strlen(str);
 
-    VX_PIXELFORMAT format = UNKNOWN_PF;
+    int format = UNKNOWN_PF;
     if (strncmp(str, "_32_ARGB8888", max) == 0)
         format = _32_ARGB8888;
     else if (strncmp(str, "_32_RGB888", max) == 0)
@@ -304,110 +311,280 @@ int bpString2PixelFormat(const char *str) {
         format = _4_ABGR8888_CLUT;
     else if (strncmp(str, "_4_ARGB8888_CLUT", max) == 0)
         format = _4_ARGB8888_CLUT;
-
     return format;
 }
 
-const char *PixelFormat2String(int format) {
+const char *bpPixelFormat2String(int format) {
     const char *str;
     switch (format) {
-        case _32_ARGB8888:
-            str = "_32_ARGB8888";
-            break;
-        case _32_RGB888:
-            str = "_32_RGB888";
-            break;
-        case _24_RGB888:
-            str = "_24_RGB888";
-            break;
-        case _16_RGB565:
-            str = "_16_RGB565";
-            break;
-        case _16_RGB555:
-            str = "_16_RGB555";
-            break;
-        case _16_ARGB1555:
-            str = "_16_ARGB1555";
-            break;
-        case _16_ARGB4444:
-            str = "_16_ARGB4444";
-            break;
-        case _8_RGB332:
-            str = "_8_RGB332";
-            break;
-        case _8_ARGB2222:
-            str = "_8_ARGB2222";
-            break;
-        case _32_ABGR8888:
-            str = "_32_ABGR8888";
-            break;
-        case _32_RGBA8888:
-            str = "_32_RGBA8888";
-            break;
-        case _32_BGRA8888:
-            str = "_32_BGRA8888";
-            break;
-        case _32_BGR888:
-            str = "_32_BGR888";
-            break;
-        case _24_BGR888:
-            str = "_24_BGR888";
-            break;
-        case _16_BGR565:
-            str = "_16_BGR565";
-            break;
-        case _16_BGR555:
-            str = "_16_BGR555";
-            break;
-        case _16_ABGR1555:
-            str = "_16_ABGR1555";
-            break;
-        case _16_ABGR4444:
-            str = "_16_ABGR4444";
-            break;
-        case _DXT1:
-            str = "_DXT1";
-            break;
-        case _DXT2:
-            str = "_DXT2";
-            break;
-        case _DXT3:
-            str = "_DXT3";
-            break;
-        case _DXT4:
-            str = "_DXT4";
-            break;
-        case _DXT5:
-            str = "_DXT5";
-            break;
-        case _16_V8U8:
-            str = "_16_V8U8";
-            break;
-        case _32_V16U16:
-            str = "_32_V16U16";
-            break;
-        case _16_L6V5U5:
-            str = "_16_L6V5U5";
-            break;
-        case _32_X8L8V8U8:
-            str = "_32_X8L8V8U8";
-            break;
-        case _8_ABGR8888_CLUT:
-            str = "_8_ABGR8888_CLUT";
-            break;
-        case _8_ARGB8888_CLUT:
-            str = "_8_ARGB8888_CLUT";
-            break;
-        case _4_ABGR8888_CLUT:
-            str = "_4_ABGR8888_CLUT";
-            break;
-        case _4_ARGB8888_CLUT:
-            str = "_4_ARGB8888_CLUT";
-            break;
-        default:
-            str = "UNKNOWN_PF";
-            break;
+    case _32_ARGB8888:
+        str = "_32_ARGB8888";
+        break;
+    case _32_RGB888:
+        str = "_32_RGB888";
+        break;
+    case _24_RGB888:
+        str = "_24_RGB888";
+        break;
+    case _16_RGB565:
+        str = "_16_RGB565";
+        break;
+    case _16_RGB555:
+        str = "_16_RGB555";
+        break;
+    case _16_ARGB1555:
+        str = "_16_ARGB1555";
+        break;
+    case _16_ARGB4444:
+        str = "_16_ARGB4444";
+        break;
+    case _8_RGB332:
+        str = "_8_RGB332";
+        break;
+    case _8_ARGB2222:
+        str = "_8_ARGB2222";
+        break;
+    case _32_ABGR8888:
+        str = "_32_ABGR8888";
+        break;
+    case _32_RGBA8888:
+        str = "_32_RGBA8888";
+        break;
+    case _32_BGRA8888:
+        str = "_32_BGRA8888";
+        break;
+    case _32_BGR888:
+        str = "_32_BGR888";
+        break;
+    case _24_BGR888:
+        str = "_24_BGR888";
+        break;
+    case _16_BGR565:
+        str = "_16_BGR565";
+        break;
+    case _16_BGR555:
+        str = "_16_BGR555";
+        break;
+    case _16_ABGR1555:
+        str = "_16_ABGR1555";
+        break;
+    case _16_ABGR4444:
+        str = "_16_ABGR4444";
+        break;
+    case _DXT1:
+        str = "_DXT1";
+        break;
+    case _DXT2:
+        str = "_DXT2";
+        break;
+    case _DXT3:
+        str = "_DXT3";
+        break;
+    case _DXT4:
+        str = "_DXT4";
+        break;
+    case _DXT5:
+        str = "_DXT5";
+        break;
+    case _16_V8U8:
+        str = "_16_V8U8";
+        break;
+    case _32_V16U16:
+        str = "_32_V16U16";
+        break;
+    case _16_L6V5U5:
+        str = "_16_L6V5U5";
+        break;
+    case _32_X8L8V8U8:
+        str = "_32_X8L8V8U8";
+        break;
+    case _8_ABGR8888_CLUT:
+        str = "_8_ABGR8888_CLUT";
+        break;
+    case _8_ARGB8888_CLUT:
+        str = "_8_ARGB8888_CLUT";
+        break;
+    case _4_ABGR8888_CLUT:
+        str = "_4_ABGR8888_CLUT";
+        break;
+    case _4_ARGB8888_CLUT:
+        str = "_4_ARGB8888_CLUT";
+        break;
+    default:
+        str = "UNKNOWN_PF";
+        break;
     }
 
     return str;
+}
+
+bool bpIniGetString(const char *section, const char *name, char *str, size_t size, const char *filename) {
+    if (!section || !name || !str || !filename || size <= 0) {
+        return false;
+    }
+
+    DWORD result = ::GetPrivateProfileStringA(section, name, "", str, size, filename);
+    return (result > 0 || GetLastError() == ERROR_SUCCESS);
+}
+
+bool bpIniSetString(const char *section, const char *name, const char *str, const char *filename) {
+    if (!section || !name || !str || !filename) {
+        return false;
+    }
+
+    return ::WritePrivateProfileStringA(section, name, str, filename) != 0;
+}
+
+bool bpIniGetBoolean(const char *section, const char *name, bool *value, const char *filename) {
+    if (!section || !name || !filename) {
+        return false;
+    }
+
+    const DWORD val = ::GetPrivateProfileIntA(section, name, -1, filename);
+    if (val == -1 && GetLastError() != ERROR_SUCCESS) {
+        return false;
+    }
+
+    char buf[8] = {0};
+    if (bpIniGetString(section, name, buf, sizeof(buf), filename)) {
+        if (_stricmp(buf, "true") == 0 || _stricmp(buf, "yes") == 0 || _stricmp(buf, "on") == 0) {
+            if (value)
+                *value = true;
+            return true;
+        }
+        if (_stricmp(buf, "false") == 0 || _stricmp(buf, "no") == 0 || _stricmp(buf, "off") == 0) {
+            if (value)
+                *value = false;
+            return true;
+        }
+    }
+
+    if (value)
+        *value = (val == 1);
+    return true;
+}
+
+bool bpIniSetBoolean(const char *section, const char *name, bool value, const char *filename) {
+    if (!section || !name || !filename) {
+        return false;
+    }
+
+    const char *buf = (value) ? "1" : "0";
+    return bpIniSetString(section, name, buf, filename);
+}
+
+bool bpIniGetInteger(const char *section, const char *name, int *value, const char *filename) {
+    if (!section || !name || !filename) {
+        return false;
+    }
+
+    char buf[512] = {0};
+    if (!bpIniGetString(section, name, buf, sizeof(buf), filename) || buf[0] == '\0') {
+        return false;
+    }
+
+    char *endptr = nullptr;
+    errno = 0;
+    long val = strtol(buf, &endptr, 10);
+
+    // Check for conversion errors
+    if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) ||
+        (errno != 0 && val == 0) ||
+        (endptr == buf) ||
+        (*endptr != '\0')) {
+        return false;
+    }
+
+    if (value)
+        *value = static_cast<int>(val);
+    return true;
+}
+
+bool bpIniSetInteger(const char *section, const char *name, int value, const char *filename) {
+    if (!section || !name || !filename) {
+        return false;
+    }
+
+    char buf[64] = {0};
+    int result = snprintf(buf, sizeof(buf), "%d", value);
+    if (result < 0 || result >= static_cast<int>(sizeof(buf))) {
+        return false;
+    }
+
+    return bpIniSetString(section, name, buf, filename);
+}
+
+bool bpIniGetFloat(const char *section, const char *name, float *value, const char *filename) {
+    if (!section || !name || !filename) {
+        return false;
+    }
+
+    char buf[512] = {0};
+    if (!bpIniGetString(section, name, buf, sizeof(buf), filename) || buf[0] == '\0') {
+        return false;
+    }
+
+    char *endptr = nullptr;
+    errno = 0;
+    float val = strtof(buf, &endptr);
+
+    // Check for conversion errors
+    if ((errno == ERANGE) ||
+        (errno != 0 && val == 0) ||
+        (endptr == buf) ||
+        (*endptr != '\0')) {
+        return false;
+    }
+
+    if (value)
+        *value = val;
+    return true;
+}
+
+bool bpIniSetFloat(const char *section, const char *name, float value, int precision, const char *filename) {
+    if (!section || !name || !filename || precision < 0 || precision > 20) {
+        return false;
+    }
+
+    char buf[64] = {0};
+    char format[16] = {0};
+
+    // Create format string with specified precision
+    snprintf(format, sizeof(format), "%%.%df", precision);
+
+    int result = snprintf(buf, sizeof(buf), format, value);
+    if (result < 0 || result >= static_cast<int>(sizeof(buf))) {
+        return false;
+    }
+
+    return bpIniSetString(section, name, buf, filename);
+}
+
+bool bpIniGetPixelFormat(const char *section, const char *name, int *value, const char *filename) {
+    if (!section || !name || !filename) {
+        return false;
+    }
+
+    char buf[32] = {0};
+    if (!bpIniGetString(section, name, buf, sizeof(buf), filename) || buf[0] == '\0') {
+        return false;
+    }
+
+    const int format = bpString2PixelFormat(buf);
+    if (value)
+        *value = format;
+    return true;
+}
+
+bool bpIniSetPixelFormat(const char *section, const char *name, int value, const char *filename) {
+    if (!section || !name || !filename) {
+        return false;
+    }
+
+    const char *formatStr = bpPixelFormat2String(value);
+    if (!formatStr) {
+        return false;
+    }
+
+    return bpIniSetString(section, name, formatStr, filename);
 }

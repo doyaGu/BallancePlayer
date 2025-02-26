@@ -26,6 +26,13 @@ BP_EXPORT char *bpCopyBuffer(const char *buffer, size_t size);
  */
 BP_EXPORT void bpDestroyBuffer(char *buffer);
 
+/** @brief Get the current working directory.
+ * @param buffer The buffer to store the current working directory.
+ * @param size The size of the buffer.
+ * @return True if the current working directory is successfully retrieved, false otherwise.
+ */
+BP_EXPORT bool bpGetCurrentDirectory(char *buffer, size_t size);
+
 /**
  * @brief Check if a file exists.
  * @param file The file to check.
@@ -147,6 +154,121 @@ BP_EXPORT int bpString2PixelFormat(const char *str);
  * @return The string representation of the pixel format.
  */
 BP_EXPORT const char *bpPixelFormat2String(int format);
+
+/**
+ * Retrieves a string value from an INI file.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param str Buffer to store the retrieved string
+ * @param size Size of the buffer
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+bool bpIniGetString(const char *section, const char *name, char *str, size_t size, const char *filename);
+
+/**
+ * Writes a string value to an INI file.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param str String value to write
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+bool bpIniSetString(const char *section, const char *name, const char *str, const char *filename);
+
+
+/**
+ * Retrieves a boolean value from an INI file.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param value Reference to store the boolean value
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+BP_EXPORT bool bpIniGetBoolean(const char *section, const char *name, bool *value, const char *filename);
+
+/**
+ * Writes a boolean value to an INI file.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param value Boolean value to write
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+BP_EXPORT bool bpIniSetBoolean(const char *section, const char *name, bool value, const char *filename);
+
+/**
+ * Retrieves an integer value from an INI file.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param value Reference to store the integer value
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+BP_EXPORT bool bpIniGetInteger(const char *section, const char *name, int *value, const char *filename);
+
+/**
+ * Writes an integer value to an INI file.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param value Integer value to write
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+BP_EXPORT bool bpIniSetInteger(const char *section, const char *name, int value, const char *filename);
+
+/**
+ * Retrieves a floating-point value from an INI file.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param value Reference to store the float value
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+bool bpIniGetFloat(const char *section, const char *name, float *value, const char *filename);
+
+/**
+ * Writes a floating-point value to an INI file.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param value Float value to write
+ * @param precision Number of decimal places (default: 6)
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+bool bpIniSetFloat(const char *section, const char *name, float value, int precision, const char *filename);
+
+/**
+ * Retrieves a pixel format value from an INI file.
+ * Assumes bpString2PixelFormat is defined elsewhere.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param value Reference to store the pixel format value
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+BP_EXPORT bool bpIniGetPixelFormat(const char *section, const char *name, int *value, const char *filename);
+
+/**
+ * Writes a pixel format value to an INI file.
+ * Assumes bpPixelFormat2String is defined elsewhere.
+ *
+ * @param section The section name in the INI file
+ * @param name The key name
+ * @param value Pixel format value to write
+ * @param filename Path to the INI file
+ * @return True if successful, false otherwise
+ */
+BP_EXPORT bool bpIniSetPixelFormat(const char *section, const char *name, int value, const char *filename);
 
 BP_END_CDECLS
 
