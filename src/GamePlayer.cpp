@@ -1453,7 +1453,7 @@ bool GamePlayer::GoFullscreen() {
         return false;
 
     m_GameConfig[BP_CONFIG_FULLSCREEN] = true;
-    if (m_RenderContext->GoFullScreen(m_GameConfig[BP_CONFIG_WIDTH].GetInt32(), m_GameConfig[BP_CONFIG_HEIGHT].GetInt32(), m_GameConfig[BP_CONFIG_BPP].GetInt32(), m_GameConfig[BP_CONFIG_SCREEN_MODE].GetInt32()) != CK_OK) {
+    if (m_RenderContext->GoFullScreen(m_GameConfig[BP_CONFIG_WIDTH].GetInt32(), m_GameConfig[BP_CONFIG_HEIGHT].GetInt32(), m_GameConfig[BP_CONFIG_BPP].GetInt32(), m_GameConfig[BP_CONFIG_DRIVER].GetInt32()) != CK_OK) {
         m_GameConfig[BP_CONFIG_FULLSCREEN] = false;
         m_Logger->Debug("GoFullScreen Failed");
         return false;
