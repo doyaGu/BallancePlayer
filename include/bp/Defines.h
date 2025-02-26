@@ -36,7 +36,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define BP_ENABLE_IMGUI 1
+#define BP_ENABLE_IMGUI 0
 
 #define BP_DEFAULT_NAME "Game"
 #define BP_DEFAULT_WIDTH 640
