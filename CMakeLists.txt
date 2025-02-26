@@ -6,7 +6,7 @@ project(BallancePlayer
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
         )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED NO)
 set(CMAKE_CXX_EXTENSIONS YES)
 
