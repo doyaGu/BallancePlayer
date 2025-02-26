@@ -1597,9 +1597,7 @@ void GamePlayer::OnActivateApp(bool active) {
             if (firstDeActivate)
                 wasPlaying = m_CKContext->IsPlaying() == TRUE;
 
-            if (m_GameConfig[BP_CONFIG_PAUSE_ON_DEACTIVATED] == true)
-                Pause();
-            else if (m_GameConfig[BP_CONFIG_ALWAYS_HANDLE_INPUT] == false)
+            if (m_GameConfig[BP_CONFIG_ALWAYS_HANDLE_INPUT] == false)
                 m_InputManager->Pause(TRUE);
 
             ::ClipCursor(nullptr);
@@ -1611,7 +1609,7 @@ void GamePlayer::OnActivateApp(bool active) {
                 OnStopFullscreen();
 
                 Pause();
-                if (wasPlaying && m_GameConfig[BP_CONFIG_PAUSE_ON_DEACTIVATED] == false)
+                if (wasPlaying)
                     Play();
             } else if (firstDeActivate) {
                 wasFullscreen = false;

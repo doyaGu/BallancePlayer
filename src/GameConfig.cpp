@@ -125,7 +125,6 @@ void BpGameConfig::Reset() {
     Values[BP_CONFIG_BORDERLESS] = false;
     Values[BP_CONFIG_CLIP_CURSOR] = false;
     Values[BP_CONFIG_ALWAYS_HANDLE_INPUT] = false;
-    Values[BP_CONFIG_PAUSE_ON_DEACTIVATED] = false;
     Values[BP_CONFIG_X] = 2147483647;
     Values[BP_CONFIG_Y] = 2147483647;
 
@@ -249,7 +248,6 @@ bool BpGameConfig::Load(const char *filename) {
     IniGetBoolean(Values[BP_CONFIG_BORDERLESS], "Window", "Borderless", filename);
     IniGetBoolean(Values[BP_CONFIG_CLIP_CURSOR], "Window", "ClipCursor", filename);
     IniGetBoolean(Values[BP_CONFIG_ALWAYS_HANDLE_INPUT], "Window", "AlwaysHandleInput", filename);
-    IniGetBoolean(Values[BP_CONFIG_PAUSE_ON_DEACTIVATED], "Window", "PauseOnDeactivated", filename);
     IniGetInteger(Values[BP_CONFIG_X], "Window", "X", filename);
     IniGetInteger(Values[BP_CONFIG_Y], "Window", "Y", filename);
 
@@ -315,7 +313,6 @@ bool BpGameConfig::Save(const char *filename) const {
     IniSetBoolean(Values[BP_CONFIG_BORDERLESS], "Window", "Borderless", filename);
     IniSetBoolean(Values[BP_CONFIG_CLIP_CURSOR], "Window", "ClipCursor", filename);
     IniSetBoolean(Values[BP_CONFIG_ALWAYS_HANDLE_INPUT], "Window", "AlwaysHandleInput", filename);
-    IniSetBoolean(Values[BP_CONFIG_PAUSE_ON_DEACTIVATED], "Window", "PauseOnDeactivated", filename);
     IniSetInteger(Values[BP_CONFIG_X], "Window", "X", filename);
     IniSetInteger(Values[BP_CONFIG_Y], "Window", "Y", filename);
 

@@ -314,12 +314,6 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, BpGameConfig *config)
                 *alwaysHandleInput = true;
             continue;
         }
-        if (parser.Next(arg, "--pause-on-deactivated", 'p')) {
-            BpValue *pauseOnDeactivated = bpGameConfigGetValue(config, BP_CONFIG_PAUSE_ON_DEACTIVATED);
-            if (pauseOnDeactivated)
-                *pauseOnDeactivated = true;
-            continue;
-        }
         if (parser.Next(arg, "--position-x", 'x', 1)) {
             if (arg.GetValue(0, value)) {
                 BpValue *posX = bpGameConfigGetValue(config, BP_CONFIG_X);
