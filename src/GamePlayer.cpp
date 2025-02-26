@@ -1605,12 +1605,7 @@ void GamePlayer::OnActivateApp(bool active) {
             if (m_RenderContext && IsRenderFullscreen()) {
                 if (firstDeActivate)
                     wasFullscreen = true;
-
                 OnStopFullscreen();
-
-                Pause();
-                if (wasPlaying)
-                    Play();
             } else if (firstDeActivate) {
                 wasFullscreen = false;
             }
@@ -1618,6 +1613,9 @@ void GamePlayer::OnActivateApp(bool active) {
         firstDeActivate = false;
         m_State = BP_PLAYER_FOCUS_LOST;
     } else {
+        if (wasPlaying)
+            Play();
+
         if (wasFullscreen && !firstDeActivate)
             OnGoFullscreen();
 
@@ -1625,9 +1623,6 @@ void GamePlayer::OnActivateApp(bool active) {
 
         if (m_GameConfig[BP_CONFIG_ALWAYS_HANDLE_INPUT] == false)
             m_InputManager->Pause(FALSE);
-
-        if (wasPlaying)
-            Play();
 
         firstDeActivate = true;
         m_State = BP_PLAYER_PLAYING;
