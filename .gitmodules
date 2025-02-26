@@ -1,9 +1,6 @@
 [submodule "deps/imgui"]
 	path = deps/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "deps/utf8.h"]
-	path = deps/utf8.h
-	url = https://github.com/sheredom/utf8.h.git
 [submodule "deps/cxxopts"]
 	path = deps/cxxopts
 	url = https://github.com/jarro2783/cxxopts.git
