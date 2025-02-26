@@ -1702,9 +1702,7 @@ void GamePlayer::OnClick(bool dblClk) {
 int GamePlayer::OnCommand(UINT id, UINT code) {
     switch (id) {
         case IDM_APP_ABOUT:
-            Pause();
             OpenAboutDialog();
-            Play();
             break;
 
         default:
