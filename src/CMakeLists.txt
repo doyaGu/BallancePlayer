@@ -15,9 +15,7 @@ set(LIBRARY_HEADERS
         ScriptUtils.h
         Window.h
         Configuration.h
-        DataShare.h
         Logger.h
-        Variant.h
 )
 
 set(LIBRARY_SOURCES
@@ -27,7 +25,6 @@ set(LIBRARY_SOURCES
         GameConfig.cpp
         Hotfix.cpp
         Configuration.cpp
-        DataShare.cpp
         Logger.cpp
         Variant.cpp
         Utils.cpp
