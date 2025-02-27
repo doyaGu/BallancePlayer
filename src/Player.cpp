@@ -457,14 +457,14 @@ void InitLogger(BpLogger *logger, BpGameConfig *config) {
         return;
 
     BpValue *verbose = bpGameConfigGetValue(config, BP_CONFIG_VERBOSE);
-    if (verbose && bpValueGetBool(verbose)) {
+    if (verbose && verbose->GetBool()) {
         bpLoggerSetLevel(logger, BP_LOG_DEBUG);
     }
 
     bool overwrite = true;
     BpValue *logMode = bpGameConfigGetValue(config, BP_CONFIG_LOG_MODE);
     if (logMode)
-        overwrite = bpValueGetInt32(logMode) == BP_LOG_MODE_OVERWRITE;
+        overwrite = logMode->GetInt32() == BP_LOG_MODE_OVERWRITE;
 
     g_FileLogger.Attach(logger, bpGetGamePath(config, BP_PATH_LOG), overwrite);
 }
