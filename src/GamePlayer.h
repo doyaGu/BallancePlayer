@@ -6,17 +6,18 @@
 
 #include "CKAll.h"
 
-#include "bp/Defines.h"
-
 #if BP_ENABLE_IMGUI
 #include "imgui.h"
 #endif
 
+#include "bp/Defines.h"
 #include "bp/GamePlayer.h"
 #include "Logger.h"
 #include "Window.h"
 #include "GameConfig.h"
+#if BP_ENABLE_IMGUI
 #include "GameManager.h"
+#endif
 
 class GameInfo;
 
@@ -205,7 +206,9 @@ private:
     CKRenderManager *m_RenderManager = nullptr;
     CKParameterManager *m_ParameterManager = nullptr;
     CKPathManager *m_PathManager = nullptr;
+#if BP_ENABLE_IMGUI
     GameManager *m_GameManager = nullptr;
+#endif
 
     CKMessageType m_MsgClick = -1;
     CKMessageType m_MsgDoubleClick = -1;

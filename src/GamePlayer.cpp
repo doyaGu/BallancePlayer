@@ -767,7 +767,9 @@ void GamePlayer::ShutdownEngine() {
         m_RenderManager = nullptr;
         m_ParameterManager = nullptr;
         m_PathManager = nullptr;
+#if BP_ENABLE_IMGUI
         m_GameManager = nullptr;
+#endif
 
         CKShutdown();
     }
@@ -1305,7 +1307,9 @@ bool GamePlayer::SetupManagers() {
         return false;
     }
 
+#if BP_ENABLE_IMGUI
     m_GameManager = new GameManager(m_CKContext);
+#endif
 
     return true;
 }

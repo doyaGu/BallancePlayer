@@ -10,7 +10,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_D
 
 set(LIBRARY_HEADERS
         GamePlayer.h
-        GameManager.h
         GameConfig.h
         ScriptUtils.h
         Window.h
@@ -20,7 +19,6 @@ set(LIBRARY_HEADERS
 set(LIBRARY_SOURCES
         Game.cpp
         GamePlayer.cpp
-        GameManager.cpp
         GameConfig.cpp
         Hotfix.cpp
         Logger.cpp
@@ -28,6 +26,11 @@ set(LIBRARY_SOURCES
         Utils.cpp
         Game.rc
 )
+
+if (BP_ENABLE_IMGUI)
+    list(APPEND LIBRARY_HEADERS GameManager.h)
+    list(APPEND LIBRARY_SOURCES GameManager.cpp)
+endif ()
 
 set(IMGUI_HEADERS
         ${IMGUI_SOURCE_DIR}/imgui.h
