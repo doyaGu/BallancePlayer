@@ -1699,13 +1699,8 @@ void GamePlayer::OnClick(bool dblClk) {
 }
 
 int GamePlayer::OnCommand(UINT id, UINT code) {
-    switch (id) {
-        case IDM_APP_ABOUT:
-            OpenAboutDialog();
-            break;
-
-        default:
-            break;
+    if (id == IDM_APP_ABOUT) {
+        OpenAboutDialog();
     }
     return 0;
 }
