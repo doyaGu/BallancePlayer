@@ -306,7 +306,7 @@ void BpLogger::Log(BpLogLevel level, const char *format, va_list args) {
     }
 
     for (auto it = m_Callbacks.begin(); it != m_Callbacks.end() && it->callback; it++) {
-        if (level >= it->level && level < BP_LOG_OFF) {
+        if (level >= m_Level && level < BP_LOG_OFF) {
             InitLogInfo(&info, it->userdata);
             it->callback(&info);
         }
