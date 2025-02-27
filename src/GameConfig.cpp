@@ -2,8 +2,6 @@
 
 #include <cstring>
 
-#include "VxMathDefines.h"
-
 #include "bp/Utils.h"
 
 constexpr const char *const PathNames[] = {
@@ -118,8 +116,8 @@ void BpGameConfig::Reset() {
     Values[BP_CONFIG_VERTEX_CACHE] = 16;
     Values[BP_CONFIG_TEXTURE_CACHE_MANAGEMENT] = true;
     Values[BP_CONFIG_SORT_TRANSPARENT_OBJECTS] = true;
-    Values[BP_CONFIG_TEXTURE_VIDEO_FORMAT] = _16_ARGB1555;
-    Values[BP_CONFIG_SPRITE_VIDEO_FORMAT] = _16_ARGB1555;
+    Values[BP_CONFIG_TEXTURE_VIDEO_FORMAT] = 0;
+    Values[BP_CONFIG_SPRITE_VIDEO_FORMAT] = 0;
 
     Values[BP_CONFIG_CHILD_WINDOW_RENDERING] = false;
     Values[BP_CONFIG_BORDERLESS] = false;
