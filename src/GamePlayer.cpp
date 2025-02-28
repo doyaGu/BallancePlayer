@@ -246,13 +246,6 @@ CKCollisionManager *bpGetCollisionManager(BpGamePlayer *player) {
     return p->GetCollisionManager();
 }
 
-CKGridManager *bpGetGridManager(BpGamePlayer *player) {
-    if (!player)
-        return nullptr;
-    auto *p = (GamePlayer *) player;
-    return p->GetGridManager();
-}
-
 CKRenderManager *bpGetRenderManager(BpGamePlayer *player) {
     if (!player)
         return nullptr;
@@ -763,7 +756,6 @@ void GamePlayer::ShutdownEngine() {
         m_BehaviorManager = nullptr;
         m_FloorManager = nullptr;
         m_CollisionManager = nullptr;
-        m_GridManager = nullptr;
         m_RenderManager = nullptr;
         m_ParameterManager = nullptr;
         m_PathManager = nullptr;
@@ -1258,12 +1250,6 @@ bool GamePlayer::SetupManagers() {
     m_CollisionManager = (CKCollisionManager *) m_CKContext->GetManagerByGuid(COLLISION_MANAGER_GUID);
     if (!m_CollisionManager) {
         m_Logger->Error("Unable to get Collision Manager.");
-        return false;
-    }
-
-    m_GridManager = (CKGridManager *) m_CKContext->GetManagerByGuid(GRID_MANAGER_GUID);
-    if (!m_GridManager) {
-        m_Logger->Error("Unable to get Grid Manager.");
         return false;
     }
 

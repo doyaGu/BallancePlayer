@@ -18,7 +18,6 @@ typedef struct CKInputManager CKInputManager;
 typedef struct CKBehaviorManager CKBehaviorManager;
 typedef struct CKFloorManager CKFloorManager;
 typedef struct CKCollisionManager CKCollisionManager;
-typedef struct CKGridManager CKGridManager;
 typedef struct CKRenderManager CKRenderManager;
 typedef struct CKParameterManager CKParameterManager;
 typedef struct CKPathManager CKPathManager;
@@ -109,13 +108,6 @@ BP_EXPORT CKFloorManager *bpGetFloorManager(BpGamePlayer *player);
  * @return The collision manager.
  */
 BP_EXPORT CKCollisionManager *bpGetCollisionManager(BpGamePlayer *player);
-
-/**
- * @brief Get the grid manager of the game player.
- * @param player The game player.
- * @return The grid manager.
- */
-BP_EXPORT CKGridManager *bpGetGridManager(BpGamePlayer *player);
 
 /**
  * @brief Get the render manager of the game player.

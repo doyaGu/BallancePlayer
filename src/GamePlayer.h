@@ -74,7 +74,6 @@ public:
     CKBehaviorManager *GetBehaviorManager() const { return m_BehaviorManager; }
     CKFloorManager *GetFloorManager() const { return m_FloorManager; }
     CKCollisionManager *GetCollisionManager() const { return m_CollisionManager; }
-    CKGridManager *GetGridManager() const { return m_GridManager; }
     CKRenderManager *GetRenderManager() const { return m_RenderManager; }
     CKParameterManager *GetParameterManager() const { return m_ParameterManager; }
     CKPathManager *GetPathManager() const { return m_PathManager; }
@@ -202,7 +201,6 @@ private:
     CKBehaviorManager *m_BehaviorManager = nullptr;
     CKFloorManager *m_FloorManager = nullptr;
     CKCollisionManager *m_CollisionManager = nullptr;
-    CKGridManager *m_GridManager = nullptr;
     CKRenderManager *m_RenderManager = nullptr;
     CKParameterManager *m_ParameterManager = nullptr;
     CKPathManager *m_PathManager = nullptr;
