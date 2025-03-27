@@ -40,7 +40,6 @@ set(IMGUI_HEADERS
         ${IMGUI_SOURCE_DIR}/imstb_truetype.h
         ${IMGUI_SOURCE_DIR}/backends/imgui_impl_win32.h
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_ck2.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/cimgui.h
 )
 
 set(IMGUI_SOURCES
@@ -51,7 +50,6 @@ set(IMGUI_SOURCES
         ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
         ${IMGUI_SOURCE_DIR}/backends/imgui_impl_win32.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_ck2.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/cimgui.cpp
 )
 
 if (BP_ENABLE_IMGUI)
@@ -134,7 +132,6 @@ if (BP_ENABLE_IMGUI)
             "${IMGUI_SOURCE_DIR}/imstb_rectpack.h"
             "${IMGUI_SOURCE_DIR}/imstb_textedit.h"
             "${IMGUI_SOURCE_DIR}/imstb_truetype.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/cimgui.h"
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endif ()
