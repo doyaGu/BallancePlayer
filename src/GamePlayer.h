@@ -2,6 +2,7 @@
 #define BP_GAMEPLAYER_PRIVATE_H
 
 #include <string>
+#include <memory>
 #include <unordered_map>
 
 #include "CKAll.h"
@@ -63,8 +64,8 @@ public:
     BpLogger *GetLogger() const { return m_Logger; }
     BpGameConfig &GetGameConfig() { return m_GameConfig; }
 
-    HWND GetMainWindow() const { return m_MainWindow.GetHandle(); }
-    HWND GetRenderWindow() const { return m_RenderWindow.GetHandle(); }
+    HWND GetMainWindow() const { return m_MainWindow ? m_MainWindow->GetHandle() : nullptr; }
+    HWND GetRenderWindow() const { return m_RenderWindow ? m_RenderWindow->GetHandle() : nullptr; }
 
     CKContext *GetCKContext() const { return m_CKContext; }
     CKRenderContext *GetRenderContext() const { return m_RenderContext; }
@@ -86,7 +87,7 @@ private:
     bool InitWindow(HINSTANCE hInstance);
     void ShutdownWindow();
 
-    bool InitEngine(CWindow &mainWindow);
+    bool InitEngine(Window &mainWindow);
     void ShutdownEngine();
 
     bool InitDriver();
@@ -108,6 +109,7 @@ private:
 
     bool SetupManagers();
     bool SetupPaths();
+    void SetupWindowEventHandlers(Window &window);
 
     void ResizeWindow();
 
@@ -118,12 +120,6 @@ private:
     bool IsRenderFullscreen() const;
     bool GoFullscreen();
     bool StopFullscreen();
-
-    bool RegisterMainWindowClass(HINSTANCE hInstance);
-    bool RegisterRenderWindowClass(HINSTANCE hInstance);
-
-    void RegisterWindow(HWND hWnd);
-    bool UnregisterWindow(HWND hWnd);
 
     void RegisterContext(CKContext *context);
     bool UnregisterContext(CKContext *context);
@@ -164,14 +160,14 @@ private:
     static int RegisterPlayer(GamePlayer *player);
     static bool UnregisterPlayer(GamePlayer *player);
 
-    static LRESULT CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static BOOL CALLBACK FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static BOOL CALLBACK AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+    static std::mutex s_MapMutex;
     static int s_PlayerCount;
     static std::unordered_map<int, GamePlayer *> s_IdToPlayerMap;
     static std::unordered_map<std::string, GamePlayer *> s_NameToPlayerMap;
-    static std::unordered_map<HWND, GamePlayer *> s_WindowToPlayerMap;
     static std::unordered_map<CKContext *, GamePlayer *> s_CKContextToPlayerMap;
 
     int m_Id = -1;
@@ -182,10 +178,8 @@ private:
 
     HINSTANCE m_hInstance = nullptr;
     HACCEL m_hAccelTable = nullptr;
-    WNDCLASSEX m_MainWndClass = {};
-    WNDCLASS m_RenderWndClass = {};
-    CWindow m_MainWindow;
-    CWindow m_RenderWindow;
+    std::unique_ptr<Window> m_MainWindow;
+    std::unique_ptr<Window> m_RenderWindow;
 
 #if BP_ENABLE_IMGUI
     ImGuiContext *m_ImGuiContext = nullptr;

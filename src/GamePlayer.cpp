@@ -270,29 +270,27 @@ CKPathManager *bpGetPathManager(BpGamePlayer *player) {
     return p->GetPathManager();
 }
 
+std::mutex GamePlayer::s_MapMutex;
 int GamePlayer::s_PlayerCount = 0;
 std::unordered_map<int, GamePlayer *> GamePlayer::s_IdToPlayerMap;
 std::unordered_map<std::string, GamePlayer *> GamePlayer::s_NameToPlayerMap;
-std::unordered_map<HWND, GamePlayer *> GamePlayer::s_WindowToPlayerMap;
 std::unordered_map<CKContext *, GamePlayer *> GamePlayer::s_CKContextToPlayerMap;
 
 GamePlayer *GamePlayer::Get(int id) {
+    std::lock_guard<std::mutex> lock(s_MapMutex);
     auto it = s_IdToPlayerMap.find(id);
     return it != s_IdToPlayerMap.end() ? it->second : nullptr;
 }
 
 GamePlayer *GamePlayer::Get(const char *name) {
+    std::lock_guard<std::mutex> lock(s_MapMutex);
     if (!name) name = BP_DEFAULT_NAME;
     auto it = s_NameToPlayerMap.find(name);
     return it != s_NameToPlayerMap.end() ? it->second : nullptr;
 }
 
-GamePlayer *GamePlayer::Get(HWND hWnd) {
-    auto it = s_WindowToPlayerMap.find(hWnd);
-    return it != s_WindowToPlayerMap.end() ? it->second : nullptr;
-}
-
 GamePlayer *GamePlayer::Get(CKContext *context) {
+    std::lock_guard<std::mutex> lock(s_MapMutex);
     auto it = s_CKContextToPlayerMap.find(context);
     return it != s_CKContextToPlayerMap.end() ? it->second : nullptr;
 }
@@ -325,7 +323,7 @@ bool GamePlayer::Init(HINSTANCE hInstance) {
         return false;
     }
 
-    if (!InitEngine(m_MainWindow)) {
+    if (!InitEngine(*m_MainWindow)) {
         m_Logger->Error("Failed to initialize CK Engine!");
         ShutdownWindow();
         return false;
@@ -344,13 +342,16 @@ bool GamePlayer::Init(HINSTANCE hInstance) {
     bool fullscreen = m_GameConfig[BP_CONFIG_FULLSCREEN].GetBool();
     bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
 
-    RECT rc;
-    m_MainWindow.GetClientRect(&rc);
-    if (rc.right - rc.left != width || rc.bottom - rc.top != height) {
-        ResizeWindow();
+    // Check if we need to resize the window
+    int clientWidth, clientHeight;
+    if (m_MainWindow->GetClientSize(clientWidth, clientHeight)) {
+        if (clientWidth != width || clientHeight != height) {
+            ResizeWindow();
+        }
     }
 
-    HWND handle = !childWindowRendering ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
+    // Create render context
+    HWND handle = !childWindowRendering ? m_MainWindow->GetHandle() : m_RenderWindow->GetHandle();
     CKRECT rect = {0, 0, width, height};
     m_RenderContext = m_RenderManager->CreateRenderContext(handle, driver, &rect, FALSE, bpp);
     if (!m_RenderContext) {
@@ -362,8 +363,8 @@ bool GamePlayer::Init(HINSTANCE hInstance) {
     if (fullscreen)
         OnGoFullscreen();
 
-    m_MainWindow.Show();
-    m_MainWindow.SetFocus();
+    m_MainWindow->Show();
+    m_MainWindow->SetFocus();
 
 #if BP_ENABLE_IMGUI
     if (!InitImGuiContext()) {
@@ -466,7 +467,7 @@ bool GamePlayer::Update() {
         if (msg.message == WM_QUIT)
             return false;
 
-        if (!::TranslateAccelerator(m_MainWindow.GetHandle(), m_hAccelTable, &msg)) {
+        if (!::TranslateAccelerator(m_MainWindow->GetHandle(), m_hAccelTable, &msg)) {
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
         }
@@ -577,7 +578,14 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
         return false;
     }
 
-    if (!RegisterMainWindowClass(hInstance)) {
+    if (!Window::RegisterWindowClass(
+        m_hInstance,
+        std::string("Ballance"),
+        WndProc,
+        CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS,
+        ::LoadIcon(m_hInstance, MAKEINTRESOURCE(IDI_PLAYER)),
+        ::LoadCursor(nullptr, IDC_ARROW),
+        (HBRUSH) ::GetStockObject(BLACK_BRUSH))) {
         m_Logger->Error("Failed to register main window class!");
         return false;
     }
@@ -591,79 +599,104 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
     bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
 
     if (childWindowRendering) {
-        if (!RegisterRenderWindowClass(hInstance)) {
+        if (!Window::RegisterWindowClass(
+            m_hInstance,
+            std::string("Ballance Render"),
+            WndProc,
+            CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS)) {
             m_Logger->Error("Failed to register render window class!");
-            ::UnregisterClass(TEXT("Ballance"), hInstance);
-            memset(&m_MainWndClass, 0, sizeof(m_MainWndClass));
+            Window::UnregisterWindowClass(m_hInstance, std::string("Ballance"));
             return false;
         }
 
         m_Logger->Debug("Render window class registered.");
     }
 
-    DWORD style = (fullscreen || borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
-
-    RECT rect = {0, 0, width, height};
-    ::AdjustWindowRect(&rect, style, FALSE);
-
-    int windowWidth = rect.right - rect.left;
-    int windowHeight = rect.bottom - rect.top;
-
     int screenWidth = ::GetSystemMetrics(SM_CXSCREEN);
     int screenHeight = ::GetSystemMetrics(SM_CYSCREEN);
 
     int x = m_GameConfig[BP_CONFIG_X].GetInt32();
-    if (x <= -windowWidth || x >= screenWidth)
-        x = (screenWidth - windowWidth) / 2;
+    if (x <= -width || x >= screenWidth)
+        x = (screenWidth - width) / 2;
     int y = m_GameConfig[BP_CONFIG_Y].GetInt32();
-    if (y <= -windowHeight || y >= screenHeight)
-        y = (screenHeight - windowHeight) / 2;
+    if (y <= -height || y >= screenHeight)
+        y = (screenHeight - height) / 2;
 
-    if (!m_MainWindow.CreateEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
-                               x, y, windowWidth, windowHeight, nullptr, nullptr, hInstance, nullptr)) {
+    m_MainWindow = std::make_unique<Window>();
+
+    WindowStyles windowStyles;
+    windowStyles.style = (fullscreen || borderless) ? WS_POPUP : (WS_POPUP | WS_CAPTION);
+    windowStyles.exStyle = WS_EX_LEFT;
+
+    WindowCreateParamsA createParams;
+    createParams.className = "Ballance";
+    createParams.title = "Ballance";
+    createParams.x = x;
+    createParams.y = y;
+    createParams.width = width;
+    createParams.height = height;
+    createParams.instance = m_hInstance;
+    createParams.styles = windowStyles;
+    // createParams.param = this;  // Important: pass this pointer for message routing
+
+    if (!m_MainWindow->Create(createParams)) {
         m_Logger->Error("Failed to create main window!");
-
-        ::UnregisterClass(TEXT("Ballance"), hInstance);
-        memset(&m_MainWndClass, 0, sizeof(m_MainWndClass));
+        Window::UnregisterWindowClass(m_hInstance, std::string("Ballance"));
         if (childWindowRendering) {
-            ::UnregisterClass(TEXT("Ballance Render"), hInstance);
-            memset(&m_RenderWndClass, 0, sizeof(m_RenderWndClass));
+            Window::UnregisterWindowClass(m_hInstance, std::string("Ballance Render"));
         }
         return false;
     }
 
-    RegisterWindow(m_MainWindow.GetHandle());
+    m_MainWindow->EnableDpiAwareness(true);
     m_Logger->Debug("Main window created.");
 
     if (childWindowRendering) {
-        if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
-                                     0, 0, width, height, m_MainWindow.GetHandle(), nullptr, hInstance, nullptr)) {
-            m_Logger->Error("Failed to create render window!");
+        m_RenderWindow = std::make_unique<Window>();
 
-            m_MainWindow.Destroy();
-            ::UnregisterClass(TEXT("Ballance"), hInstance);
-            memset(&m_MainWndClass, 0, sizeof(m_MainWndClass));
-            ::UnregisterClass(TEXT("Ballance Render"), hInstance);
-            memset(&m_RenderWndClass, 0, sizeof(m_RenderWndClass));
+        WindowStyles renderStyles;
+        renderStyles.style = WS_CHILD | WS_VISIBLE;
+        renderStyles.exStyle = WS_EX_TOPMOST;
+
+        WindowCreateParams renderParams;
+        renderParams.className = "Ballance Render";
+        renderParams.title = "Ballance Render";
+        renderParams.x = 0;
+        renderParams.y = 0;
+        renderParams.width = width;
+        renderParams.height = height;
+        renderParams.parent = m_MainWindow->GetHandle();
+        renderParams.instance = m_hInstance;
+        renderParams.styles = renderStyles;
+        // renderParams.param = this;  // Important: pass this pointer for message routing
+
+        if (!m_RenderWindow->Create(renderParams)) {
+            m_Logger->Error("Failed to create render window!");
+            m_MainWindow = nullptr;
+            Window::UnregisterWindowClass(m_hInstance, std::string("Ballance"));
+            Window::UnregisterWindowClass(m_hInstance, std::string("Ballance Render"));
             return false;
         }
 
-        RegisterWindow(m_RenderWindow.GetHandle());
+        m_RenderWindow->EnableDpiAwareness(true);
         m_Logger->Debug("Render window created.");
+    }
+
+    SetupWindowEventHandlers(*m_MainWindow);
+    if (childWindowRendering) {
+        SetupWindowEventHandlers(*m_RenderWindow);
     }
 
     m_hAccelTable = ::LoadAccelerators(m_hInstance, MAKEINTRESOURCE(IDR_ACCEL));
     if (!m_hAccelTable) {
         m_Logger->Error("Failed to load the accelerator table!");
 
-        m_MainWindow.Destroy();
+        m_MainWindow->Destroy();
         if (childWindowRendering)
-            m_RenderWindow.Destroy();
-        ::UnregisterClass(TEXT("Ballance"), hInstance);
-        memset(&m_MainWndClass, 0, sizeof(m_MainWndClass));
+            m_RenderWindow->Destroy();
+        Window::UnregisterWindowClass(m_hInstance, std::string("Ballance"));
         if (childWindowRendering) {
-            ::UnregisterClass(TEXT("Ballance Render"), hInstance);
-            memset(&m_RenderWndClass, 0, sizeof(m_RenderWndClass));
+            Window::UnregisterWindowClass(m_hInstance, std::string("Ballance Render"));
         }
         return false;
     }
@@ -680,16 +713,12 @@ void GamePlayer::ShutdownWindow() {
         m_hAccelTable = nullptr;
     }
 
-    if (m_RenderWindow.GetHandle()) {
-        m_RenderWindow.Destroy();
-        ::UnregisterClass(TEXT("Ballance Render"), m_hInstance);
-        memset(&m_RenderWndClass, 0, sizeof(m_RenderWndClass));
-    }
+    m_RenderWindow = nullptr;
+    m_MainWindow = nullptr;
 
-    if (m_MainWindow.GetHandle()) {
-        m_MainWindow.Destroy();
-        ::UnregisterClass(TEXT("Ballance"), m_hInstance);
-        memset(&m_MainWindow, 0, sizeof(m_MainWindow));
+    if (m_hInstance) {
+        Window::UnregisterWindowClass(m_hInstance, std::string("Ballance Render"));
+        Window::UnregisterWindowClass(m_hInstance, std::string("Ballance"));
     }
 }
 
@@ -701,7 +730,7 @@ static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *data) {
     return CK_OK;
 }
 
-bool GamePlayer::InitEngine(CWindow &mainWindow) {
+bool GamePlayer::InitEngine(Window &mainWindow) {
     if (CKStartUp() != CK_OK) {
         m_Logger->Error("CK Engine can not start up!");
         return false;
@@ -1377,8 +1406,7 @@ bool GamePlayer::SetupPaths() {
         XString scriptPath = path;
         XString category = "Script Paths";
         int catIdx = pm->GetCategoryIndex(category);
-        if (catIdx == -1)
-        {
+        if (catIdx == -1) {
             catIdx = pm->AddCategory(category);
         }
         pm->AddPath(catIdx, scriptPath);
@@ -1388,15 +1416,164 @@ bool GamePlayer::SetupPaths() {
     return true;
 }
 
+void GamePlayer::SetupWindowEventHandlers(Window &window) {
+    // Setup message handling for each event type
+    window.RegisterMessageHandler(WM_PAINT, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+        OnPaint();
+        return false; // Allow default processing
+    });
+
+    window.RegisterMessageHandler(WM_MOVE, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+        OnMove();
+        return false; // Allow default processing
+    });
+
+    window.RegisterMessageHandler(WM_SIZE, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+        OnSize();
+        return false; // Allow default processing
+    });
+
+    window.RegisterMessageHandler(
+        WM_ACTIVATEAPP, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+            OnActivateApp(wParam == WA_ACTIVE);
+            return false; // Allow default processing
+        });
+
+    window.RegisterMessageHandler(
+        WM_SETCURSOR, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+            OnSetCursor();
+            return false; // Allow default processing
+        });
+
+    window.RegisterMessageHandler(
+        WM_GETMINMAXINFO, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+            OnGetMinMaxInfo((LPMINMAXINFO) lParam);
+            return false; // Allow default processing
+        });
+
+    window.RegisterMessageHandler(
+        WM_LBUTTONDOWN, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+            OnClick(false);
+            return false; // Allow default processing
+        });
+
+    window.RegisterMessageHandler(
+        WM_LBUTTONDBLCLK, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+            OnClick(true);
+            return false; // Allow default processing
+        });
+
+    window.RegisterMessageHandler(
+        WM_SYSKEYDOWN, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+            int res = OnSysKeyDown((UINT) wParam);
+            if (res != 0) {
+                result = 0;
+                return true; // Prevent default processing
+            }
+            return false; // Allow default processing
+        });
+
+    window.RegisterMessageHandler(WM_COMMAND, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+        int res = OnCommand(LOWORD(wParam), HIWORD(wParam));
+        if (res != 0) {
+            result = 0;
+            return true; // Prevent default processing
+        }
+        return false; // Allow default processing
+    });
+
+    window.RegisterMessageHandler(WM_CLOSE, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+        OnClose();
+        return true; // Prevent default processing
+    });
+
+    window.RegisterMessageHandler(WM_DESTROY, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+        OnDestroy();
+        return true; // Prevent default processing
+    });
+
+#if BP_ENABLE_IMGUI
+    window.RegisterMessageHandler(WM_IME_COMPOSITION, [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result) -> bool {
+        int res = OnImeComposition(window.GetHandle(), (UINT)lParam);
+        if (res == 1) {
+            return true; // Prevent default processing
+        }
+        return false; // Allow default processing
+    });
+
+    // Add ImGui message handling
+    window.RegisterMessageHandler(0, [](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT& result) -> bool {
+        if (ImGui::GetCurrentContext() && ImGui_ImplWin32_WndProcHandler(nullptr, msg, wParam, lParam)) {
+            result = 1;
+            return true; // Prevent default processing for ImGui messages
+        }
+        return false; // Allow default processing
+    });
+#endif
+
+    // Register custom Ballance messages
+    window.RegisterMessageHandler(TT_MSG_NO_GAMEINFO,
+                                  [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+                                      OnExceptionCMO();
+                                      return true; // Prevent default processing
+                                  });
+
+    window.RegisterMessageHandler(TT_MSG_CMO_RESTART,
+                                  [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+                                      OnReturn();
+                                      return true; // Prevent default processing
+                                  });
+
+    window.RegisterMessageHandler(TT_MSG_CMO_LOAD,
+                                  [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+                                      OnLoadCMO((const char *) wParam);
+                                      return true; // Prevent default processing
+                                  });
+
+    window.RegisterMessageHandler(TT_MSG_EXIT_TO_SYS,
+                                  [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+                                      OnExitToSystem();
+                                      return true; // Prevent default processing
+                                  });
+
+    window.RegisterMessageHandler(TT_MSG_EXIT_TO_TITLE,
+                                  [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+                                      OnExitToTitle();
+                                      return true; // Prevent default processing
+                                  });
+
+    window.RegisterMessageHandler(TT_MSG_SCREEN_MODE_CHG,
+                                  [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+                                      result = OnChangeScreenMode((int) lParam, (int) wParam);
+                                      return true; // Prevent default processing
+                                  });
+
+    window.RegisterMessageHandler(TT_MSG_GO_FULLSCREEN,
+                                  [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+                                      OnGoFullscreen();
+                                      return true; // Prevent default processing
+                                  });
+
+    window.RegisterMessageHandler(TT_MSG_STOP_FULLSCREEN,
+                                  [this](UINT msg, WPARAM wParam, LPARAM lParam, LRESULT &result) -> bool {
+                                      OnStopFullscreen();
+                                      return true; // Prevent default processing
+                                  });
+}
+
 void GamePlayer::ResizeWindow() {
+    if (!m_MainWindow)
+        return;
+
     int width = m_GameConfig[BP_CONFIG_WIDTH].GetInt32();
     int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
 
     RECT rc = {0, 0, width, height};
-    ::AdjustWindowRect(&rc, m_MainWindow.GetStyle(), FALSE);
-    m_MainWindow.SetPos(nullptr, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
-    if (m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool())
-        m_RenderWindow.SetPos(nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
+    ::AdjustWindowRect(&rc, m_MainWindow->GetStyle(), FALSE);
+
+    m_MainWindow->Resize(rc.right - rc.left, rc.bottom - rc.top);
+    if (m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool() && m_RenderWindow)
+        m_RenderWindow->Resize(width, height);
 }
 
 int GamePlayer::FindScreenMode(int width, int height, int bpp, int driver) {
@@ -1502,63 +1679,21 @@ bool GamePlayer::StopFullscreen() {
     return true;
 }
 
-bool GamePlayer::RegisterMainWindowClass(HINSTANCE hInstance) {
-    memset(&m_MainWndClass, 0, sizeof(WNDCLASSEX));
-
-    m_MainWndClass.lpfnWndProc = MainWndProc;
-    m_MainWndClass.cbSize = sizeof(WNDCLASSEX);
-    m_MainWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-    m_MainWndClass.cbClsExtra = 0;
-    m_MainWndClass.cbWndExtra = 0;
-    m_MainWndClass.hInstance = hInstance;
-    m_MainWndClass.hIcon = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
-    m_MainWndClass.hCursor = ::LoadCursor(nullptr, IDC_ARROW);
-    m_MainWndClass.hbrBackground = (HBRUSH) ::GetStockObject(BLACK_BRUSH);
-    m_MainWndClass.lpszMenuName = nullptr;
-    m_MainWndClass.lpszClassName = TEXT("Ballance");
-    m_MainWndClass.hIconSm = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
-
-    return ::RegisterClassEx(&m_MainWndClass) != 0;
-}
-
-bool GamePlayer::RegisterRenderWindowClass(HINSTANCE hInstance) {
-    memset(&m_RenderWndClass, 0, sizeof(WNDCLASS));
-
-    m_RenderWndClass.lpfnWndProc = MainWndProc;
-    m_RenderWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-    m_RenderWndClass.hInstance = hInstance;
-    m_RenderWndClass.lpszClassName = TEXT("Ballance Render");
-
-    return ::RegisterClass(&m_RenderWndClass) != 0;
-}
-
-void GamePlayer::RegisterWindow(HWND hWnd) {
-    if (!hWnd)
-        return;
-    s_WindowToPlayerMap[hWnd] = this;
-}
-
-bool GamePlayer::UnregisterWindow(HWND hWnd) {
-    auto it = std::find_if(s_WindowToPlayerMap.begin(), s_WindowToPlayerMap.end(), [hWnd, this](const auto &p) {
-        return p.first == hWnd && p.second == this;
-    });
-    if (it == s_WindowToPlayerMap.end())
-        return false;
-
-    s_WindowToPlayerMap.erase(it);
-    return true;
-}
-
 void GamePlayer::RegisterContext(CKContext *context) {
     if (!context)
         return;
+
+    std::lock_guard<std::mutex> lock(s_MapMutex);
     s_CKContextToPlayerMap[context] = this;
 }
 
 bool GamePlayer::UnregisterContext(CKContext *context) {
-    auto it = std::find_if(s_CKContextToPlayerMap.begin(), s_CKContextToPlayerMap.end(), [context, this](const auto &p) {
-        return p.first == context && p.second == this;
-    });
+    std::lock_guard<std::mutex> lock(s_MapMutex);
+
+    auto it = std::find_if(s_CKContextToPlayerMap.begin(), s_CKContextToPlayerMap.end(),
+                           [context, this](const auto &p) {
+                               return p.first == context && p.second == this;
+                           });
     if (it == s_CKContextToPlayerMap.end())
         return false;
 
@@ -1569,8 +1704,8 @@ bool GamePlayer::UnregisterContext(CKContext *context) {
 bool GamePlayer::ClipCursor() {
     if (m_GameConfig[BP_CONFIG_CLIP_CURSOR] == true) {
         RECT rect;
-        m_MainWindow.GetClientRect(&rect);
-        m_MainWindow.ClientToScreen(&rect);
+        m_MainWindow->GetClientRect(rect);
+        m_MainWindow->ClientToScreen(rect);
         return ::ClipCursor(&rect) == TRUE;
     }
     return ::ClipCursor(nullptr) == TRUE;
@@ -1590,11 +1725,13 @@ void GamePlayer::OnDestroy() {
 }
 
 void GamePlayer::OnMove() {
-    if (m_GameConfig[BP_CONFIG_FULLSCREEN] == false) {
-        RECT rect;
-        m_MainWindow.GetWindowRect(&rect);
-        m_GameConfig[BP_CONFIG_X] = rect.left;
-        m_GameConfig[BP_CONFIG_Y] = rect.top;
+    if (!m_MainWindow || m_GameConfig[BP_CONFIG_FULLSCREEN].GetBool())
+        return;
+
+    int x, y;
+    if (m_MainWindow->GetPosition(x, y)) {
+        m_GameConfig[BP_CONFIG_X] = x;
+        m_GameConfig[BP_CONFIG_Y] = y;
     }
 }
 
@@ -1608,7 +1745,7 @@ void GamePlayer::OnPaint() {
 }
 
 void GamePlayer::OnClose() {
-    m_MainWindow.Destroy();
+    m_MainWindow->Destroy();
 }
 
 void GamePlayer::OnActivateApp(bool active) {
@@ -1671,18 +1808,18 @@ void GamePlayer::OnGetMinMaxInfo(LPMINMAXINFO lpmmi) {
 int GamePlayer::OnSysKeyDown(UINT uKey) {
     // Manage system key (ALT + KEY)
     switch (uKey) {
-        case VK_RETURN:
-            // ALT + ENTER -> SwitchFullscreen
-            OnSwitchFullscreen();
-            break;
+    case VK_RETURN:
+        // ALT + ENTER -> SwitchFullscreen
+        OnSwitchFullscreen();
+        break;
 
-        case VK_F4:
-            // ALT + F4 -> Quit the application
-            m_MainWindow.PostMsg(TT_MSG_EXIT_TO_SYS, 0, 0);
-            return 1;
+    case VK_F4:
+        // ALT + F4 -> Quit the application
+        m_MainWindow->PostMessage(TT_MSG_EXIT_TO_SYS, 0, 0);
+        return 1;
 
-        default:
-            break;
+    default:
+        break;
     }
     return 0;
 }
@@ -1694,9 +1831,9 @@ void GamePlayer::OnClick(bool dblClk) {
     POINT pt;
     ::GetCursorPos(&pt);
     if (m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING] == true)
-        m_RenderWindow.ScreenToClient(&pt);
+        m_RenderWindow->ScreenToClient(pt);
     else
-        m_MainWindow.ScreenToClient(&pt);
+        m_MainWindow->ScreenToClient(pt);
 
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
@@ -1750,7 +1887,7 @@ int GamePlayer::OnImeComposition(HWND hWnd, UINT gcs) {
 
 void GamePlayer::OnExceptionCMO() {
     m_Logger->Error("Exception in the CMO - Abort");
-    m_MainWindow.PostMsg(TT_MSG_EXIT_TO_SYS, 0, 0);
+    m_MainWindow->PostMessage(TT_MSG_EXIT_TO_SYS, 0, 0);
 }
 
 void GamePlayer::OnReturn() {
@@ -1772,7 +1909,7 @@ void GamePlayer::OnExitToSystem() {
     OnStopFullscreen();
     m_GameConfig[BP_CONFIG_FULLSCREEN] = fullscreen;
 
-    m_MainWindow.PostMsg(WM_CLOSE, 0, 0);
+    m_MainWindow->PostMessage(WM_CLOSE, 0, 0);
 }
 
 void GamePlayer::OnExitToTitle() {}
@@ -1820,20 +1957,25 @@ void GamePlayer::OnGoFullscreen() {
         int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
         bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
 
-        m_MainWindow.SetStyle(WS_POPUP);
-        m_MainWindow.SetPos(nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        // Update main window style and size
+        m_MainWindow->SetStyle(WS_POPUP);
+        m_MainWindow->SetPositionAndSize(0, 0, width, height);
 
-        m_MainWindow.Show();
-        m_MainWindow.SetFocus();
+        // Show and focus
+        m_MainWindow->Show();
+        m_MainWindow->SetFocus();
 
-        if (childWindowRendering) {
-            m_RenderWindow.Show();
-            m_RenderWindow.SetFocus();
+        // Handle render window if needed
+        if (childWindowRendering && m_RenderWindow) {
+            m_RenderWindow->Show();
+            m_RenderWindow->SetFocus();
         }
 
-        m_MainWindow.Update();
-        if (childWindowRendering)
-            m_RenderWindow.Update();
+        // Update windows
+        m_MainWindow->Update();
+        if (childWindowRendering && m_RenderWindow) {
+            m_RenderWindow->Update();
+        }
     }
 }
 
@@ -1849,24 +1991,30 @@ void GamePlayer::OnStopFullscreen() {
         bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
         bool borderless = m_GameConfig[BP_CONFIG_BORDERLESS].GetBool();
 
-        LONG style = (borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
+        // Calculate new style and window size
+        DWORD style = borderless ? WS_POPUP : (WS_POPUP | WS_CAPTION);
         RECT rc = {0, 0, width, height};
         ::AdjustWindowRect(&rc, style, FALSE);
 
-        m_MainWindow.SetStyle(style);
-        m_MainWindow.SetPos(HWND_NOTOPMOST, x, y, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED);
+        // Update window style and position
+        m_MainWindow->SetStyle(style);
+        m_MainWindow->SetPositionAndSize(x, y, rc.right - rc.left, rc.bottom - rc.top);
 
-        m_MainWindow.Show();
-        m_MainWindow.SetFocus();
+        // Show and focus
+        m_MainWindow->Show();
+        m_MainWindow->SetFocus();
 
-        if (childWindowRendering) {
-            m_RenderWindow.SetPos(nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER);
-            m_RenderWindow.SetFocus();
+        // Handle render window if needed
+        if (childWindowRendering && m_RenderWindow) {
+            m_RenderWindow->Resize(width, height);
+            m_RenderWindow->SetFocus();
         }
 
-        m_MainWindow.Update();
-        if (childWindowRendering)
-            m_RenderWindow.Update();
+        // Update windows
+        m_MainWindow->Update();
+        if (childWindowRendering && m_RenderWindow) {
+            m_RenderWindow->Update();
+        }
     }
 
     ClipCursor();
@@ -1953,6 +2101,8 @@ int GamePlayer::RegisterPlayer(GamePlayer *player) {
     if (!player)
         return -1;
 
+    std::lock_guard<std::mutex> lock(s_MapMutex);
+
     auto it = std::find_if(s_IdToPlayerMap.begin(), s_IdToPlayerMap.end(), [player](const auto &p) {
         return p.second == player;
     });
@@ -1961,7 +2111,14 @@ int GamePlayer::RegisterPlayer(GamePlayer *player) {
 
     int id = s_PlayerCount++;
     s_IdToPlayerMap[id] = player;
-    s_NameToPlayerMap[player->GetName()] = player;
+
+    const char *name = player->GetName();
+    if (name && name[0] != '\0') {
+        s_NameToPlayerMap[name] = player;
+    } else {
+        s_NameToPlayerMap["unknown"] = player;
+    }
+
     return id;
 }
 
@@ -1969,122 +2126,46 @@ bool GamePlayer::UnregisterPlayer(GamePlayer *player) {
     if (!player)
         return false;
 
+    std::lock_guard<std::mutex> lock(s_MapMutex);
+
     auto it = std::find_if(s_IdToPlayerMap.begin(), s_IdToPlayerMap.end(), [player](const auto &p) {
         return p.second == player;
     });
     if (it == s_IdToPlayerMap.end())
         return false;
 
-    s_NameToPlayerMap.erase(player->GetName());
+    const char *name = player->GetName();
+    if (name && name[0] != '\0') {
+        s_NameToPlayerMap.erase(name);
+    } else {
+        s_NameToPlayerMap.erase("unknown");
+    }
+
     s_IdToPlayerMap.erase(it);
     return true;
 }
 
-LRESULT GamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    GamePlayer *player = GamePlayer::Get(hWnd);
-    if (!player)
-        return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
-
+LRESULT GamePlayer::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 #if BP_ENABLE_IMGUI
     if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
         return 1;
 #endif
 
-    switch (uMsg) {
-        case WM_PAINT:
-            player->OnPaint();
-            break;
-
-        case WM_MOVE:
-            player->OnMove();
-            break;
-
-        case WM_SIZE:
-            player->OnSize();
-            break;
-
-        case WM_ACTIVATEAPP:
-            player->OnActivateApp(wParam == WA_ACTIVE);
-            break;
-
-        case WM_SETCURSOR:
-            player->OnSetCursor();
-            break;
-
-        case WM_GETMINMAXINFO:
-            player->OnGetMinMaxInfo((LPMINMAXINFO) lParam);
-            break;
-
-        case WM_LBUTTONDOWN:
-            player->OnClick();
-            break;
-
-        case WM_LBUTTONDBLCLK:
-            player->OnClick(true);
-            break;
-
-        case WM_SYSKEYDOWN:
-            return player->OnSysKeyDown(wParam);
-
-        case WM_COMMAND:
-            return player->OnCommand(LOWORD(wParam), HIWORD(wParam));
-
-#if BP_ENABLE_IMGUI
-        case WM_IME_COMPOSITION:
-            if (player->OnImeComposition(hWnd, lParam) == 1)
-                return 1;
-            break;
-#endif
-
-        case WM_CLOSE:
-            player->OnClose();
-            return 0;
-
-        case WM_DESTROY:
-            player->OnDestroy();
-            return 0;
-
-        case WM_NCDESTROY:
-            // Final cleanup
-            player->UnregisterWindow(hWnd);
-            break;
-
-        case TT_MSG_NO_GAMEINFO:
-            player->OnExceptionCMO();
-            break;
-
-        case TT_MSG_CMO_RESTART:
-            player->OnReturn();
-            break;
-
-        case TT_MSG_CMO_LOAD:
-            player->OnLoadCMO((const char *) wParam);
-            break;
-
-        case TT_MSG_EXIT_TO_SYS:
-            player->OnExitToSystem();
-            break;
-
-        case TT_MSG_EXIT_TO_TITLE:
-            player->OnExitToTitle();
-            break;
-
-        case TT_MSG_SCREEN_MODE_CHG:
-            return player->OnChangeScreenMode((int) lParam, (int) wParam);
-
-        case TT_MSG_GO_FULLSCREEN:
-            player->OnGoFullscreen();
-            break;
-
-        case TT_MSG_STOP_FULLSCREEN:
-            player->OnStopFullscreen();
-            return 1;
-
-        default:
-            break;
+    auto *pWindow = reinterpret_cast<Window *>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+    if (pWindow) {
+        return pWindow->HandleMessage(uMsg, wParam, lParam);
     }
 
-    return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+    if (uMsg == WM_CREATE) {
+        // Store Window instance pointer in window's user data
+        auto *cs = reinterpret_cast<CREATESTRUCT *>(lParam);
+        pWindow = static_cast<Window *>(cs->lpCreateParams);
+        if (pWindow) {
+            ::SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWindow));
+        }
+    }
+
+    return ::DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 BOOL GamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
