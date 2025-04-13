@@ -340,7 +340,14 @@ bool GamePlayer::Init(HINSTANCE hInstance) {
     int width = m_GameConfig[BP_CONFIG_WIDTH].GetInt32();
     int height = m_GameConfig[BP_CONFIG_HEIGHT].GetInt32();
     bool fullscreen = m_GameConfig[BP_CONFIG_FULLSCREEN].GetBool();
+    bool borderless = m_GameConfig[BP_CONFIG_BORDERLESS].GetBool();
     bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
+
+    if (borderless && m_MainWindow->GetStyle() & WS_CAPTION) {
+        m_MainWindow->SetStyle(m_MainWindow->GetStyle() & ~WS_CAPTION);
+    } else if (!borderless && !(m_MainWindow->GetStyle() & WS_CAPTION)) {
+        m_MainWindow->SetStyle(m_MainWindow->GetStyle() | WS_CAPTION);
+    }
 
     // Check if we need to resize the window
     int clientWidth, clientHeight;
@@ -1712,7 +1719,7 @@ bool GamePlayer::ClipCursor() {
 }
 
 bool GamePlayer::OpenSetupDialog() {
-    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), nullptr, FullscreenSetupDlgProc, 0) == IDOK;
+    return m_SetupDialog.Show(m_hInstance, m_RenderManager, &m_GameConfig);
 }
 
 bool GamePlayer::OpenAboutDialog() {
@@ -2030,73 +2037,6 @@ void GamePlayer::OnSwitchFullscreen() {
         OnStopFullscreen();
 }
 
-bool GamePlayer::FillDriverList(HWND hWnd) {
-    const int drCount = m_RenderManager->GetRenderDriverCount();
-    if (drCount == 0)
-        return false;
-
-    for (int i = 0; i < drCount; ++i) {
-        VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(i);
-#if CKVERSION == 0x13022002
-        const char *driverName = drDesc->DriverName;
-#else
-        const char *driverName = drDesc->DriverName.CStr();
-#endif
-        int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_ADDSTRING, 0, (LPARAM) driverName);
-        ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETITEMDATA, index, i);
-        if (i == m_GameConfig[BP_CONFIG_DRIVER].GetInt32())
-            ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETCURSEL, index, 0);
-    }
-
-    return true;
-}
-
-bool GamePlayer::FillScreenModeList(HWND hWnd, int driver) {
-    char buffer[256];
-
-    VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(driver);
-    if (!drDesc)
-        return false;
-
-#if CKVERSION == 0x13022002
-    VxDisplayMode *dm = drDesc->DisplayModes;
-    if (!dm)
-        return false;
-
-    const int dmCount = drDesc->DisplayModeCount;
-    if (dmCount == 0)
-        return false;
-#else
-    XArray<VxDisplayMode> &dm = drDesc->DisplayModes;
-    if (dm.Size() == 0)
-        return false;
-
-    const int dmCount = dm.Size();
-    if (dmCount == 0)
-        return false;
-#endif
-
-    int i = 0;
-    while (i < dmCount) {
-        int width = dm[i].Width;
-        int height = dm[i].Height;
-        while (i < dmCount && dm[i].Width == width && dm[i].Height == height) {
-            if (dm[i].Bpp > 8) {
-                sprintf(buffer, "%d x %d x %d x %dHz", dm[i].Width, dm[i].Height, dm[i].Bpp, dm[i].RefreshRate);
-                int index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_ADDSTRING, 0, (LPARAM) buffer);
-                ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETITEMDATA, index, i);
-                if (i == m_GameConfig[BP_CONFIG_SCREEN_MODE].GetInt32()) {
-                    ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETCURSEL, index, 0);
-                    ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETTOPINDEX, index, 0);
-                }
-            }
-            ++i;
-        }
-    }
-
-    return true;
-}
-
 int GamePlayer::RegisterPlayer(GamePlayer *player) {
     if (!player)
         return -1;
@@ -2166,74 +2106,6 @@ LRESULT GamePlayer::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     }
 
     return ::DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-BOOL GamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    WORD wNotifyCode = HIWORD(wParam);
-    int wID = LOWORD(wParam);
-
-    GamePlayer *player = GamePlayer::Get(hWnd);
-    if (!player)
-        return FALSE;
-
-    BpGameConfig &config = player->GetGameConfig();
-
-    switch (uMsg) {
-        case WM_INITDIALOG: {
-            if (!player->FillDriverList(hWnd))
-                ::EndDialog(hWnd, IDCANCEL);
-            if (!player->FillScreenModeList(hWnd, config[BP_CONFIG_DRIVER].GetInt32()))
-                ::EndDialog(hWnd, IDCANCEL);
-            return TRUE;
-        }
-
-        case WM_COMMAND: {
-            if (wNotifyCode == LBN_SELCHANGE && wID == IDC_LB_DRIVER) {
-                int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
-                int driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
-
-                ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_RESETCONTENT, 0, 0);
-
-                player->FillScreenModeList(hWnd, driver);
-
-                return TRUE;
-            } else if (wID == IDOK || wID == IDCANCEL) {
-                if (wID == IDOK) {
-                    int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
-                    if (index == LB_ERR) {
-                        ::EndDialog(hWnd, IDCANCEL);
-                        return TRUE;
-                    }
-                    int driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
-                    config[BP_CONFIG_DRIVER] = driver;
-
-                    index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETCURSEL, 0, 0);
-                    if (index == LB_ERR) {
-                        ::EndDialog(hWnd, IDCANCEL);
-                        return TRUE;
-                    }
-                    int screenMode = SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0);
-                    config[BP_CONFIG_SCREEN_MODE] = screenMode;
-
-                    VxDriverDesc *drDesc = player->GetRenderManager()->GetRenderDriverDescription(config[BP_CONFIG_DRIVER].GetInt32());
-                    if (drDesc) {
-                        const VxDisplayMode &dm = drDesc->DisplayModes[config[BP_CONFIG_SCREEN_MODE].GetInt32()];
-                        config[BP_CONFIG_WIDTH] = dm.Width;
-                        config[BP_CONFIG_HEIGHT] = dm.Height;
-                        config[BP_CONFIG_BPP] = dm.Bpp;
-                    }
-                }
-
-                ::EndDialog(hWnd, wID);
-                return TRUE;
-            }
-        }
-        break;
-
-        default:
-            break;
-    }
-    return FALSE;
 }
 
 BOOL GamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {

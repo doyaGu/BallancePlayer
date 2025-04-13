@@ -20,6 +20,8 @@
 #include "GameManager.h"
 #endif
 
+#include "NuklearSetupDialog.h"
+
 class GameInfo;
 
 struct BpGamePlayer {
@@ -154,14 +156,10 @@ private:
     void OnStopFullscreen();
     void OnSwitchFullscreen();
 
-    bool FillDriverList(HWND hWnd);
-    bool FillScreenModeList(HWND hWnd, int driver);
-
     static int RegisterPlayer(GamePlayer *player);
     static bool UnregisterPlayer(GamePlayer *player);
 
     static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    static BOOL CALLBACK FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static BOOL CALLBACK AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     static std::mutex s_MapMutex;
@@ -180,6 +178,7 @@ private:
     HACCEL m_hAccelTable = nullptr;
     std::unique_ptr<Window> m_MainWindow;
     std::unique_ptr<Window> m_RenderWindow;
+    NuklearSetupDialog m_SetupDialog;
 
 #if BP_ENABLE_IMGUI
     ImGuiContext *m_ImGuiContext = nullptr;
