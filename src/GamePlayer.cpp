@@ -27,14 +27,17 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 extern bool EditScript(CKLevel *level, const BpGameConfig &config);
 
 BpGamePlayer *bpCreateGamePlayer(const char *name) {
+    if (!name || name[0] == '\0') {
+        // Use a default name if none provided
+        name = BP_DEFAULT_NAME;
+    }
     return new GamePlayer(name);
 }
 
 void bpDestroyGamePlayer(BpGamePlayer *player) {
     if (!player)
         return;
-    auto *p = (GamePlayer *) player;
-    delete p;
+    delete player;
 }
 
 BpGamePlayer *bpGetGamePlayerById(int id) {
@@ -377,19 +380,29 @@ bool GamePlayer::Init(HINSTANCE hInstance) {
 }
 
 bool GamePlayer::Load(const char *filename) {
-    if (m_State == BP_PLAYER_INITIAL)
+    if (m_State == BP_PLAYER_INITIAL) {
+        m_Logger->Error("Cannot load file before initializing the player!");
         return false;
+    }
 
     if (!filename || filename[0] == '\0') {
         filename = bpGetGamePath(&m_GameConfig, BP_PATH_CMO);
+        if (!filename || filename[0] == '\0') {
+            m_Logger->Error("Failed to get default filename");
+            return false;
+        }
     }
 
-    if (!m_CKContext)
+    if (!m_CKContext) {
+        m_Logger->Error("CKContext is null");
         return false;
+    }
 
     CKPathManager *pm = m_CKContext->GetPathManager();
-    if (!pm)
+    if (!pm) {
+        m_Logger->Error("PathManager is null");
         return false;
+    }
 
     XString resolvedFile = filename;
     CKERROR err = pm->ResolveFileName(resolvedFile, DATA_PATH_IDX);
@@ -403,6 +416,11 @@ bool GamePlayer::Load(const char *filename) {
 
     // Load the file and fills the array with loaded objects
     CKFile *f = m_CKContext->CreateCKFile();
+    if (!f) {
+        m_Logger->Error("Failed to create CKFile");
+        return false;
+    }
+
     err = f->OpenFile(resolvedFile.Str(), (CK_LOAD_FLAGS) (CK_LOAD_DEFAULT | CK_LOAD_CHECKDEPENDENCIES));
     if (err != CK_OK) {
         // something failed
@@ -417,9 +435,17 @@ bool GamePlayer::Load(const char *filename) {
     }
 
     CKObjectArray *array = CreateCKObjectArray();
+    if (!array) {
+        m_CKContext->DeleteCKFile(f);
+        m_Logger->Error("Failed to create object array");
+        return false;
+    }
+
     err = f->LoadFileData(array);
     if (err != CK_OK) {
         m_CKContext->DeleteCKFile(f);
+        DeleteCKObjectArray(array);
+        m_Logger->Error("Failed to load file data (error: %d)", err);
         return false;
     }
 
@@ -491,7 +517,13 @@ void GamePlayer::Process() {
 }
 
 void GamePlayer::Render() {
-    m_RenderContext->Render();
+    if (m_RenderContext) {
+        m_RenderContext->Render();
+    } else {
+        if (m_Logger) {
+            m_Logger->Warn("Render called with null render context");
+        }
+    }
 }
 
 #if BP_ENABLE_IMGUI
@@ -780,10 +812,11 @@ bool GamePlayer::InitDriver() {
         m_Logger->Debug("Found %s render drivers", driverCount);
     }
 
-    if (m_GameConfig[BP_CONFIG_MANUAL_SETUP] == true)
+    if (m_GameConfig[BP_CONFIG_MANUAL_SETUP] == true) {
         OpenSetupDialog();
+        m_GameConfig[BP_CONFIG_MANUAL_SETUP] = false;
+    }
 
-    m_GameConfig[BP_CONFIG_MANUAL_SETUP] = false;
     bool tryFailed = false;
 
     int driver = m_GameConfig[BP_CONFIG_DRIVER].GetInt32();
@@ -931,7 +964,8 @@ bool GamePlayer::FinishLoad(const char *filename) {
             mesh->Show(CKHIDE);
     }
 
-    if (m_GameConfig[BP_CONFIG_APPLY_HOTFIX] == true && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != nullptr) {
+    if (m_GameConfig[BP_CONFIG_APPLY_HOTFIX] == true &&
+        m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != nullptr) {
         if (!EditScript(level, m_GameConfig)) {
             m_Logger->Warn("Failed to apply hotfixes on script!");
         }
@@ -1443,7 +1477,10 @@ bool GamePlayer::GoFullscreen() {
         return false;
 
     m_GameConfig[BP_CONFIG_FULLSCREEN] = true;
-    if (m_RenderContext->GoFullScreen(m_GameConfig[BP_CONFIG_WIDTH].GetInt32(), m_GameConfig[BP_CONFIG_HEIGHT].GetInt32(), m_GameConfig[BP_CONFIG_BPP].GetInt32(), m_GameConfig[BP_CONFIG_DRIVER].GetInt32()) != CK_OK) {
+    if (m_RenderContext->GoFullScreen(m_GameConfig[BP_CONFIG_WIDTH].GetInt32(),
+                                      m_GameConfig[BP_CONFIG_HEIGHT].GetInt32(),
+                                      m_GameConfig[BP_CONFIG_BPP].GetInt32(),
+                                      m_GameConfig[BP_CONFIG_DRIVER].GetInt32()) != CK_OK) {
         m_GameConfig[BP_CONFIG_FULLSCREEN] = false;
         m_Logger->Debug("GoFullScreen Failed");
         return false;
@@ -1773,6 +1810,9 @@ int GamePlayer::OnChangeScreenMode(int driver, int screenMode) {
 }
 
 void GamePlayer::OnGoFullscreen() {
+    if (!m_RenderContext)
+        return;
+
     ::ClipCursor(nullptr);
 
     if (GoFullscreen()) {
@@ -1798,6 +1838,9 @@ void GamePlayer::OnGoFullscreen() {
 }
 
 void GamePlayer::OnStopFullscreen() {
+    if (!m_RenderContext)
+        return;
+
     if (StopFullscreen()) {
         int x = m_GameConfig[BP_CONFIG_X].GetInt32();
         int y = m_GameConfig[BP_CONFIG_Y].GetInt32();
