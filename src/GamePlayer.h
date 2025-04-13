@@ -21,7 +21,9 @@
 
 class GameInfo;
 
-struct BpGamePlayer {};
+struct BpGamePlayer {
+    virtual ~BpGamePlayer() = default;
+};
 
 class GamePlayer : public BpGamePlayer {
 public:
@@ -34,7 +36,7 @@ public:
     GamePlayer(GamePlayer &&) = delete;
 
     explicit GamePlayer(const char *name);
-    ~GamePlayer();
+    ~GamePlayer() override;
 
     GamePlayer &operator=(const GamePlayer &) = delete;
     GamePlayer &operator=(GamePlayer &&) = delete;
