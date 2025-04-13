@@ -46,7 +46,9 @@ public:
     bool Update();
     void Process();
     void Render();
+#if BP_ENABLE_IMGUI
     void RenderImGui();
+#endif
     void Shutdown();
 
     void Play();
