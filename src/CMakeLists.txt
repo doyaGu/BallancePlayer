@@ -11,9 +11,11 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_D
 set(LIBRARY_HEADERS
         GamePlayer.h
         GameConfig.h
+        NuklearSetupDialog.h
         ScriptUtils.h
         Window.h
         NuklearWindow.h
+        Localization.h
         Logger.h
 )
 
@@ -21,9 +23,11 @@ set(LIBRARY_SOURCES
         Game.cpp
         GamePlayer.cpp
         GameConfig.cpp
+        NuklearSetupDialog.cpp
         Hotfix.cpp
         Window.cpp
         NuklearWindow.cpp
+        Localization.cpp
         Logger.cpp
         Value.cpp
         Utils.cpp
