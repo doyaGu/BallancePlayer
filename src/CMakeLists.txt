@@ -13,6 +13,7 @@ set(LIBRARY_HEADERS
         GameConfig.h
         ScriptUtils.h
         Window.h
+        NuklearWindow.h
         Logger.h
 )
 
@@ -22,6 +23,7 @@ set(LIBRARY_SOURCES
         GameConfig.cpp
         Hotfix.cpp
         Window.cpp
+        NuklearWindow.cpp
         Logger.cpp
         Value.cpp
         Utils.cpp
@@ -67,6 +69,7 @@ target_include_directories(${LIBRARY_NAME}
         $<BUILD_INTERFACE:${BP_INCLUDE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
+        ${NUKLEAR_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -78,7 +81,7 @@ endif ()
 
 target_link_libraries(${LIBRARY_NAME}
         PUBLIC
-        CK2 VxMath
+        CK2 VxMath Msimg32
 )
 
 target_compile_definitions(${LIBRARY_NAME} PRIVATE "BP_EXPORTS")
