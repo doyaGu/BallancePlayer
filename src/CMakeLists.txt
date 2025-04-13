@@ -21,6 +21,7 @@ set(LIBRARY_SOURCES
         GamePlayer.cpp
         GameConfig.cpp
         Hotfix.cpp
+        Window.cpp
         Logger.cpp
         Value.cpp
         Utils.cpp
