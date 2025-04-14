@@ -4,6 +4,12 @@
 
 #include "bp/Utils.h"
 
+#ifdef _WIN32
+#define PATH_SEPARATOR "\\"
+#else
+#define PATH_SEPARATOR "/"
+#endif
+
 constexpr const char *const PathNames[] = {
     "Config",
     "Log",
@@ -23,15 +29,15 @@ constexpr const char *const DefaultPaths[] = {
     "Player.ini",
     "Player.log",
     "base.cmo",
-    "..\\",
-    "Plugins\\",
-    "RenderEngines\\",
-    "Managers\\",
-    "BuildingBlocks\\",
-    "Sounds\\",
-    "Textures\\",
+    ".." PATH_SEPARATOR,
+    "Plugins" PATH_SEPARATOR,
+    "RenderEngines" PATH_SEPARATOR,
+    "Managers" PATH_SEPARATOR,
+    "BuildingBlocks" PATH_SEPARATOR,
+    "Sounds" PATH_SEPARATOR,
+    "Textures" PATH_SEPARATOR,
     "",
-    "Scripts\\",
+    "Scripts" PATH_SEPARATOR,
 };
 
 void bpGameConfigReset(BpGameConfig *config) {
@@ -331,21 +337,35 @@ bool BpGameConfig::ResetPath(BpPathCategory category) {
         return false;
 
     if (category == BP_PATH_CATEGORY_COUNT) {
+        // Reset all paths
         for (int i = 0; i < BP_PATH_CATEGORY_COUNT; ++i) {
             if (i < BP_PATH_PLUGINS) {
-                SetPath((BpPathCategory) i, DefaultPaths[i]);
+                SetPath(static_cast<BpPathCategory>(i), DefaultPaths[i]);
             } else {
-                char szPath[MAX_PATH];
-                bpConcatPath(szPath, MAX_PATH, GetPath(BP_PATH_ROOT), DefaultPaths[i]);
-                SetPath((BpPathCategory) i, szPath);
+                char szPath[MAX_PATH] = {};
+                const char *rootPath = GetPath(BP_PATH_ROOT);
+                if (!rootPath)
+                    return false;
+
+                if (!bpConcatPath(szPath, MAX_PATH, rootPath, DefaultPaths[i]))
+                    return false;
+
+                SetPath(static_cast<BpPathCategory>(i), szPath);
             }
         }
     } else {
+        // Reset specific path
         if (category < BP_PATH_PLUGINS) {
             SetPath(category, DefaultPaths[category]);
         } else {
-            char szPath[MAX_PATH];
-            bpConcatPath(szPath, MAX_PATH, GetPath(BP_PATH_ROOT), DefaultPaths[category]);
+            char szPath[MAX_PATH] = {};
+            const char *rootPath = GetPath(BP_PATH_ROOT);
+            if (!rootPath)
+                return false;
+
+            if (!bpConcatPath(szPath, MAX_PATH, rootPath, DefaultPaths[category]))
+                return false;
+
             SetPath(category, szPath);
         }
     }
