@@ -16,89 +16,139 @@ static HANDLE CreatNamedMutex();
 static void ParseConfigsFromCmdline(CmdlineParser &parser, BpGameConfig *config);
 static void ParsePathsFromCmdline(CmdlineParser &parser, BpGameConfig *config);
 static void InitLogger(BpLogger *logger, BpGameConfig *config);
+static void CleanupResources(BpGamePlayer *player, HANDLE mutex);
 
 static FileLogger g_FileLogger;
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    // Initialize mutex
     HANDLE hMutex = CreatNamedMutex();
     if (!hMutex) {
         ::MessageBox(nullptr, TEXT("Another player is running!"), TEXT("Error"), MB_OK);
         return -1;
     }
 
+    // Use RAII for mutex management
     LockGuard guard(hMutex);
 
+    // Console attachment for debugging
     ConsoleAttacher consoleAttacher;
 
+    // Get default logger
     auto *logger = bpGetDefaultLogger();
+    if (!logger) {
+        ::MessageBoxA(nullptr, "Failed to initialize logging system!", "Error", MB_OK | MB_ICONERROR);
+        return -1;
+    }
 
+    // Create player
     BpGamePlayer *player = bpCreateGamePlayer(nullptr);
     if (!player) {
         ::MessageBox(nullptr, TEXT("Failed to create player!"), TEXT("Error"), MB_OK);
         return -1;
     }
 
+    // Get configuration
     BpGameConfig *config = bpGamePlayerGetConfig(player);
+    if (!config) {
+        bpLoggerError(logger, "Failed to get game configuration!");
+        CleanupResources(player, hMutex);
+        return -1;
+    }
 
+    // Parse command line arguments
     CmdlineParser parser(__argc, __argv);
     ParsePathsFromCmdline(parser, config);
 
-    if (bpFileOrDirectoryExists(bpGetGamePath(config, BP_PATH_CONFIG))) {
+    // Load or create configuration file
+    const char *configPath = bpGetGamePath(config, BP_PATH_CONFIG);
+    if (configPath && bpFileOrDirectoryExists(configPath)) {
         if (!bpGameConfigLoad(config, nullptr)) {
-            bpLoggerWarn(logger, "Failed to load game configuration from file!");
+            bpLoggerWarn(logger, "Failed to load game configuration from file: %s", configPath);
         }
     } else {
         if (!bpGameConfigSave(config, nullptr)) {
-            bpLoggerWarn(logger, "Failed to save game configuration to file!");
+            bpLoggerWarn(logger, "Failed to save default game configuration to file!");
         }
     }
 
+    // Override config with command line arguments
     ParseConfigsFromCmdline(parser, config);
 
+    // Initialize logger with configuration
     InitLogger(logger, config);
 
+    // Show splash window
     Splash splash(hInstance);
     splash.Show();
 
+    // Initialize and run the game
     if (!bpGamePlayerInit(player, hInstance)) {
-        ::MessageBox(nullptr, TEXT("Failed to initialize player!"), TEXT("Error"), MB_OK);
-        bpDestroyGamePlayer(player);
+        bpLoggerError(logger, "Failed to initialize game player!");
+        ::MessageBoxA(nullptr, "Failed to initialize game player.", "Error", MB_OK | MB_ICONERROR);
+        CleanupResources(player, hMutex);
         return -1;
     }
 
     if (!bpGamePlayerLoad(player, nullptr)) {
-        ::MessageBox(nullptr, TEXT("Failed to load game composition!"), TEXT("Error"), MB_OK);
-        bpDestroyGamePlayer(player);
+        bpLoggerError(logger, "Failed to load game composition!");
+        ::MessageBoxA(nullptr, "Failed to load game composition.", "Error", MB_OK | MB_ICONERROR);
+        CleanupResources(player, hMutex);
         return -1;
     }
 
+    // Play and run the game
     bpGamePlayerPlay(player);
     bpGamePlayerRun(player);
     bpGamePlayerShutdown(player);
 
-    // Save settings before destroying the player
+    // Save configuration and clean up
     bpGameConfigSave(config, nullptr);
-    // Destroy the player
-    bpDestroyGamePlayer(player);
+    CleanupResources(player, hMutex);
 
     return 0;
 }
 
 static HANDLE CreatNamedMutex() {
-    char buf[MAX_PATH];
-    char drive[4];
-    char dir[MAX_PATH];
-    char filename[MAX_PATH];
-    ::GetModuleFileNameA(nullptr, buf, MAX_PATH);
-    _splitpath(buf, drive, dir, filename, nullptr);
-    _snprintf(buf, MAX_PATH, "%s%s", drive, dir);
+    char buf[MAX_PATH] = {};
+    char drive[4] = {};
+    char dir[MAX_PATH] = {};
+    char filename[MAX_PATH] = {};
 
+    // Get application path
+    if (::GetModuleFileNameA(nullptr, buf, MAX_PATH) == 0) {
+        return nullptr;
+    }
+
+    // Split path components
+    if (_splitpath_s(buf, drive, 4, dir, MAX_PATH, filename, MAX_PATH, nullptr, 0) != 0) {
+        return nullptr;
+    }
+
+    // Create directory path for CRC calculation
+    if (_snprintf_s(buf, MAX_PATH, _TRUNCATE, "%s%s", drive, dir) < 0) {
+        return nullptr;
+    }
+
+    // Generate mutex name using CRC32
     size_t crc = 0;
     bpCRC32(buf, strlen(buf), 0, &crc);
-    _snprintf(buf, MAX_PATH, "Ballance-%X", crc);
-    HANDLE hMutex = ::CreateMutexA(nullptr, FALSE, buf);
-    if (::GetLastError() == ERROR_ALREADY_EXISTS)
+    if (_snprintf_s(buf, MAX_PATH, _TRUNCATE, "Ballance-%X", crc) < 0) {
         return nullptr;
+    }
+
+    // Create mutex
+    HANDLE hMutex = ::CreateMutexA(nullptr, FALSE, buf);
+    if (hMutex == nullptr) {
+        return nullptr;
+    }
+
+    // Check if mutex already exists
+    if (::GetLastError() == ERROR_ALREADY_EXISTS) {
+        ::CloseHandle(hMutex);
+        return nullptr;
+    }
+
     return hMutex;
 }
 
@@ -108,7 +158,7 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, BpGameConfig *config)
 
     CmdlineArg arg;
     long value = 0;
-    XString str;
+    std::string str;
 
     while (!parser.Done()) {
         if (parser.Next(arg, "--verbose", '\0')) {
@@ -179,7 +229,7 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, BpGameConfig *config)
                 *fullscreen = true;
             continue;
         }
-        if (parser.Next(arg, "--disable--perspective-correction", '\0')) {
+        if (parser.Next(arg, "--disable-perspective-correction", '\0')) {
             BpValue *disablePerspectiveCorrection = bpGameConfigGetValue(
                 config, BP_CONFIG_DISABLE_PERSPECTIVE_CORRECTION);
             if (disablePerspectiveCorrection)
@@ -278,18 +328,20 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, BpGameConfig *config)
             if (arg.GetValue(0, str)) {
                 BpValue *textureVideoFormat = bpGameConfigGetValue(config, BP_CONFIG_TEXTURE_VIDEO_FORMAT);
                 if (textureVideoFormat)
-                    *textureVideoFormat = bpString2PixelFormat(str.CStr());
+                    *textureVideoFormat = bpString2PixelFormat(str.c_str());
             }
-            break;
+            continue;
         }
         if (parser.Next(arg, "--sprite-video-format", '\0', 1)) {
             if (arg.GetValue(0, str)) {
                 BpValue *spriteVideoFormat = bpGameConfigGetValue(config, BP_CONFIG_SPRITE_VIDEO_FORMAT);
                 if (spriteVideoFormat)
-                    *spriteVideoFormat = bpString2PixelFormat(str.CStr());
+                    *spriteVideoFormat = bpString2PixelFormat(str.c_str());
             }
-            break;
+            continue;
         }
+
+        // Window options
         if (parser.Next(arg, "--child-window-rendering", 's')) {
             BpValue *childWindowRendering = bpGameConfigGetValue(config, BP_CONFIG_CHILD_WINDOW_RENDERING);
             if (childWindowRendering)
@@ -330,7 +382,7 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, BpGameConfig *config)
             }
             continue;
         }
-        if (parser.Next(arg, "--lang", 'l')) {
+        if (parser.Next(arg, "--lang", 'l', 1)) {
             if (arg.GetValue(0, value)) {
                 BpValue *langId = bpGameConfigGetValue(config, BP_CONFIG_LANG_ID);
                 if (langId)
@@ -390,61 +442,62 @@ static void ParsePathsFromCmdline(CmdlineParser &parser, BpGameConfig *config) {
         return;
 
     CmdlineArg arg;
-    XString path;
+    std::string path;
+
     while (!parser.Done()) {
         if (parser.Next(arg, "--config", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_CONFIG, path.CStr());
-            break;
+                bpSetGamePath(config, BP_PATH_CONFIG, path.c_str());
+            continue;
         }
         if (parser.Next(arg, "--log", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_LOG, path.CStr());
+                bpSetGamePath(config, BP_PATH_LOG, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--cmo", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_CMO, path.CStr());
+                bpSetGamePath(config, BP_PATH_CMO, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--root-path", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_ROOT, path.CStr());
+                bpSetGamePath(config, BP_PATH_ROOT, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--plugin-path", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_PLUGINS, path.CStr());
+                bpSetGamePath(config, BP_PATH_PLUGINS, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--render-engine-path", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_RENDER_ENGINES, path.CStr());
+                bpSetGamePath(config, BP_PATH_RENDER_ENGINES, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--manager-path", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_MANAGERS, path.CStr());
+                bpSetGamePath(config, BP_PATH_MANAGERS, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--building-block-path", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_BUILDING_BLOCKS, path.CStr());
+                bpSetGamePath(config, BP_PATH_BUILDING_BLOCKS, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--sound-path", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_SOUNDS, path.CStr());
+                bpSetGamePath(config, BP_PATH_SOUNDS, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--bitmap-path", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_TEXTURES, path.CStr());
+                bpSetGamePath(config, BP_PATH_TEXTURES, path.c_str());
             continue;
         }
         if (parser.Next(arg, "--data-path", '\0', 1)) {
             if (arg.GetValue(0, path))
-                bpSetGamePath(config, BP_PATH_DATA, path.CStr());
+                bpSetGamePath(config, BP_PATH_DATA, path.c_str());
             continue;
         }
         parser.Skip();
@@ -453,18 +506,43 @@ static void ParsePathsFromCmdline(CmdlineParser &parser, BpGameConfig *config) {
 }
 
 void InitLogger(BpLogger *logger, BpGameConfig *config) {
-    if (!logger)
+    if (!logger || !config)
         return;
 
+    // Set log level based on verbose flag
     BpValue *verbose = bpGameConfigGetValue(config, BP_CONFIG_VERBOSE);
     if (verbose && verbose->GetBool()) {
         bpLoggerSetLevel(logger, BP_LOG_DEBUG);
+    } else {
+        bpLoggerSetLevel(logger, BP_LOG_INFO);
     }
 
+    // Determine log mode
     bool overwrite = true;
     BpValue *logMode = bpGameConfigGetValue(config, BP_CONFIG_LOG_MODE);
-    if (logMode)
+    if (logMode) {
         overwrite = logMode->GetInt32() == BP_LOG_MODE_OVERWRITE;
+    }
 
-    g_FileLogger.Attach(logger, bpGetGamePath(config, BP_PATH_LOG), overwrite);
+    // Get log file path
+    const char *logPath = bpGetGamePath(config, BP_PATH_LOG);
+    if (!logPath || !logPath[0]) {
+        bpLoggerWarn(logger, "No log file path specified, using default");
+        logPath = "Player.log"; // Fallback
+    }
+
+    // Attach file logger
+    if (!g_FileLogger.Attach(logger, logPath, overwrite)) {
+        bpLoggerError(logger, "Failed to open log file: %s", logPath);
+    } else {
+        bpLoggerInfo(logger, "Log file opened: %s", logPath);
+    }
+}
+
+static void CleanupResources(BpGamePlayer *player, HANDLE mutex) {
+    if (player) {
+        bpDestroyGamePlayer(player);
+    }
+
+    g_FileLogger.Release();
 }
