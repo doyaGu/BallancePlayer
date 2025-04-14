@@ -165,7 +165,7 @@ BP_EXPORT const char *bpPixelFormat2String(int format);
  * @param filename Path to the INI file
  * @return True if successful, false otherwise
  */
-bool bpIniGetString(const char *section, const char *name, char *str, size_t size, const char *filename);
+BP_EXPORT bool bpIniGetString(const char *section, const char *name, char *str, size_t size, const char *filename);
 
 /**
  * Writes a string value to an INI file.
@@ -176,8 +176,7 @@ bool bpIniGetString(const char *section, const char *name, char *str, size_t siz
  * @param filename Path to the INI file
  * @return True if successful, false otherwise
  */
-bool bpIniSetString(const char *section, const char *name, const char *str, const char *filename);
-
+BP_EXPORT bool bpIniSetString(const char *section, const char *name, const char *str, const char *filename);
 
 /**
  * Retrieves a boolean value from an INI file.
@@ -232,7 +231,7 @@ BP_EXPORT bool bpIniSetInteger(const char *section, const char *name, int value,
  * @param filename Path to the INI file
  * @return True if successful, false otherwise
  */
-bool bpIniGetFloat(const char *section, const char *name, float *value, const char *filename);
+BP_EXPORT bool bpIniGetFloat(const char *section, const char *name, float *value, const char *filename);
 
 /**
  * Writes a floating-point value to an INI file.
@@ -244,7 +243,7 @@ bool bpIniGetFloat(const char *section, const char *name, float *value, const ch
  * @param filename Path to the INI file
  * @return True if successful, false otherwise
  */
-bool bpIniSetFloat(const char *section, const char *name, float value, int precision, const char *filename);
+BP_EXPORT bool bpIniSetFloat(const char *section, const char *name, float value, int precision, const char *filename);
 
 /**
  * Retrieves a pixel format value from an INI file.

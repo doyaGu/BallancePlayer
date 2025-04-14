@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -19,16 +20,24 @@ char *bpCreateBuffer(size_t size) {
     if (size == 0)
         return nullptr;
 
-    return new char[size];
+    try {
+        return new char[size](); // Zero-initialize buffer
+    } catch (const std::bad_alloc &) {
+        return nullptr; // Handle allocation failure
+    }
 }
 
 char *bpCopyBuffer(const char *buffer, size_t size) {
     if (!buffer || size == 0)
         return nullptr;
 
-    char *newBuffer = new char[size];
-    memcpy(newBuffer, buffer, size);
-    return newBuffer;
+    try {
+        char *newBuffer = new char[size];
+        memcpy(newBuffer, buffer, size);
+        return newBuffer;
+    } catch (const std::bad_alloc &) {
+        return nullptr; // Handle allocation failure
+    }
 }
 
 void bpDestroyBuffer(char *buffer) {
@@ -98,19 +107,65 @@ bool bpGetAbsolutePath(char *buffer, size_t size, const char *path, bool trailin
 }
 
 char *bpConcatPath(char *buffer, size_t size, const char *path1, const char *path2) {
-    if (!buffer)
+    if (!buffer || size == 0)
         return nullptr;
 
     if (!path1 || path1[0] == '\0') {
-        strncpy(buffer, path2, size);
-    } else if (path2) {
-        strncpy(buffer, path1, size);
-        bpRemoveTrailingPathSeparator(buffer);
-        size_t len2 = strlen(path2);
-        size_t n = size - 1 - len2;
-        strncat(buffer, "\\", n);
-        --n;
-        strncat(buffer, path2, n);
+        if (path2) {
+            strncpy(buffer, path2, size - 1);
+            buffer[size - 1] = '\0'; // Ensure null termination
+        } else {
+            buffer[0] = '\0';
+        }
+        return buffer;
+    }
+
+    if (!path2 || path2[0] == '\0') {
+        strncpy(buffer, path1, size - 1);
+        buffer[size - 1] = '\0';
+        return buffer;
+    }
+
+    // Copy first path
+    size_t path1_len = strlen(path1);
+    if (path1_len >= size - 1) {
+        // First path too long, truncate
+        strncpy(buffer, path1, size - 2);
+        buffer[size - 2] = '\0';
+        path1_len = size - 2;
+    } else {
+        strcpy(buffer, path1);
+    }
+
+    // Check if first path has separator
+    bool needsSeparator = true;
+    if (path1_len > 0) {
+#ifdef _WIN32
+        needsSeparator = (path1[path1_len - 1] != '\\' && path1[path1_len - 1] != '/');
+#else
+        needsSeparator = (path1[path1_len - 1] != '/');
+#endif
+    }
+
+    // Add separator if needed
+    if (needsSeparator) {
+        if (path1_len >= size - 2) {
+            return buffer; // No room for separator and path2
+        }
+#ifdef _WIN32
+        buffer[path1_len] = '\\';
+#else
+        buffer[path1_len] = '/';
+#endif
+        buffer[path1_len + 1] = '\0';
+        path1_len++;
+    }
+
+    // Add second path
+    size_t remaining = size - path1_len - 1;
+    if (remaining > 0) {
+        strncat(buffer + path1_len, path2, remaining);
+        buffer[size - 1] = '\0'; // Ensure null termination
     }
 
     return buffer;
@@ -120,19 +175,34 @@ const char *bpFindLastPathSeparator(const char *path) {
     if (!path || path[0] == '\0')
         return nullptr;
 
-    const char *const lastSep = strrchr(path, '\\');
-    const char *const lastAltSep = strrchr(path, '/');
-    return (lastAltSep && (!lastSep || lastAltSep > lastSep)) ? lastAltSep : lastSep;
+    const char *lastSlash = strrchr(path, '/');
+
+#ifdef _WIN32
+    const char *lastBackslash = strrchr(path, '\\');
+
+    // Return the one that appears later in the string
+    if (!lastSlash) return lastBackslash;
+    if (!lastBackslash) return lastSlash;
+
+    return (lastSlash > lastBackslash) ? lastSlash : lastBackslash;
+#else
+    return lastSlash;
+#endif
 }
 
 bool bpHasTrailingPathSeparator(const char *path) {
     if (!path || path[0] == '\0')
         return false;
 
-    if (path[strlen(path) - 1] == '\\')
-        return true;
+    size_t len = strlen(path);
+    if (len == 0)
+        return false;
 
-    return false;
+#ifdef _WIN32
+    return (path[len - 1] == '\\' || path[len - 1] == '/');
+#else
+    return (path[len - 1] == '/');
+#endif
 }
 
 bool bpRemoveTrailingPathSeparator(char *path) {
@@ -565,7 +635,7 @@ bool bpIniGetPixelFormat(const char *section, const char *name, int *value, cons
         return false;
     }
 
-    char buf[32] = {0};
+    char buf[32] = {};
     if (!bpIniGetString(section, name, buf, sizeof(buf), filename) || buf[0] == '\0') {
         return false;
     }
