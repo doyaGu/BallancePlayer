@@ -696,7 +696,7 @@ struct BpValue {
 #else
     BpVal value = {};
     size_t size = 0;
-    uint32_t tag = BP_VAL_TYPE_NONE;
+    uint8_t tag = BP_VAL_TYPE_NONE;
 
     // Constructors
     BpValue() = default;
@@ -734,6 +734,9 @@ struct BpValue {
 
     // Move constructor
     BpValue(BpValue &&other) noexcept {
+        value = {};
+        size = 0;
+        tag = BP_VAL_TYPE_NONE;
         bpValueMove(this, &other);
     }
 
@@ -1099,6 +1102,28 @@ struct BpValue {
     void *AsPointer(void *defaultVal = nullptr) const {
         void *ptr = GetPointer();
         return (IsPointer() && ptr) ? ptr : defaultVal;
+    }
+
+    template <typename T>
+    void SetValue(BpValue *value, T val, BpValueType type, BpValueSubtype subtype) {
+        if (!value)
+            return;
+
+        bpValueClear(value);
+        memcpy(&value->value, &val, sizeof(T));
+        value->size = sizeof(T);
+        bpValueSetType(value, type, subtype);
+    }
+
+    // Specializations for common types with correct type tags
+    template <>
+    void SetValue<bool>(BpValue *value, bool val, BpValueType, BpValueSubtype) {
+        bpValueSetBool(value, val);
+    }
+
+    template <>
+    void SetValue<uint8_t>(BpValue *value, uint8_t val, BpValueType, BpValueSubtype) {
+        bpValueSetUint8(value, val);
     }
 
     // Buffer management

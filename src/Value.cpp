@@ -87,9 +87,84 @@ void bpValueCopy(BpValue *dest, const BpValue *src) {
         break;
     default:
         // Just initialize to empty for unknown types
-            bpValueInit(dest);
+        bpValueInit(dest);
         break;
     }
+}
+
+/*
+ * Safely copy a BpValue with error handling
+ */
+bool bpValueCopySafe(BpValue *dest, const BpValue *src) {
+    if (!dest || !src)
+        return false;
+
+    if (dest == src)
+        return true;
+
+    // Handle string and buffer types specially
+    if (bpValueIsString(src)) {
+        const char *srcStr = bpValueGetString(src);
+        if (!srcStr)
+            return false;
+
+        char *newStr = strdup(srcStr);
+        if (!newStr)
+            return false;
+
+        bpValueClear(dest);
+        dest->value.str = newStr;
+        dest->size = src->size;
+        dest->tag = src->tag;
+        return true;
+    } else if (bpValueIsBuffer(src)) {
+        const void *srcBuf = bpValueGetBuffer(src);
+        size_t srcSize = bpValueGetSize(src);
+        if (!srcBuf || srcSize == 0)
+            return false;
+
+        void *newBuf = malloc(srcSize);
+        if (!newBuf)
+            return false;
+
+        memcpy(newBuf, srcBuf, srcSize);
+        bpValueClear(dest);
+        dest->value.buf = newBuf;
+        dest->size = srcSize;
+        dest->tag = src->tag;
+        return true;
+    } else {
+        // For other types, a simple copy is sufficient
+        bpValueClear(dest);
+        memcpy(&dest->value, &src->value, sizeof(BpVal));
+        dest->size = src->size;
+        dest->tag = src->tag;
+        return true;
+    }
+}
+
+/*
+ * Thread-safe version of bpValueClear with double-free protection
+ */
+void bpValueClearSafe(BpValue *value) {
+    if (!value)
+        return;
+
+    // For string and buffer types, only free if pointer is not null
+    if (bpValueIsString(value) && value->value.str) {
+        void *ptr = value->value.str;
+        value->value.str = NULL; // Mark as cleared before freeing
+        free(ptr);
+    } else if (bpValueIsBuffer(value) && value->value.buf) {
+        void *ptr = value->value.buf;
+        value->value.buf = NULL; // Mark as cleared before freeing
+        free(ptr);
+    }
+
+    // Reset value to empty state
+    value->size = 0;
+    value->tag = BP_VAL_TYPE_NONE;
+    memset(&value->value, 0, sizeof(BpVal));
 }
 
 /**
@@ -110,7 +185,7 @@ void bpValueMove(BpValue *dest, BpValue *src) {
     dest->size = src->size;
     dest->tag = src->tag;
 
-    // Reset source to empty state without freeing memory (since we moved it)
+    // Reset source to empty state without freeing memory
     memset(&src->value, 0, sizeof(BpVal));
     src->size = 0;
     src->tag = BP_VAL_TYPE_NONE;
@@ -126,19 +201,25 @@ void bpValueSwap(BpValue *lhs, BpValue *rhs) {
     if (lhs == rhs)
         return;
 
-    // Use a temporary value to swap
-    BpValue tmp;
-    memcpy(&tmp.value, &lhs->value, sizeof(BpVal));
-    tmp.size = lhs->size;
-    tmp.tag = lhs->tag;
+    // Use primitive variables for the temporary storage
+    BpVal tmpValue;
+    size_t tmpSize;
+    uint8_t tmpTag;
 
+    // Save lhs to temporaries
+    memcpy(&tmpValue, &lhs->value, sizeof(BpVal));
+    tmpSize = lhs->size;
+    tmpTag = lhs->tag;
+
+    // Copy rhs to lhs
     memcpy(&lhs->value, &rhs->value, sizeof(BpVal));
     lhs->size = rhs->size;
     lhs->tag = rhs->tag;
 
-    memcpy(&rhs->value, &tmp.value, sizeof(BpVal));
-    rhs->size = tmp.size;
-    rhs->tag = tmp.tag;
+    // Copy temporaries to rhs
+    memcpy(&rhs->value, &tmpValue, sizeof(BpVal));
+    rhs->size = tmpSize;
+    rhs->tag = tmpTag;
 }
 
 /**
@@ -287,81 +368,81 @@ bool bpValueEquals(const BpValue *lhs, const BpValue *rhs) {
 
     // Compare based on type
     switch (bpValueGetType(lhs)) {
-        case BP_VAL_TYPE_BOOL:
-            return bpValueGetBool(lhs) == bpValueGetBool(rhs);
+    case BP_VAL_TYPE_BOOL:
+        return bpValueGetBool(lhs) == bpValueGetBool(rhs);
 
-        case BP_VAL_TYPE_CHAR:
-            return bpValueGetChar(lhs) == bpValueGetChar(rhs);
+    case BP_VAL_TYPE_CHAR:
+        return bpValueGetChar(lhs) == bpValueGetChar(rhs);
 
-        case BP_VAL_TYPE_NUM:
-            switch (bpValueGetSubtype(lhs)) {
-                case BP_VAL_SUBTYPE_UINT8:
-                    return bpValueGetUint8(lhs) == bpValueGetUint8(rhs);
-                case BP_VAL_SUBTYPE_INT8:
-                    return bpValueGetInt8(lhs) == bpValueGetInt8(rhs);
-                case BP_VAL_SUBTYPE_UINT16:
-                    return bpValueGetUint16(lhs) == bpValueGetUint16(rhs);
-                case BP_VAL_SUBTYPE_INT16:
-                    return bpValueGetInt16(lhs) == bpValueGetInt16(rhs);
-                case BP_VAL_SUBTYPE_UINT32:
-                    return bpValueGetUint32(lhs) == bpValueGetUint32(rhs);
-                case BP_VAL_SUBTYPE_INT32:
-                    return bpValueGetInt32(lhs) == bpValueGetInt32(rhs);
-                case BP_VAL_SUBTYPE_UINT64:
-                    return bpValueGetUint64(lhs) == bpValueGetUint64(rhs);
-                case BP_VAL_SUBTYPE_INT64:
-                    return bpValueGetInt64(lhs) == bpValueGetInt64(rhs);
-                case BP_VAL_SUBTYPE_FLOAT32: {
-                    float a = bpValueGetFloat32(lhs);
-                    float b = bpValueGetFloat32(rhs);
-                    // Handle NaN values properly
-                    if (std::isnan(a) && std::isnan(b))
-                        return true;
-                    return a == b;
-                }
-                case BP_VAL_SUBTYPE_FLOAT64: {
-                    double a = bpValueGetFloat64(lhs);
-                    double b = bpValueGetFloat64(rhs);
-                    // Handle NaN values properly
-                    if (std::isnan(a) && std::isnan(b))
-                        return true;
-                    return a == b;
-                }
-                default:
-                    return false;
-            }
-
-        case BP_VAL_TYPE_STR: {
-            const char *str1 = bpValueGetString(lhs);
-            const char *str2 = bpValueGetString(rhs);
-
-            // Handle null strings
-            if (!str1 || !str2)
-                return str1 == str2;
-
-            return strcmp(str1, str2) == 0;
+    case BP_VAL_TYPE_NUM:
+        switch (bpValueGetSubtype(lhs)) {
+        case BP_VAL_SUBTYPE_UINT8:
+            return bpValueGetUint8(lhs) == bpValueGetUint8(rhs);
+        case BP_VAL_SUBTYPE_INT8:
+            return bpValueGetInt8(lhs) == bpValueGetInt8(rhs);
+        case BP_VAL_SUBTYPE_UINT16:
+            return bpValueGetUint16(lhs) == bpValueGetUint16(rhs);
+        case BP_VAL_SUBTYPE_INT16:
+            return bpValueGetInt16(lhs) == bpValueGetInt16(rhs);
+        case BP_VAL_SUBTYPE_UINT32:
+            return bpValueGetUint32(lhs) == bpValueGetUint32(rhs);
+        case BP_VAL_SUBTYPE_INT32:
+            return bpValueGetInt32(lhs) == bpValueGetInt32(rhs);
+        case BP_VAL_SUBTYPE_UINT64:
+            return bpValueGetUint64(lhs) == bpValueGetUint64(rhs);
+        case BP_VAL_SUBTYPE_INT64:
+            return bpValueGetInt64(lhs) == bpValueGetInt64(rhs);
+        case BP_VAL_SUBTYPE_FLOAT32: {
+            float a = bpValueGetFloat32(lhs);
+            float b = bpValueGetFloat32(rhs);
+            // Handle NaN values properly
+            if (std::isnan(a) && std::isnan(b))
+                return true;
+            return a == b;
         }
-
-        case BP_VAL_TYPE_BUF: {
-            const void *buf1 = bpValueGetBuffer(lhs);
-            const void *buf2 = bpValueGetBuffer(rhs);
-            size_t size1 = bpValueGetSize(lhs);
-            size_t size2 = bpValueGetSize(rhs);
-
-            // Different sizes or null buffers
-            if (size1 != size2 || !buf1 || !buf2)
-                return buf1 == buf2 && size1 == size2;
-
-            return memcmp(buf1, buf2, size1) == 0;
+        case BP_VAL_SUBTYPE_FLOAT64: {
+            double a = bpValueGetFloat64(lhs);
+            double b = bpValueGetFloat64(rhs);
+            // Handle NaN values properly
+            if (std::isnan(a) && std::isnan(b))
+                return true;
+            return a == b;
         }
-
-        case BP_VAL_TYPE_PTR:
-            // For pointers, we only compare the actual pointer values
-            return bpValueGetPointer(lhs) == bpValueGetPointer(rhs);
-
         default:
-            // For unknown or NONE types, they're equal if both have the same type
-            return true;
+            return false;
+        }
+
+    case BP_VAL_TYPE_STR: {
+        const char *str1 = bpValueGetString(lhs);
+        const char *str2 = bpValueGetString(rhs);
+
+        // Handle null strings
+        if (!str1 || !str2)
+            return str1 == str2;
+
+        return strcmp(str1, str2) == 0;
+    }
+
+    case BP_VAL_TYPE_BUF: {
+        const void *buf1 = bpValueGetBuffer(lhs);
+        const void *buf2 = bpValueGetBuffer(rhs);
+        size_t size1 = bpValueGetSize(lhs);
+        size_t size2 = bpValueGetSize(rhs);
+
+        // Different sizes or null buffers
+        if (size1 != size2 || !buf1 || !buf2)
+            return buf1 == buf2 && size1 == size2;
+
+        return memcmp(buf1, buf2, size1) == 0;
+    }
+
+    case BP_VAL_TYPE_PTR:
+        // For pointers, we only compare the actual pointer values
+        return bpValueGetPointer(lhs) == bpValueGetPointer(rhs);
+
+    default:
+        // For unknown or NONE types, they're equal if both have the same type
+        return true;
     }
 }
 
@@ -690,15 +771,15 @@ void bpValueSetString(BpValue *value, const char *str) {
     if (!value || !str)
         return;
 
-    // Always clear previous value first
-    bpValueClear(value);
-
-    // Allocate memory and copy the string
+    // Allocate memory first, before clearing previous value
     char *newStr = strdup(str);
     if (!newStr) {
-        // Handle allocation failure
+        // If allocation fails, leave the value unchanged
         return;
     }
+
+    // Only clear after successful allocation
+    bpValueClear(value);
 
     value->value.str = newStr;
     value->size = strlen(newStr);
@@ -709,18 +790,18 @@ void bpValueSetStringN(BpValue *value, const char *str, size_t size) {
     if (!value || !str || size == 0)
         return;
 
-    // Always clear previous value first
-    bpValueClear(value);
-
-    // Allocate memory and copy the string with explicit length
+    // Allocate memory first, before clearing previous value
     char *newStr = static_cast<char *>(malloc(size + 1));
     if (!newStr) {
-        // Handle allocation failure
+        // If allocation fails, leave the value unchanged
         return;
     }
 
     memcpy(newStr, str, size);
-    newStr[size] = '\0';  // Ensure null termination
+    newStr[size] = '\0'; // Ensure null termination
+
+    // Only clear after successful allocation
+    bpValueClear(value);
 
     value->value.str = newStr;
     value->size = size;
@@ -742,10 +823,7 @@ void bpValueSetStringV(BpValue *value, const char *fmt, va_list args) {
         return;
     }
 
-    // Always clear previous value first
-    bpValueClear(value);
-
-    // Allocate memory for the formatted string
+    // Allocate memory first, before clearing previous value
     char *newStr = static_cast<char *>(malloc(len + 1));
     if (!newStr) {
         // Handle allocation failure
@@ -754,6 +832,9 @@ void bpValueSetStringV(BpValue *value, const char *fmt, va_list args) {
 
     // Format the string into the buffer
     vsnprintf(newStr, len + 1, fmt, args);
+
+    // Only clear after successful allocation
+    bpValueClear(value);
 
     value->value.str = newStr;
     value->size = len;
@@ -774,17 +855,17 @@ void bpValueSetBuffer(BpValue *value, const void *buf, size_t size) {
     if (!value || !buf || size == 0)
         return;
 
-    // Always clear previous value first
-    bpValueClear(value);
-
-    // Allocate memory and copy the buffer
+    // Allocate memory first, before clearing previous value
     void *newBuf = malloc(size);
     if (!newBuf) {
-        // Handle allocation failure
+        // If allocation fails, leave the value unchanged
         return;
     }
 
     memcpy(newBuf, buf, size);
+
+    // Only clear after successful allocation
+    bpValueClear(value);
 
     value->value.buf = newBuf;
     value->size = size;
@@ -811,28 +892,28 @@ int bpValueToInt(const BpValue *value) {
         return 0;
 
     switch (bpValueGetSubtype(value)) {
-        case BP_VAL_SUBTYPE_UINT8:
-            return static_cast<int>(value->value.u8);
-        case BP_VAL_SUBTYPE_INT8:
-            return static_cast<int>(value->value.i8);
-        case BP_VAL_SUBTYPE_UINT16:
-            return static_cast<int>(value->value.u16);
-        case BP_VAL_SUBTYPE_INT16:
-            return static_cast<int>(value->value.i16);
-        case BP_VAL_SUBTYPE_UINT32:
-            return static_cast<int>(value->value.u32);
-        case BP_VAL_SUBTYPE_INT32:
-            return value->value.i32;
-        case BP_VAL_SUBTYPE_UINT64:
-            return static_cast<int>(value->value.u64);
-        case BP_VAL_SUBTYPE_INT64:
-            return static_cast<int>(value->value.i64);
-        case BP_VAL_SUBTYPE_FLOAT32:
-            return static_cast<int>(value->value.f32);
-        case BP_VAL_SUBTYPE_FLOAT64:
-            return static_cast<int>(value->value.f64);
-        default:
-            return 0;
+    case BP_VAL_SUBTYPE_UINT8:
+        return static_cast<int>(value->value.u8);
+    case BP_VAL_SUBTYPE_INT8:
+        return static_cast<int>(value->value.i8);
+    case BP_VAL_SUBTYPE_UINT16:
+        return static_cast<int>(value->value.u16);
+    case BP_VAL_SUBTYPE_INT16:
+        return static_cast<int>(value->value.i16);
+    case BP_VAL_SUBTYPE_UINT32:
+        return static_cast<int>(value->value.u32);
+    case BP_VAL_SUBTYPE_INT32:
+        return value->value.i32;
+    case BP_VAL_SUBTYPE_UINT64:
+        return static_cast<int>(value->value.u64);
+    case BP_VAL_SUBTYPE_INT64:
+        return static_cast<int>(value->value.i64);
+    case BP_VAL_SUBTYPE_FLOAT32:
+        return static_cast<int>(value->value.f32);
+    case BP_VAL_SUBTYPE_FLOAT64:
+        return static_cast<int>(value->value.f64);
+    default:
+        return 0;
     }
 }
 
@@ -841,28 +922,28 @@ long bpValueToLong(const BpValue *value) {
         return 0L;
 
     switch (bpValueGetSubtype(value)) {
-        case BP_VAL_SUBTYPE_UINT8:
-            return static_cast<long>(value->value.u8);
-        case BP_VAL_SUBTYPE_INT8:
-            return static_cast<long>(value->value.i8);
-        case BP_VAL_SUBTYPE_UINT16:
-            return static_cast<long>(value->value.u16);
-        case BP_VAL_SUBTYPE_INT16:
-            return static_cast<long>(value->value.i16);
-        case BP_VAL_SUBTYPE_UINT32:
-            return static_cast<long>(value->value.u32);
-        case BP_VAL_SUBTYPE_INT32:
-            return static_cast<long>(value->value.i32);
-        case BP_VAL_SUBTYPE_UINT64:
-            return static_cast<long>(value->value.u64);
-        case BP_VAL_SUBTYPE_INT64:
-            return static_cast<long>(value->value.i64);
-        case BP_VAL_SUBTYPE_FLOAT32:
-            return static_cast<long>(value->value.f32);
-        case BP_VAL_SUBTYPE_FLOAT64:
-            return static_cast<long>(value->value.f64);
-        default:
-            return 0L;
+    case BP_VAL_SUBTYPE_UINT8:
+        return static_cast<long>(value->value.u8);
+    case BP_VAL_SUBTYPE_INT8:
+        return static_cast<long>(value->value.i8);
+    case BP_VAL_SUBTYPE_UINT16:
+        return static_cast<long>(value->value.u16);
+    case BP_VAL_SUBTYPE_INT16:
+        return static_cast<long>(value->value.i16);
+    case BP_VAL_SUBTYPE_UINT32:
+        return static_cast<long>(value->value.u32);
+    case BP_VAL_SUBTYPE_INT32:
+        return static_cast<long>(value->value.i32);
+    case BP_VAL_SUBTYPE_UINT64:
+        return static_cast<long>(value->value.u64);
+    case BP_VAL_SUBTYPE_INT64:
+        return static_cast<long>(value->value.i64);
+    case BP_VAL_SUBTYPE_FLOAT32:
+        return static_cast<long>(value->value.f32);
+    case BP_VAL_SUBTYPE_FLOAT64:
+        return static_cast<long>(value->value.f64);
+    default:
+        return 0L;
     }
 }
 
@@ -871,28 +952,28 @@ long long bpValueToLongLong(const BpValue *value) {
         return 0LL;
 
     switch (bpValueGetSubtype(value)) {
-        case BP_VAL_SUBTYPE_UINT8:
-            return static_cast<long long>(value->value.u8);
-        case BP_VAL_SUBTYPE_INT8:
-            return static_cast<long long>(value->value.i8);
-        case BP_VAL_SUBTYPE_UINT16:
-            return static_cast<long long>(value->value.u16);
-        case BP_VAL_SUBTYPE_INT16:
-            return static_cast<long long>(value->value.i16);
-        case BP_VAL_SUBTYPE_UINT32:
-            return static_cast<long long>(value->value.u32);
-        case BP_VAL_SUBTYPE_INT32:
-            return static_cast<long long>(value->value.i32);
-        case BP_VAL_SUBTYPE_UINT64:
-            return static_cast<long long>(value->value.u64);
-        case BP_VAL_SUBTYPE_INT64:
-            return value->value.i64;
-        case BP_VAL_SUBTYPE_FLOAT32:
-            return static_cast<long long>(value->value.f32);
-        case BP_VAL_SUBTYPE_FLOAT64:
-            return static_cast<long long>(value->value.f64);
-        default:
-            return 0LL;
+    case BP_VAL_SUBTYPE_UINT8:
+        return static_cast<long long>(value->value.u8);
+    case BP_VAL_SUBTYPE_INT8:
+        return static_cast<long long>(value->value.i8);
+    case BP_VAL_SUBTYPE_UINT16:
+        return static_cast<long long>(value->value.u16);
+    case BP_VAL_SUBTYPE_INT16:
+        return static_cast<long long>(value->value.i16);
+    case BP_VAL_SUBTYPE_UINT32:
+        return static_cast<long long>(value->value.u32);
+    case BP_VAL_SUBTYPE_INT32:
+        return static_cast<long long>(value->value.i32);
+    case BP_VAL_SUBTYPE_UINT64:
+        return static_cast<long long>(value->value.u64);
+    case BP_VAL_SUBTYPE_INT64:
+        return value->value.i64;
+    case BP_VAL_SUBTYPE_FLOAT32:
+        return static_cast<long long>(value->value.f32);
+    case BP_VAL_SUBTYPE_FLOAT64:
+        return static_cast<long long>(value->value.f64);
+    default:
+        return 0LL;
     }
 }
 
@@ -901,28 +982,28 @@ unsigned int bpValueToUint(const BpValue *value) {
         return 0U;
 
     switch (bpValueGetSubtype(value)) {
-        case BP_VAL_SUBTYPE_UINT8:
-            return static_cast<unsigned int>(value->value.u8);
-        case BP_VAL_SUBTYPE_INT8:
-            return value->value.i8 < 0 ? 0U : static_cast<unsigned int>(value->value.i8);
-        case BP_VAL_SUBTYPE_UINT16:
-            return static_cast<unsigned int>(value->value.u16);
-        case BP_VAL_SUBTYPE_INT16:
-            return value->value.i16 < 0 ? 0U : static_cast<unsigned int>(value->value.i16);
-        case BP_VAL_SUBTYPE_UINT32:
-            return value->value.u32;
-        case BP_VAL_SUBTYPE_INT32:
-            return value->value.i32 < 0 ? 0U : static_cast<unsigned int>(value->value.i32);
-        case BP_VAL_SUBTYPE_UINT64:
-            return static_cast<unsigned int>(value->value.u64);
-        case BP_VAL_SUBTYPE_INT64:
-            return value->value.i64 < 0 ? 0U : static_cast<unsigned int>(value->value.i64);
-        case BP_VAL_SUBTYPE_FLOAT32:
-            return value->value.f32 < 0 ? 0U : static_cast<unsigned int>(value->value.f32);
-        case BP_VAL_SUBTYPE_FLOAT64:
-            return value->value.f64 < 0 ? 0U : static_cast<unsigned int>(value->value.f64);
-        default:
-            return 0U;
+    case BP_VAL_SUBTYPE_UINT8:
+        return static_cast<unsigned int>(value->value.u8);
+    case BP_VAL_SUBTYPE_INT8:
+        return value->value.i8 < 0 ? 0U : static_cast<unsigned int>(value->value.i8);
+    case BP_VAL_SUBTYPE_UINT16:
+        return static_cast<unsigned int>(value->value.u16);
+    case BP_VAL_SUBTYPE_INT16:
+        return value->value.i16 < 0 ? 0U : static_cast<unsigned int>(value->value.i16);
+    case BP_VAL_SUBTYPE_UINT32:
+        return value->value.u32;
+    case BP_VAL_SUBTYPE_INT32:
+        return value->value.i32 < 0 ? 0U : static_cast<unsigned int>(value->value.i32);
+    case BP_VAL_SUBTYPE_UINT64:
+        return static_cast<unsigned int>(value->value.u64);
+    case BP_VAL_SUBTYPE_INT64:
+        return value->value.i64 < 0 ? 0U : static_cast<unsigned int>(value->value.i64);
+    case BP_VAL_SUBTYPE_FLOAT32:
+        return value->value.f32 < 0 ? 0U : static_cast<unsigned int>(value->value.f32);
+    case BP_VAL_SUBTYPE_FLOAT64:
+        return value->value.f64 < 0 ? 0U : static_cast<unsigned int>(value->value.f64);
+    default:
+        return 0U;
     }
 }
 
@@ -931,28 +1012,28 @@ unsigned long bpValueToUlong(const BpValue *value) {
         return 0UL;
 
     switch (bpValueGetSubtype(value)) {
-        case BP_VAL_SUBTYPE_UINT8:
-            return static_cast<unsigned long>(value->value.u8);
-        case BP_VAL_SUBTYPE_INT8:
-            return value->value.i8 < 0 ? 0UL : static_cast<unsigned long>(value->value.i8);
-        case BP_VAL_SUBTYPE_UINT16:
-            return static_cast<unsigned long>(value->value.u16);
-        case BP_VAL_SUBTYPE_INT16:
-            return value->value.i16 < 0 ? 0UL : static_cast<unsigned long>(value->value.i16);
-        case BP_VAL_SUBTYPE_UINT32:
-            return static_cast<unsigned long>(value->value.u32);
-        case BP_VAL_SUBTYPE_INT32:
-            return value->value.i32 < 0 ? 0UL : static_cast<unsigned long>(value->value.i32);
-        case BP_VAL_SUBTYPE_UINT64:
-            return static_cast<unsigned long>(value->value.u64);
-        case BP_VAL_SUBTYPE_INT64:
-            return value->value.i64 < 0 ? 0UL : static_cast<unsigned long>(value->value.i64);
-        case BP_VAL_SUBTYPE_FLOAT32:
-            return value->value.f32 < 0 ? 0UL : static_cast<unsigned long>(value->value.f32);
-        case BP_VAL_SUBTYPE_FLOAT64:
-            return value->value.f64 < 0 ? 0UL : static_cast<unsigned long>(value->value.f64);
-        default:
-            return 0UL;
+    case BP_VAL_SUBTYPE_UINT8:
+        return static_cast<unsigned long>(value->value.u8);
+    case BP_VAL_SUBTYPE_INT8:
+        return value->value.i8 < 0 ? 0UL : static_cast<unsigned long>(value->value.i8);
+    case BP_VAL_SUBTYPE_UINT16:
+        return static_cast<unsigned long>(value->value.u16);
+    case BP_VAL_SUBTYPE_INT16:
+        return value->value.i16 < 0 ? 0UL : static_cast<unsigned long>(value->value.i16);
+    case BP_VAL_SUBTYPE_UINT32:
+        return static_cast<unsigned long>(value->value.u32);
+    case BP_VAL_SUBTYPE_INT32:
+        return value->value.i32 < 0 ? 0UL : static_cast<unsigned long>(value->value.i32);
+    case BP_VAL_SUBTYPE_UINT64:
+        return static_cast<unsigned long>(value->value.u64);
+    case BP_VAL_SUBTYPE_INT64:
+        return value->value.i64 < 0 ? 0UL : static_cast<unsigned long>(value->value.i64);
+    case BP_VAL_SUBTYPE_FLOAT32:
+        return value->value.f32 < 0 ? 0UL : static_cast<unsigned long>(value->value.f32);
+    case BP_VAL_SUBTYPE_FLOAT64:
+        return value->value.f64 < 0 ? 0UL : static_cast<unsigned long>(value->value.f64);
+    default:
+        return 0UL;
     }
 }
 
@@ -961,28 +1042,28 @@ unsigned long long bpValueToUlongLong(const BpValue *value) {
         return 0ULL;
 
     switch (bpValueGetSubtype(value)) {
-        case BP_VAL_SUBTYPE_UINT8:
-            return static_cast<unsigned long long>(value->value.u8);
-        case BP_VAL_SUBTYPE_INT8:
-            return value->value.i8 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.i8);
-        case BP_VAL_SUBTYPE_UINT16:
-            return static_cast<unsigned long long>(value->value.u16);
-        case BP_VAL_SUBTYPE_INT16:
-            return value->value.i16 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.i16);
-        case BP_VAL_SUBTYPE_UINT32:
-            return static_cast<unsigned long long>(value->value.u32);
-        case BP_VAL_SUBTYPE_INT32:
-            return value->value.i32 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.i32);
-        case BP_VAL_SUBTYPE_UINT64:
-            return value->value.u64;
-        case BP_VAL_SUBTYPE_INT64:
-            return value->value.i64 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.i64);
-        case BP_VAL_SUBTYPE_FLOAT32:
-            return value->value.f32 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.f32);
-        case BP_VAL_SUBTYPE_FLOAT64:
-            return value->value.f64 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.f64);
-        default:
-            return 0ULL;
+    case BP_VAL_SUBTYPE_UINT8:
+        return static_cast<unsigned long long>(value->value.u8);
+    case BP_VAL_SUBTYPE_INT8:
+        return value->value.i8 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.i8);
+    case BP_VAL_SUBTYPE_UINT16:
+        return static_cast<unsigned long long>(value->value.u16);
+    case BP_VAL_SUBTYPE_INT16:
+        return value->value.i16 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.i16);
+    case BP_VAL_SUBTYPE_UINT32:
+        return static_cast<unsigned long long>(value->value.u32);
+    case BP_VAL_SUBTYPE_INT32:
+        return value->value.i32 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.i32);
+    case BP_VAL_SUBTYPE_UINT64:
+        return value->value.u64;
+    case BP_VAL_SUBTYPE_INT64:
+        return value->value.i64 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.i64);
+    case BP_VAL_SUBTYPE_FLOAT32:
+        return value->value.f32 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.f32);
+    case BP_VAL_SUBTYPE_FLOAT64:
+        return value->value.f64 < 0 ? 0ULL : static_cast<unsigned long long>(value->value.f64);
+    default:
+        return 0ULL;
     }
 }
 
@@ -991,28 +1072,28 @@ float bpValueToFloat(const BpValue *value) {
         return 0.0f;
 
     switch (bpValueGetSubtype(value)) {
-        case BP_VAL_SUBTYPE_UINT8:
-            return static_cast<float>(value->value.u8);
-        case BP_VAL_SUBTYPE_INT8:
-            return static_cast<float>(value->value.i8);
-        case BP_VAL_SUBTYPE_UINT16:
-            return static_cast<float>(value->value.u16);
-        case BP_VAL_SUBTYPE_INT16:
-            return static_cast<float>(value->value.i16);
-        case BP_VAL_SUBTYPE_UINT32:
-            return static_cast<float>(value->value.u32);
-        case BP_VAL_SUBTYPE_INT32:
-            return static_cast<float>(value->value.i32);
-        case BP_VAL_SUBTYPE_UINT64:
-            return static_cast<float>(value->value.u64);
-        case BP_VAL_SUBTYPE_INT64:
-            return static_cast<float>(value->value.i64);
-        case BP_VAL_SUBTYPE_FLOAT32:
-            return value->value.f32;
-        case BP_VAL_SUBTYPE_FLOAT64:
-            return static_cast<float>(value->value.f64);
-        default:
-            return 0.0f;
+    case BP_VAL_SUBTYPE_UINT8:
+        return static_cast<float>(value->value.u8);
+    case BP_VAL_SUBTYPE_INT8:
+        return static_cast<float>(value->value.i8);
+    case BP_VAL_SUBTYPE_UINT16:
+        return static_cast<float>(value->value.u16);
+    case BP_VAL_SUBTYPE_INT16:
+        return static_cast<float>(value->value.i16);
+    case BP_VAL_SUBTYPE_UINT32:
+        return static_cast<float>(value->value.u32);
+    case BP_VAL_SUBTYPE_INT32:
+        return static_cast<float>(value->value.i32);
+    case BP_VAL_SUBTYPE_UINT64:
+        return static_cast<float>(value->value.u64);
+    case BP_VAL_SUBTYPE_INT64:
+        return static_cast<float>(value->value.i64);
+    case BP_VAL_SUBTYPE_FLOAT32:
+        return value->value.f32;
+    case BP_VAL_SUBTYPE_FLOAT64:
+        return static_cast<float>(value->value.f64);
+    default:
+        return 0.0f;
     }
 }
 
@@ -1021,27 +1102,27 @@ double bpValueToDouble(const BpValue *value) {
         return 0.0;
 
     switch (bpValueGetSubtype(value)) {
-        case BP_VAL_SUBTYPE_UINT8:
-            return static_cast<double>(value->value.u8);
-        case BP_VAL_SUBTYPE_INT8:
-            return static_cast<double>(value->value.i8);
-        case BP_VAL_SUBTYPE_UINT16:
-            return static_cast<double>(value->value.u16);
-        case BP_VAL_SUBTYPE_INT16:
-            return static_cast<double>(value->value.i16);
-        case BP_VAL_SUBTYPE_UINT32:
-            return static_cast<double>(value->value.u32);
-        case BP_VAL_SUBTYPE_INT32:
-            return static_cast<double>(value->value.i32);
-        case BP_VAL_SUBTYPE_UINT64:
-            return static_cast<double>(value->value.u64);
-        case BP_VAL_SUBTYPE_INT64:
-            return static_cast<double>(value->value.i64);
-        case BP_VAL_SUBTYPE_FLOAT32:
-            return static_cast<double>(value->value.f32);
-        case BP_VAL_SUBTYPE_FLOAT64:
-            return value->value.f64;
-        default:
-            return 0.0;
+    case BP_VAL_SUBTYPE_UINT8:
+        return static_cast<double>(value->value.u8);
+    case BP_VAL_SUBTYPE_INT8:
+        return static_cast<double>(value->value.i8);
+    case BP_VAL_SUBTYPE_UINT16:
+        return static_cast<double>(value->value.u16);
+    case BP_VAL_SUBTYPE_INT16:
+        return static_cast<double>(value->value.i16);
+    case BP_VAL_SUBTYPE_UINT32:
+        return static_cast<double>(value->value.u32);
+    case BP_VAL_SUBTYPE_INT32:
+        return static_cast<double>(value->value.i32);
+    case BP_VAL_SUBTYPE_UINT64:
+        return static_cast<double>(value->value.u64);
+    case BP_VAL_SUBTYPE_INT64:
+        return static_cast<double>(value->value.i64);
+    case BP_VAL_SUBTYPE_FLOAT32:
+        return static_cast<double>(value->value.f32);
+    case BP_VAL_SUBTYPE_FLOAT64:
+        return value->value.f64;
+    default:
+        return 0.0;
     }
 }
