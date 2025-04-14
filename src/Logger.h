@@ -92,6 +92,15 @@ struct BpLogger {
     static const char *GetLevelString(BpLogLevel level);
 
 private:
+    class ScopedLock {
+    public:
+        explicit ScopedLock(BpLogger *logger) : m_Logger(logger) { m_Logger->Lock(); }
+        ~ScopedLock() { m_Logger->Unlock(); }
+
+    private:
+        BpLogger *m_Logger;
+    };
+
     struct Callback {
         BpLogCallback callback;
         void *userdata;
@@ -101,8 +110,8 @@ private:
 
         bool operator==(const Callback &rhs) const {
             return callback == rhs.callback &&
-                   userdata == rhs.userdata &&
-                   level == rhs.level;
+                userdata == rhs.userdata &&
+                level == rhs.level;
         }
 
         bool operator!=(const Callback &rhs) const {

@@ -14,7 +14,7 @@ BpLogger *bpGetDefaultLogger() {
     return BpLogger::GetDefault();
 }
 
-void bpSetDefaultBpLogger(BpLogger *logger) {
+void bpSetDefaultLogger(BpLogger *logger) {
     BpLogger::SetDefault(logger);
 }
 
@@ -149,6 +149,7 @@ void bpLoggerFatal(BpLogger *logger, const char *format, ...) {
     va_list args;
     va_start(args, format);
     logger->Log(BP_LOG_FATAL, format, args);
+    va_end(args);
 }
 
 void bpLog(BpLogLevel level, const char *format, ...) {
@@ -232,23 +233,37 @@ std::unordered_map<std::string, BpLogger *> BpLogger::s_BpLoggers;
 BpLogger *BpLogger::GetInstance(const std::string &name) {
     auto it = s_BpLoggers.find(name);
     if (it == s_BpLoggers.end()) {
-        return new BpLogger(name);
+        BpLogger *logger = new BpLogger(name);
+        s_BpLoggers[name] = logger;
+        return logger;
     }
     return it->second;
 }
 
 BpLogger *BpLogger::SetDefault(BpLogger *logger) {
     BpLogger *previous = s_DefaultBpLogger;
+
     if (!logger) {
-        s_DefaultBpLogger = GetInstance(BP_DEFAULT_NAME);
+        logger = GetInstance(BP_DEFAULT_NAME);
     }
-    s_DefaultBpLogger = logger;
+
+    if (logger != previous) {
+        s_DefaultBpLogger = logger;
+        if (logger) {
+            logger->AddRef();
+        }
+    }
+
     return previous;
 }
 
 BpLogger *BpLogger::GetDefault() {
+    static std::mutex defaultLoggerMutex;
+    std::lock_guard<std::mutex> lock(defaultLoggerMutex);
+
     if (!s_DefaultBpLogger) {
         s_DefaultBpLogger = GetInstance(BP_DEFAULT_NAME);
+        s_DefaultBpLogger->AddRef(); // Ensure it stays alive
     }
     return s_DefaultBpLogger;
 }
@@ -296,23 +311,21 @@ size_t BpLogger::GetCallbackCount() const {
 }
 
 void BpLogger::Log(BpLogLevel level, const char *format, va_list args) {
-    Lock();
+    ScopedLock lock(this);
 
     BpLogInfo info = {this, level, args, format, nullptr, nullptr};
 
-    if (level >= m_Level && level < BP_LOG_OFF) {
+    if (m_Level != BP_LOG_OFF && level >= m_Level) {
         InitLogInfo(&info, stdout);
         StdoutCallback(&info);
     }
 
     for (auto it = m_Callbacks.begin(); it != m_Callbacks.end() && it->callback; it++) {
-        if (level >= m_Level && level < BP_LOG_OFF) {
+        if (m_Level != BP_LOG_OFF && level >= m_Level) {
             InitLogInfo(&info, it->userdata);
             it->callback(&info);
         }
     }
-
-    Unlock();
 }
 
 const char *BpLogger::GetLevelString(BpLogLevel level) {
