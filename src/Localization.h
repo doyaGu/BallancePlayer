@@ -46,7 +46,7 @@ public:
      * @brief Constructor with optional default language
      * @param defaultLanguage Default language code
      */
-    explicit Localization(const std::string &defaultLanguage = "en");
+    explicit Localization(std::string defaultLanguage = "en");
 
     /**
      * @brief Destructor

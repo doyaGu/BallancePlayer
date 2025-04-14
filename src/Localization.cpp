@@ -6,14 +6,14 @@
 #include <ctime>
 #include <regex>
 #include <cctype>
+#include <utility>
 
-Localization::Localization(const std::string &defaultLanguage)
-    : m_CurrentLanguage(defaultLanguage) {
+Localization::Localization(std::string defaultLanguage)
+    : m_CurrentLanguage(std::move(defaultLanguage)) {
     InitDefaultPluralRules();
 }
 
 bool Localization::SetLanguage(const std::string &languageCode) {
-    // Check if language exists
     if (!HasLanguage(languageCode)) {
         return false;
     }
@@ -23,7 +23,6 @@ bool Localization::SetLanguage(const std::string &languageCode) {
 }
 
 bool Localization::RegisterLanguage(const LanguageConfig &config) {
-    // Validate language code
     if (config.code.empty()) {
         return false;
     }
@@ -59,7 +58,6 @@ void Localization::SetString(const std::string &key, const std::string &value,
     // Use provided language code or current language
     std::string targetLanguage = languageCode.empty() ? m_CurrentLanguage : languageCode;
 
-    // Ensure language exists
     if (!HasLanguage(targetLanguage)) {
         // Register language with default config if it doesn't exist
         LanguageConfig config;
@@ -68,7 +66,6 @@ void Localization::SetString(const std::string &key, const std::string &value,
         RegisterLanguage(config);
     }
 
-    // Set the string
     m_Strings[targetLanguage][key] = value;
 }
 
@@ -161,7 +158,6 @@ std::string Localization::FormatNumber(double value, int precision) const {
 }
 
 bool Localization::LoadFromFile(const std::string &filePath, const std::string &languageCode) {
-    // Open the file
     std::ifstream file(filePath);
     if (!file.is_open()) {
         return false;
