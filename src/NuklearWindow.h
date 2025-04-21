@@ -8,6 +8,11 @@
 #include "Window.h"
 
 // Nuklear definitions
+#ifdef NK_EXPORT
+#define NK_API __declspec(dllexport)
+#else
+#define NK_API __declspec(dllimport)
+#endif
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_BOOL
 #define NK_INCLUDE_STANDARD_VARARGS

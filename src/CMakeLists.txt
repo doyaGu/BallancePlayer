@@ -89,7 +89,7 @@ target_link_libraries(${LIBRARY_NAME}
 )
 
 target_compile_definitions(${LIBRARY_NAME} PRIVATE "BP_EXPORTS")
-
+target_compile_definitions(${LIBRARY_NAME} PRIVATE "NK_EXPORT")
 if (BP_ENABLE_IMGUI)
     target_compile_definitions(${LIBRARY_NAME} PRIVATE "IMGUI_EXPORT")
 endif ()
