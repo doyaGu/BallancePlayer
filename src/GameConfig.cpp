@@ -359,7 +359,7 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     verbose = config.verbose;
     manualSetup =  config.manualSetup;
     loadAllManagers = config.loadAllManagers;
-    loadAllBuildingBlocks = config.loadAllPlugins;
+    loadAllBuildingBlocks = config.loadAllBuildingBlocks;
     loadAllPlugins = config.loadAllPlugins;
 
     driver = config.driver;
