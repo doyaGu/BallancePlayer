@@ -76,7 +76,6 @@ public:
     bool borderless;
     bool clipCursor;
     bool alwaysHandleInput;
-    bool pauseOnDeactivated;
     int posX;
     int posY;
 

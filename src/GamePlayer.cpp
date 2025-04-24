@@ -1155,9 +1155,7 @@ void CGamePlayer::OnActivateApp(bool active)
             if (firstDeActivate)
                 wasPlaying = m_CKContext->IsPlaying() == TRUE;
 
-            if (m_Config.pauseOnDeactivated)
-                Pause();
-            else if (!m_Config.alwaysHandleInput)
+            if (!m_Config.alwaysHandleInput)
                 m_InputManager->Pause(TRUE);
 
             ::ClipCursor(NULL);
@@ -1166,12 +1164,7 @@ void CGamePlayer::OnActivateApp(bool active)
             {
                 if (firstDeActivate)
                     wasFullscreen = true;
-
                 OnStopFullscreen();
-
-                Pause();
-                if (wasPlaying && !m_Config.pauseOnDeactivated)
-                    Play();
             }
             else if (firstDeActivate)
             {
@@ -1183,6 +1176,9 @@ void CGamePlayer::OnActivateApp(bool active)
     }
     else
     {
+        if (wasPlaying)
+            Play();
+
         if (wasFullscreen && !firstDeActivate)
             OnGoFullscreen();
 
@@ -1190,9 +1186,6 @@ void CGamePlayer::OnActivateApp(bool active)
 
         if (!m_Config.alwaysHandleInput)
             m_InputManager->Pause(FALSE);
-
-        if (wasPlaying)
-            Play();
 
         firstDeActivate = true;
         m_State = ePlaying;
@@ -1276,9 +1269,7 @@ int CGamePlayer::OnCommand(UINT id, UINT code)
     switch (id)
     {
     case IDM_APP_ABOUT:
-        Pause();
         OpenAboutDialog();
-        Play();
         break;
 
     default:
@@ -1359,8 +1350,6 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
 
 void CGamePlayer::OnGoFullscreen()
 {
-    Pause();
-
     ::ClipCursor(NULL);
 
     if (GoFullscreen())
@@ -1381,14 +1370,10 @@ void CGamePlayer::OnGoFullscreen()
         if (m_Config.childWindowRendering)
             m_RenderWindow.Update();
     }
-
-    Play();
 }
 
 void CGamePlayer::OnStopFullscreen()
 {
-    Pause();
-
     if (StopFullscreen())
     {
         LONG style = (m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
@@ -1413,8 +1398,6 @@ void CGamePlayer::OnStopFullscreen()
     }
 
     ClipCursor();
-
-    Play();
 }
 
 void CGamePlayer::OnSwitchFullscreen()
