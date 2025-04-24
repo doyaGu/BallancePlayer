@@ -47,7 +47,7 @@ bool CmdlineArg::GetValue(int i, XString &value) const
 
         int n = 0;
         int foundPos = val.Find('=');
-        if (foundPos == NOTFOUND)
+        if (foundPos == XString::NOTFOUND)
             return false;
         int j = foundPos + 1;
         for (int vi = j; vi < sz; ++vi)
