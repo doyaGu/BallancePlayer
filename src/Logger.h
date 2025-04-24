@@ -23,8 +23,11 @@ public:
     void Open(const char *filename, bool overwrite = true, int level = LEVEL_INFO);
     void Close();
 
-    int GetLevel() const;
-    void SetLevel(int level);
+    bool IsConsoleOpened() const { return m_ConsoleOpened; }
+    void OpenConsole(bool opened);
+
+    int GetLevel() const { return m_Level; }
+    void SetLevel(int level) { m_Level = level; }
 
     void Debug(const char *fmt, ...);
     void Info(const char *fmt, ...);

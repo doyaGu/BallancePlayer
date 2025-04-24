@@ -34,29 +34,29 @@ void CLogger::Close()
     if (m_ConsoleOpened)
     {
         ::FreeConsole();
+        m_ConsoleOpened = false;
     }
 
     if (m_File)
+    {
         fclose(m_File);
+        m_File = NULL;
+    }
 }
 
-int CLogger::GetLevel() const
+void CLogger::OpenConsole(bool opened)
 {
-    return m_Level;
-}
-
-void CLogger::SetLevel(int level)
-{
-    m_Level = level;
-    if (!m_ConsoleOpened && level >= LEVEL_DEBUG)
+    if (opened)
     {
         ::AllocConsole();
         freopen("CONOUT$", "w", stdout);
+        m_ConsoleOpened = true;
     }
-    else if (m_ConsoleOpened && level < LEVEL_DEBUG)
+    else
     {
         freopen("CON", "w", stdout);
         ::FreeConsole();
+        m_ConsoleOpened = false;
     }
 }
 
