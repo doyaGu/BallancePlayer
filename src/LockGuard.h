@@ -18,8 +18,11 @@ public:
 
     void Release()
     {
-        ::CloseHandle(m_Mutex);
-        m_Mutex = NULL;
+        if (m_Mutex)
+        {
+            ::CloseHandle(m_Mutex);
+            m_Mutex = NULL;
+        }
     }
 
 private:
