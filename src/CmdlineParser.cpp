@@ -27,15 +27,13 @@ bool CmdlineArg::GetValue(int i, XString &value) const
 
             for (int vi = 0; vi < sz; ++vi)
             {
+                if (val[vi] == '"')
                 {
-                    if (val[vi] == '"')
-                    {
-                        inQuote = !inQuote;
-                        continue;
-                    }
-                    if (inQuote)
-                        value[k++] = val[vi];
+                    inQuote = !inQuote;
+                    continue;
                 }
+                if (inQuote)
+                    value[k++] = val[vi];
             }
 
             value.Resize(k);
@@ -48,7 +46,10 @@ bool CmdlineArg::GetValue(int i, XString &value) const
         int k = 0;
 
         int n = 0;
-        int j = val.Find('=') + 1;
+        int foundPos = val.Find('=');
+        if (foundPos == NOTFOUND)
+            return false;
+        int j = foundPos + 1;
         for (int vi = j; vi < sz; ++vi)
         {
             if (val[vi] == ';' && vi != j)
@@ -171,16 +172,24 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
             if (maxValueCount == -1)
                 maxValueCount = (int)(m_Args.Size() - m_Index);
 
-            values = &m_Args[m_Index];
-            while (valueCount < maxValueCount)
+            ++m_Index; // Skip the option itself
+            if (m_Index >= m_Args.Size() || maxValueCount == 0)
             {
-                const XString &next = m_Args[m_Index];
-                if (next.Length() != 0 && next[0] == '-')
-                    break;
-                ++m_Index;
-                ++valueCount;
+                arg = CmdlineArg(NULL, 0);
             }
-            arg = CmdlineArg(values, valueCount);
+            else
+            {
+                values = &m_Args[m_Index]; // Start from after the option
+                while (valueCount < maxValueCount && m_Index < m_Args.Size())
+                {
+                    const XString &next = m_Args[m_Index];
+                    if (next.Length() != 0 && next[0] == '-')
+                        break;
+                    ++m_Index;
+                    ++valueCount;
+                }
+                arg = CmdlineArg(values, valueCount);
+            }
         }
     }
 
