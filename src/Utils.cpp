@@ -117,11 +117,12 @@ namespace utils
     {
         if (!path || path[0] == '\0')
             return false;
-
-        if (path[strlen(path) - 1] == '\\')
-            return true;
-
-        return false;
+    
+        size_t len = strlen(path);
+        if (len == 0)
+            return false;
+        
+        return (path[len - 1] == '\\' || path[len - 1] == '/');
     }
 
     bool RemoveTrailingPathSeparator(char *path)
