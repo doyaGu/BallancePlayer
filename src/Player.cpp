@@ -10,12 +10,12 @@
 #include "Logger.h"
 #include "Utils.h"
 
-static HANDLE CreatNamedMutex();
+static HANDLE CreateNamedMutex();
 static void LoadPaths(CGameConfig &config, CmdlineParser &parser);
 
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    HANDLE hMutex = CreatNamedMutex();
+    HANDLE hMutex = CreateNamedMutex();
     if (!hMutex)
     {
         ::MessageBox(NULL, TEXT("Another player is running!"), TEXT("Error"), MB_OK);
@@ -50,12 +50,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     if (!player.Init(hInstance, config))
     {
+        CLogger::Get().Error("Failed to initialize player!");
         ::MessageBox(NULL, TEXT("Failed to initialize player!"), TEXT("Error"), MB_OK);
         return -1;
     }
 
     if (!player.Load())
     {
+        CLogger::Get().Error("Failed to load game composition!");
         ::MessageBox(NULL, TEXT("Failed to load game composition!"), TEXT("Error"), MB_OK);
         return -1;
     }
@@ -67,22 +69,41 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     return 0;
 }
 
-static HANDLE CreatNamedMutex()
+static HANDLE CreateNamedMutex()
 {
     char buf[MAX_PATH];
     char drive[4];
     char dir[MAX_PATH];
     char filename[MAX_PATH];
-    ::GetModuleFileNameA(NULL, buf, MAX_PATH);
+    
+    if (!::GetModuleFileNameA(NULL, buf, MAX_PATH))
+    {
+        CLogger::Get().Error("Failed to get module filename, error code: %d", GetLastError());
+        return NULL;
+    }
+    
     _splitpath(buf, drive, dir, filename, NULL);
     _snprintf(buf, MAX_PATH, "%s%s", drive, dir);
 
     size_t crc = 0;
     utils::CRC32(buf, strlen(buf), 0, &crc);
     _snprintf(buf, MAX_PATH, "Ballance-%X", crc);
+    
     HANDLE hMutex = ::CreateMutexA(NULL, FALSE, buf);
-    if (::GetLastError() == ERROR_ALREADY_EXISTS)
+    DWORD error = ::GetLastError();
+    
+    if (!hMutex)
+    {
+        CLogger::Get().Error("Failed to create mutex, error code: %d", error);
         return NULL;
+    }
+    
+    if (error == ERROR_ALREADY_EXISTS)
+    {
+        ::CloseHandle(hMutex);
+        return NULL;
+    }
+    
     return hMutex;
 }
 
