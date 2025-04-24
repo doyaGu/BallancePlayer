@@ -153,13 +153,13 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
         {
             if (arg.GetValue(0, str))
                 config.textureVideoFormat = utils::String2PixelFormat(str.CStr(), 16);
-            break;
+            continue;
         }
         if (parser.Next(arg, "--sprite-video-format", '\0', 1))
         {
             if (arg.GetValue(0, str))
                 config.spriteVideoFormat = utils::String2PixelFormat(str.CStr(), 16);
-            break;
+            continue;
         }
         if (parser.Next(arg, "--child-window-rendering", 's'))
         {
