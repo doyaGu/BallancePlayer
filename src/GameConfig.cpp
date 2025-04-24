@@ -262,7 +262,7 @@ static bool IniGetBoolean(const char *section, const char *name, bool &value, co
     UINT val = ::GetPrivateProfileIntA(section, name, -1, filename);
     if (val == -1)
         return false;
-    value = (val == 1);
+    value = (val != 0);
     return true;
 }
 
