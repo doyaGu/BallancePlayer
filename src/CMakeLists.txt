@@ -11,7 +11,7 @@ set(PLAYER_HEADERS
         LockGuard.h
         Logger.h
         Utils.h
-        )
+)
 
 set(PLAYER_SOURCES
         Player.cpp
@@ -23,14 +23,14 @@ set(PLAYER_SOURCES
         Logger.cpp
         Utils.cpp
         Player.rc
-        )
+)
 
 add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
 
 set_target_properties(${PLAYER_NAME} PROPERTIES
         OUTPUT_NAME ${PLAYER_NAME}
         WIN32_EXECUTABLE TRUE
-        )
+)
 
 target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
 
