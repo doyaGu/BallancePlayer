@@ -612,11 +612,11 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
             WndProc,
             CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS)) {
             m_Logger->Error("Failed to register render window class!");
-            Window::UnregisterWindowClass(m_hInstance, std::string("Ballance"));
-            return false;
+            m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING] = false;
+            childWindowRendering = false;
+        } else {
+            m_Logger->Debug("Render window class registered.");
         }
-
-        m_Logger->Debug("Render window class registered.");
     }
 
     int screenWidth = ::GetSystemMetrics(SM_CXSCREEN);
@@ -679,14 +679,14 @@ bool GamePlayer::InitWindow(HINSTANCE hInstance) {
 
         if (!m_RenderWindow->Create(renderParams)) {
             m_Logger->Error("Failed to create render window!");
-            m_MainWindow = nullptr;
-            Window::UnregisterWindowClass(m_hInstance, std::string("Ballance"));
             Window::UnregisterWindowClass(m_hInstance, std::string("Ballance Render"));
+            m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING] = false;
+            childWindowRendering = false;
             return false;
+        } else {
+            m_RenderWindow->EnableDpiAwareness(true);
+            m_Logger->Debug("Render window created.");
         }
-
-        m_RenderWindow->EnableDpiAwareness(true);
-        m_Logger->Debug("Render window created.");
     }
 
     SetupWindowEventHandlers(*m_MainWindow);
@@ -720,11 +720,17 @@ void GamePlayer::ShutdownWindow() {
         m_hAccelTable = nullptr;
     }
 
-    m_RenderWindow = nullptr;
+    bool childWindowRendering = m_GameConfig[BP_CONFIG_CHILD_WINDOW_RENDERING].GetBool();
+
+    if (m_RenderWindow) {
+        m_RenderWindow = nullptr;
+    }
     m_MainWindow = nullptr;
 
     if (m_hInstance) {
-        Window::UnregisterWindowClass(m_hInstance, std::string("Ballance Render"));
+        if (childWindowRendering) {
+            Window::UnregisterWindowClass(m_hInstance, std::string("Ballance Render"));
+        }
         Window::UnregisterWindowClass(m_hInstance, std::string("Ballance"));
     }
 }
