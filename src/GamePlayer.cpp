@@ -1063,14 +1063,17 @@ bool CGamePlayer::IsRenderFullscreen() const
 
 bool CGamePlayer::GoFullscreen()
 {
-    if (!m_RenderContext || IsRenderFullscreen())
+    if (!m_RenderContext)
         return false;
+
+    if (IsRenderFullscreen())
+        return true;
 
     m_Config.fullscreen = true;
     if (m_RenderContext->GoFullScreen(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver) != CK_OK)
     {
-        m_Config.fullscreen = false;
         CLogger::Get().Debug("GoFullScreen Failed");
+        m_Config.fullscreen = false;
         return false;
     }
 
