@@ -351,7 +351,6 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
-    m_MainWindow.EnableDpiAwareness();
     CLogger::Get().Debug("Main window created.");
 
     if (m_Config.childWindowRendering)
@@ -365,7 +364,6 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         }
         else
         {
-            m_RenderWindow.EnableDpiAwareness();
             CLogger::Get().Debug("Render window created.");
         }
     }

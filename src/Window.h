@@ -163,63 +163,6 @@ public:
 
     int GetText(LPTSTR string, int maxCount) const { return ::GetWindowText(m_Window, string, maxCount); }
 
-    void EnableDpiAwareness()
-    {
-        // Try to enable Per-Monitor DPI awareness
-        HINSTANCE hUser32 = ::LoadLibrary(TEXT("user32.dll"));
-        if (hUser32)
-        {
-            typedef BOOL(WINAPI * SetProcessDPIAwarePtr)();
-            typedef HRESULT(WINAPI * SetProcessDpiAwarenessPtr)(int);
-
-// Define DPI_AWARENESS_CONTEXT if not defined in older Windows SDK
-#ifndef DPI_AWARENESS_CONTEXT
-            typedef HANDLE DPI_AWARENESS_CONTEXT;
-#endif
-
-            typedef BOOL(WINAPI * SetProcessDpiAwarenessContextPtr)(DPI_AWARENESS_CONTEXT);
-
-            // Try Windows 10 (1703) API first - most advanced
-            SetProcessDpiAwarenessContextPtr setProcessDpiAwarenessContextPtr =
-                (SetProcessDpiAwarenessContextPtr)(::GetProcAddress(hUser32, "SetProcessDpiAwarenessContext"));
-            if (setProcessDpiAwarenessContextPtr)
-            {
-                // Try for Per-Monitor V2 first (Windows 10 1703+)
-                DPI_AWARENESS_CONTEXT perMonitorV2 = (DPI_AWARENESS_CONTEXT)(-4);
-
-                if (!setProcessDpiAwarenessContextPtr(perMonitorV2))
-                {
-                    // Fall back to regular Per-Monitor (Windows 8.1+)
-                    DPI_AWARENESS_CONTEXT perMonitor = (DPI_AWARENESS_CONTEXT)(-3);
-                    setProcessDpiAwarenessContextPtr(perMonitor);
-                }
-            }
-            else
-            {
-                // Try Windows 8.1+ API
-                SetProcessDpiAwarenessPtr setProcessDpiAwarenessPtr =
-                    (SetProcessDpiAwarenessPtr)(::GetProcAddress(hUser32, "SetProcessDpiAwareness"));
-                if (setProcessDpiAwarenessPtr)
-                {
-                    setProcessDpiAwarenessPtr(2); // PROCESS_PER_MONITOR_DPI_AWARE
-                }
-                else
-                {
-                    // Fall back to Windows Vista API
-                    SetProcessDPIAwarePtr setProcessDPIAwarePtr =
-                        (SetProcessDPIAwarePtr)(GetProcAddress(hUser32, "SetProcessDPIAware"));
-
-                    if (setProcessDPIAwarePtr)
-                    {
-                        setProcessDPIAwarePtr();
-                    }
-                }
-            }
-
-            ::FreeLibrary(hUser32);
-        }
-    }
-
 protected:
     HWND m_Window;
 };
