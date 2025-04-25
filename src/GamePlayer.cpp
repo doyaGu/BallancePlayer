@@ -969,6 +969,12 @@ void CGamePlayer::ResizeWindow()
 
 int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
 {
+    if (!m_RenderManager)
+    {
+        CLogger::Get().Error("RenderManager is not initialized");
+        return -1;
+    }
+
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(driver);
     if (!drDesc)
     {
@@ -994,6 +1000,12 @@ int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
             if (dm[i].RefreshRate > refreshRate)
                 refreshRate = dm[i].RefreshRate;
         }
+    }
+
+    if (refreshRate == 0)
+    {
+        CLogger::Get().Error("No matching refresh rate found for %d x %d x %d", width, height, bpp);
+        return -1;
     }
 
     int screenMode = -1;
