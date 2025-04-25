@@ -392,7 +392,7 @@ void CGamePlayer::ShutdownWindow()
     if (m_hAccelTable)
     {
         ::DestroyAcceleratorTable(m_hAccelTable);
-        m_hAccelTable = nullptr;
+        m_hAccelTable = NULL;
     }
 
     if (m_Config.childWindowRendering)
@@ -478,17 +478,17 @@ void CGamePlayer::ShutdownEngine()
         if (m_RenderManager && m_RenderContext)
         {
             m_RenderManager->DestroyRenderContext(m_RenderContext);
-            m_RenderContext = nullptr;
+            m_RenderContext = NULL;
         }
 
         CKCloseContext(m_CKContext);
-        m_CKContext = nullptr;
+        m_CKContext = NULL;
 
-        m_RenderManager = nullptr;
-        m_MessageManager = nullptr;
-        m_TimeManager = nullptr;
-        m_AttributeManager = nullptr;
-        m_InputManager = nullptr;
+        m_RenderManager = NULL;
+        m_MessageManager = NULL;
+        m_TimeManager = NULL;
+        m_AttributeManager = NULL;
+        m_InputManager = NULL;
 
         CKShutdown();
     }
@@ -898,8 +898,8 @@ bool CGamePlayer::UnloadPlugins(CKPluginManager *pluginManager, CK_PLUGIN_TYPE t
     const int count = pluginManager->GetPluginCount(type);
     for (int i = 0; i < count; ++i)
     {
-        auto *entry = pluginManager->GetPluginInfo(type, i);
-        auto &info = entry->m_PluginInfo;
+        CKPluginEntry *entry = pluginManager->GetPluginInfo(type, i);
+        CKPluginInfo &info = entry->m_PluginInfo;
         if (info.m_GUID == guid)
         {
             if (pluginManager->UnLoadPluginDll(entry->m_PluginDllIndex) == CK_OK)
