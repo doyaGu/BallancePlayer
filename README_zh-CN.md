@@ -162,9 +162,6 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 - `AlwaysHandleInput`：允许窗口在后台时仍然处理输入。
   - `0`：禁用。
   - `1`：启用。
-- `PauseOnDeactivated`：当窗口失去焦点时暂停游戏。
-  - `0`：禁用。
-  - `1`：启用。
 - `X`：设置窗口的水平坐标（可以为负值）。
 - `Y`：设置窗口的垂直坐标（可以为负值）。
 
@@ -236,7 +233,6 @@ Player.exe [OPTIONS]
 - `-c`, `--borderless`：启动时进入无边框模式。
 - `--clip-cursor`：限制鼠标光标在窗口内。
 - `--always-handle-input`：允许窗口在后台时处理输入。
-- `-p`, `--pause-on-deactivated`：窗口失去焦点时暂停游戏。
 - `-x <X>`, `--position-x <X>`：设置窗口的 X 坐标。
 - `-y <Y>`, `--position-y <Y>`：设置窗口的 Y 坐标。
 - `-l <lang>`, `--lang <lang>`：设置游戏语言。

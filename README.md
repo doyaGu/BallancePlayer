@@ -162,9 +162,6 @@ The `Player.ini` file contains several settings that control the behavior of the
 - `AlwaysHandleInput`: Allows the player to handle input even when the window is in the background.
   - `0`: Disabled.
   - `1`: Enabled.
-- `PauseOnDeactivated`: Pauses the game when the window is deactivated.
-  - `0`: Disabled.
-  - `1`: Enabled.
 - `X`: Specifies the horizontal window coordinate (can be negative).
 - `Y`: Specifies the vertical window coordinate (can be negative).
 
@@ -236,7 +233,6 @@ Player.exe [OPTIONS]
 - `-c`, `--borderless`: Start the game in borderless mode.
 - `--clip-cursor`: Clip the cursor to the window.
 - `--always-handle-input`:  Allow input handling when the window is in the background.
-- `-p`, `--pause-on-deactivated`: Pause the game when the window is deactivated.
 - `-x <X>`, `--position-x <X>`: Set the window's X coordinate.
 - `-y <Y>`, `--position-y <Y>`: Set the window's Y coordinate.
 - `-l <lang>`, `--lang <lang>`: Set the game language.
