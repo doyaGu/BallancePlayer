@@ -439,9 +439,11 @@ bool CGamePlayer::InitDriver()
     }
 
     if (m_Config.manualSetup)
+    {
         OpenSetupDialog();
+        m_Config.manualSetup = false;
+    }
 
-    m_Config.manualSetup = false;
     bool tryFailed = false;
 
     VxDriverDesc *drDesc = m_RenderManager->GetRenderDriverDescription(m_Config.driver);
