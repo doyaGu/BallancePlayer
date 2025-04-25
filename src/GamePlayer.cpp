@@ -1719,12 +1719,12 @@ bool GamePlayer::ClipCursor() {
     if (m_GameConfig[BP_CONFIG_CLIP_CURSOR] == true)
     {
         RECT rect;
-        if (!m_MainWindow.GetClientRect(&rect))
+        if (!m_MainWindow->GetClientRect(rect))
         {
-            CLogger::Get().Error("Failed to get client rect for cursor clipping");
+            m_Logger->Error("Failed to get client rect for cursor clipping");
             return false;
         }
-        m_MainWindow.ClientToScreen(&rect);
+        m_MainWindow->ClientToScreen(rect);
         result = ::ClipCursor(&rect);
     }
     else
@@ -1735,7 +1735,7 @@ bool GamePlayer::ClipCursor() {
     if (!result)
     {
         DWORD error = GetLastError();
-        CLogger::Get().Error("ClipCursor failed with error code: %d", error);
+        m_Logger->Error("ClipCursor failed with error code: %d", error);
         return false;
     }
 
