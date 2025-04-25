@@ -250,6 +250,22 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
+### v0.3.4 (2025-04-24)
+
+**New Features**
+
+- Added support for DPI awareness handling to improve display scaling across different monitor configurations.
+
+**Bug Fixes**
+
+- Fixed an issue with the command line parser that could cause incorrect parameter handling.
+- Resolved an irregular game acceleration issue that occurred when frequently switching between windowed and fullscreen modes.
+
+**Changes**
+
+- Removed the deprecated `PauseOnDeactivated` setting.
+- Enhanced error handling with more descriptive messages and improved recovery from common failure states.
+
 ### v0.3.3 (2024-10-01)
 
 **New Features**
