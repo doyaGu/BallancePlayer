@@ -67,7 +67,7 @@ private:
     bool InitEngine(CWindow &mainWindow);
     bool InitDriver();
 
-    bool FinishLoad();
+    bool FinishLoad(const char *filename);
     void ReportMissingGuids(CKFile *file, const char *resolvedFile);
 
     bool InitPlugins(CKPluginManager *pluginManager);

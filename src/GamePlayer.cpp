@@ -85,17 +85,33 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
 bool CGamePlayer::Load(const char *filename)
 {
     if (m_State == eInitial)
+    {
+        CLogger::Get().Error("Player is not initialized!");
         return false;
+    }
 
     if (!filename || (*filename) == '\0')
+    {
         filename = m_Config.GetPath(eCmoPath);
+        if (!filename || (*filename) == '\0')
+        {
+            CLogger::Get().Error("No filename specified!");
+            return false;
+        }
+    }
 
     if (!m_CKContext)
+    {
+        CLogger::Get().Error("CKContext is not initialized!");
         return false;
+    }
 
     CKPathManager *pm = m_CKContext->GetPathManager();
     if (!pm)
+    {
+        CLogger::Get().Error("Failed to get CKPathManager!");
         return false;
+    }
 
     XString resolvedFile = filename;
     CKERROR err = pm->ResolveFileName(resolvedFile, DATA_PATH_IDX);
@@ -110,6 +126,12 @@ bool CGamePlayer::Load(const char *filename)
 
     // Load the file and fills the array with loaded objects
     CKFile *f = m_CKContext->CreateCKFile();
+    if (!f)
+    {
+        CLogger::Get().Error("Failed to create CKFile!");
+        return false;
+    }
+
     CKERROR res = f->OpenFile(resolvedFile.Str(), (CK_LOAD_FLAGS)(CK_LOAD_DEFAULT | CK_LOAD_CHECKDEPENDENCIES));
     if (res != CK_OK)
     {
@@ -126,37 +148,26 @@ bool CGamePlayer::Load(const char *filename)
     }
 
     CKObjectArray *array = CreateCKObjectArray();
+    if (!array)
+    {
+        CLogger::Get().Error("Failed to create CKObjectArray!");
+        m_CKContext->DeleteCKFile(f);
+        return false;
+    }
+
     res = f->LoadFileData(array);
     if (res != CK_OK)
     {
+        CLogger::Get().Error("Failed to load file: %s", resolvedFile.CStr());
         m_CKContext->DeleteCKFile(f);
+        DeleteCKObjectArray(array);
         return false;
     }
 
     m_CKContext->DeleteCKFile(f);
     DeleteCKObjectArray(array);
 
-    InterfaceManager *man = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
-    if (man)
-    {
-        man->SetDriver(m_Config.driver);
-        man->SetScreenMode(m_Config.screenMode);
-        man->SetRookie(m_Config.rookie);
-        man->SetTaskSwitchEnabled(true);
-
-        if (m_GameInfo)
-        {
-            delete m_GameInfo;
-            m_GameInfo = NULL;
-        }
-
-        m_GameInfo = new CGameInfo;
-        strcpy(m_GameInfo->path, ".");
-        strcpy(m_GameInfo->fileName, filename);
-        man->SetGameInfo(m_GameInfo);
-    }
-
-    return FinishLoad();
+    return FinishLoad(filename);
 }
 
 void CGamePlayer::Run()
@@ -500,8 +511,31 @@ bool CGamePlayer::InitDriver()
     return true;
 }
 
-bool CGamePlayer::FinishLoad()
+bool CGamePlayer::FinishLoad(const char *filename)
 {
+    if (!filename)
+        return false;
+
+    InterfaceManager *man = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
+    if (man)
+    {
+        man->SetDriver(m_Config.driver);
+        man->SetScreenMode(m_Config.screenMode);
+        man->SetRookie(m_Config.rookie);
+        man->SetTaskSwitchEnabled(true);
+
+        if (m_GameInfo)
+        {
+            delete m_GameInfo;
+            m_GameInfo = NULL;
+        }
+
+        m_GameInfo = new CGameInfo;
+        strcpy(m_GameInfo->path, ".");
+        strcpy(m_GameInfo->fileName, filename);
+        man->SetGameInfo(m_GameInfo);
+    }
+
     // Retrieve the level
     CKLevel *level = m_CKContext->GetCurrentLevel();
     if (!level)
