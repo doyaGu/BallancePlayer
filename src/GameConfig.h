@@ -1,10 +1,11 @@
 #ifndef PLAYER_GAMECONFIG_H
 #define PLAYER_GAMECONFIG_H
 
+#include <string>
+
 #include "config.h"
 
 #include "VxMathDefines.h"
-#include "XString.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH 260
@@ -102,7 +103,7 @@ public:
     void SaveToIni(const char *filename = "");
 
 private:
-    XString m_Paths[ePathCategoryCount];
+    std::string m_Paths[ePathCategoryCount];
 };
 
 #endif // PLAYER_GAMECONFIG_H

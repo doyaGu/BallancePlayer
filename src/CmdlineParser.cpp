@@ -2,14 +2,15 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 
-bool CmdlineArg::GetValue(int i, XString &value) const
+bool CmdlineArg::GetValue(int i, std::string &value) const
 {
     if (i >= m_Size || i < 0)
         return false;
 
-    const XString &val = m_Values[i];
-    const int sz = val.Length();
+    const std::string &val = m_Values[i];
+    const int sz = (int)val.length();
 
     bool inQuote = false;
 
@@ -22,7 +23,7 @@ bool CmdlineArg::GetValue(int i, XString &value) const
         else
         {
             value = "";
-            value.Resize(sz);
+            value.resize(sz);
             int k = 0;
 
             for (int vi = 0; vi < sz; ++vi)
@@ -36,20 +37,20 @@ bool CmdlineArg::GetValue(int i, XString &value) const
                     value[k++] = val[vi];
             }
 
-            value.Resize(k);
+            value.resize(k);
         }
     }
     else
     {
         value = "";
-        value.Resize(sz);
+        value.resize(sz);
         int k = 0;
 
         int n = 0;
-        int foundPos = val.Find('=');
-        if (foundPos == XString::NOTFOUND)
+        size_t foundPos = val.find('=');
+        if (foundPos == std::string::npos)
             return false;
-        int j = foundPos + 1;
+        int j = (int)foundPos + 1;
         for (int vi = j; vi < sz; ++vi)
         {
             if (val[vi] == ';' && vi != j)
@@ -63,12 +64,12 @@ bool CmdlineArg::GetValue(int i, XString &value) const
             {
                 if (val[vi] != '"')
                 {
-                    for (; val[vi] != ';' && vi < sz; ++vi)
+                    for (; vi < sz && val[vi] != ';'; ++vi)
                         value[k++] = val[vi];
                 }
                 else
                 {
-                    for (; val[vi] != ';' && vi < sz; ++vi)
+                    for (; vi < sz && val[vi] != ';'; ++vi)
                     {
                         if (val[vi] == '"')
                         {
@@ -82,7 +83,7 @@ bool CmdlineArg::GetValue(int i, XString &value) const
             }
         }
 
-        value.Resize(k);
+        value.resize(k);
     }
 
     return true;
@@ -93,10 +94,10 @@ bool CmdlineArg::GetValue(int i, long &value) const
     if (i >= m_Size || i < 0)
         return false;
 
-    const XString &v = m_Values[i];
-    const char *s = v.CStr();
-    const char *e = s + v.Length();
-    long val = strtol(s, const_cast<char **>(&e), 10);
+    const std::string &v = m_Values[i];
+    const char *s = v.c_str();
+    char *e = NULL;
+    long val = strtol(s, &e, 10);
     if (s == e)
         return false;
     value = val;
@@ -111,7 +112,7 @@ int CmdlineArg::GetSize() const
 CmdlineParser::CmdlineParser(int argc, char **argv) : m_Index(0)
 {
     for (int i = 1; i < argc; ++i)
-        m_Args.PushBack(argv[i]);
+        m_Args.push_back(argv[i]);
 }
 
 bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int maxValueCount)
@@ -119,8 +120,8 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
     if (Done())
         return false;
 
-    const XString &s = m_Args[m_Index];
-    const int sz = s.Length();
+    const std::string &s = m_Args[m_Index];
+    const int sz = (int)s.length();
     if (sz < 2 || s[0] != '-')
         return false;
 
@@ -143,13 +144,13 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
                     return false;
         }
 
-        if (strncmp(s.CStr(), longopt, optLen) != 0)
+        if (strncmp(s.c_str(), longopt, optLen) != 0)
             return false;
     }
 
     if (maxValueCount != 0)
     {
-        const XString *values = NULL;
+        const std::string *values = NULL;
         int valueCount = 0;
 
         if (sz > optLen + 1 && s[optLen] == '=')
@@ -170,20 +171,20 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
         else
         {
             if (maxValueCount == -1)
-                maxValueCount = (int)(m_Args.Size() - m_Index);
+                maxValueCount = (int)(m_Args.size() - m_Index);
 
             ++m_Index; // Skip the option itself
-            if (m_Index >= m_Args.Size() || maxValueCount == 0)
+            if (m_Index >= (int)m_Args.size() || maxValueCount == 0)
             {
                 arg = CmdlineArg(NULL, 0);
             }
             else
             {
                 values = &m_Args[m_Index]; // Start from after the option
-                while (valueCount < maxValueCount && m_Index < m_Args.Size())
+                while (valueCount < maxValueCount && m_Index < (int)m_Args.size())
                 {
-                    const XString &next = m_Args[m_Index];
-                    if (next.Length() != 0 && next[0] == '-')
+                    const std::string &next = m_Args[m_Index];
+                    if (next.length() != 0 && next[0] == '-')
                         break;
                     ++m_Index;
                     ++valueCount;
@@ -199,7 +200,7 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
 
 bool CmdlineParser::Skip()
 {
-    if (m_Index < m_Args.Size())
+    if (m_Index < (int)m_Args.size())
     {
         ++m_Index;
         return true;
@@ -209,7 +210,7 @@ bool CmdlineParser::Skip()
 
 bool CmdlineParser::Done() const
 {
-    return m_Index >= m_Args.Size();
+    return m_Index >= (int)m_Args.size();
 }
 
 void CmdlineParser::Reset()

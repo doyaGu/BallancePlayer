@@ -5,22 +5,22 @@
 #pragma warning (disable: 4514 4786)
 #endif
 
-#include "XString.h"
-#include "XClassArray.h"
+#include <string>
+#include <vector>
 
 class CmdlineArg
 {
 public:
     CmdlineArg() : m_Values(NULL), m_Size(0), m_Jointed(false) {}
-    CmdlineArg(const XString *values, int size, bool jointed = false) : m_Values(values), m_Size(size), m_Jointed(jointed) {}
+    CmdlineArg(const std::string *values, int size, bool jointed = false) : m_Values(values), m_Size(size), m_Jointed(jointed) {}
 
-    bool GetValue(int i, XString &value) const;
+    bool GetValue(int i, std::string &value) const;
     bool GetValue(int i, long &value) const;
 
     int GetSize() const;
 
 private:
-    const XString *m_Values;
+    const std::string *m_Values;
     int m_Size;
     bool m_Jointed;
 };
@@ -39,7 +39,7 @@ public:
     void Reset();
 
 private:
-    XClassArray<XString> m_Args;
+    std::vector<std::string> m_Args;
     int m_Index;
 };
 

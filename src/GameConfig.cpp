@@ -14,7 +14,7 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
 {
     CmdlineArg arg;
     long value = 0;
-    XString str;
+    std::string str;
 
     while (!parser.Done())
     {
@@ -152,13 +152,13 @@ static void ParseConfigsFromCmdline(CmdlineParser &parser, CGameConfig &config)
         if (parser.Next(arg, "--texture-video-format", '\0', 1))
         {
             if (arg.GetValue(0, str))
-                config.textureVideoFormat = utils::String2PixelFormat(str.CStr(), 16);
+                config.textureVideoFormat = utils::String2PixelFormat(str.c_str(), 16);
             continue;
         }
         if (parser.Next(arg, "--sprite-video-format", '\0', 1))
         {
             if (arg.GetValue(0, str))
-                config.spriteVideoFormat = utils::String2PixelFormat(str.CStr(), 16);
+                config.spriteVideoFormat = utils::String2PixelFormat(str.c_str(), 16);
             continue;
         }
         if (parser.Next(arg, "--child-window-rendering", 's'))
@@ -421,14 +421,14 @@ const char *CGameConfig::GetPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
         return NULL;
-    return m_Paths[category].CStr();
+    return m_Paths[category].c_str();
 }
 
 bool CGameConfig::HasPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
         return false;
-    return m_Paths[category].Length() != 0;
+    return m_Paths[category].size() != 0;
 }
 
 void CGameConfig::LoadFromCmdline(CmdlineParser &parser)
@@ -439,13 +439,13 @@ void CGameConfig::LoadFromCmdline(CmdlineParser &parser)
 void CGameConfig::LoadPathsFromCmdline(CmdlineParser &parser)
 {
     CmdlineArg arg;
-    XString path;
+    std::string path;
     while (!parser.Done())
     {
         if (parser.Next(arg, "--config", '\0', 1))
         {
             if (arg.GetValue(0, path))
-                m_Paths[eConfigPath] = path;
+                m_Paths[eConfigPath] = path.c_str();
             break;
         }
         if (parser.Next(arg, "--log", '\0', 1))
@@ -520,9 +520,9 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     if (filename[0] == '\0')
     {
-        if (m_Paths[eConfigPath].Length() == 0 || !utils::FileOrDirectoryExists(m_Paths[eConfigPath].CStr()))
+        if (m_Paths[eConfigPath].size() == 0 || !utils::FileOrDirectoryExists(m_Paths[eConfigPath].c_str()))
             return;
-        filename = m_Paths[eConfigPath].CStr();
+        filename = m_Paths[eConfigPath].c_str();
     }
 
     char path[MAX_PATH];
@@ -588,9 +588,9 @@ void CGameConfig::SaveToIni(const char *filename)
 
     if (filename[0] == '\0')
     {
-        if (m_Paths[eConfigPath].Length() == 0)
+        if (m_Paths[eConfigPath].size() == 0)
             return;
-        filename = m_Paths[eConfigPath].CStr();
+        filename = m_Paths[eConfigPath].c_str();
     }
 
     char path[MAX_PATH];
