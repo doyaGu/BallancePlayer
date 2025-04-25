@@ -1715,13 +1715,31 @@ bool GamePlayer::UnregisterContext(CKContext *context) {
 }
 
 bool GamePlayer::ClipCursor() {
-    if (m_GameConfig[BP_CONFIG_CLIP_CURSOR] == true) {
+    BOOL result;
+    if (m_GameConfig[BP_CONFIG_CLIP_CURSOR] == true)
+    {
         RECT rect;
-        m_MainWindow->GetClientRect(rect);
-        m_MainWindow->ClientToScreen(rect);
-        return ::ClipCursor(&rect) == TRUE;
+        if (!m_MainWindow.GetClientRect(&rect))
+        {
+            CLogger::Get().Error("Failed to get client rect for cursor clipping");
+            return false;
+        }
+        m_MainWindow.ClientToScreen(&rect);
+        result = ::ClipCursor(&rect);
     }
-    return ::ClipCursor(nullptr) == TRUE;
+    else
+    {
+        result = ::ClipCursor(NULL);
+    }
+
+    if (!result)
+    {
+        DWORD error = GetLastError();
+        CLogger::Get().Error("ClipCursor failed with error code: %d", error);
+        return false;
+    }
+
+    return true;
 }
 
 bool GamePlayer::OpenSetupDialog() {
