@@ -387,7 +387,8 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     return true;
 }
 
-void CGamePlayer::ShutdownWindow() {
+void CGamePlayer::ShutdownWindow()
+{
     if (m_hAccelTable)
     {
         ::DestroyAcceleratorTable(m_hAccelTable);
@@ -467,12 +468,15 @@ bool CGamePlayer::InitEngine(CWindow &mainWindow)
     return true;
 }
 
-void CGamePlayer::ShutdownEngine() {
-    if (m_CKContext) {
+void CGamePlayer::ShutdownEngine()
+{
+    if (m_CKContext)
+    {
         m_CKContext->Reset();
         m_CKContext->ClearAll();
 
-        if (m_RenderManager && m_RenderContext) {
+        if (m_RenderManager && m_RenderContext)
+        {
             m_RenderManager->DestroyRenderContext(m_RenderContext);
             m_RenderContext = nullptr;
         }
