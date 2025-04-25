@@ -20,7 +20,9 @@ public:
 
     void Run();
     bool Update();
-    void Exit();
+    void Process();
+    void Render();
+    void Shutdown();
 
     void Play();
     void Pause();
@@ -60,11 +62,12 @@ private:
         return m_Config;
     }
 
-    void Process();
-    void Render();
-
     bool InitWindow(HINSTANCE hInstance);
+    void ShutdownWindow();
+
     bool InitEngine(CWindow &mainWindow);
+    void ShutdownEngine();
+
     bool InitDriver();
 
     bool FinishLoad(const char *filename);
@@ -75,7 +78,9 @@ private:
     bool LoadManagers(CKPluginManager *pluginManager);
     bool LoadBuildingBlocks(CKPluginManager *pluginManager);
     bool LoadPlugins(CKPluginManager *pluginManager);
-    int InitRenderEngines(CKPluginManager *pluginManager);
+    bool UnloadPlugins(CKPluginManager *pluginManager, CK_PLUGIN_TYPE type, CKGUID guid);
+
+    int FindRenderEngine(CKPluginManager *pluginManager);
 
     bool SetupManagers();
     bool SetupPaths();
@@ -92,6 +97,8 @@ private:
 
     bool RegisterMainWindowClass(HINSTANCE hInstance);
     bool RegisterRenderWindowClass(HINSTANCE hInstance);
+    bool UnregisterMainWindowClass(HINSTANCE hInstance);
+    bool UnregisterRenderWindowClass(HINSTANCE hInstance);
 
     bool ClipCursor();
 
