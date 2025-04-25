@@ -401,9 +401,9 @@ void CGamePlayer::ShutdownWindow()
 
     if (m_hInstance)
     {
-        UnregisterMainWindowClass(m_hInstance);
         if (m_Config.childWindowRendering)
             UnregisterRenderWindowClass(m_hInstance);
+        UnregisterMainWindowClass(m_hInstance);
     }
 }
 
