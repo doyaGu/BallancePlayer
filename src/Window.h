@@ -16,7 +16,7 @@ public:
 
     explicit CWindow(HWND newWindow) : m_Window(newWindow) {}
 
-    CWindow& operator=(HWND newWindow)
+    CWindow &operator=(HWND newWindow)
     {
         m_Window = newWindow;
         return *this;
@@ -40,8 +40,8 @@ public:
                 HINSTANCE instance, LPVOID createParam)
     {
         m_Window = ::CreateWindow(className, windowName,
-                                 style, x, y, width, height, parentWindow,
-                                 idOrHMenu, instance, createParam);
+                                  style, x, y, width, height, parentWindow,
+                                  idOrHMenu, instance, createParam);
         return m_Window != NULL;
     }
 
@@ -67,11 +67,11 @@ public:
         return result;
     }
 
-    bool IsWindow() {  return ::IsWindow(m_Window) == TRUE; }
+    bool IsWindow() { return ::IsWindow(m_Window) == TRUE; }
 
     bool Foreground() { return ::SetForegroundWindow(m_Window) == TRUE; }
     HWND GetParent() const { return ::GetParent(m_Window); }
-    bool GetWindowRect(LPRECT rect) const { return ::GetWindowRect(m_Window,rect) == TRUE; }
+    bool GetWindowRect(LPRECT rect) const { return ::GetWindowRect(m_Window, rect) == TRUE; }
     bool IsIconic() const { return ::IsIconic(m_Window) == TRUE; }
     bool IsZoomed() const { return ::IsZoomed(m_Window) == TRUE; }
 
@@ -137,7 +137,8 @@ public:
     LONG SetStyle(LONG style) { return SetLong(GWL_STYLE, style); }
     LONG GetStyle() const { return GetLong(GWL_STYLE); }
 
-    bool SetPos(HWND hWndInsertAfter, int x, int y, int cx, int cy, UINT flags) {
+    bool SetPos(HWND hWndInsertAfter, int x, int y, int cx, int cy, UINT flags)
+    {
         return ::SetWindowPos(m_Window, hWndInsertAfter, x, y, cx, cy, flags) == TRUE;
     }
 
