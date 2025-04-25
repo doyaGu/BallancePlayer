@@ -6,6 +6,7 @@
 #include "CmdlineParser.h"
 #include "GameConfig.h"
 #include "GamePlayer.h"
+#include "Splash.h"
 #include "LockGuard.h"
 #include "Logger.h"
 #include "Utils.h"
@@ -45,6 +46,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     CLogger::Get().Open(config.GetPath(eLogPath), overwrite);
     if (config.verbose)
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
+
+    CSplash splash(hInstance);
+    splash.Show();
 
     CGamePlayer &player = CGamePlayer::GetInstance();
 
