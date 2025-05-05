@@ -97,8 +97,6 @@ public:
     const char *GetPath(PathCategory category) const;
     bool HasPath(PathCategory category) const;
 
-    void LoadFromCmdline(CmdlineParser &parser);
-    void LoadPathsFromCmdline(CmdlineParser &parser);
     void LoadFromIni(const char *filename = "");
     void SaveToIni(const char *filename = "");
 

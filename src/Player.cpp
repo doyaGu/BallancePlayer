@@ -12,6 +12,7 @@
 #include "Utils.h"
 
 static HANDLE CreateNamedMutex();
+static void ParseConfigsFromCmdline(CGameConfig &config, CmdlineParser &parser);
 static void LoadPaths(CGameConfig &config, CmdlineParser &parser);
 static void EnableDpiAwareness();
 
@@ -38,7 +39,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     // Load configurations
     config.LoadFromIni();
-    config.LoadFromCmdline(parser);
+    ParseConfigsFromCmdline(config, parser);
 
     bool overwrite = true;
     if (config.logMode == eLogAppend)
@@ -114,6 +115,235 @@ static HANDLE CreateNamedMutex()
     return hMutex;
 }
 
+static void ParseConfigsFromCmdline(CGameConfig &config, CmdlineParser &parser)
+{
+    CmdlineArg arg;
+    long value = 0;
+    std::string str;
+
+    while (!parser.Done())
+    {
+        if (parser.Next(arg, "--verbose", '\0'))
+        {
+            config.verbose = true;
+            continue;
+        }
+        if (parser.Next(arg, "--manual-setup", 'm'))
+        {
+            config.manualSetup = true;
+            continue;
+        }
+        if (parser.Next(arg, "--load-required-managers", '\0'))
+        {
+            config.loadAllManagers = false;
+            continue;
+        }
+        if (parser.Next(arg, "--load-required-building-blocks", '\0'))
+        {
+            config.loadAllBuildingBlocks = false;
+            continue;
+        }
+        if (parser.Next(arg, "--load-required-plugins", '\0'))
+        {
+            config.loadAllPlugins = false;
+            continue;
+        }
+        if (parser.Next(arg, "--video-driver", 'v', 1))
+        {
+            if (arg.GetValue(0, value))
+                config.driver = value;
+            continue;
+        }
+        if (parser.Next(arg, "--bpp", 'b', 1))
+        {
+            if (arg.GetValue(0, value))
+                config.bpp = value;
+            continue;
+        }
+        if (parser.Next(arg, "--width", 'w', 1))
+        {
+            if (arg.GetValue(0, value))
+                config.width = value;
+            continue;
+        }
+        if (parser.Next(arg, "--height", 'h', 1))
+        {
+            if (arg.GetValue(0, value))
+                config.height = value;
+            continue;
+        }
+        if (parser.Next(arg, "--fullscreen", 'f'))
+        {
+            config.fullscreen = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable--perspective-correction", '\0'))
+        {
+            config.disablePerspectiveCorrection = true;
+            continue;
+        }
+        if (parser.Next(arg, "--force-linear-fog", '\0'))
+        {
+            config.forceLinearFog = true;
+            continue;
+        }
+        if (parser.Next(arg, "--force-software", '\0'))
+        {
+            config.forceSoftware = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-filter", '\0'))
+        {
+            config.disableFilter = true;
+            continue;
+        }
+        if (parser.Next(arg, "--ensure-vertex-shader", '\0'))
+        {
+            config.ensureVertexShader = true;
+            continue;
+        }
+        if (parser.Next(arg, "--use-index-buffers", '\0'))
+        {
+            config.useIndexBuffers = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-dithering", '\0'))
+        {
+            config.disableDithering = true;
+            continue;
+        }
+        if (parser.Next(arg, "--antialias", '\0', 1))
+        {
+            if (arg.GetValue(0, value))
+                config.antialias = value;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-mipmap", '\0'))
+        {
+            config.disableMipmap = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-specular", '\0'))
+        {
+            config.disableSpecular = true;
+            continue;
+        }
+        if (parser.Next(arg, "--enable-screen-dump", '\0'))
+        {
+            config.enableScreenDump = true;
+            continue;
+        }
+        if (parser.Next(arg, "--enable-debug-mode", '\0'))
+        {
+            config.enableDebugMode = true;
+            continue;
+        }
+        if (parser.Next(arg, "--vertex-cache", '\0', 1))
+        {
+            if (arg.GetValue(0, value))
+                config.vertexCache = value;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-texture-cache-management", 's'))
+        {
+            config.textureCacheManagement = false;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-sort-transparent-objects", 's'))
+        {
+            config.sortTransparentObjects = false;
+            continue;
+        }
+        if (parser.Next(arg, "--texture-video-format", '\0', 1))
+        {
+            if (arg.GetValue(0, str))
+                config.textureVideoFormat = utils::String2PixelFormat(str.c_str(), 16);
+            continue;
+        }
+        if (parser.Next(arg, "--sprite-video-format", '\0', 1))
+        {
+            if (arg.GetValue(0, str))
+                config.spriteVideoFormat = utils::String2PixelFormat(str.c_str(), 16);
+            continue;
+        }
+        if (parser.Next(arg, "--child-window-rendering", 's'))
+        {
+            config.childWindowRendering = true;
+            continue;
+        }
+        if (parser.Next(arg, "--borderless", 'c'))
+        {
+            config.borderless = true;
+            continue;
+        }
+        if (parser.Next(arg, "--clip-cursor", '\0'))
+        {
+            config.clipCursor = true;
+            continue;
+        }
+        if (parser.Next(arg, "--always-handle-input", '\0'))
+        {
+            config.alwaysHandleInput = true;
+            continue;
+        }
+        if (parser.Next(arg, "--position-x", 'x', 1))
+        {
+            if (arg.GetValue(0, value))
+                config.posX = value;
+            continue;
+        }
+        if (parser.Next(arg, "--position-y", 'y', 1))
+        {
+            if (arg.GetValue(0, value))
+                config.posY = value;
+            continue;
+        }
+        if (parser.Next(arg, "--lang", 'l'))
+        {
+            if (arg.GetValue(0, value))
+                config.langId = value;
+            continue;
+        }
+        if (parser.Next(arg, "--skip-opening", '\0'))
+        {
+            config.skipOpening = true;
+            continue;
+        }
+        if (parser.Next(arg, "--disable-hotfix", '\0'))
+        {
+            config.applyHotfix = false;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-framerate", 'u'))
+        {
+            config.unlockFramerate = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-widescreen", '\0'))
+        {
+            config.unlockWidescreen = true;
+            continue;
+        }
+        if (parser.Next(arg, "--unlock-high-resolution", '\0'))
+        {
+            config.unlockHighResolution = true;
+            continue;
+        }
+        if (parser.Next(arg, "--debug", 'd'))
+        {
+            config.debug = true;
+            continue;
+        }
+        if (parser.Next(arg, "--rookie", 'r'))
+        {
+            config.rookie = true;
+            continue;
+        }
+        parser.Skip();
+    }
+    parser.Reset();
+}
+
 static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
 {
     static const char *const DefaultPaths[] = {
@@ -134,7 +364,79 @@ static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
     bool useDefault;
 
     // Load paths
-    config.LoadPathsFromCmdline(parser);
+    CmdlineArg arg;
+    std::string path;
+    while (!parser.Done())
+    {
+        if (parser.Next(arg, "--config", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eConfigPath, path.c_str());
+            break;
+        }
+        if (parser.Next(arg, "--log", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eLogPath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--cmo", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eCmoPath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--root-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eRootPath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--plugin-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(ePluginPath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--render-engine-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eRenderEnginePath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--manager-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eManagerPath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--building-block-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eBuildingBlockPath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--sound-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eSoundPath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--bitmap-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eBitmapPath, path.c_str());
+            continue;
+        }
+        if (parser.Next(arg, "--data-path", '\0', 1))
+        {
+            if (arg.GetValue(0, path))
+                config.SetPath(eDataPath, path.c_str());
+            continue;
+        }
+        parser.Skip();
+    }
+    parser.Reset();
 
     // Set default value for the path if it was not specified in command line
     for (int p = eConfigPath; p < ePathCategoryCount; ++p)
@@ -168,7 +470,7 @@ static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
     }
 }
 
-void EnableDpiAwareness()
+static void EnableDpiAwareness()
 {
     // DPI awareness enums and types for VC6.0 compatibility
 #ifndef PROCESS_DPI_UNAWARE
@@ -184,9 +486,9 @@ void EnableDpiAwareness()
 #endif
 
     // Function pointer types
-    typedef HRESULT(WINAPI * PFN_SetProcessDpiAwareness)(int);
-    typedef DPI_AWARENESS_CONTEXT(WINAPI * PFN_SetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT);
-    typedef BOOL(WINAPI * PFN_SetProcessDPIAware)(void);
+    typedef HRESULT(WINAPI *PFN_SetProcessDpiAwareness)(int);
+    typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_SetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT);
+    typedef BOOL(WINAPI *PFN_SetProcessDPIAware)();
 
     // Since VC6.0 lacks many modern Windows types, we'll use a simpler approach
     // to check the Windows version using GetVersionEx()
