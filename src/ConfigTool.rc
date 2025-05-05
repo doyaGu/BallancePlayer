@@ -1,0 +1,295 @@
+#include "ConfigToolResource.h"
+
+#include <winres.h>
+
+// Dialog template
+IDD_CONFIG DIALOGEX 0, 0, 450, 380
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Ballance Configuration"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    // Standard buttons
+    DEFPUSHBUTTON   "OK", IDOK, 310, 348, 40, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 355, 348, 40, 14
+    PUSHBUTTON      "Defaults", IDC_BUTTON_DEFAULTS, 265, 348, 40, 14
+
+    // Startup Group
+    GROUPBOX        "Startup", IDC_GROUP_STARTUP, 7, 5, 215, 95
+    LTEXT           "Log Mode:", IDC_STATIC, 14, 20, 45, 8
+    COMBOBOX        IDC_COMBO_LOGMODE, 70, 18, 145, 45, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX    "Verbose Logging", IDC_CHECK_VERBOSE, 14, 35, 198, 10
+    AUTOCHECKBOX    "Manual Setup Dialog on Start", IDC_CHECK_MANUALSETUP, 14, 48, 198, 10
+    AUTOCHECKBOX    "Load All Managers", IDC_CHECK_LOADALLMGR, 14, 61, 198, 10
+    AUTOCHECKBOX    "Load All Building Blocks", IDC_CHECK_LOADALLBB, 14, 74, 198, 10
+    AUTOCHECKBOX    "Load All Plugins", IDC_CHECK_LOADALLPLUG, 14, 87, 198, 10
+
+    // Graphics Group
+    GROUPBOX        "Graphics", IDC_GROUP_GRAPHICS, 228, 5, 215, 325
+    LTEXT           "Driver ID:", IDC_STATIC, 235, 20, 40, 8
+    EDITTEXT        IDC_EDIT_DRIVER, 280, 18, 40, 12, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "BPP:", IDC_STATIC, 330, 20, 20, 8
+    COMBOBOX        IDC_COMBO_BPP, 355, 18, 80, 30, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Width:", IDC_STATIC, 235, 36, 40, 8
+    EDITTEXT        IDC_EDIT_WIDTH, 280, 34, 40, 12, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Height:", IDC_STATIC, 330, 36, 40, 8
+    EDITTEXT        IDC_EDIT_HEIGHT, 375, 34, 60, 12, ES_AUTOHSCROLL | ES_NUMBER
+    AUTOCHECKBOX    "Fullscreen", IDC_CHECK_FULLSCREEN, 235, 52, 198, 10
+    AUTOCHECKBOX    "Disable Perspective Correction", IDC_CHECK_DISPERSPCORRECT, 235, 65, 198, 10
+    AUTOCHECKBOX    "Force Linear Fog", IDC_CHECK_FORCELINEARFOG, 235, 78, 198, 10
+    AUTOCHECKBOX    "Force Software Rendering", IDC_CHECK_FORCESOFTWARE, 235, 91, 198, 10
+    AUTOCHECKBOX    "Disable Texture Filtering", IDC_CHECK_DISABLEFILTER, 235, 104, 198, 10
+    AUTOCHECKBOX    "Ensure Vertex Shader Support", IDC_CHECK_ENSUREVS, 235, 117, 198, 10
+    AUTOCHECKBOX    "Use Index Buffers", IDC_CHECK_USEINDEXBUFFERS, 235, 130, 198, 10
+    AUTOCHECKBOX    "Disable Dithering", IDC_CHECK_DISABLEDITHER, 235, 143, 198, 10
+    LTEXT           "Antialias Level:", IDC_STATIC, 235, 158, 60, 8
+    EDITTEXT        IDC_EDIT_ANTIALIAS, 300, 156, 40, 12, ES_AUTOHSCROLL | ES_NUMBER
+    AUTOCHECKBOX    "Disable Mipmaps", IDC_CHECK_DISABLEMIPMAP, 235, 173, 198, 10
+    AUTOCHECKBOX    "Disable Specular Highlights", IDC_CHECK_DISABLESPECULAR, 235, 186, 198, 10
+    AUTOCHECKBOX    "Enable Screen Dump (Ctrl+Alt+F10)", IDC_CHECK_ENABLESCREENDUMP, 235, 199, 198, 10
+    AUTOCHECKBOX    "Enable Graphics Debug (Ctrl+Alt+F11)", IDC_CHECK_ENABLEDEBUGMODE_GFX, 235, 212, 198, 10
+    LTEXT           "Vertex Cache Size:", IDC_STATIC, 235, 227, 70, 8
+    EDITTEXT        IDC_EDIT_VERTEXCACHE, 310, 225, 40, 12, ES_AUTOHSCROLL | ES_NUMBER
+    AUTOCHECKBOX    "Texture Cache Management", IDC_CHECK_TEXCACHEMGMT, 235, 242, 198, 10
+    AUTOCHECKBOX    "Sort Transparent Objects", IDC_CHECK_SORTTRANSPARENT, 235, 255, 198, 10
+    LTEXT           "Texture Video Format:", IDC_STATIC, 235, 270, 85, 8
+    EDITTEXT        IDC_EDIT_TEXVIDFORMAT, 325, 268, 110, 12, ES_AUTOHSCROLL
+    LTEXT           "Sprite Video Format:", IDC_STATIC, 235, 286, 85, 8
+    EDITTEXT        IDC_EDIT_SPRVIDFORMAT, 325, 284, 110, 12, ES_AUTOHSCROLL
+
+    // Window Group
+    GROUPBOX        "Window", IDC_GROUP_WINDOW, 7, 105, 215, 90
+    AUTOCHECKBOX    "Render in Child Window", IDC_CHECK_CHILDWINRENDER, 14, 118, 198, 10
+    AUTOCHECKBOX    "Borderless Window", IDC_CHECK_BORDERLESS, 14, 131, 198, 10
+    AUTOCHECKBOX    "Clip Cursor to Window", IDC_CHECK_CLIPCURSOR, 14, 144, 198, 10
+    AUTOCHECKBOX    "Always Handle Input (Background)", IDC_CHECK_ALWAYSHANDLEINPUT, 14, 157, 198, 10
+    LTEXT           "Pos X:", IDC_STATIC, 14, 172, 40, 8
+    EDITTEXT        IDC_EDIT_POSX, 60, 170, 50, 12, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Pos Y:", IDC_STATIC, 115, 172, 40, 8
+    EDITTEXT        IDC_EDIT_POSY, 160, 170, 50, 12, ES_AUTOHSCROLL | ES_NUMBER
+
+    // Game Group
+    GROUPBOX        "Game", IDC_GROUP_GAME, 7, 200, 215, 130
+    LTEXT           "Language:", IDC_STATIC, 14, 216, 45, 8
+    COMBOBOX        IDC_COMBO_LANG, 70, 214, 145, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX    "Skip Opening Animation", IDC_CHECK_SKIPOPENING, 14, 231, 198, 10
+    AUTOCHECKBOX    "Apply Script Hotfixes", IDC_CHECK_APPLYHOTFIX, 14, 244, 198, 10
+    AUTOCHECKBOX    "Unlock Framerate", IDC_CHECK_UNLOCKFRAMERATE, 14, 257, 198, 10
+    AUTOCHECKBOX    "Unlock Widescreen (Non-4:3)", IDC_CHECK_UNLOCKWIDESCREEN, 14, 270, 198, 10
+    AUTOCHECKBOX    "Unlock High Resolution (>1600w)", IDC_CHECK_UNLOCKHIGHRES, 14, 283, 198, 10
+    AUTOCHECKBOX    "Enable In-Game Debug Mode", IDC_CHECK_DEBUG, 14, 296, 198, 10
+    AUTOCHECKBOX    "Enable In-Game Rookie Mode", IDC_CHECK_ROOKIE, 14, 309, 198, 10
+
+    // Interface Group (for language selection)
+    GROUPBOX        "Interface", IDC_GROUP_INTERFACE, 7, 335, 215, 35
+    LTEXT           "Language:", IDC_STATIC, 14, 350, 45, 8
+    COMBOBOX        IDC_COMBO_LANGUAGE, 70, 348, 145, 60, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+END
+
+// Version Information
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0x0L
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Kakuty"
+            VALUE "FileDescription", "Ballance Configuration Tool"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "ConfigTool.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2025"
+            VALUE "OriginalFilename", "ConfigTool.exe"
+            VALUE "ProductName", "Ballance Player"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200, 0x804, 1200
+    END
+END
+
+// Icon
+IDI_ICON ICON "Player.ico"
+
+// String Tables - English
+STRINGTABLE
+BEGIN
+    IDS_DIALOG_TITLE        "Ballance Configuration"
+    IDS_BTN_OK              "OK"
+    IDS_BTN_CANCEL          "Cancel"
+    IDS_BTN_DEFAULTS        "Defaults"
+    IDS_RESET_CONFIRM       "Reset all settings to default values?"
+    IDS_RESET_TITLE         "Confirm Reset"
+    IDS_GROUP_STARTUP       "Startup"
+    IDS_GROUP_GRAPHICS      "Graphics"
+    IDS_GROUP_WINDOW        "Window"
+    IDS_GROUP_GAME          "Game"
+    IDS_GROUP_INTERFACE     "Interface"
+    IDS_LOG_MODE            "Log Mode:"
+    IDS_LOG_APPEND          "Append"
+    IDS_LOG_OVERWRITE       "Overwrite"
+    IDS_VERBOSE             "Verbose Logging"
+    IDS_MANUAL_SETUP        "Manual Setup Dialog on Start"
+    IDS_LOAD_ALL_MGR        "Load All Managers"
+    IDS_LOAD_ALL_BB         "Load All Building Blocks"
+    IDS_LOAD_ALL_PLUGINS    "Load All Plugins"
+    IDS_DRIVER_ID           "Driver ID:"
+    IDS_BPP                 "BPP:"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_WIDTH               "Width:"
+    IDS_HEIGHT              "Height:"
+    IDS_FULLSCREEN          "Fullscreen"
+    IDS_DISABLE_PERSP_CORRECT "Disable Perspective Correction"
+    IDS_FORCE_LINEAR_FOG    "Force Linear Fog"
+    IDS_FORCE_SOFTWARE      "Force Software Rendering"
+    IDS_DISABLE_FILTER      "Disable Texture Filtering"
+    IDS_ENSURE_VS           "Ensure Vertex Shader Support"
+    IDS_USE_INDEX_BUFFERS   "Use Index Buffers"
+    IDS_DISABLE_DITHER      "Disable Dithering"
+    IDS_ANTIALIAS           "Antialias Level:"
+    IDS_DISABLE_MIPMAP      "Disable Mipmaps"
+    IDS_DISABLE_SPECULAR    "Disable Specular Highlights"
+    IDS_ENABLE_SCREEN_DUMP  "Enable Screen Dump (Ctrl+Alt+F10)"
+    IDS_ENABLE_DEBUG_GFX    "Enable Graphics Debug (Ctrl+Alt+F11)"
+    IDS_VERTEX_CACHE        "Vertex Cache Size:"
+    IDS_TEXTURE_CACHE_MGMT  "Texture Cache Management"
+    IDS_SORT_TRANSPARENT    "Sort Transparent Objects"
+    IDS_TEXTURE_VIDEO_FORMAT "Texture Video Format:"
+    IDS_SPRITE_VIDEO_FORMAT "Sprite Video Format:"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CHILD_WINDOW_RENDER "Render in Child Window"
+    IDS_BORDERLESS          "Borderless Window"
+    IDS_CLIP_CURSOR         "Clip Cursor to Window"
+    IDS_ALWAYS_HANDLE_INPUT "Always Handle Input (Background)"
+    IDS_POSITION_X          "Pos X:"
+    IDS_POSITION_Y          "Pos Y:"
+    IDS_LANGUAGE            "Language:"
+    IDS_UI_LANGUAGE         "Language:"
+    IDS_LANG_GERMAN         "German (0)"
+    IDS_LANG_ENGLISH        "English (1)"
+    IDS_LANG_SPANISH        "Spanish (2)"
+    IDS_LANG_ITALIAN        "Italian (3)"
+    IDS_LANG_FRENCH         "French (4)"
+    IDS_UI_ENGLISH          "English"
+    IDS_UI_CHINESE          "Chinese"
+    IDS_SKIP_OPENING        "Skip Opening Animation"
+    IDS_APPLY_HOTFIX        "Apply Script Hotfixes"
+    IDS_UNLOCK_FRAMERATE    "Unlock Framerate"
+    IDS_UNLOCK_WIDESCREEN   "Unlock Widescreen (Non-4:3)"
+    IDS_UNLOCK_HIGHRES      "Unlock High Resolution (>1600)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_DEBUG               "Enable In-Game Debug Mode"
+    IDS_ROOKIE              "Enable In-Game Rookie Mode"
+    IDS_ERR_NO_CONFIG       "Failed to initialize configuration dialog: No configuration data provided."
+    IDS_ERR_CANNOT_SAVE     "Cannot save configuration: Configuration data unavailable."
+    IDS_ERR_DIALOG_CREATE   "Failed to create configuration dialog! Error code: %lu\nPlease check that the dialog resource exists."
+    IDS_ERR_CONFIG_TITLE    "Configuration Error"
+    IDS_WARN_CONFIG_PATH    "Warning: Could not determine configuration file path. Using default location."
+    IDS_WARN_CONFIG_TITLE   "Config Path Warning"
+    IDS_SAVE_SUCCESS        "Configuration saved successfully."
+    IDS_SAVE_TITLE          "Configuration"
+END
+
+// String Tables - Chinese (Simplified)
+STRINGTABLE
+BEGIN
+    IDS_CN_DIALOG_TITLE     "Ballance Player 配置工具"
+    IDS_CN_BTN_OK           "确定"
+    IDS_CN_BTN_CANCEL       "取消"
+    IDS_CN_BTN_DEFAULTS     "默认设置"
+    IDS_CN_RESET_CONFIRM    "是否将所有设置重置为默认值？"
+    IDS_CN_RESET_TITLE      "确认重置"
+    IDS_CN_GROUP_STARTUP    "启动选项"
+    IDS_CN_GROUP_GRAPHICS   "图形设置"
+    IDS_CN_GROUP_WINDOW     "窗口设置"
+    IDS_CN_GROUP_GAME       "游戏设置"
+    IDS_CN_GROUP_INTERFACE  "界面设置"
+    IDS_CN_LOG_MODE         "日志模式:"
+    IDS_CN_LOG_APPEND       "追加"
+    IDS_CN_LOG_OVERWRITE    "覆盖"
+    IDS_CN_VERBOSE          "详细日志记录"
+    IDS_CN_MANUAL_SETUP     "启动时显示设置对话框"
+    IDS_CN_LOAD_ALL_MGR     "加载所有 Managers"
+    IDS_CN_LOAD_ALL_BB      "加载所有 Building Blocks"
+    IDS_CN_LOAD_ALL_PLUGINS "加载所有 Plugins"
+    IDS_CN_DRIVER_ID        "驱动 ID:"
+    IDS_CN_BPP              "色深:"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CN_WIDTH            "宽度:"
+    IDS_CN_HEIGHT           "高度:"
+    IDS_CN_FULLSCREEN       "全屏模式"
+    IDS_CN_DISABLE_PERSP_CORRECT "禁用透视校正"
+    IDS_CN_FORCE_LINEAR_FOG "强制线性雾效"
+    IDS_CN_FORCE_SOFTWARE   "强制软件渲染"
+    IDS_CN_DISABLE_FILTER   "禁用纹理过滤"
+    IDS_CN_ENSURE_VS        "确保顶点着色器支持"
+    IDS_CN_USE_INDEX_BUFFERS "使用索引缓冲区"
+    IDS_CN_DISABLE_DITHER   "禁用抖动"
+    IDS_CN_ANTIALIAS        "抗锯齿级别:"
+    IDS_CN_DISABLE_MIPMAP   "禁用多级纹理"
+    IDS_CN_DISABLE_SPECULAR "禁用镜面高光"
+    IDS_CN_ENABLE_SCREEN_DUMP "启用屏幕转储 (Ctrl+Alt+F10)"
+    IDS_CN_ENABLE_DEBUG_GFX "启用图形调试 (Ctrl+Alt+F11)"
+    IDS_CN_VERTEX_CACHE     "顶点缓存大小:"
+    IDS_CN_TEXTURE_CACHE_MGMT "纹理缓存管理"
+    IDS_CN_SORT_TRANSPARENT "排序透明对象"
+    IDS_CN_TEXTURE_VIDEO_FORMAT "纹理视频格式:"
+    IDS_CN_SPRITE_VIDEO_FORMAT "精灵视频格式:"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CN_CHILD_WINDOW_RENDER "在子窗口中渲染"
+    IDS_CN_BORDERLESS       "无边框窗口"
+    IDS_CN_CLIP_CURSOR      "限制鼠标在窗口内"
+    IDS_CN_ALWAYS_HANDLE_INPUT "总是处理输入（后台）"
+    IDS_CN_POSITION_X       "X位置:"
+    IDS_CN_POSITION_Y       "Y位置:"
+    IDS_CN_LANGUAGE         "游戏语言:"
+    IDS_CN_UI_LANGUAGE      "界面语言:"
+    IDS_CN_LANG_GERMAN      "德语 (0)"
+    IDS_CN_LANG_ENGLISH     "英语 (1)"
+    IDS_CN_LANG_SPANISH     "西班牙语 (2)"
+    IDS_CN_LANG_ITALIAN     "意大利语 (3)"
+    IDS_CN_LANG_FRENCH      "法语 (4)"
+    IDS_CN_UI_ENGLISH       "英语"
+    IDS_CN_UI_CHINESE       "中文"
+    IDS_CN_SKIP_OPENING     "跳过开场动画"
+    IDS_CN_APPLY_HOTFIX     "应用脚本热修复"
+    IDS_CN_UNLOCK_FRAMERATE "解锁帧率限制"
+    IDS_CN_UNLOCK_WIDESCREEN "解锁宽屏支持 (非4:3)"
+    IDS_CN_UNLOCK_HIGHRES   "解锁高分辨率 (>1600)"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_CN_DEBUG            "启用游戏内调试模式"
+    IDS_CN_ROOKIE           "启用游戏内新手模式"
+    IDS_CN_ERR_NO_CONFIG    "无法初始化配置对话框：未提供配置数据。"
+    IDS_CN_ERR_CANNOT_SAVE  "无法保存配置：配置数据不可用。"
+    IDS_CN_ERR_DIALOG_CREATE "无法创建配置对话框！错误代码：%lu\n请检查对话框资源是否存在。"
+    IDS_CN_ERR_CONFIG_TITLE "配置错误"
+    IDS_CN_WARN_CONFIG_PATH "警告：无法确定配置文件路径。使用默认位置。"
+    IDS_CN_WARN_CONFIG_TITLE "配置路径警告"
+    IDS_CN_SAVE_SUCCESS     "配置已成功保存。"
+    IDS_CN_SAVE_TITLE       "配置信息"
+END

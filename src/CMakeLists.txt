@@ -34,7 +34,28 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
 
 target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
 
-install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION Bin)
+add_executable(ConfigTool
+        ConfigTool.cpp
+        GameConfig.cpp
+        Utils.cpp
+        ConfigTool.rc
+
+        ConfigTool.h
+        GameConfig.h
+        Utils.h
+)
+
+set_target_properties(ConfigTool PROPERTIES
+        WIN32_EXECUTABLE TRUE
+)
+
+target_compile_definitions(ConfigTool PRIVATE
+        CONFIGTOOL_STANDALONE
+)
+
+target_link_libraries(ConfigTool PRIVATE VxMath)
+
+install(TARGETS ${PLAYER_NAME} ConfigTool RUNTIME DESTINATION Bin)
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Kakuty")
