@@ -121,7 +121,7 @@ IDI_ICON ICON "Player.ico"
 // String Tables - English
 STRINGTABLE
 BEGIN
-    IDS_DIALOG_TITLE        "Ballance Configuration"
+    IDS_DIALOG_TITLE        "Ballance Player Configuration"
     IDS_BTN_OK              "OK"
     IDS_BTN_CANCEL          "Cancel"
     IDS_BTN_DEFAULTS        "Defaults"
