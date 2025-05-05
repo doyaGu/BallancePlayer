@@ -119,9 +119,6 @@ namespace utils
             return false;
     
         size_t len = strlen(path);
-        if (len == 0)
-            return false;
-        
         return (path[len - 1] == '\\' || path[len - 1] == '/');
     }
 
