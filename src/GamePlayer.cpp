@@ -1322,7 +1322,7 @@ void CGamePlayer::OnActivateApp(bool active)
 
             ::ClipCursor(NULL);
 
-            if (m_RenderContext && IsRenderFullscreen())
+            if (IsRenderFullscreen())
             {
                 if (firstDeActivate)
                     wasFullscreen = true;
@@ -1332,6 +1332,9 @@ void CGamePlayer::OnActivateApp(bool active)
             {
                 wasFullscreen = false;
             }
+
+            if (wasPlaying)
+                Pause();
         }
         firstDeActivate = false;
         m_State = eFocusLost;
@@ -1512,6 +1515,8 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
 
 void CGamePlayer::OnGoFullscreen()
 {
+    Pause();
+
     ::ClipCursor(NULL);
 
     if (GoFullscreen())
@@ -1532,10 +1537,14 @@ void CGamePlayer::OnGoFullscreen()
         if (m_Config.childWindowRendering)
             m_RenderWindow.Update();
     }
+
+    Play();
 }
 
 void CGamePlayer::OnStopFullscreen()
 {
+    Pause();
+
     if (StopFullscreen())
     {
         LONG style = (m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
@@ -1560,6 +1569,8 @@ void CGamePlayer::OnStopFullscreen()
     }
 
     ClipCursor();
+
+    Play();
 }
 
 void CGamePlayer::OnSwitchFullscreen()
