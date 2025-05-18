@@ -509,7 +509,7 @@ bool CGamePlayer::InitDriver()
     }
     else
     {
-        CLogger::Get().Debug("Found %s render drivers", driverCount);
+        CLogger::Get().Debug("Found %d render drivers", driverCount);
     }
 
     if (m_Config.manualSetup)
