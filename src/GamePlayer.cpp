@@ -1381,14 +1381,9 @@ void CGamePlayer::OnClick(bool dblClk)
 
 int CGamePlayer::OnCommand(UINT id, UINT code)
 {
-    switch (id)
+    if (id == IDM_APP_ABOUT)
     {
-    case IDM_APP_ABOUT:
         OpenAboutDialog();
-        break;
-
-    default:
-        break;
     }
     return 0;
 }
@@ -1413,7 +1408,7 @@ void CGamePlayer::OnReturn()
 
 bool CGamePlayer::OnLoadCMO(const char *filename)
 {
-    return Load((const char *)filename);
+    return Load(filename);
 }
 
 void CGamePlayer::OnExitToSystem()
