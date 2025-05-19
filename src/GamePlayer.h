@@ -1,9 +1,16 @@
 #ifndef PLAYER_GAMEPLAYER_H
 #define PLAYER_GAMEPLAYER_H
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#ifdef WIN32_LEAN_AND_MEAN
+#undef WIN32_LEAN_AND_MEAN
+#endif
+
 #include "CKAll.h"
 
-#include "Window.h"
 #include "GameConfig.h"
 
 class CGameInfo;
@@ -48,7 +55,7 @@ private:
     bool InitWindow(HINSTANCE hInstance);
     void ShutdownWindow();
 
-    bool InitEngine(CWindow &mainWindow);
+    bool InitEngine(HWND mainWindow);
     void ShutdownEngine();
 
     bool InitDriver();
@@ -121,8 +128,8 @@ private:
     int m_State;
     HINSTANCE m_hInstance;
     HACCEL m_hAccelTable;
-    CWindow m_MainWindow;
-    CWindow m_RenderWindow;
+    HWND m_MainWindow;
+    HWND m_RenderWindow;
 
     CKContext *m_CKContext;
     CKRenderContext *m_RenderContext;

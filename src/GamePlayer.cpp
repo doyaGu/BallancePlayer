@@ -18,6 +18,8 @@ CGamePlayer::CGamePlayer()
     : m_State(eInitial),
       m_hInstance(NULL),
       m_hAccelTable(NULL),
+      m_MainWindow(NULL),
+      m_RenderWindow(NULL),
       m_CKContext(NULL),
       m_RenderContext(NULL),
       m_RenderManager(NULL),
@@ -66,13 +68,13 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
     }
 
     RECT rc;
-    m_MainWindow.GetClientRect(&rc);
+    ::GetClientRect(m_MainWindow, &rc);
     if (rc.right - rc.left != m_Config.width || rc.bottom - rc.top != m_Config.height)
     {
         ResizeWindow();
     }
 
-    HWND handle = (!m_Config.childWindowRendering) ? m_MainWindow.GetHandle() : m_RenderWindow.GetHandle();
+    HWND handle = (!m_Config.childWindowRendering) ? m_MainWindow : m_RenderWindow;
     CKRECT rect = {0, 0, m_Config.width, m_Config.height};
     m_RenderContext = m_RenderManager->CreateRenderContext(handle, m_Config.driver, &rect, FALSE, m_Config.bpp);
     if (!m_RenderContext)
@@ -86,8 +88,8 @@ bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
     if (m_Config.fullscreen)
         OnGoFullscreen();
 
-    m_MainWindow.Show();
-    m_MainWindow.SetFocus();
+    ::ShowWindow(m_MainWindow, SW_SHOW);
+    ::SetFocus(m_MainWindow);
 
     m_State = eReady;
     return true;
@@ -195,7 +197,7 @@ bool CGamePlayer::Update()
         if (msg.message == WM_QUIT)
             return false;
 
-        if (!::TranslateAccelerator(m_MainWindow.GetHandle(), m_hAccelTable, &msg))
+        if (!::TranslateAccelerator(m_MainWindow, m_hAccelTable, &msg))
         {
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
@@ -335,8 +337,9 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     if (y <= -height || y >= screenHeight)
         y = (screenHeight - height) / 2;
 
-    if (!m_MainWindow.CreateEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
-                               x, y, width, height, NULL, NULL, hInstance, this))
+    m_MainWindow = ::CreateWindowEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
+                               x, y, width, height, NULL, NULL, hInstance, this);
+    if (!m_MainWindow)
     {
         CLogger::Get().Error("Failed to create main window!");
         UnregisterMainWindowClass(hInstance);
@@ -349,8 +352,10 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
 
     if (m_Config.childWindowRendering)
     {
-        if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
-                                     0, 0, m_Config.width, m_Config.height, m_MainWindow.GetHandle(), NULL, hInstance, this))
+        m_RenderWindow = ::CreateWindowEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"),
+                                          WS_CHILD | WS_VISIBLE, 0, 0, m_Config.width, m_Config.height, m_MainWindow,
+                                          NULL, hInstance, this);
+        if (!m_RenderWindow)
         {
             CLogger::Get().Error("Failed to create render window!");
             UnregisterRenderWindowClass(hInstance);
@@ -366,9 +371,9 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     if (!m_hAccelTable)
     {
         CLogger::Get().Error("Failed to load the accelerator table!");
-        m_MainWindow.Destroy();
+        ::DestroyWindow(m_MainWindow);
         if (m_Config.childWindowRendering)
-            m_RenderWindow.Destroy();
+            ::DestroyWindow(m_RenderWindow);
         UnregisterMainWindowClass(hInstance);
         if (m_Config.childWindowRendering)
             UnregisterRenderWindowClass(hInstance);
@@ -390,8 +395,8 @@ void CGamePlayer::ShutdownWindow()
     }
 
     if (m_Config.childWindowRendering)
-        m_RenderWindow.Destroy();
-    m_MainWindow.Destroy();
+        ::DestroyWindow(m_RenderWindow);
+    ::DestroyWindow(m_MainWindow);
 
     if (m_hInstance)
     {
@@ -401,7 +406,7 @@ void CGamePlayer::ShutdownWindow()
     }
 }
 
-bool CGamePlayer::InitEngine(CWindow &mainWindow)
+bool CGamePlayer::InitEngine(HWND mainWindow)
 {
     if (CKStartUp() != CK_OK)
     {
@@ -429,9 +434,9 @@ bool CGamePlayer::InitEngine(CWindow &mainWindow)
 
     CLogger::Get().Debug("Render Engine initialized.");
 #if CKVERSION == 0x13022002
-    CKERROR res = CKCreateContext(&m_CKContext, mainWindow.GetHandle(), renderEngine, 0);
+    CKERROR res = CKCreateContext(&m_CKContext, mainWindow, renderEngine, 0);
 #else
-    CKERROR res = CKCreateContext(&m_CKContext, mainWindow.GetHandle(), 0);
+    CKERROR res = CKCreateContext(&m_CKContext, mainWindow, 0);
 #endif
     if (res != CK_OK)
     {
@@ -646,17 +651,17 @@ bool CGamePlayer::FinishLoad(const char *filename)
 void CGamePlayer::ReportMissingGuids(CKFile *file, const char *resolvedFile)
 {
     // retrieve the list of missing plugins/guids
-    XClassArray<CKFilePluginDependencies> *p = file->GetMissingPlugins();
+    const XClassArray<CKFilePluginDependencies> *p = file->GetMissingPlugins();
     for (CKFilePluginDependencies *it = p->Begin(); it != p->End(); it++)
     {
-        int count = (*it).m_Guids.Size();
+        const int count = it->m_Guids.Size();
         for (int i = 0; i < count; i++)
         {
-            if (!((*it).ValidGuids[i]))
+            if (!(it->ValidGuids[i]))
             {
                 if (resolvedFile)
                     CLogger::Get().Error("File Name : %s\nMissing GUIDS:\n", resolvedFile);
-                CLogger::Get().Error("%x,%x\n", (*it).m_Guids[i].d1, (*it).m_Guids[i].d2);
+                CLogger::Get().Error("%x,%x\n", it->m_Guids[i].d1, it->m_Guids[i].d2);
             }
         }
     }
@@ -1039,10 +1044,11 @@ bool CGamePlayer::SetupPaths()
 void CGamePlayer::ResizeWindow()
 {
     RECT rc = {0, 0, m_Config.width, m_Config.height};
-    ::AdjustWindowRect(&rc, m_MainWindow.GetStyle(), FALSE);
-    m_MainWindow.SetPos(NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
+    DWORD style = ::GetWindowLong(m_MainWindow, GWL_STYLE);
+    ::AdjustWindowRect(&rc, style, FALSE);
+    ::SetWindowPos(m_MainWindow, NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
     if (m_Config.childWindowRendering)
-        m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+        ::SetWindowPos(m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
 }
 
 int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
@@ -1179,12 +1185,23 @@ bool CGamePlayer::ClipCursor()
     if (m_Config.clipCursor)
     {
         RECT rect;
-        if (!m_MainWindow.GetClientRect(&rect))
+        if (!::GetClientRect(m_MainWindow, &rect))
         {
             CLogger::Get().Error("Failed to get client rect for cursor clipping");
             return false;
         }
-        m_MainWindow.ClientToScreen(&rect);
+
+        POINT p1, p2;
+        p1.x = rect.left;
+        p1.y = rect.top;
+        p2.x = rect.right;
+        p2.y = rect.bottom;
+        ::ClientToScreen(m_MainWindow, &p1);
+        ::ClientToScreen(m_MainWindow, &p2);
+        rect.left = p1.x;
+        rect.top = p1.y;
+        rect.right = p2.x;
+        rect.bottom = p2.y;
         result = ::ClipCursor(&rect);
     }
     else
@@ -1223,7 +1240,7 @@ void CGamePlayer::OnMove()
     if (!m_Config.fullscreen)
     {
         RECT rect;
-        m_MainWindow.GetWindowRect(&rect);
+        ::GetWindowRect(m_MainWindow, &rect);
         m_Config.posX = rect.left;
         m_Config.posY = rect.top;
     }
@@ -1242,7 +1259,7 @@ void CGamePlayer::OnPaint()
 
 void CGamePlayer::OnClose()
 {
-    m_MainWindow.Destroy();
+    ::DestroyWindow(m_MainWindow);
 }
 
 void CGamePlayer::OnActivateApp(bool active)
@@ -1328,7 +1345,7 @@ int CGamePlayer::OnSysKeyDown(UINT uKey)
 
     case VK_F4:
         // ALT + F4 -> Quit the application
-        m_MainWindow.PostMsg(TT_MSG_EXIT_TO_SYS, 0, 0);
+        ::PostMessage(m_MainWindow, TT_MSG_EXIT_TO_SYS, 0, 0);
         return 1;
 
     default:
@@ -1345,9 +1362,9 @@ void CGamePlayer::OnClick(bool dblClk)
     POINT pt;
     ::GetCursorPos(&pt);
     if (m_Config.childWindowRendering)
-        m_RenderWindow.ScreenToClient(&pt);
+        ::ScreenToClient(m_RenderWindow, &pt);
     else
-        m_MainWindow.ScreenToClient(&pt);
+        ::ScreenToClient(m_MainWindow, &pt);
 
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
@@ -1385,7 +1402,7 @@ int CGamePlayer::OnCommand(UINT id, UINT code)
 void CGamePlayer::OnExceptionCMO()
 {
     CLogger::Get().Error("Exception in the CMO - Abort");
-    m_MainWindow.PostMsg(TT_MSG_EXIT_TO_SYS, 0, 0);
+    ::PostMessage(m_MainWindow, TT_MSG_EXIT_TO_SYS, 0, 0);
 }
 
 void CGamePlayer::OnReturn()
@@ -1410,8 +1427,7 @@ void CGamePlayer::OnExitToSystem()
     bool fullscreen = m_Config.fullscreen;
     OnStopFullscreen();
     m_Config.fullscreen = fullscreen;
-
-    m_MainWindow.PostMsg(WM_CLOSE, 0, 0);
+    ::PostMessage(m_MainWindow, WM_CLOSE, 0, 0);
 }
 
 void CGamePlayer::OnExitToTitle()
@@ -1460,21 +1476,22 @@ void CGamePlayer::OnGoFullscreen()
 
     if (GoFullscreen())
     {
-        m_MainWindow.SetStyle(WS_POPUP);
-        m_MainWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        ::SetWindowLong(m_MainWindow, GWL_STYLE, WS_POPUP);
+        ::SetWindowPos(m_MainWindow, NULL, 0, 0, m_Config.width, m_Config.height,
+                       SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
-        m_MainWindow.Show();
-        m_MainWindow.SetFocus();
+        ::ShowWindow(m_MainWindow, SW_SHOW);
+        ::SetFocus(m_MainWindow);
 
         if (m_Config.childWindowRendering)
         {
-            m_RenderWindow.Show();
-            m_RenderWindow.SetFocus();
+            ::ShowWindow(m_RenderWindow, SW_SHOW);
+            ::SetFocus(m_RenderWindow);
         }
 
-        m_MainWindow.Update();
+        ::UpdateWindow(m_MainWindow);
         if (m_Config.childWindowRendering)
-            m_RenderWindow.Update();
+            ::UpdateWindow(m_RenderWindow);
     }
 
     Play();
@@ -1490,21 +1507,22 @@ void CGamePlayer::OnStopFullscreen()
         RECT rc = {0, 0, m_Config.width, m_Config.height};
         ::AdjustWindowRect(&rc, style, FALSE);
 
-        m_MainWindow.SetStyle(style);
-        m_MainWindow.SetPos(HWND_NOTOPMOST, m_Config.posX, m_Config.posY, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED);
+        ::SetWindowLong(m_MainWindow, GWL_STYLE, style);
+        ::SetWindowPos(m_MainWindow, HWND_NOTOPMOST, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left,
+                       rc.bottom - rc.top, SWP_FRAMECHANGED);
 
-        m_MainWindow.Show();
-        m_MainWindow.SetFocus();
+        ::ShowWindow(m_MainWindow, SW_SHOW);
+        ::SetFocus(m_MainWindow);
 
         if (m_Config.childWindowRendering)
         {
-            m_RenderWindow.SetPos(NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
-            m_RenderWindow.SetFocus();
+            ::SetWindowPos(m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+            ::SetFocus(m_RenderWindow);
         }
 
-        m_MainWindow.Update();
+        ::UpdateWindow(m_MainWindow);
         if (m_Config.childWindowRendering)
-            m_RenderWindow.Update();
+            ::UpdateWindow(m_RenderWindow);
     }
 
     ClipCursor();

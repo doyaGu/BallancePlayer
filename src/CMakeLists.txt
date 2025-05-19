@@ -4,7 +4,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_D
 set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
-        Window.h
         Splash.h
         ScriptUtils.h
         CmdlineParser.h
