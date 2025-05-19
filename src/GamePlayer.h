@@ -28,20 +28,10 @@ public:
     void Pause();
     void Reset();
 
-    CKContext *GetCKContext()
-    {
-        return m_CKContext;
-    }
-
-    CKRenderContext *GetRenderContext()
-    {
-        return m_RenderContext;
-    }
-
-    CKRenderManager *GetRenderManager()
-    {
-        return m_RenderManager;
-    }
+    CGameConfig &GetConfig() { return m_Config; }
+    CKContext *GetCKContext() const { return m_CKContext; }
+    CKRenderContext *GetRenderContext() const { return m_RenderContext; }
+    CKRenderManager *GetRenderManager() const { return m_RenderManager; }
 
 private:
     enum PlayerState
@@ -56,11 +46,6 @@ private:
     CGamePlayer();
     CGamePlayer(const CGamePlayer &);
     CGamePlayer &operator=(const CGamePlayer &);
-
-    CGameConfig &GetConfig()
-    {
-        return m_Config;
-    }
 
     bool InitWindow(HINSTANCE hInstance);
     void ShutdownWindow();
