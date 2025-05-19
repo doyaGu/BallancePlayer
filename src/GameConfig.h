@@ -96,6 +96,7 @@ public:
     void SetPath(PathCategory category, const char *path);
     const char *GetPath(PathCategory category) const;
     bool HasPath(PathCategory category) const;
+    bool ResetPath(PathCategory category = ePathCategoryCount);
 
     void LoadFromIni(const char *filename = "");
     void SaveToIni(const char *filename = "");

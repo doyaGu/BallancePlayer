@@ -346,23 +346,6 @@ static void ParseConfigsFromCmdline(CGameConfig &config, CmdlineParser &parser)
 
 static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
 {
-    static const char *const DefaultPaths[] = {
-        "Player.ini",
-        "Player.log",
-        "base.cmo",
-        "..\\",
-        "Plugins\\",
-        "RenderEngines\\",
-        "Managers\\",
-        "BuildingBlocks\\",
-        "Sounds\\",
-        "Textures\\",
-        "",
-    };
-
-    char szPath[MAX_PATH];
-    bool useDefault;
-
     // Load paths
     CmdlineArg arg;
     std::string path;
@@ -441,31 +424,10 @@ static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
     // Set default value for the path if it was not specified in command line
     for (int p = eConfigPath; p < ePathCategoryCount; ++p)
     {
-        if (!config.HasPath((PathCategory)p))
+        if (!utils::DirectoryExists(config.GetPath((PathCategory)p)))
         {
-            useDefault = true;
-        }
-        else if (!utils::DirectoryExists(config.GetPath((PathCategory)p)))
-        {
-            CLogger::Get().Warn("%s does not exist, using default path: %s", config.GetPath((PathCategory)p), DefaultPaths[p]);
-            useDefault = true;
-        }
-        else
-        {
-            useDefault = false;
-        }
-
-        if (useDefault)
-        {
-            if (p < ePluginPath)
-            {
-                config.SetPath((PathCategory)p, DefaultPaths[p]);
-            }
-            else
-            {
-                utils::ConcatPath(szPath, MAX_PATH, config.GetPath(eRootPath), DefaultPaths[p]);
-                config.SetPath((PathCategory)p, szPath);
-            }
+            CLogger::Get().Warn("%s does not exist, using default path", config.GetPath((PathCategory)p));
+            config.ResetPath((PathCategory)p);
         }
     }
 }

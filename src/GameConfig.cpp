@@ -2,6 +2,20 @@
 
 #include "Utils.h"
 
+static const char *const DefaultPaths[] = {
+    "Player.ini",
+    "Player.log",
+    "base.cmo",
+    "..\\",
+    "Plugins\\",
+    "RenderEngines\\",
+    "Managers\\",
+    "BuildingBlocks\\",
+    "Sounds\\",
+    "Textures\\",
+    "",
+};
+
 CGameConfig::CGameConfig()
 {
     logMode = eLogOverwrite;
@@ -51,6 +65,8 @@ CGameConfig::CGameConfig()
     unlockHighResolution = false;
     debug = false;
     rookie = false;
+
+    ResetPath();
 }
 
 CGameConfig &CGameConfig::operator=(const CGameConfig &config)
@@ -131,6 +147,46 @@ bool CGameConfig::HasPath(PathCategory category) const
     if (category < 0 || category >= ePathCategoryCount)
         return false;
     return m_Paths[category].size() != 0;
+}
+
+bool CGameConfig::ResetPath(PathCategory category)
+{
+    if (category < 0 || category > ePathCategoryCount)
+        return false;
+
+    if (category == ePathCategoryCount)
+    {
+        // Reset all paths
+        for (int i = 0; i < ePathCategoryCount; ++i)
+        {
+            if (i < ePluginPath)
+            {
+                SetPath((PathCategory)i, DefaultPaths[i]);
+            }
+            else
+            {
+                char szPath[MAX_PATH];
+                utils::ConcatPath(szPath, MAX_PATH, GetPath(eRootPath), DefaultPaths[i]);
+                SetPath((PathCategory)i, szPath);
+            }
+        }
+    }
+    else
+    {
+        // Reset specific path
+        if (category < ePluginPath)
+        {
+            SetPath(category, DefaultPaths[category]);
+        }
+        else
+        {
+            char szPath[MAX_PATH];
+            utils::ConcatPath(szPath, MAX_PATH, GetPath(eRootPath), DefaultPaths[category]);
+            SetPath(category, szPath);
+        }
+    }
+
+    return true;
 }
 
 void CGameConfig::LoadFromIni(const char *filename)
