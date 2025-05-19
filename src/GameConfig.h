@@ -93,9 +93,9 @@ public:
     CGameConfig();
     CGameConfig &operator=(const CGameConfig &config);
 
-    void SetPath(PathCategory category, const char *path);
-    const char *GetPath(PathCategory category) const;
     bool HasPath(PathCategory category) const;
+    const char *GetPath(PathCategory category) const;
+    void SetPath(PathCategory category, const char *path);
     bool ResetPath(PathCategory category = ePathCategoryCount);
 
     void LoadFromIni(const char *filename = "");

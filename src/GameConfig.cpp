@@ -128,11 +128,11 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     return *this;
 }
 
-void CGameConfig::SetPath(PathCategory category, const char *path)
+bool CGameConfig::HasPath(PathCategory category) const
 {
-    if (category < 0 || category >= ePathCategoryCount || !path)
-        return;
-    m_Paths[category] = path;
+    if (category < 0 || category >= ePathCategoryCount)
+        return false;
+    return m_Paths[category].size() != 0;
 }
 
 const char *CGameConfig::GetPath(PathCategory category) const
@@ -142,11 +142,11 @@ const char *CGameConfig::GetPath(PathCategory category) const
     return m_Paths[category].c_str();
 }
 
-bool CGameConfig::HasPath(PathCategory category) const
+void CGameConfig::SetPath(PathCategory category, const char *path)
 {
-    if (category < 0 || category >= ePathCategoryCount)
-        return false;
-    return m_Paths[category].size() != 0;
+    if (category < 0 || category >= ePathCategoryCount || !path)
+        return;
+    m_Paths[category] = path;
 }
 
 bool CGameConfig::ResetPath(PathCategory category)

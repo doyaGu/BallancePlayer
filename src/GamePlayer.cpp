@@ -252,8 +252,7 @@ void CGamePlayer::Shutdown()
     }
 
     // Save settings
-    if (m_Config.HasPath(eConfigPath))
-        m_Config.SaveToIni();
+    m_Config.SaveToIni();
 }
 
 void CGamePlayer::Play()

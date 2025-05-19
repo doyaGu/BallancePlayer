@@ -808,10 +808,7 @@ BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
             if (pConfig)
             {
                 SaveDialogToConfig(hDlg, *pConfig); // Save UI state to config object
-                if (pConfig->HasPath(eConfigPath))
-                {
-                    SaveUILanguageToIni(pConfig->GetPath(eConfigPath)); // Save UI language selection
-                }
+                SaveUILanguageToIni(pConfig->GetPath(eConfigPath)); // Save UI language selection
                 CleanupFonts();
                 ::EndDialog(hDlg, IDOK);
             }
