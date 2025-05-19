@@ -342,7 +342,7 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         y = (screenHeight - height) / 2;
 
     if (!m_MainWindow.CreateEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
-                               x, y, width, height, NULL, NULL, hInstance, NULL))
+                               x, y, width, height, NULL, NULL, hInstance, this))
     {
         CLogger::Get().Error("Failed to create main window!");
         UnregisterMainWindowClass(hInstance);
@@ -356,7 +356,7 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     if (m_Config.childWindowRendering)
     {
         if (!m_RenderWindow.CreateEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"), WS_CHILD | WS_VISIBLE,
-                                     0, 0, m_Config.width, m_Config.height, m_MainWindow.GetHandle(), NULL, hInstance, NULL))
+                                     0, 0, m_Config.width, m_Config.height, m_MainWindow.GetHandle(), NULL, hInstance, this))
         {
             CLogger::Get().Error("Failed to create render window!");
             UnregisterRenderWindowClass(hInstance);
@@ -1179,56 +1179,6 @@ bool CGamePlayer::StopFullscreen()
     return true;
 }
 
-bool CGamePlayer::RegisterMainWindowClass(HINSTANCE hInstance)
-{
-    WNDCLASSEX mainWndClass;
-    memset(&mainWndClass, 0, sizeof(WNDCLASSEX));
-
-    mainWndClass.lpfnWndProc = CGamePlayer::MainWndProc;
-    mainWndClass.cbSize = sizeof(WNDCLASSEX);
-    mainWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-    mainWndClass.cbClsExtra = 0;
-    mainWndClass.cbWndExtra = 0;
-    mainWndClass.hInstance = hInstance;
-    mainWndClass.hIcon = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
-    mainWndClass.hCursor = ::LoadCursor(NULL, IDC_ARROW);
-    mainWndClass.hbrBackground = (HBRUSH)::GetStockObject(BLACK_BRUSH);
-    mainWndClass.lpszMenuName = NULL;
-    mainWndClass.lpszClassName = TEXT("Ballance");
-    mainWndClass.hIconSm = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
-
-    return ::RegisterClassEx(&mainWndClass) != 0;
-}
-
-bool CGamePlayer::RegisterRenderWindowClass(HINSTANCE hInstance)
-{
-    WNDCLASS renderWndClass;
-    memset(&renderWndClass, 0, sizeof(WNDCLASS));
-
-    renderWndClass.lpfnWndProc = CGamePlayer::MainWndProc;
-    renderWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
-    renderWndClass.hInstance = hInstance;
-    renderWndClass.lpszClassName = TEXT("Ballance Render");
-
-    return ::RegisterClass(&renderWndClass) != 0;
-}
-
-bool CGamePlayer::UnregisterMainWindowClass(HINSTANCE hInstance)
-{
-    if (!hInstance)
-        return false;
-    ::UnregisterClass(TEXT("Ballance"), hInstance);
-    return true;
-}
-
-bool CGamePlayer::UnregisterRenderWindowClass(HINSTANCE hInstance)
-{
-    if (!hInstance)
-        return false;
-    ::UnregisterClass(TEXT("Ballance Render"), hInstance);
-    return true;
-}
-
 bool CGamePlayer::ClipCursor()
 {
     BOOL result;
@@ -1260,12 +1210,12 @@ bool CGamePlayer::ClipCursor()
 
 bool CGamePlayer::OpenSetupDialog()
 {
-    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, CGamePlayer::FullscreenSetupDlgProc, 0) == IDOK;
+    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, CGamePlayer::FullscreenSetupDlgProc, reinterpret_cast<LPARAM>(this)) == IDOK;
 }
 
 bool CGamePlayer::OpenAboutDialog()
 {
-    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT), NULL, CGamePlayer::AboutDlgProc, 0) == IDOK;
+    return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT), NULL, CGamePlayer::AboutDlgProc, reinterpret_cast<LPARAM>(this)) == IDOK;
 }
 
 void CGamePlayer::OnDestroy()
@@ -1584,6 +1534,94 @@ void CGamePlayer::OnSwitchFullscreen()
         OnStopFullscreen();
 }
 
+LRESULT CGamePlayer::HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+    case WM_DESTROY:
+        OnDestroy();
+        return 0;
+
+    case WM_MOVE:
+        OnMove();
+        break;
+
+    case WM_SIZE:
+        OnSize();
+        break;
+
+    case WM_PAINT:
+        OnPaint();
+        break;
+
+    case WM_CLOSE:
+        OnClose();
+        return 0;
+
+    case WM_ACTIVATEAPP:
+        OnActivateApp(wParam == WA_ACTIVE);
+        break;
+
+    case WM_SETCURSOR:
+        OnSetCursor();
+        break;
+
+    case WM_GETMINMAXINFO:
+        OnGetMinMaxInfo((LPMINMAXINFO)lParam);
+        break;
+
+    case WM_SYSKEYDOWN:
+        return OnSysKeyDown(wParam);
+
+    case WM_LBUTTONDOWN:
+        OnClick();
+        break;
+
+    case WM_LBUTTONDBLCLK:
+        OnClick(true);
+        break;
+
+    case WM_COMMAND:
+        return OnCommand(LOWORD(wParam), HIWORD(wParam));
+
+    case TT_MSG_NO_GAMEINFO:
+        OnExceptionCMO();
+        break;
+
+    case TT_MSG_CMO_RESTART:
+        OnReturn();
+        break;
+
+    case TT_MSG_CMO_LOAD:
+        OnLoadCMO((const char *)wParam);
+        break;
+
+    case TT_MSG_EXIT_TO_SYS:
+        OnExitToSystem();
+        break;
+
+    case TT_MSG_EXIT_TO_TITLE:
+        OnExitToTitle();
+        break;
+
+    case TT_MSG_SCREEN_MODE_CHG:
+        return OnChangeScreenMode((int)lParam, (int)wParam);
+
+    case TT_MSG_GO_FULLSCREEN:
+        OnGoFullscreen();
+        break;
+
+    case TT_MSG_STOP_FULLSCREEN:
+        OnStopFullscreen();
+        return 1;
+
+    default:
+        break;
+    }
+
+    return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
 bool CGamePlayer::FillDriverList(HWND hWnd)
 {
     const int drCount = m_RenderManager->GetRenderDriverCount();
@@ -1658,91 +1696,72 @@ bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
     return true;
 }
 
+bool CGamePlayer::RegisterMainWindowClass(HINSTANCE hInstance)
+{
+    WNDCLASSEX mainWndClass;
+    memset(&mainWndClass, 0, sizeof(WNDCLASSEX));
+
+    mainWndClass.lpfnWndProc = CGamePlayer::MainWndProc;
+    mainWndClass.cbSize = sizeof(WNDCLASSEX);
+    mainWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+    mainWndClass.cbClsExtra = 0;
+    mainWndClass.cbWndExtra = 0;
+    mainWndClass.hInstance = hInstance;
+    mainWndClass.hIcon = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
+    mainWndClass.hCursor = ::LoadCursor(NULL, IDC_ARROW);
+    mainWndClass.hbrBackground = (HBRUSH)::GetStockObject(BLACK_BRUSH);
+    mainWndClass.lpszMenuName = NULL;
+    mainWndClass.lpszClassName = TEXT("Ballance");
+    mainWndClass.hIconSm = ::LoadIcon(hInstance, MAKEINTRESOURCE(IDI_PLAYER));
+
+    return ::RegisterClassEx(&mainWndClass) != 0;
+}
+
+bool CGamePlayer::RegisterRenderWindowClass(HINSTANCE hInstance)
+{
+    WNDCLASS renderWndClass;
+    memset(&renderWndClass, 0, sizeof(WNDCLASS));
+
+    renderWndClass.lpfnWndProc = CGamePlayer::MainWndProc;
+    renderWndClass.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+    renderWndClass.hInstance = hInstance;
+    renderWndClass.lpszClassName = TEXT("Ballance Render");
+
+    return ::RegisterClass(&renderWndClass) != 0;
+}
+
+bool CGamePlayer::UnregisterMainWindowClass(HINSTANCE hInstance)
+{
+    if (!hInstance)
+        return false;
+    ::UnregisterClass(TEXT("Ballance"), hInstance);
+    return true;
+}
+
+bool CGamePlayer::UnregisterRenderWindowClass(HINSTANCE hInstance)
+{
+    if (!hInstance)
+        return false;
+    ::UnregisterClass(TEXT("Ballance Render"), hInstance);
+    return true;
+}
+
 LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    CGamePlayer &player = CGamePlayer::GetInstance();
-
-    switch (uMsg)
+    CGamePlayer *player = NULL;
+    if (uMsg == WM_NCCREATE)
     {
-    case WM_DESTROY:
-        player.OnDestroy();
-        return 0;
+        CREATESTRUCT *pCreate = reinterpret_cast<CREATESTRUCT *>(lParam);
+        player = static_cast<CGamePlayer *>(pCreate->lpCreateParams);
+        ::SetWindowLong(hWnd, GWL_USERDATA, reinterpret_cast<LONG>(player));
+    }
+    else
+    {
+        player = reinterpret_cast<CGamePlayer *>(::GetWindowLong(hWnd, GWL_USERDATA));
+    }
 
-    case WM_MOVE:
-        player.OnMove();
-        break;
-
-    case WM_SIZE:
-        player.OnSize();
-        break;
-
-    case WM_PAINT:
-        player.OnPaint();
-        break;
-
-    case WM_CLOSE:
-        player.OnClose();
-        return 0;
-
-    case WM_ACTIVATEAPP:
-        player.OnActivateApp(wParam == WA_ACTIVE);
-        break;
-
-    case WM_SETCURSOR:
-        player.OnSetCursor();
-        break;
-
-    case WM_GETMINMAXINFO:
-        player.OnGetMinMaxInfo((LPMINMAXINFO)lParam);
-        break;
-
-    case WM_SYSKEYDOWN:
-        return player.OnSysKeyDown(wParam);
-
-    case WM_LBUTTONDOWN:
-        player.OnClick();
-        break;
-
-    case WM_LBUTTONDBLCLK:
-        player.OnClick(true);
-        break;
-
-    case WM_COMMAND:
-        return player.OnCommand(LOWORD(wParam), HIWORD(wParam));
-
-    case TT_MSG_NO_GAMEINFO:
-        player.OnExceptionCMO();
-        break;
-
-    case TT_MSG_CMO_RESTART:
-        player.OnReturn();
-        break;
-
-    case TT_MSG_CMO_LOAD:
-        player.OnLoadCMO((const char *)wParam);
-        break;
-
-    case TT_MSG_EXIT_TO_SYS:
-        player.OnExitToSystem();
-        break;
-
-    case TT_MSG_EXIT_TO_TITLE:
-        player.OnExitToTitle();
-        break;
-
-    case TT_MSG_SCREEN_MODE_CHG:
-        return player.OnChangeScreenMode((int)lParam, (int)wParam);
-
-    case TT_MSG_GO_FULLSCREEN:
-        player.OnGoFullscreen();
-        break;
-
-    case TT_MSG_STOP_FULLSCREEN:
-        player.OnStopFullscreen();
-        return 1;
-
-    default:
-        break;
+    if (player) {
+        return player->HandleMessage(hWnd, uMsg, wParam, lParam);
     }
 
     return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -1753,16 +1772,29 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
     WORD wNotifyCode = HIWORD(wParam);
     int wID = LOWORD(wParam);
 
-    CGamePlayer &player = CGamePlayer::GetInstance();
-    CGameConfig &config = player.GetConfig();
+    CGamePlayer *player = NULL;
+    if (uMsg == WM_INITDIALOG)
+    {
+        player = reinterpret_cast<CGamePlayer *>(lParam);
+        ::SetWindowLong(hWnd, GWL_USERDATA, reinterpret_cast<LONG>(player));
+    }
+    else
+    {
+        player = reinterpret_cast<CGamePlayer *>(::GetWindowLong(hWnd, GWL_USERDATA));
+    }
+
+    if (!player)
+        return FALSE;
+
+    CGameConfig &config = player->GetConfig();
 
     switch (uMsg)
     {
     case WM_INITDIALOG:
     {
-        if (!player.FillDriverList(hWnd))
+        if (!player->FillDriverList(hWnd))
             ::EndDialog(hWnd, IDCANCEL);
-        if (!player.FillScreenModeList(hWnd, config.driver))
+        if (!player->FillScreenModeList(hWnd, config.driver))
             ::EndDialog(hWnd, IDCANCEL);
         return TRUE;
     }
@@ -1776,7 +1808,7 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 
             ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_RESETCONTENT, 0, 0);
 
-            player.FillScreenModeList(hWnd, driver);
+            player->FillScreenModeList(hWnd, driver);
 
             return TRUE;
         }
@@ -1800,7 +1832,7 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
                 }
                 config.screenMode = SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0);
 
-                VxDriverDesc *drDesc = player.GetRenderManager()->GetRenderDriverDescription(config.driver);
+                VxDriverDesc *drDesc = player->GetRenderManager()->GetRenderDriverDescription(config.driver);
                 if (drDesc)
                 {
                     const VxDisplayMode &dm = drDesc->DisplayModes[config.screenMode];

@@ -80,11 +80,6 @@ private:
     bool GoFullscreen();
     bool StopFullscreen();
 
-    bool RegisterMainWindowClass(HINSTANCE hInstance);
-    bool RegisterRenderWindowClass(HINSTANCE hInstance);
-    bool UnregisterMainWindowClass(HINSTANCE hInstance);
-    bool UnregisterRenderWindowClass(HINSTANCE hInstance);
-
     bool ClipCursor();
 
     bool OpenSetupDialog();
@@ -111,8 +106,15 @@ private:
     void OnStopFullscreen();
     void OnSwitchFullscreen();
 
+    LRESULT HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
     bool FillDriverList(HWND hWnd);
     bool FillScreenModeList(HWND hWnd, int driver);
+
+    static bool RegisterMainWindowClass(HINSTANCE hInstance);
+    static bool RegisterRenderWindowClass(HINSTANCE hInstance);
+    static bool UnregisterMainWindowClass(HINSTANCE hInstance);
+    static bool UnregisterRenderWindowClass(HINSTANCE hInstance);
 
     static LRESULT CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     static BOOL CALLBACK FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
