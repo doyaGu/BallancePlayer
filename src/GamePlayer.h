@@ -11,8 +11,7 @@ class CGameInfo;
 class CGamePlayer
 {
 public:
-    static CGamePlayer &GetInstance();
-
+    CGamePlayer();
     ~CGamePlayer();
 
     bool Init(HINSTANCE hInstance, const CGameConfig &config);
@@ -43,7 +42,6 @@ private:
         eFocusLost,
     };
 
-    CGamePlayer();
     CGamePlayer(const CGamePlayer &);
     CGamePlayer &operator=(const CGamePlayer &);
 

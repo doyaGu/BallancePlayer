@@ -14,11 +14,20 @@
 
 extern bool EditScript(CKLevel *level, const CGameConfig &config);
 
-CGamePlayer &CGamePlayer::GetInstance()
-{
-    static CGamePlayer player;
-    return player;
-}
+CGamePlayer::CGamePlayer()
+    : m_State(eInitial),
+      m_hInstance(NULL),
+      m_hAccelTable(NULL),
+      m_CKContext(NULL),
+      m_RenderContext(NULL),
+      m_RenderManager(NULL),
+      m_MessageManager(NULL),
+      m_TimeManager(NULL),
+      m_AttributeManager(NULL),
+      m_InputManager(NULL),
+      m_MsgClick(-1),
+      m_MsgDoubleClick(-1),
+      m_GameInfo(NULL) {}
 
 CGamePlayer::~CGamePlayer()
 {
@@ -265,21 +274,6 @@ void CGamePlayer::Reset()
     m_CKContext->Play();
     CLogger::Get().Debug("Game is reset.");
 }
-
-CGamePlayer::CGamePlayer()
-    : m_State(eInitial),
-      m_hInstance(NULL),
-      m_hAccelTable(NULL),
-      m_CKContext(NULL),
-      m_RenderContext(NULL),
-      m_RenderManager(NULL),
-      m_MessageManager(NULL),
-      m_TimeManager(NULL),
-      m_AttributeManager(NULL),
-      m_InputManager(NULL),
-      m_MsgClick(-1),
-      m_MsgDoubleClick(-1),
-      m_GameInfo(NULL) {}
 
 static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *)
 {

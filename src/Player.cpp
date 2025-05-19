@@ -54,8 +54,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     CSplash splash(hInstance);
     splash.Show();
 
-    CGamePlayer &player = CGamePlayer::GetInstance();
-
+    CGamePlayer player;
     if (!player.Init(hInstance, config))
     {
         CLogger::Get().Error("Failed to initialize player!");
@@ -67,6 +66,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     {
         CLogger::Get().Error("Failed to load game composition!");
         ::MessageBox(NULL, TEXT("Failed to load game composition!"), TEXT("Error"), MB_OK);
+        player.Shutdown();
         return -1;
     }
 
