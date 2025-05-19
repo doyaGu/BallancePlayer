@@ -36,18 +36,19 @@ CGamePlayer::~CGamePlayer()
     Shutdown();
 }
 
-bool CGamePlayer::Init(HINSTANCE hInstance, const CGameConfig &config)
+bool CGamePlayer::Init(const CGameConfig &config, HINSTANCE hInstance)
 {
     if (m_State != eInitial)
         return true;
 
-    if (!hInstance)
-        return false;
-
-    m_hInstance = hInstance;
     m_Config = config;
 
-    if (!InitWindow(hInstance))
+    if (!hInstance)
+        m_hInstance = ::GetModuleHandle(nullptr);
+    else
+        m_hInstance = hInstance;
+
+    if (!InitWindow(m_hInstance))
     {
         CLogger::Get().Error("Failed to initialize window!");
         ShutdownWindow();

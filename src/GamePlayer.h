@@ -21,7 +21,7 @@ public:
     CGamePlayer();
     ~CGamePlayer();
 
-    bool Init(HINSTANCE hInstance, const CGameConfig &config);
+    bool Init(const CGameConfig &config, HINSTANCE hInstance = NULL);
     bool Load(const char *filename = NULL);
 
     void Run();

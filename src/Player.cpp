@@ -55,7 +55,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     splash.Show();
 
     CGamePlayer player;
-    if (!player.Init(hInstance, config))
+    if (!player.Init(config, hInstance))
     {
         CLogger::Get().Error("Failed to initialize player!");
         ::MessageBox(NULL, TEXT("Failed to initialize player!"), TEXT("Error"), MB_OK);
