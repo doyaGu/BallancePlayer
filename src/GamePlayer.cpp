@@ -44,7 +44,7 @@ bool CGamePlayer::Init(const CGameConfig &config, HINSTANCE hInstance)
     m_Config = config;
 
     if (!hInstance)
-        m_hInstance = ::GetModuleHandle(nullptr);
+        m_hInstance = ::GetModuleHandle(NULL);
     else
         m_hInstance = hInstance;
 
