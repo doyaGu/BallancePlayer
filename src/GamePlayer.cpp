@@ -578,13 +578,13 @@ bool CGamePlayer::FinishLoad(const char *filename)
     if (!filename)
         return false;
 
-    InterfaceManager *man = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
-    if (man)
+    InterfaceManager *im = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
+    if (im)
     {
-        man->SetDriver(m_Config.driver);
-        man->SetScreenMode(m_Config.screenMode);
-        man->SetRookie(m_Config.rookie);
-        man->SetTaskSwitchEnabled(true);
+        im->SetDriver(m_Config.driver);
+        im->SetScreenMode(m_Config.screenMode);
+        im->SetRookie(m_Config.rookie);
+        im->SetTaskSwitchEnabled(true);
 
         if (m_GameInfo)
         {
@@ -595,7 +595,7 @@ bool CGamePlayer::FinishLoad(const char *filename)
         m_GameInfo = new CGameInfo;
         strcpy(m_GameInfo->path, ".");
         strcpy(m_GameInfo->fileName, filename);
-        man->SetGameInfo(m_GameInfo);
+        im->SetGameInfo(m_GameInfo);
     }
 
     // Retrieve the level
@@ -657,7 +657,7 @@ void CGamePlayer::ReportMissingGuids(CKFile *file, const char *resolvedFile)
         const int count = it->m_Guids.Size();
         for (int i = 0; i < count; i++)
         {
-            if (!(it->ValidGuids[i]))
+            if (!it->ValidGuids[i])
             {
                 if (resolvedFile)
                     CLogger::Get().Error("File Name : %s\nMissing GUIDS:\n", resolvedFile);
@@ -1456,8 +1456,11 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
     m_Config.bpp = bpp;
 
     InterfaceManager *im = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
-    im->SetDriver(m_Config.driver);
-    im->SetScreenMode(m_Config.screenMode);
+    if (im)
+    {
+        im->SetDriver(m_Config.driver);
+        im->SetScreenMode(m_Config.screenMode);
+    }
 
     ResizeWindow();
     m_RenderContext->Resize();
