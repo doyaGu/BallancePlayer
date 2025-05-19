@@ -1,6 +1,7 @@
 #include "Utils.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -30,6 +31,11 @@ namespace utils
         return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
     }
 
+    size_t GetCurrentPath(char *buffer, size_t size)
+    {
+        return ::GetCurrentDirectoryA(size, buffer);
+    }
+
     bool IsAbsolutePath(const char *path)
     {
         if (!path || path[0] == '\0')
@@ -57,7 +63,7 @@ namespace utils
         }
         else
         {
-            size_t n = ::GetCurrentDirectoryA(size, buffer);
+            size_t n = GetCurrentPath(buffer, size);
             n = size - 1 - n;
             strncat(buffer, "\\", n);
             --n;
@@ -401,5 +407,66 @@ namespace utils
         }
 
         return str;
+    }
+
+    bool IniGetString(const char *section, const char *name, char *str, int size, const char *filename)
+    {
+        return ::GetPrivateProfileStringA(section, name, "", str, size, filename) != 0;
+    }
+
+    bool IniGetInteger(const char *section, const char *name, int &value, const char *filename)
+    {
+        char buf[512];
+        ::GetPrivateProfileStringA(section, name, "", buf, 512, filename);
+        if (strcmp(buf, "") == 0)
+            return false;
+        int val = strtol(buf, NULL, 10);
+        if (val == 0 && strcmp(buf, "0") != 0)
+            return false;
+        value = val;
+        return true;
+    }
+
+    bool IniGetBoolean(const char *section, const char *name, bool &value, const char *filename)
+    {
+        UINT val = ::GetPrivateProfileIntA(section, name, -1, filename);
+        if (val == -1)
+            return false;
+        value = val != 0;
+        return true;
+    }
+
+    bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT &value, const char *filename)
+    {
+        char buf[16];
+        ::GetPrivateProfileStringA(section, name, "", buf, 16, filename);
+        if (strcmp(buf, "") == 0)
+            return false;
+
+        value = String2PixelFormat(buf, sizeof(buf));
+        return true;
+    }
+
+    bool IniSetString(const char *section, const char *name, const char *str, const char *filename)
+    {
+        return ::WritePrivateProfileStringA(section, name, str, filename) != 0;
+    }
+
+    bool IniSetInteger(const char *section, const char *name, int value, const char *filename)
+    {
+        char buf[64];
+        sprintf(buf, "%d", value);
+        return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
+    }
+
+    bool IniSetBoolean(const char *section, const char *name, bool value, const char *filename)
+    {
+        const char *buf = (value) ? "1" : "0";
+        return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
+    }
+
+    bool IniSetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT value, const char *filename)
+    {
+        return ::WritePrivateProfileStringA(section, name, utils::PixelFormat2String(value), filename) != 0;
     }
 }

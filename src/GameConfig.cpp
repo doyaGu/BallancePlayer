@@ -1,74 +1,6 @@
 #include "GameConfig.h"
 
-#include <stdio.h>
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <Windows.h>
-
 #include "Utils.h"
-
-static bool IniGetString(const char *section, const char *name, char *str, int size, const char *filename)
-{
-    return ::GetPrivateProfileStringA(section, name, "", str, size, filename) != 0;
-}
-
-static bool IniGetInteger(const char *section, const char *name, int &value, const char *filename)
-{
-    char buf[512];
-    ::GetPrivateProfileStringA(section, name, "", buf, 512, filename);
-    if (strcmp(buf, "") == 0)
-        return false;
-    int val = strtol(buf, NULL, 10);
-    if (val == 0 && strcmp(buf, "0") != 0)
-        return false;
-    value = val;
-    return true;
-}
-
-static bool IniGetBoolean(const char *section, const char *name, bool &value, const char *filename)
-{
-    UINT val = ::GetPrivateProfileIntA(section, name, -1, filename);
-    if (val == -1)
-        return false;
-    value = (val != 0);
-    return true;
-}
-
-static bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT &value, const char *filename)
-{
-    char buf[16];
-    ::GetPrivateProfileStringA(section, name, "", buf, 16, filename);
-    if (strcmp(buf, "") == 0)
-        return false;
-
-    value = utils::String2PixelFormat(buf, sizeof(buf));
-    return true;
-}
-
-static bool IniSetString(const char *section, const char *name, const char *str, const char *filename)
-{
-    return ::WritePrivateProfileStringA(section, name, str, filename) != 0;
-}
-
-static bool IniSetInteger(const char *section, const char *name, int value, const char *filename)
-{
-    char buf[64];
-    sprintf(buf, "%d", value);
-    return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
-}
-
-static bool IniSetBoolean(const char *section, const char *name, bool value, const char *filename)
-{
-    const char *buf = (value) ? "1" : "0";
-    return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
-}
-
-static bool IniSetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT value, const char *filename)
-{
-    return ::WritePrivateProfileStringA(section, name, utils::PixelFormat2String(value), filename) != 0;
-}
 
 CGameConfig::CGameConfig()
 {
@@ -216,57 +148,57 @@ void CGameConfig::LoadFromIni(const char *filename)
     char path[MAX_PATH];
     if (!utils::IsAbsolutePath(filename))
     {
-        ::GetCurrentDirectoryA(MAX_PATH, path);
+        utils::GetCurrentPath(path, MAX_PATH);
         utils::ConcatPath(path, MAX_PATH, path, filename);
         filename = path;
     }
 
-    IniGetInteger("Startup", "LogMode", logMode, filename);
-    IniGetBoolean("Startup", "Verbose", verbose, filename);
-    IniGetBoolean("Startup", "ManualSetup", manualSetup, filename);
-    IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
-    IniGetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
-    IniGetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
+    utils::IniGetInteger("Startup", "LogMode", logMode, filename);
+    utils::IniGetBoolean("Startup", "Verbose", verbose, filename);
+    utils::IniGetBoolean("Startup", "ManualSetup", manualSetup, filename);
+    utils::IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
+    utils::IniGetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
+    utils::IniGetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
 
-    IniGetInteger("Graphics", "Driver", driver, filename);
-    IniGetInteger("Graphics", "BitsPerPixel", bpp, filename);
-    IniGetInteger("Graphics", "Width", width, filename);
-    IniGetInteger("Graphics", "Height", height, filename);
-    IniGetBoolean("Graphics", "FullScreen", fullscreen, filename);
+    utils::IniGetInteger("Graphics", "Driver", driver, filename);
+    utils::IniGetInteger("Graphics", "BitsPerPixel", bpp, filename);
+    utils::IniGetInteger("Graphics", "Width", width, filename);
+    utils::IniGetInteger("Graphics", "Height", height, filename);
+    utils::IniGetBoolean("Graphics", "FullScreen", fullscreen, filename);
 
-    IniGetBoolean("Graphics", "DisablePerspectiveCorrection", disablePerspectiveCorrection, filename);
-    IniGetBoolean("Graphics", "ForceLinearFog", forceLinearFog, filename);
-    IniGetBoolean("Graphics", "ForceSoftware", forceSoftware, filename);
-    IniGetBoolean("Graphics", "DisableFilter", disableFilter, filename);
-    IniGetBoolean("Graphics", "EnsureVertexShader", ensureVertexShader, filename);
-    IniGetBoolean("Graphics", "UseIndexBuffers", useIndexBuffers, filename);
-    IniGetBoolean("Graphics", "DisableDithering", disableDithering, filename);
-    IniGetInteger("Graphics", "Antialias", antialias, filename);
-    IniGetBoolean("Graphics", "DisableMipmap", disableMipmap, filename);
-    IniGetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
-    IniGetBoolean("Graphics", "EnableScreenDump", enableScreenDump, filename);
-    IniGetBoolean("Graphics", "EnableDebugMode", enableDebugMode, filename);
-    IniGetInteger("Graphics", "VertexCache", vertexCache, filename);
-    IniGetBoolean("Graphics", "TextureCacheManagement", textureCacheManagement, filename);
-    IniGetBoolean("Graphics", "SortTransparentObjects", sortTransparentObjects, filename);
-    IniGetPixelFormat("Graphics", "TextureVideoFormat", textureVideoFormat, filename);
-    IniGetPixelFormat("Graphics", "SpriteVideoFormat", spriteVideoFormat, filename);
+    utils::IniGetBoolean("Graphics", "DisablePerspectiveCorrection", disablePerspectiveCorrection, filename);
+    utils::IniGetBoolean("Graphics", "ForceLinearFog", forceLinearFog, filename);
+    utils::IniGetBoolean("Graphics", "ForceSoftware", forceSoftware, filename);
+    utils::IniGetBoolean("Graphics", "DisableFilter", disableFilter, filename);
+    utils::IniGetBoolean("Graphics", "EnsureVertexShader", ensureVertexShader, filename);
+    utils::IniGetBoolean("Graphics", "UseIndexBuffers", useIndexBuffers, filename);
+    utils::IniGetBoolean("Graphics", "DisableDithering", disableDithering, filename);
+    utils::IniGetInteger("Graphics", "Antialias", antialias, filename);
+    utils::IniGetBoolean("Graphics", "DisableMipmap", disableMipmap, filename);
+    utils::IniGetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
+    utils::IniGetBoolean("Graphics", "EnableScreenDump", enableScreenDump, filename);
+    utils::IniGetBoolean("Graphics", "EnableDebugMode", enableDebugMode, filename);
+    utils::IniGetInteger("Graphics", "VertexCache", vertexCache, filename);
+    utils::IniGetBoolean("Graphics", "TextureCacheManagement", textureCacheManagement, filename);
+    utils::IniGetBoolean("Graphics", "SortTransparentObjects", sortTransparentObjects, filename);
+    utils::IniGetPixelFormat("Graphics", "TextureVideoFormat", textureVideoFormat, filename);
+    utils::IniGetPixelFormat("Graphics", "SpriteVideoFormat", spriteVideoFormat, filename);
 
-    IniGetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
-    IniGetBoolean("Window", "Borderless", borderless, filename);
-    IniGetBoolean("Window", "ClipCursor", clipCursor, filename);
-    IniGetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
-    IniGetInteger("Window", "X", posX, filename);
-    IniGetInteger("Window", "Y", posY, filename);
+    utils::IniGetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
+    utils::IniGetBoolean("Window", "Borderless", borderless, filename);
+    utils::IniGetBoolean("Window", "ClipCursor", clipCursor, filename);
+    utils::IniGetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
+    utils::IniGetInteger("Window", "X", posX, filename);
+    utils::IniGetInteger("Window", "Y", posY, filename);
 
-    IniGetInteger("Game", "Language", langId, filename);
-    IniGetBoolean("Game", "SkipOpening", skipOpening, filename);
-    IniGetBoolean("Game", "ApplyHotfix", applyHotfix, filename);
-    IniGetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
-    IniGetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
-    IniGetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
-    IniGetBoolean("Game", "Debug", debug, filename);
-    IniGetBoolean("Game", "Rookie", rookie, filename);
+    utils::IniGetInteger("Game", "Language", langId, filename);
+    utils::IniGetBoolean("Game", "SkipOpening", skipOpening, filename);
+    utils::IniGetBoolean("Game", "ApplyHotfix", applyHotfix, filename);
+    utils::IniGetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
+    utils::IniGetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
+    utils::IniGetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
+    utils::IniGetBoolean("Game", "Debug", debug, filename);
+    utils::IniGetBoolean("Game", "Rookie", rookie, filename);
 }
 
 void CGameConfig::SaveToIni(const char *filename)
@@ -284,53 +216,53 @@ void CGameConfig::SaveToIni(const char *filename)
     char path[MAX_PATH];
     if (!utils::IsAbsolutePath(filename))
     {
-        ::GetCurrentDirectoryA(MAX_PATH, path);
+        utils::GetCurrentPath(path, MAX_PATH);
         utils::ConcatPath(path, MAX_PATH, path, filename);
         filename = path;
     }
 
-    IniSetInteger("Startup", "LogMode", logMode, filename);
-    IniSetBoolean("Startup", "Verbose", verbose, filename);
-    IniSetBoolean("Startup", "ManualSetup", manualSetup, filename);
-    IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
-    IniSetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
-    IniSetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
+    utils::IniSetInteger("Startup", "LogMode", logMode, filename);
+    utils::IniSetBoolean("Startup", "Verbose", verbose, filename);
+    utils::IniSetBoolean("Startup", "ManualSetup", manualSetup, filename);
+    utils::IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
+    utils::IniSetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
+    utils::IniSetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
 
-    IniSetInteger("Graphics", "Driver", driver, filename);
-    IniSetInteger("Graphics", "BitsPerPixel", bpp, filename);
-    IniSetInteger("Graphics", "Width", width, filename);
-    IniSetInteger("Graphics", "Height", height, filename);
-    IniSetBoolean("Graphics", "FullScreen", fullscreen, filename);
+    utils::IniSetInteger("Graphics", "Driver", driver, filename);
+    utils::IniSetInteger("Graphics", "BitsPerPixel", bpp, filename);
+    utils::IniSetInteger("Graphics", "Width", width, filename);
+    utils::IniSetInteger("Graphics", "Height", height, filename);
+    utils::IniSetBoolean("Graphics", "FullScreen", fullscreen, filename);
 
-    IniSetBoolean("Graphics", "DisablePerspectiveCorrection", disablePerspectiveCorrection, filename);
-    IniSetBoolean("Graphics", "ForceLinearFog", forceLinearFog, filename);
-    IniSetBoolean("Graphics", "ForceSoftware", forceSoftware, filename);
-    IniSetBoolean("Graphics", "DisableFilter", disableFilter, filename);
-    IniSetBoolean("Graphics", "EnsureVertexShader", ensureVertexShader, filename);
-    IniSetBoolean("Graphics", "UseIndexBuffers", useIndexBuffers, filename);
-    IniSetBoolean("Graphics", "DisableDithering", disableDithering, filename);
-    IniSetInteger("Graphics", "Antialias", antialias, filename);
-    IniSetBoolean("Graphics", "DisableMipmap", disableMipmap, filename);
-    IniSetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
-    IniSetBoolean("Graphics", "EnableScreenDump", enableScreenDump, filename);
-    IniSetBoolean("Graphics", "EnableDebugMode", enableDebugMode, filename);
-    IniSetInteger("Graphics", "VertexCache", vertexCache, filename);
-    IniSetBoolean("Graphics", "TextureCacheManagement", textureCacheManagement, filename);
-    IniSetBoolean("Graphics", "SortTransparentObjects", sortTransparentObjects, filename);
-    IniSetPixelFormat("Graphics", "TextureVideoFormat", textureVideoFormat, filename);
-    IniSetPixelFormat("Graphics", "SpriteVideoFormat", spriteVideoFormat, filename);
+    utils::IniSetBoolean("Graphics", "DisablePerspectiveCorrection", disablePerspectiveCorrection, filename);
+    utils::IniSetBoolean("Graphics", "ForceLinearFog", forceLinearFog, filename);
+    utils::IniSetBoolean("Graphics", "ForceSoftware", forceSoftware, filename);
+    utils::IniSetBoolean("Graphics", "DisableFilter", disableFilter, filename);
+    utils::IniSetBoolean("Graphics", "EnsureVertexShader", ensureVertexShader, filename);
+    utils::IniSetBoolean("Graphics", "UseIndexBuffers", useIndexBuffers, filename);
+    utils::IniSetBoolean("Graphics", "DisableDithering", disableDithering, filename);
+    utils::IniSetInteger("Graphics", "Antialias", antialias, filename);
+    utils::IniSetBoolean("Graphics", "DisableMipmap", disableMipmap, filename);
+    utils::IniSetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
+    utils::IniSetBoolean("Graphics", "EnableScreenDump", enableScreenDump, filename);
+    utils::IniSetBoolean("Graphics", "EnableDebugMode", enableDebugMode, filename);
+    utils::IniSetInteger("Graphics", "VertexCache", vertexCache, filename);
+    utils::IniSetBoolean("Graphics", "TextureCacheManagement", textureCacheManagement, filename);
+    utils::IniSetBoolean("Graphics", "SortTransparentObjects", sortTransparentObjects, filename);
+    utils::IniSetPixelFormat("Graphics", "TextureVideoFormat", textureVideoFormat, filename);
+    utils::IniSetPixelFormat("Graphics", "SpriteVideoFormat", spriteVideoFormat, filename);
 
-    IniSetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
-    IniSetBoolean("Window", "Borderless", borderless, filename);
-    IniSetBoolean("Window", "ClipCursor", clipCursor, filename);
-    IniSetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
-    IniSetInteger("Window", "X", posX, filename);
-    IniSetInteger("Window", "Y", posY, filename);
+    utils::IniSetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
+    utils::IniSetBoolean("Window", "Borderless", borderless, filename);
+    utils::IniSetBoolean("Window", "ClipCursor", clipCursor, filename);
+    utils::IniSetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
+    utils::IniSetInteger("Window", "X", posX, filename);
+    utils::IniSetInteger("Window", "Y", posY, filename);
 
-    IniSetInteger("Game", "Language", langId, filename);
-    IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
-    IniSetBoolean("Game", "ApplyHotfix", applyHotfix, filename);
-    IniSetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
-    IniSetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
-    IniSetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
+    utils::IniSetInteger("Game", "Language", langId, filename);
+    utils::IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
+    utils::IniSetBoolean("Game", "ApplyHotfix", applyHotfix, filename);
+    utils::IniSetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
+    utils::IniSetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
+    utils::IniSetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
 }
