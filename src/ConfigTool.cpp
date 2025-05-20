@@ -45,9 +45,7 @@ const ControlTextMapping g_TextMappings[] = {
     {IDOK, IDS_BTN_OK}, {IDCANCEL, IDS_BTN_CANCEL}, {IDC_BUTTON_DEFAULTS, IDS_BTN_DEFAULTS},
     {IDC_GROUP_STARTUP, IDS_GROUP_STARTUP}, {IDC_GROUP_GRAPHICS, IDS_GROUP_GRAPHICS},
     {IDC_GROUP_WINDOW, IDS_GROUP_WINDOW}, {IDC_GROUP_GAME, IDS_GROUP_GAME}, {IDC_GROUP_INTERFACE, IDS_GROUP_INTERFACE},
-    {IDC_CHECK_VERBOSE, IDS_VERBOSE}, {IDC_CHECK_MANUALSETUP, IDS_MANUAL_SETUP},
-    {IDC_CHECK_LOADALLMGR, IDS_LOAD_ALL_MGR}, {IDC_CHECK_LOADALLBB, IDS_LOAD_ALL_BB},
-    {IDC_CHECK_LOADALLPLUG, IDS_LOAD_ALL_PLUGINS}, {IDC_CHECK_FULLSCREEN, IDS_FULLSCREEN},
+    {IDC_CHECK_VERBOSE, IDS_VERBOSE}, {IDC_CHECK_MANUALSETUP, IDS_MANUAL_SETUP}, {IDC_CHECK_FULLSCREEN, IDS_FULLSCREEN},
     {IDC_CHECK_DISPERSPCORRECT, IDS_DISABLE_PERSP_CORRECT}, {IDC_CHECK_FORCELINEARFOG, IDS_FORCE_LINEAR_FOG},
     {IDC_CHECK_FORCESOFTWARE, IDS_FORCE_SOFTWARE}, {IDC_CHECK_DISABLEFILTER, IDS_DISABLE_FILTER},
     {IDC_CHECK_ENSUREVS, IDS_ENSURE_VS}, {IDC_CHECK_USEINDEXBUFFERS, IDS_USE_INDEX_BUFFERS},
@@ -511,9 +509,6 @@ static void CreateDefaultConfig(CGameConfig &config)
     config.logMode = eLogOverwrite;
     config.verbose = false;
     config.manualSetup = false;
-    config.loadAllManagers = true;
-    config.loadAllBuildingBlocks = true;
-    config.loadAllPlugins = true;
     config.driver = 0;
     config.bpp = PLAYER_DEFAULT_BPP;
     config.width = PLAYER_DEFAULT_WIDTH;
@@ -569,8 +564,7 @@ static void LoadConfigToDialog(HWND hDlg, const CGameConfig &config)
     } BooleanMapping;
     const BooleanMapping boolMap[] = {
         {IDC_CHECK_VERBOSE, config.verbose}, {IDC_CHECK_MANUALSETUP, config.manualSetup},
-        {IDC_CHECK_LOADALLMGR, config.loadAllManagers}, {IDC_CHECK_LOADALLBB, config.loadAllBuildingBlocks},
-        {IDC_CHECK_LOADALLPLUG, config.loadAllPlugins}, {IDC_CHECK_FULLSCREEN, config.fullscreen},
+        {IDC_CHECK_FULLSCREEN, config.fullscreen},
         {IDC_CHECK_DISPERSPCORRECT, config.disablePerspectiveCorrection},
         {IDC_CHECK_FORCELINEARFOG, config.forceLinearFog},
         {IDC_CHECK_FORCESOFTWARE, config.forceSoftware}, {IDC_CHECK_DISABLEFILTER, config.disableFilter},
@@ -652,8 +646,7 @@ static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
     } BooleanPtrMapping;
     const BooleanPtrMapping boolMap[] = {
         {IDC_CHECK_VERBOSE, &config.verbose}, {IDC_CHECK_MANUALSETUP, &config.manualSetup},
-        {IDC_CHECK_LOADALLMGR, &config.loadAllManagers}, {IDC_CHECK_LOADALLBB, &config.loadAllBuildingBlocks},
-        {IDC_CHECK_LOADALLPLUG, &config.loadAllPlugins}, {IDC_CHECK_FULLSCREEN, &config.fullscreen},
+        {IDC_CHECK_FULLSCREEN, &config.fullscreen},
         {IDC_CHECK_DISPERSPCORRECT, &config.disablePerspectiveCorrection},
         {IDC_CHECK_FORCELINEARFOG, &config.forceLinearFog},
         {IDC_CHECK_FORCESOFTWARE, &config.forceSoftware}, {IDC_CHECK_DISABLEFILTER, &config.disableFilter},

@@ -130,6 +130,10 @@ SOURCE=.\src\Utils.h
 
 SOURCE=.\src\ConfigTool.rc
 # End Source File
+# Begin Source File
+
+SOURCE=.\src\Player.ico
+# End Source File
 # End Group
 # End Target
 # End Project

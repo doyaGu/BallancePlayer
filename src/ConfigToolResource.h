@@ -156,9 +156,6 @@
 #define IDC_COMBO_LOGMODE               1001
 #define IDC_CHECK_VERBOSE               1002
 #define IDC_CHECK_MANUALSETUP           1003
-#define IDC_CHECK_LOADALLMGR            1004
-#define IDC_CHECK_LOADALLBB             1005
-#define IDC_CHECK_LOADALLPLUG           1006
 
 #define IDC_EDIT_DRIVER                 1101
 #define IDC_COMBO_BPP                   1102

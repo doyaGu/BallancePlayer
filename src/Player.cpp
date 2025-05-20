@@ -133,21 +133,6 @@ static void ParseConfigsFromCmdline(CGameConfig &config, CmdlineParser &parser)
             config.manualSetup = true;
             continue;
         }
-        if (parser.Next(arg, "--load-required-managers", '\0'))
-        {
-            config.loadAllManagers = false;
-            continue;
-        }
-        if (parser.Next(arg, "--load-required-building-blocks", '\0'))
-        {
-            config.loadAllBuildingBlocks = false;
-            continue;
-        }
-        if (parser.Next(arg, "--load-required-plugins", '\0'))
-        {
-            config.loadAllPlugins = false;
-            continue;
-        }
         if (parser.Next(arg, "--video-driver", 'v', 1))
         {
             if (arg.GetValue(0, value))

@@ -21,9 +21,6 @@ CGameConfig::CGameConfig()
     logMode = eLogOverwrite;
     verbose = false;
     manualSetup = false;
-    loadAllManagers = true;
-    loadAllBuildingBlocks = true;
-    loadAllPlugins = true;
 
     driver = 0;
     screenMode = -1;
@@ -76,9 +73,6 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
 
     verbose = config.verbose;
     manualSetup =  config.manualSetup;
-    loadAllManagers = config.loadAllManagers;
-    loadAllBuildingBlocks = config.loadAllBuildingBlocks;
-    loadAllPlugins = config.loadAllPlugins;
 
     driver = config.driver;
     screenMode = config.screenMode;
@@ -212,9 +206,6 @@ void CGameConfig::LoadFromIni(const char *filename)
     utils::IniGetInteger("Startup", "LogMode", logMode, filename);
     utils::IniGetBoolean("Startup", "Verbose", verbose, filename);
     utils::IniGetBoolean("Startup", "ManualSetup", manualSetup, filename);
-    utils::IniGetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
-    utils::IniGetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
-    utils::IniGetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
 
     utils::IniGetInteger("Graphics", "Driver", driver, filename);
     utils::IniGetInteger("Graphics", "BitsPerPixel", bpp, filename);
@@ -280,9 +271,6 @@ void CGameConfig::SaveToIni(const char *filename)
     utils::IniSetInteger("Startup", "LogMode", logMode, filename);
     utils::IniSetBoolean("Startup", "Verbose", verbose, filename);
     utils::IniSetBoolean("Startup", "ManualSetup", manualSetup, filename);
-    utils::IniSetBoolean("Startup", "LoadAllManagers", loadAllManagers, filename);
-    utils::IniSetBoolean("Startup", "LoadAllBuildingBlocks", loadAllBuildingBlocks, filename);
-    utils::IniSetBoolean("Startup", "LoadAllPlugins", loadAllPlugins, filename);
 
     utils::IniSetInteger("Graphics", "Driver", driver, filename);
     utils::IniSetInteger("Graphics", "BitsPerPixel", bpp, filename);

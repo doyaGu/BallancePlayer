@@ -718,12 +718,6 @@ bool CGamePlayer::LoadRenderEngines(CKPluginManager *pluginManager)
 
 bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
 {
-    static const char *const VirtoolsManagers[] = {
-        "Dx5InputManager.dll",
-        "DX7SoundManager.dll",
-        "ParameterOperations.dll",
-    };
-
     if (!pluginManager)
         return false;
 
@@ -736,26 +730,10 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading managers from %s", path);
 
-    if (m_Config.loadAllManagers)
+    if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
     {
-        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
-        {
-            CLogger::Get().Error("Managers parse error.");
-            return false;
-        }
-    }
-    else
-    {
-        char szPath[MAX_PATH];
-        for (int i = 0; i < ARRAY_NUM(VirtoolsManagers); ++i)
-        {
-            utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsManagers[i]);
-            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
-            {
-                CLogger::Get().Error("Unable to register manager: %s", VirtoolsManagers[i]);
-                return false;
-            }
-        }
+        CLogger::Get().Error("Managers parse error.");
+        return false;
     }
 
     CLogger::Get().Debug("Managers loaded.");
@@ -765,31 +743,6 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
 
 bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
 {
-    static const char *const VirtoolsBuildingBlocks[] = {
-        "3DTransfo.dll",
-        "BuildingBlocksAddons1.dll",
-        "Cameras.dll",
-        "Collisions.dll",
-        "Controllers.dll",
-        "Interface.dll",
-        "Lights.dll",
-        "Logics.dll",
-        "Materials.dll",
-        "Narratives.dll",
-        "Sounds.dll",
-        "Visuals.dll",
-        "WorldEnvironments.dll",
-    };
-
-    static const char *const CustomBuildingBlocks[] = {
-        "physics_RT.dll",
-        "TT_DatabaseManager_RT.dll",
-        "TT_Gravity_RT.dll",
-        "TT_InterfaceManager_RT.dll",
-        "TT_ParticleSystems_RT.dll",
-        "TT_Toolbox_RT.dll",
-    };
-
     if (!pluginManager)
         return false;
 
@@ -802,38 +755,10 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading building blocks from %s", path);
 
-    if (m_Config.loadAllBuildingBlocks)
+    if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
     {
-        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
-        {
-            CLogger::Get().Error("Behaviors parse error.");
-            return false;
-        }
-    }
-    else
-    {
-        char szPath[MAX_PATH];
-        int i;
-
-        for (i = 0; i < ARRAY_NUM(VirtoolsBuildingBlocks); ++i)
-        {
-            utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsBuildingBlocks[i]);
-            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
-            {
-                CLogger::Get().Error("Unable to register building blocks: %s", VirtoolsBuildingBlocks[i]);
-                return false;
-            }
-        }
-
-        for (i = 0; i < ARRAY_NUM(CustomBuildingBlocks); ++i)
-        {
-            utils::ConcatPath(szPath, MAX_PATH, path, CustomBuildingBlocks[i]);
-            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
-            {
-                CLogger::Get().Error("Unable to register building blocks: %s", CustomBuildingBlocks[i]);
-                return false;
-            }
-        }
+        CLogger::Get().Error("Behaviors parse error.");
+        return false;
     }
 
     CLogger::Get().Debug("Building blocks loaded.");
@@ -843,13 +768,6 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
 
 bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
 {
-    static const char *const VirtoolsPlugins[] = {
-        "AVIReader.dll",
-        "ImageReader.dll",
-        "VirtoolsLoaderR.dll",
-        "WavReader.dll",
-    };
-
     if (!pluginManager)
         return false;
 
@@ -862,26 +780,10 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading plugins from %s", path);
 
-    if (m_Config.loadAllPlugins)
+    if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
     {
-        if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
-        {
-            CLogger::Get().Error("Plugins parse error.");
-            return false;
-        }
-    }
-    else
-    {
-        char szPath[MAX_PATH];
-        for (int i = 0; i < ARRAY_NUM(VirtoolsPlugins); ++i)
-        {
-            utils::ConcatPath(szPath, MAX_PATH, path, VirtoolsPlugins[i]);
-            if (pluginManager->RegisterPlugin(szPath) != CK_OK)
-            {
-                CLogger::Get().Error("Unable to register plugin: %s", VirtoolsPlugins[i]);
-                return false;
-            }
-        }
+        CLogger::Get().Error("Plugins parse error.");
+        return false;
     }
 
     CLogger::Get().Debug("Plugins loaded.");

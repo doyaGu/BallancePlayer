@@ -42,9 +42,6 @@ public:
     int logMode;
     bool verbose;
     bool manualSetup;
-    bool loadAllManagers;
-    bool loadAllBuildingBlocks;
-    bool loadAllPlugins;
 
     // Graphics
     int driver;
