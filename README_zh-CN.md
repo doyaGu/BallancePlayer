@@ -83,15 +83,6 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 - `ManualSetup`：控制是否在启动时显示设置对话框。
   - `0`：禁用。
   - `1`：启用。
-- `LoadAllManagers`：控制是否加载所有管理器。
-  - `0`：禁用。
-  - `1`：启用。
-- `LoadAllBuildingBlocks`：控制是否加载所有构建模块。
-  - `0`：禁用。
-  - `1`：启用。
-- `LoadAllPlugins`：控制是否加载所有插件。
-  - `0`：禁用。
-  - `1`：启用。
 
 ### 图形设置
 
@@ -204,9 +195,6 @@ Player.exe [OPTIONS]
 ```
 - `--verbose`：启用详细日志记录。
 - `-m`, `--manual-setup`：启动时总是显示设置对话框。
-- `--load-all-managers`：启动时加载所有管理器。
-- `--load-all-building-blocks`：启动时加载所有构建模块。
-- `--load-all-plugins`：启动时加载所有插件。
 - `-v <driver>`, `--video-driver <driver>`：设置显卡驱动 ID。
 - `-b <bpp>`, `--bpp <bpp>`：设置屏幕的色彩深度（32 或 16）。
 - `-w <width>`, `--width <width>`：设置屏幕宽度。
@@ -249,6 +237,22 @@ Player.exe [OPTIONS]
 如果你有任何问题或功能请求，请在 GitHub 上进行反馈：[BallancePlayer](https://github.com/doyaGu/BallancePlayer)。
 
 ## 更新日志
+
+### v0.3.5 (2025-05-23)
+
+**新功能**
+
+- 引入了一个独立的配置工具，便于更轻松地管理游戏设置。
+- 增加了对加载自定义游戏文件的支持。
+
+**问题修复**
+
+- 修复了启用详细日志记录时可能导致的崩溃问题。
+
+**变更**
+
+- 移除了已弃用的设置项：`LoadAllManagers`、`LoadAllBuildingBlocks` 和 `LoadAllPlugins`。
+- 游戏在窗口失去焦点时默认不再暂停。
 
 ### v0.3.4 (2025-04-24)
 

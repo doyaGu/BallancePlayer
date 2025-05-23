@@ -83,15 +83,6 @@ The `Player.ini` file contains several settings that control the behavior of the
 - `ManualSetup`: Controls whether the setup dialog appears on startup.
   - `0`: Disabled.
   - `1`: Enabled.
-- `LoadAllManagers`: Controls whether all managers are loaded.
-  - `0`: Disabled.
-  - `1`: Enabled.
-- `LoadAllBuildingBlocks`: Controls whether all building blocks are loaded.
-  - `0`: Disabled.
-  - `1`: Enabled.
-- `LoadAllPlugins`: Controls whether all plugins are loaded.
-  - `0`: Disabled.
-  - `1`: Enabled.
 
 ### Graphics
 
@@ -204,9 +195,6 @@ Player.exe [OPTIONS]
 ```
 - `--verbose`: Enable verbose logging.
 - `-m`, `--manual-setup`: Always show the setup dialog box at startup.
-- `--load-all-managers`: Load all managers at startup.
-- `--load-all-building-blocks`: Load all building blocks at startup.
-- `--load-all-plugins`: Load all plugins at startup.
 - `-v <driver>`, `--video-driver <driver>`: Set the graphics card driver ID.
 - `-b <bpp>`, `--bpp <bpp>`: Set the bits per pixel (32 or 16).
 - `-w <width>`, `--width <width>`: Set the screen width.
@@ -249,6 +237,22 @@ Player.exe [OPTIONS]
 If you have any bugs or requests, please open an issue in this repository: [BallancePlayer](https://github.com/doyaGu/BallancePlayer).
 
 ## ChangeLog
+
+### v0.3.5 (2025-05-23)
+
+**New Features**
+
+- Introduced a standalone configuration tool for easier management of game settings.
+- Added support for loading custom game compositions.
+
+**Bug Fixes**
+
+- Fixed a crash that could occur when enabling verbose logging.
+
+**Changes**
+
+- Removed deprecated settings: `LoadAllManagers`, `LoadAllBuildingBlocks`, and `LoadAllPlugins`.
+- The game no longer pauses by default when the window is deactivated.
 
 ### v0.3.4 (2025-04-24)
 
