@@ -1166,7 +1166,6 @@ void CGamePlayer::OnClose()
 
 void CGamePlayer::OnActivateApp(bool active)
 {
-    static bool wasPlaying = false;
     static bool wasFullscreen = false;
     static bool firstDeActivate = true;
 
@@ -1177,9 +1176,6 @@ void CGamePlayer::OnActivateApp(bool active)
     {
         if (m_CKContext)
         {
-            if (firstDeActivate)
-                wasPlaying = m_CKContext->IsPlaying() == TRUE;
-
             if (!m_Config.alwaysHandleInput)
                 m_InputManager->Pause(TRUE);
 
@@ -1195,18 +1191,12 @@ void CGamePlayer::OnActivateApp(bool active)
             {
                 wasFullscreen = false;
             }
-
-            if (wasPlaying)
-                Pause();
         }
         firstDeActivate = false;
         m_State = eFocusLost;
     }
     else
     {
-        if (wasPlaying)
-            Play();
-
         if (wasFullscreen && !firstDeActivate)
             OnGoFullscreen();
 
