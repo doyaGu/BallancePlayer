@@ -292,14 +292,6 @@ namespace utils
             format = _16_L6V5U5;
         else if (strncmp(str, "_32_X8L8V8U8", max) == 0)
             format = _32_X8L8V8U8;
-        else if (strncmp(str, "_8_ABGR8888_CLUT", max) == 0)
-            format = _8_ABGR8888_CLUT;
-        else if (strncmp(str, "_8_ARGB8888_CLUT", max) == 0)
-            format = _8_ARGB8888_CLUT;
-        else if (strncmp(str, "_4_ABGR8888_CLUT", max) == 0)
-            format = _4_ABGR8888_CLUT;
-        else if (strncmp(str, "_4_ARGB8888_CLUT", max) == 0)
-            format = _4_ARGB8888_CLUT;
 
         return format;
     }
@@ -388,18 +380,6 @@ namespace utils
                 break;
             case _32_X8L8V8U8:
                 str = "_32_X8L8V8U8";
-                break;
-            case _8_ABGR8888_CLUT:
-                str = "_8_ABGR8888_CLUT";
-                break;
-            case _8_ARGB8888_CLUT:
-                str = "_8_ARGB8888_CLUT";
-                break;
-            case _4_ABGR8888_CLUT:
-                str = "_4_ABGR8888_CLUT";
-                break;
-            case _4_ARGB8888_CLUT:
-                str = "_4_ARGB8888_CLUT";
                 break;
             default:
                 str = "UNKNOWN_PF";
