@@ -31,6 +31,10 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
         WIN32_EXECUTABLE TRUE
 )
 
+target_compile_definitions(${PLAYER_NAME} PRIVATE
+        UNICODE _UNICODE
+)
+
 target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
 
 add_executable(ConfigTool
@@ -49,6 +53,7 @@ set_target_properties(ConfigTool PROPERTIES
 )
 
 target_compile_definitions(ConfigTool PRIVATE
+        UNICODE _UNICODE
         CONFIGTOOL_STANDALONE
 )
 
