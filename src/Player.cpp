@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#include <tchar.h>
 
 #include "CmdlineParser.h"
 #include "GameConfig.h"
@@ -16,7 +17,7 @@ static void ParseConfigsFromCmdline(CGameConfig &config, CmdlineParser &parser);
 static void LoadPaths(CGameConfig &config, CmdlineParser &parser);
 static void EnableDpiAwareness();
 
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
     HANDLE hMutex = CreateNamedMutex();
     if (!hMutex)
