@@ -6,7 +6,7 @@
 #include "GameConfig.h"
 #include "Utils.h"
 
-// --- String Resource Management ---
+// String Resource Management
 
 typedef enum
 {
@@ -19,7 +19,7 @@ class StringResource
 {
 public:
     static bool Initialize(HINSTANCE hInstance);
-    static const char *GetString(UINT resourceID);
+    static LPCTSTR GetString(UINT resourceID);
     static UILanguage GetLanguage();
     static void SetLanguage(UILanguage lang);
     static UILanguage DetectSystemLanguage();
@@ -27,8 +27,7 @@ public:
 private:
     static HINSTANCE m_hInstance;
     static UILanguage m_CurrentLanguage;
-    static char m_Buffer[4096];
-    static TCHAR m_TBuffer[4096];
+    static TCHAR m_Buffer[4096];
 
     static UINT MapToLanguageID(UINT resourceID);
 };
@@ -85,12 +84,11 @@ static const LabelPosition g_LabelPositions[] = {
     {0, 0} // Terminator
 };
 
-// --- StringResource Implementation ---
+// StringResource Implementation
 
 HINSTANCE StringResource::m_hInstance = NULL;
 UILanguage StringResource::m_CurrentLanguage = LANG_UI_ENGLISH;
-char StringResource::m_Buffer[4096] = {0};
-TCHAR StringResource::m_TBuffer[4096] = {0};
+TCHAR StringResource::m_Buffer[4096] = {0};
 
 bool StringResource::Initialize(HINSTANCE hInstance)
 {
@@ -98,41 +96,33 @@ bool StringResource::Initialize(HINSTANCE hInstance)
     return (m_hInstance != NULL);
 }
 
-const char *StringResource::GetString(UINT resourceID)
+LPCTSTR StringResource::GetString(UINT resourceID)
 {
     if (!m_hInstance)
     {
-#ifdef UNICODE
-        _tcscpy(m_TBuffer, TEXT("ERR: Uninitialized"));
-        utils::WcharToChar(m_TBuffer, m_Buffer, sizeof(m_Buffer));
-#else
-        strcpy(m_Buffer, "ERR: Uninitialized");
-#endif
+        _tcscpy(m_Buffer, TEXT("ERR: Uninitialized"));
         return m_Buffer;
     }
 
     UINT mappedID = MapToLanguageID(resourceID);
 
 #ifdef UNICODE
-    int len = ::LoadStringW(m_hInstance, mappedID, m_TBuffer, sizeof(m_TBuffer) / sizeof(TCHAR) - 1);
+    int len = ::LoadStringW(m_hInstance, mappedID, m_Buffer, sizeof(m_Buffer) / sizeof(TCHAR) - 1);
 
     if (len <= 0)
     {
         if (m_CurrentLanguage != LANG_UI_ENGLISH && resourceID != mappedID)
         {
             mappedID = resourceID;
-            len = ::LoadStringW(m_hInstance, mappedID, m_TBuffer, sizeof(m_TBuffer) / sizeof(TCHAR) - 1);
+            len = ::LoadStringW(m_hInstance, mappedID, m_Buffer, sizeof(m_Buffer) / sizeof(TCHAR) - 1);
         }
     }
 
     if (len <= 0)
     {
-        _stprintf(m_TBuffer, TEXT("ERR: ID %u"), resourceID);
-        len = _tcslen(m_TBuffer);
+        _stprintf(m_Buffer, TEXT("ERR: ID %u"), resourceID);
+        len = (int)_tcslen(m_Buffer);
     }
-
-    m_TBuffer[len] = TEXT('\0');
-    utils::WcharToChar(m_TBuffer, m_Buffer, sizeof(m_Buffer));
 #else
     int len = ::LoadStringA(m_hInstance, mappedID, m_Buffer, sizeof(m_Buffer) - 1);
 
@@ -148,12 +138,11 @@ const char *StringResource::GetString(UINT resourceID)
     if (len <= 0)
     {
         sprintf(m_Buffer, "ERR: ID %u", resourceID);
-        len = strlen(m_Buffer);
+        len = (int)strlen(m_Buffer);
     }
-
-    m_Buffer[len] = '\0';
 #endif
 
+    m_Buffer[len] = TEXT('\0');
     return m_Buffer;
 }
 
@@ -199,7 +188,7 @@ UINT StringResource::MapToLanguageID(UINT resourceID)
     return resourceID; // Fallback
 }
 
-// --- Font Management ---
+// Font Management
 
 static void CleanupFonts()
 {
@@ -254,7 +243,7 @@ static BOOL CALLBACK SetFontToChildProc(HWND hwnd, LPARAM lParam)
     return TRUE;
 }
 
-// --- Dialog Update Logic ---
+// Dialog Update Logic
 
 static void UpdateDialogLanguage(HWND hDlg)
 {
@@ -290,21 +279,21 @@ static void UpdateDialogLanguage(HWND hDlg)
     // Update ComboBox items and retain selection
 
     // Log Mode combo
-    int logModeSel = ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_GETCURSEL, 0, 0);
+    int logModeSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_GETCURSEL, 0, 0);
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_RESETCONTENT, 0, 0);
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LOG_APPEND));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LOG_OVERWRITE));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_SETCURSEL, (logModeSel == 0 || logModeSel == 1) ? logModeSel : 1, 0);
 
     // BPP combo
-    int bppSel = ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_GETCURSEL, 0, 0);
+    int bppSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_GETCURSEL, 0, 0);
     ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_RESETCONTENT, 0, 0);
     ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_ADDSTRING, 0, (LPARAM)TEXT("16"));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_ADDSTRING, 0, (LPARAM)TEXT("32"));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_SETCURSEL, (bppSel == 0 || bppSel == 1) ? bppSel : 1, 0);
 
     // Game Language combo
-    int langGameSel = ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_GETCURSEL, 0, 0);
+    int langGameSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_GETCURSEL, 0, 0);
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_RESETCONTENT, 0, 0);
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LANG_GERMAN));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LANG_ENGLISH));
@@ -340,12 +329,12 @@ static void UpdateDialogLanguage(HWND hDlg)
             // If it's an LTEXT label (unmapped Static control, not IDC_STATIC=-1), match by position
             if (!isHandledByMapping && ctrlId == (DWORD)-1)
             {
-                // Get the control's actual position in PIXELS relative to the dialog client area
+                // Get the control's position in pixels relative to the dialog client area
                 RECT controlPixelRect;
                 ::GetWindowRect(hwndChild, &controlPixelRect);
                 ::MapWindowPoints(NULL, hDlg, (POINT *)&controlPixelRect, 2);
 
-                // Now, iterate through our known DLU positions and convert each to pixels for comparison
+                // Iterate through known DLU positions and convert each to pixels for comparison
                 for (int i = 0; g_LabelMappings[i].strID != 0; i++)
                 {
                     // Create a RECT using the stored DLU coordinates from g_LabelPositions
@@ -355,16 +344,16 @@ static void UpdateDialogLanguage(HWND hDlg)
                     labelDluRect.right = g_LabelPositions[i].left + 1; // Minimal width DLU
                     labelDluRect.bottom = g_LabelPositions[i].top + 1; // Minimal height DLU
 
-                    // Convert this DLU rect to PIXEL coordinates relative to the dialog
+                    // Convert this DLU rect to pixel coordinates relative to the dialog
                     RECT labelPixelRect = labelDluRect; // Copy structure
                     if (::MapDialogRect(hDlg, &labelPixelRect))
                     {
-                        // Conversion successful. Now compare the TOP-LEFT PIXEL coordinates
+                        // Conversion successful. Compare the TOP-LEFT pixel coordinates
                         const int POSITION_TOLERANCE = 10;
                         if (abs(controlPixelRect.left - labelPixelRect.left) <= POSITION_TOLERANCE &&
                             abs(controlPixelRect.top - labelPixelRect.top) <= POSITION_TOLERANCE)
                         {
-                            // PIXEL positions match! Update the text
+                            // Pixel positions match! Update the text
                             ::SetWindowText(hwndChild, StringResource::GetString(g_LabelMappings[i].strID));
                             break;
                         }
@@ -380,7 +369,7 @@ static void UpdateDialogLanguage(HWND hDlg)
     ::UpdateWindow(hDlg);
 }
 
-// --- Configuration File Handling ---
+// Configuration File Handling
 
 static BOOL SetConfigPath(CGameConfig &config)
 {
@@ -391,20 +380,21 @@ static BOOL SetConfigPath(CGameConfig &config)
     DWORD dwResult = ::GetModuleFileName(NULL, modulePath, MAX_PATH);
     if (dwResult > 0 && dwResult < MAX_PATH)
     {
-#ifdef UNICODE
-        char ansiModulePath[MAX_PATH];
-        utils::WcharToChar(modulePath, ansiModulePath, MAX_PATH);
-        ansiModulePath[dwResult] = '\0';
-        char *lastSlash = strrchr(ansiModulePath, '\\');
-#else
-        modulePath[dwResult] = '\0';
-        char *lastSlash = strrchr(modulePath, '\\');
-#endif
+        modulePath[dwResult] = TEXT('\0');
+
+        // Find last path separator
+        TCHAR *lastSlash = _tcsrchr(modulePath, TEXT('\\'));
+        if (!lastSlash)
+            lastSlash = _tcsrchr(modulePath, TEXT('/'));
 
         if (lastSlash)
         {
-            *(lastSlash + 1) = '\0';
+            *(lastSlash + 1) = TEXT('\0');
+
+            // Convert to narrow string for config path
 #ifdef UNICODE
+            char ansiModulePath[MAX_PATH];
+            utils::WcharToChar(modulePath, ansiModulePath, MAX_PATH);
             sprintf(configPath, "%sPlayer.ini", ansiModulePath);
 #else
             sprintf(configPath, "%sPlayer.ini", modulePath);
@@ -418,22 +408,16 @@ static BOOL SetConfigPath(CGameConfig &config)
     TCHAR currentDir[MAX_PATH];
     if (::GetCurrentDirectory(MAX_PATH, currentDir))
     {
-#ifdef UNICODE
-        char ansiCurrentDir[MAX_PATH];
-        utils::WcharToChar(currentDir, ansiCurrentDir, MAX_PATH);
-        size_t len = strlen(ansiCurrentDir);
-#else
         size_t len = _tcslen(currentDir);
-#endif
-
         if (len > 0)
         {
-#ifdef UNICODE
-            if (ansiCurrentDir[len - 1] != '\\')
+            // Ensure trailing backslash
+            if (currentDir[len - 1] != TEXT('\\') && currentDir[len - 1] != TEXT('/'))
             {
-                if (len + 11 < MAX_PATH)
+                if (len + 1 < MAX_PATH)
                 {
-                    strcat(ansiCurrentDir, "\\");
+                    currentDir[len] = TEXT('\\');
+                    currentDir[len + 1] = TEXT('\0');
                 }
                 else
                 {
@@ -446,25 +430,13 @@ static BOOL SetConfigPath(CGameConfig &config)
                 config.SetPath(eConfigPath, "Player.ini");
                 return FALSE;
             }
+
+            // Convert to narrow string for config path
+#ifdef UNICODE
+            char ansiCurrentDir[MAX_PATH];
+            utils::WcharToChar(currentDir, ansiCurrentDir, MAX_PATH);
             sprintf(configPath, "%sPlayer.ini", ansiCurrentDir);
 #else
-            if (currentDir[len - 1] != '\\')
-            {
-                if (len + 11 < MAX_PATH)
-                {
-                    strcat(currentDir, "\\");
-                }
-                else
-                {
-                    config.SetPath(eConfigPath, "Player.ini");
-                    return FALSE;
-                }
-            }
-            else if (len + 10 >= MAX_PATH)
-            {
-                config.SetPath(eConfigPath, "Player.ini");
-                return FALSE;
-            }
             sprintf(configPath, "%sPlayer.ini", currentDir);
 #endif
 
@@ -591,17 +563,19 @@ static void LoadConfigToDialog(HWND hDlg, const CGameConfig &config)
     const char *texFormatStr = utils::PixelFormat2String(config.textureVideoFormat);
     const char *sprFormatStr = utils::PixelFormat2String(config.spriteVideoFormat);
 
+    // Convert to TCHAR for dialog controls
+    TCHAR texFormatTStr[32];
+    TCHAR sprFormatTStr[32];
 #ifdef UNICODE
-    WCHAR texFormatWStr[32];
-    WCHAR sprFormatWStr[32];
-    utils::CharToWchar(texFormatStr, texFormatWStr, 32);
-    utils::CharToWchar(sprFormatStr, sprFormatWStr, 32);
-    ::SetDlgItemTextW(hDlg, IDC_EDIT_TEXVIDFORMAT, texFormatWStr);
-    ::SetDlgItemTextW(hDlg, IDC_EDIT_SPRVIDFORMAT, sprFormatWStr);
+    utils::CharToWchar(texFormatStr, texFormatTStr, 32);
+    utils::CharToWchar(sprFormatStr, sprFormatTStr, 32);
 #else
-    ::SetDlgItemTextA(hDlg, IDC_EDIT_TEXVIDFORMAT, texFormatStr);
-    ::SetDlgItemTextA(hDlg, IDC_EDIT_SPRVIDFORMAT, sprFormatStr);
+    strcpy(texFormatTStr, texFormatStr);
+    strcpy(sprFormatTStr, sprFormatStr);
 #endif
+
+    ::SetDlgItemText(hDlg, IDC_EDIT_TEXVIDFORMAT, texFormatTStr);
+    ::SetDlgItemText(hDlg, IDC_EDIT_SPRVIDFORMAT, sprFormatTStr);
 
     // Handle Window Position (display empty for CW_USEDEFAULT)
     if (config.posX != CW_USEDEFAULT)
@@ -623,10 +597,10 @@ static void LoadConfigToDialog(HWND hDlg, const CGameConfig &config)
 
 static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
 {
-    int logModeSel = ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_GETCURSEL, 0, 0);
+    int logModeSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_GETCURSEL, 0, 0);
     config.logMode = (logModeSel == 0) ? eLogAppend : eLogOverwrite;
     config.driver = GetDlgItemIntSafe(hDlg, IDC_EDIT_DRIVER, config.driver);
-    int bppSel = ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_GETCURSEL, 0, 0);
+    int bppSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_GETCURSEL, 0, 0);
     config.bpp = (bppSel == 0) ? 16 : 32;
     config.width = GetDlgItemIntSafe(hDlg, IDC_EDIT_WIDTH, config.width);
     config.height = GetDlgItemIntSafe(hDlg, IDC_EDIT_HEIGHT, config.height);
@@ -634,7 +608,7 @@ static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
     config.vertexCache = GetDlgItemIntSafe(hDlg, IDC_EDIT_VERTEXCACHE, config.vertexCache);
     config.posX = GetDlgItemIntSafe(hDlg, IDC_EDIT_POSX, CW_USEDEFAULT);
     config.posY = GetDlgItemIntSafe(hDlg, IDC_EDIT_POSY, CW_USEDEFAULT);
-    int langSel = ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_GETCURSEL, 0, 0);
+    int langSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_GETCURSEL, 0, 0);
     if (langSel >= 0 && langSel <= 4)
         config.langId = langSel;
 
@@ -671,14 +645,11 @@ static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
 
     // Handle Pixel Formats
     TCHAR buffer[MAX_PATH];
-
-#ifdef UNICODE
     char ansiBuffer[MAX_PATH];
-#endif
 
     ::GetDlgItemText(hDlg, IDC_EDIT_TEXVIDFORMAT, buffer, sizeof(buffer) / sizeof(TCHAR));
 #ifdef UNICODE
-    WcharToChar(buffer, ansiBuffer, MAX_PATH);
+    utils::WcharToChar(buffer, ansiBuffer, MAX_PATH);
     config.textureVideoFormat = utils::String2PixelFormat(ansiBuffer, strlen(ansiBuffer));
 #else
     config.textureVideoFormat = utils::String2PixelFormat(buffer, strlen(buffer));
@@ -686,7 +657,7 @@ static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
 
     ::GetDlgItemText(hDlg, IDC_EDIT_SPRVIDFORMAT, buffer, sizeof(buffer) / sizeof(TCHAR));
 #ifdef UNICODE
-    WcharToChar(buffer, ansiBuffer, MAX_PATH);
+    utils::WcharToChar(buffer, ansiBuffer, MAX_PATH);
     config.spriteVideoFormat = utils::String2PixelFormat(ansiBuffer, strlen(ansiBuffer));
 #else
     config.spriteVideoFormat = utils::String2PixelFormat(buffer, strlen(buffer));
@@ -703,13 +674,15 @@ static void LoadUILanguageFromIni(const char *iniPath)
         return;
     }
 
+    // Convert path to TCHAR
+    TCHAR tIniPath[MAX_PATH];
 #ifdef UNICODE
-    WCHAR wIniPath[MAX_PATH];
-    utils::CharToWchar(iniPath, wIniPath, MAX_PATH);
-    int langId = (int)::GetPrivateProfileIntW(TEXT("Interface"), TEXT("UILanguage"), -1, wIniPath);
+    utils::CharToWchar(iniPath, tIniPath, MAX_PATH);
 #else
-    int langId = (int)::GetPrivateProfileIntA("Interface", "UILanguage", -1, iniPath);
+    strcpy(tIniPath, iniPath);
 #endif
+
+    int langId = (int)::GetPrivateProfileInt(TEXT("Interface"), TEXT("UILanguage"), -1, tIniPath);
 
     if (langId >= 0 && langId < LANG_UI_COUNT)
     {
@@ -729,25 +702,25 @@ static void SaveUILanguageToIni(const char *iniPath)
     TCHAR buffer[16];
     _stprintf(buffer, TEXT("%d"), StringResource::GetLanguage());
 
+    // Convert path to TCHAR
+    TCHAR tIniPath[MAX_PATH];
 #ifdef UNICODE
-    WCHAR wIniPath[MAX_PATH];
-    utils::CharToWchar(iniPath, wIniPath, MAX_PATH);
-    ::WritePrivateProfileStringW(TEXT("Interface"), TEXT("UILanguage"), buffer, wIniPath);
+    utils::CharToWchar(iniPath, tIniPath, MAX_PATH);
 #else
-    ::WritePrivateProfileStringA("Interface", "UILanguage", buffer, iniPath);
+    strcpy(tIniPath, iniPath);
 #endif
+
+    ::WritePrivateProfileString(TEXT("Interface"), TEXT("UILanguage"), buffer, tIniPath);
 }
 
-// --- Dialog Procedure ---
+// Dialog Procedure
 
 // Compatibility definitions for Get/SetWindowLongPtr for VC++ 6.0
 #ifndef GWLP_USERDATA
 #define GWLP_USERDATA (-21)
 typedef LONG LONG_PTR;
-#define GetWindowLongPtrA GetWindowLongA
-#define SetWindowLongPtrA SetWindowLongA
-#define GetWindowLongPtrW GetWindowLongW
-#define SetWindowLongPtrW SetWindowLongW
+#define GetWindowLongPtr GetWindowLong
+#define SetWindowLongPtr SetWindowLong
 #endif
 
 BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -756,11 +729,7 @@ BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
     if (message != WM_INITDIALOG)
     {
         // Retrieve stored pointer after init
-#ifdef UNICODE
-        pConfig = (CGameConfig *)::GetWindowLongPtrW(hDlg, GWLP_USERDATA);
-#else
-        pConfig = (CGameConfig *)::GetWindowLongPtrA(hDlg, GWLP_USERDATA);
-#endif
+        pConfig = (CGameConfig *)::GetWindowLongPtr(hDlg, GWLP_USERDATA);
     }
 
     switch (message)
@@ -769,11 +738,7 @@ BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
     {
         InitializeFonts();
         // Store the CGameConfig pointer passed via lParam
-#ifdef UNICODE
-        ::SetWindowLongPtrW(hDlg, GWLP_USERDATA, lParam);
-#else
-        ::SetWindowLongPtrA(hDlg, GWLP_USERDATA, lParam);
-#endif
+        ::SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
         pConfig = (CGameConfig *)lParam;
 
         if (pConfig)
@@ -783,7 +748,7 @@ BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
         }
         else
         {
-            // Critical error: No config object provided
+            // Error: No config object provided
             ::MessageBox(hDlg, StringResource::GetString(IDS_ERR_NO_CONFIG), StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
             ::EndDialog(hDlg, IDCANCEL);
         }
@@ -834,7 +799,7 @@ BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
             if (notifyCode == CBN_SELCHANGE)
             {
                 // Check if selection changed
-                int langSel = ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_GETCURSEL, 0, 0);
+                int langSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_GETCURSEL, 0, 0);
                 if (langSel != CB_ERR && langSel >= 0 && langSel < LANG_UI_COUNT)
                 {
                     if ((UILanguage)langSel != StringResource::GetLanguage())
@@ -919,7 +884,7 @@ bool ShowConfigTool(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
 }
 
 #ifdef CONFIGTOOL_STANDALONE
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
     (void)hPrevInstance;
     (void)lpCmdLine;
