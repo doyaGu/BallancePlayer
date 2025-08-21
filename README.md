@@ -238,6 +238,12 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
+### v0.3.6 (2025-08-20)
+
+**Changes**
+
+- Switched from ANSI to Unicode to improve compatibility and internationalization support.
+
 ### v0.3.5 (2025-05-23)
 
 **New Features**
