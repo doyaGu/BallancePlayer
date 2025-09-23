@@ -2,6 +2,27 @@
 
 #include "Utils.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+
+static bool GetLastWriteTime(const char *filename, FILETIME &outTime)
+{
+    WIN32_FIND_DATAA findData;
+    HANDLE handle = ::FindFirstFileA(filename, &findData);
+    if (handle == INVALID_HANDLE_VALUE)
+        return false;
+    outTime = findData.ftLastWriteTime;
+    ::FindClose(handle);
+    return true;
+}
+
+static bool SameFileTimeComponents(const FILETIME &timeValue, DWORD low, DWORD high)
+{
+    return (timeValue.dwLowDateTime == low) && (timeValue.dwHighDateTime == high);
+}
+
 static const char *const DefaultPaths[] = {
     "Player.ini",
     "Player.log",
@@ -18,52 +39,22 @@ static const char *const DefaultPaths[] = {
 
 CGameConfig::CGameConfig()
 {
-    logMode = eLogOverwrite;
-    verbose = false;
-    manualSetup = false;
+    // Auto-generated initialization from master list
+    #define X_BOOL(sec,key,member,def) member = def;
+    #define X_INT(sec,key,member,def)  member = def;
+    #define X_PF(sec,key,member,def)   member = def;
+        GAMECONFIG_FIELDS
+    #undef X_BOOL
+    #undef X_INT
+    #undef X_PF
 
-    driver = 0;
+    // Non-INI members
     screenMode = -1;
-    bpp = PLAYER_DEFAULT_BPP;
-    width = PLAYER_DEFAULT_WIDTH;
-    height = PLAYER_DEFAULT_HEIGHT;
-    fullscreen = false;
-
-    disablePerspectiveCorrection = false;
-    forceLinearFog = false;
-    forceSoftware = false;
-    disableFilter = false;
-    ensureVertexShader = false;
-    useIndexBuffers = false;
-    disableDithering = false;
-    antialias = 0;
-    disableMipmap = false;
-    disableSpecular = false;
-    enableScreenDump = false;
-    enableDebugMode = false;
-    vertexCache = 16;
-    textureCacheManagement = true;
-    sortTransparentObjects = true;
-    textureVideoFormat = UNKNOWN_PF;
-    spriteVideoFormat = UNKNOWN_PF;
-
-    childWindowRendering = false;
-    borderless = false;
-    clipCursor = false;
-    alwaysHandleInput = false;
-    posX = 2147483647;
-    posY = 2147483647;
-
-    langId = 1;
-    skipOpening = false;
-    applyHotfix = true;
-    unlockFramerate = false;
-    unlockWidescreen = false;
-    unlockHighResolution = false;
     debug = false;
     rookie = false;
 
     ResetPath();
+    ResetLoadedSnapshots();
 }
 
 CGameConfig &CGameConfig::operator=(const CGameConfig &config)
@@ -71,53 +62,37 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     if (this == &config)
         return *this;
 
-    verbose = config.verbose;
-    manualSetup =  config.manualSetup;
+    // Auto-generated copying from master list
+    #define X_BOOL(sec,key,member,def) member = config.member;
+    #define X_INT(sec,key,member,def)  member = config.member;
+    #define X_PF(sec,key,member,def)   member = config.member;
+        GAMECONFIG_FIELDS
+    #undef X_BOOL
+    #undef X_INT
+    #undef X_PF
 
-    driver = config.driver;
+    // Non-INI members
     screenMode = config.screenMode;
-    bpp = config.bpp;
-    width = config.width;
-    height = config.height;
-    fullscreen = config.fullscreen;
-
-    disablePerspectiveCorrection = config.disablePerspectiveCorrection;
-    forceLinearFog = config.forceLinearFog;
-    forceSoftware = config.forceSoftware;
-    disableFilter = config.disableFilter;
-    ensureVertexShader = config.ensureVertexShader;
-    useIndexBuffers = config.useIndexBuffers;
-    disableDithering = config.disableDithering;
-    antialias = config.antialias;
-    disableMipmap = config.disableMipmap;
-    disableSpecular = config.disableSpecular;
-    enableScreenDump = config.enableScreenDump;
-    enableDebugMode = config.enableDebugMode;
-    vertexCache = config.vertexCache;
-    textureCacheManagement = config.textureCacheManagement;
-    sortTransparentObjects = config.sortTransparentObjects;
-    textureVideoFormat = config.textureVideoFormat;
-    spriteVideoFormat = config.spriteVideoFormat;
-
-    childWindowRendering = config.childWindowRendering;
-    borderless = config.borderless;
-    clipCursor = config.clipCursor;
-    alwaysHandleInput = config.alwaysHandleInput;
-    posX = config.posX;
-    posY = config.posY;
-
-    langId = config.langId;
-    skipOpening = config.skipOpening;
-    applyHotfix = config.applyHotfix;
-    unlockFramerate = config.unlockFramerate;
-    unlockWidescreen = config.unlockWidescreen;
-    unlockHighResolution = config.unlockHighResolution;
     debug = config.debug;
     rookie = config.rookie;
 
+    // Copy paths
     int i;
     for (i = 0; i < ePathCategoryCount; ++i)
         m_Paths[i] = config.m_Paths[i];
+
+    // Copy loaded snapshots
+    for (i = 0; i < eLoadedSentinel; ++i)
+    {
+        m_LoadedInts[i] = config.m_LoadedInts[i];
+        m_LoadedBools[i] = config.m_LoadedBools[i];
+        m_LoadedPixels[i] = config.m_LoadedPixels[i];
+    }
+
+    m_ConfigTimestampLow = config.m_ConfigTimestampLow;
+    m_ConfigTimestampHigh = config.m_ConfigTimestampHigh;
+    m_ConfigTimestampValid = config.m_ConfigTimestampValid;
+    m_LastConfigAbsolutePath = config.m_LastConfigAbsolutePath;
 
     return *this;
 }
@@ -203,49 +178,51 @@ void CGameConfig::LoadFromIni(const char *filename)
         filename = path;
     }
 
-    utils::IniGetInteger("Startup", "LogMode", logMode, filename);
-    utils::IniGetBoolean("Startup", "Verbose", verbose, filename);
-    utils::IniGetBoolean("Startup", "ManualSetup", manualSetup, filename);
+    ResetLoadedSnapshots();
 
-    utils::IniGetInteger("Graphics", "Driver", driver, filename);
-    utils::IniGetInteger("Graphics", "BitsPerPixel", bpp, filename);
-    utils::IniGetInteger("Graphics", "Width", width, filename);
-    utils::IniGetInteger("Graphics", "Height", height, filename);
-    utils::IniGetBoolean("Graphics", "FullScreen", fullscreen, filename);
+    FILETIME fileTime;
+    if (GetLastWriteTime(filename, fileTime))
+    {
+        m_ConfigTimestampLow = fileTime.dwLowDateTime;
+        m_ConfigTimestampHigh = fileTime.dwHighDateTime;
+        m_ConfigTimestampValid = true;
+    }
 
-    utils::IniGetBoolean("Graphics", "DisablePerspectiveCorrection", disablePerspectiveCorrection, filename);
-    utils::IniGetBoolean("Graphics", "ForceLinearFog", forceLinearFog, filename);
-    utils::IniGetBoolean("Graphics", "ForceSoftware", forceSoftware, filename);
-    utils::IniGetBoolean("Graphics", "DisableFilter", disableFilter, filename);
-    utils::IniGetBoolean("Graphics", "EnsureVertexShader", ensureVertexShader, filename);
-    utils::IniGetBoolean("Graphics", "UseIndexBuffers", useIndexBuffers, filename);
-    utils::IniGetBoolean("Graphics", "DisableDithering", disableDithering, filename);
-    utils::IniGetInteger("Graphics", "Antialias", antialias, filename);
-    utils::IniGetBoolean("Graphics", "DisableMipmap", disableMipmap, filename);
-    utils::IniGetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
-    utils::IniGetBoolean("Graphics", "EnableScreenDump", enableScreenDump, filename);
-    utils::IniGetBoolean("Graphics", "EnableDebugMode", enableDebugMode, filename);
-    utils::IniGetInteger("Graphics", "VertexCache", vertexCache, filename);
-    utils::IniGetBoolean("Graphics", "TextureCacheManagement", textureCacheManagement, filename);
-    utils::IniGetBoolean("Graphics", "SortTransparentObjects", sortTransparentObjects, filename);
-    utils::IniGetPixelFormat("Graphics", "TextureVideoFormat", textureVideoFormat, filename);
-    utils::IniGetPixelFormat("Graphics", "SpriteVideoFormat", spriteVideoFormat, filename);
+    SetLastConfigAbsolutePath(filename);
 
-    utils::IniGetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
-    utils::IniGetBoolean("Window", "Borderless", borderless, filename);
-    utils::IniGetBoolean("Window", "ClipCursor", clipCursor, filename);
-    utils::IniGetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
-    utils::IniGetInteger("Window", "X", posX, filename);
-    utils::IniGetInteger("Window", "Y", posY, filename);
+    // Auto-generated loading from master list
+    #define X_BOOL(sec,key,member,def) \
+        do { \
+            bool tmp = member; \
+            if (utils::IniGetBoolean(sec, key, tmp, filename)) { \
+                member = tmp; \
+                StoreLoadedBool(eLoadedBool_##member, tmp); \
+            } \
+        } while(0);
 
-    utils::IniGetInteger("Game", "Language", langId, filename);
-    utils::IniGetBoolean("Game", "SkipOpening", skipOpening, filename);
-    utils::IniGetBoolean("Game", "ApplyHotfix", applyHotfix, filename);
-    utils::IniGetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
-    utils::IniGetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
-    utils::IniGetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
-    utils::IniGetBoolean("Game", "Debug", debug, filename);
-    utils::IniGetBoolean("Game", "Rookie", rookie, filename);
+    #define X_INT(sec,key,member,def) \
+        do { \
+            int tmp = member; \
+            if (utils::IniGetInteger(sec, key, tmp, filename)) { \
+                member = tmp; \
+                StoreLoadedInt(eLoadedInt_##member, tmp); \
+            } \
+        } while(0);
+
+    #define X_PF(sec,key,member,def) \
+        do { \
+            VX_PIXELFORMAT tmp = member; \
+            if (utils::IniGetPixelFormat(sec, key, tmp, filename)) { \
+                member = tmp; \
+                StoreLoadedPixel(eLoadedPixel_##member, tmp); \
+            } \
+        } while(0);
+
+        GAMECONFIG_FIELDS
+
+    #undef X_BOOL
+    #undef X_INT
+    #undef X_PF
 }
 
 void CGameConfig::SaveToIni(const char *filename)
@@ -268,45 +245,201 @@ void CGameConfig::SaveToIni(const char *filename)
         filename = path;
     }
 
-    utils::IniSetInteger("Startup", "LogMode", logMode, filename);
-    utils::IniSetBoolean("Startup", "Verbose", verbose, filename);
-    utils::IniSetBoolean("Startup", "ManualSetup", manualSetup, filename);
+    bool shouldMerge = false;
+    FILETIME fileTime;
+    if (m_ConfigTimestampValid && IsSameConfigPath(filename) && GetLastWriteTime(filename, fileTime))
+    {
+        if (!SameFileTimeComponents(fileTime, m_ConfigTimestampLow, m_ConfigTimestampHigh))
+            shouldMerge = true;
+    }
 
-    utils::IniSetInteger("Graphics", "Driver", driver, filename);
-    utils::IniSetInteger("Graphics", "BitsPerPixel", bpp, filename);
-    utils::IniSetInteger("Graphics", "Width", width, filename);
-    utils::IniSetInteger("Graphics", "Height", height, filename);
-    utils::IniSetBoolean("Graphics", "FullScreen", fullscreen, filename);
+    if (shouldMerge)
+        MergeExternalChanges(filename);
 
-    utils::IniSetBoolean("Graphics", "DisablePerspectiveCorrection", disablePerspectiveCorrection, filename);
-    utils::IniSetBoolean("Graphics", "ForceLinearFog", forceLinearFog, filename);
-    utils::IniSetBoolean("Graphics", "ForceSoftware", forceSoftware, filename);
-    utils::IniSetBoolean("Graphics", "DisableFilter", disableFilter, filename);
-    utils::IniSetBoolean("Graphics", "EnsureVertexShader", ensureVertexShader, filename);
-    utils::IniSetBoolean("Graphics", "UseIndexBuffers", useIndexBuffers, filename);
-    utils::IniSetBoolean("Graphics", "DisableDithering", disableDithering, filename);
-    utils::IniSetInteger("Graphics", "Antialias", antialias, filename);
-    utils::IniSetBoolean("Graphics", "DisableMipmap", disableMipmap, filename);
-    utils::IniSetBoolean("Graphics", "DisableSpecular", disableSpecular, filename);
-    utils::IniSetBoolean("Graphics", "EnableScreenDump", enableScreenDump, filename);
-    utils::IniSetBoolean("Graphics", "EnableDebugMode", enableDebugMode, filename);
-    utils::IniSetInteger("Graphics", "VertexCache", vertexCache, filename);
-    utils::IniSetBoolean("Graphics", "TextureCacheManagement", textureCacheManagement, filename);
-    utils::IniSetBoolean("Graphics", "SortTransparentObjects", sortTransparentObjects, filename);
-    utils::IniSetPixelFormat("Graphics", "TextureVideoFormat", textureVideoFormat, filename);
-    utils::IniSetPixelFormat("Graphics", "SpriteVideoFormat", spriteVideoFormat, filename);
+    // Auto-generated saving from master list
+    #define X_BOOL(sec,key,member,def) utils::IniSetBoolean(sec, key, member, filename);
+    #define X_INT(sec,key,member,def)  utils::IniSetInteger(sec, key, member, filename);
+    #define X_PF(sec,key,member,def)   utils::IniSetPixelFormat(sec, key, member, filename);
+        GAMECONFIG_FIELDS
+    #undef X_BOOL
+    #undef X_INT
+    #undef X_PF
 
-    utils::IniSetBoolean("Window", "ChildWindowRendering", childWindowRendering, filename);
-    utils::IniSetBoolean("Window", "Borderless", borderless, filename);
-    utils::IniSetBoolean("Window", "ClipCursor", clipCursor, filename);
-    utils::IniSetBoolean("Window", "AlwaysHandleInput", alwaysHandleInput, filename);
-    utils::IniSetInteger("Window", "X", posX, filename);
-    utils::IniSetInteger("Window", "Y", posY, filename);
+    CaptureCurrentValuesAsLoaded();
 
-    utils::IniSetInteger("Game", "Language", langId, filename);
-    utils::IniSetBoolean("Game", "SkipOpening", skipOpening, filename);
-    utils::IniSetBoolean("Game", "ApplyHotfix", applyHotfix, filename);
-    utils::IniSetBoolean("Game", "UnlockFramerate", unlockFramerate, filename);
-    utils::IniSetBoolean("Game", "UnlockWidescreen", unlockWidescreen, filename);
-    utils::IniSetBoolean("Game", "UnlockHighResolution", unlockHighResolution, filename);
+    if (GetLastWriteTime(filename, fileTime))
+    {
+        m_ConfigTimestampLow = fileTime.dwLowDateTime;
+        m_ConfigTimestampHigh = fileTime.dwHighDateTime;
+        m_ConfigTimestampValid = true;
+    }
+    else
+    {
+        m_ConfigTimestampValid = false;
+    }
+
+    SetLastConfigAbsolutePath(filename);
+}
+
+void CGameConfig::ResetLoadedSnapshots()
+{
+    for (int i = 0; i < eLoadedSentinel; ++i)
+    {
+        m_LoadedInts[i].hasValue = false;
+        m_LoadedInts[i].value = 0;
+        m_LoadedBools[i].hasValue = false;
+        m_LoadedBools[i].value = false;
+        m_LoadedPixels[i].hasValue = false;
+        m_LoadedPixels[i].value = UNKNOWN_PF;
+    }
+
+    m_ConfigTimestampLow = 0;
+    m_ConfigTimestampHigh = 0;
+    m_ConfigTimestampValid = false;
+    m_LastConfigAbsolutePath.erase();
+}
+
+void CGameConfig::StoreLoadedInt(int index, int value)
+{
+    if (index < 0 || index >= eLoadedSentinel)
+        return;
+    m_LoadedInts[index].hasValue = true;
+    m_LoadedInts[index].value = value;
+}
+
+void CGameConfig::StoreLoadedBool(int index, bool value)
+{
+    if (index < 0 || index >= eLoadedSentinel)
+        return;
+    m_LoadedBools[index].hasValue = true;
+    m_LoadedBools[index].value = value;
+}
+
+void CGameConfig::StoreLoadedPixel(int index, VX_PIXELFORMAT value)
+{
+    if (index < 0 || index >= eLoadedSentinel)
+        return;
+    m_LoadedPixels[index].hasValue = true;
+    m_LoadedPixels[index].value = value;
+}
+
+bool CGameConfig::ShouldOverrideInt(int index, int newValue) const
+{
+    if (index < 0 || index >= eLoadedSentinel)
+        return false;
+    if (!m_LoadedInts[index].hasValue)
+        return true;
+    // Return true if the current in-memory value is unchanged from what we loaded
+    // This means we should accept the external change
+    return m_LoadedInts[index].value == newValue;
+}
+
+bool CGameConfig::ShouldOverrideBool(int index, bool newValue) const
+{
+    if (index < 0 || index >= eLoadedSentinel)
+        return false;
+    if (!m_LoadedBools[index].hasValue)
+        return true;
+    // Return true if the current in-memory value is unchanged from what we loaded
+    // This means we should accept the external change
+    return m_LoadedBools[index].value == newValue;
+}
+
+bool CGameConfig::ShouldOverridePixel(int index, VX_PIXELFORMAT newValue) const
+{
+    if (index < 0 || index >= eLoadedSentinel)
+        return false;
+    if (!m_LoadedPixels[index].hasValue)
+        return true;
+    // Return true if the current in-memory value is unchanged from what we loaded
+    // This means we should accept the external change
+    return m_LoadedPixels[index].value == newValue;
+}
+
+void CGameConfig::CaptureCurrentValuesAsLoaded()
+{
+    // Auto-generated snapshot capture from master list
+    #define X_BOOL(sec,key,member,def) \
+        m_LoadedBools[eLoadedBool_##member].hasValue = true; \
+        m_LoadedBools[eLoadedBool_##member].value = member;
+
+    #define X_INT(sec,key,member,def) \
+        m_LoadedInts[eLoadedInt_##member].hasValue = true; \
+        m_LoadedInts[eLoadedInt_##member].value = member;
+
+    #define X_PF(sec,key,member,def) \
+        m_LoadedPixels[eLoadedPixel_##member].hasValue = true; \
+        m_LoadedPixels[eLoadedPixel_##member].value = member;
+
+        GAMECONFIG_FIELDS
+
+    #undef X_BOOL
+    #undef X_INT
+    #undef X_PF
+}
+
+void CGameConfig::MergeExternalChanges(const char *filename)
+{
+    // Auto-generated merging from master list
+    #define X_BOOL(sec,key,member,def) \
+        do { \
+            bool tmp; \
+            if (utils::IniGetBoolean(sec, key, tmp, filename)) { \
+                if (ShouldOverrideBool(eLoadedBool_##member, member)) \
+                    member = tmp; \
+            } \
+        } while(0);
+
+    #define X_INT(sec,key,member,def) \
+        do { \
+            int tmp; \
+            if (utils::IniGetInteger(sec, key, tmp, filename)) { \
+                if (ShouldOverrideInt(eLoadedInt_##member, member)) \
+                    member = tmp; \
+            } \
+        } while(0);
+
+    #define X_PF(sec,key,member,def) \
+        do { \
+            VX_PIXELFORMAT tmp; \
+            if (utils::IniGetPixelFormat(sec, key, tmp, filename)) { \
+                if (ShouldOverridePixel(eLoadedPixel_##member, member)) \
+                    member = tmp; \
+            } \
+        } while(0);
+
+        GAMECONFIG_FIELDS
+
+    #undef X_BOOL
+    #undef X_INT
+    #undef X_PF
+}
+
+void CGameConfig::SetLastConfigAbsolutePath(const char *path)
+{
+    if (path && path[0] != '\0')
+        m_LastConfigAbsolutePath = path;
+    else
+        m_LastConfigAbsolutePath.erase();
+}
+
+bool CGameConfig::IsSameConfigPath(const char *path) const
+{
+    if (!path)
+        return false;
+    if (m_LastConfigAbsolutePath.size() == 0)
+        return false;
+
+    const char *stored = m_LastConfigAbsolutePath.c_str();
+    while (*stored && *path)
+    {
+        unsigned char c1 = static_cast<unsigned char>(*stored);
+        unsigned char c2 = static_cast<unsigned char>(*path);
+        if (toupper(c1) != toupper(c2))
+            return false;
+        ++stored;
+        ++path;
+    }
+
+    return (*stored == '\0') && (*path == '\0');
 }
