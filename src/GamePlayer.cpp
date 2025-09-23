@@ -27,6 +27,10 @@ CGamePlayer::CGamePlayer()
       m_TimeManager(NULL),
       m_AttributeManager(NULL),
       m_InputManager(NULL),
+      m_CursorClipActive(false),
+      m_PreviousClipValid(false),
+      m_CurrentClipRect(),
+      m_PreviousClipRect(),
       m_MsgClick(-1),
       m_MsgDoubleClick(-1),
       m_GameInfo(NULL) {}
@@ -1083,41 +1087,84 @@ bool CGamePlayer::StopFullscreen()
 
 bool CGamePlayer::ClipCursor()
 {
-    BOOL result;
-    if (m_Config.clipCursor)
+    if (!m_Config.clipCursor)
+        return ReleaseCursorClip();
+
+    RECT rect;
+    if (!::GetClientRect(m_MainWindow, &rect))
     {
-        RECT rect;
-        if (!::GetClientRect(m_MainWindow, &rect))
+        CLogger::Get().Error("Failed to get client rect for cursor clipping");
+        return false;
+    }
+
+    POINT p1 = {rect.left, rect.top};
+    POINT p2 = {rect.right, rect.bottom};
+    ::ClientToScreen(m_MainWindow, &p1);
+    ::ClientToScreen(m_MainWindow, &p2);
+
+    rect.left = p1.x;
+    rect.top = p1.y;
+    rect.right = p2.x;
+    rect.bottom = p2.y;
+
+    if (!m_CursorClipActive)
+    {
+        RECT currentClip;
+        if (::GetClipCursor(&currentClip))
         {
-            CLogger::Get().Error("Failed to get client rect for cursor clipping");
-            return false;
+            m_PreviousClipRect = currentClip;
+            m_PreviousClipValid = true;
         }
-
-        POINT p1, p2;
-        p1.x = rect.left;
-        p1.y = rect.top;
-        p2.x = rect.right;
-        p2.y = rect.bottom;
-        ::ClientToScreen(m_MainWindow, &p1);
-        ::ClientToScreen(m_MainWindow, &p2);
-        rect.left = p1.x;
-        rect.top = p1.y;
-        rect.right = p2.x;
-        rect.bottom = p2.y;
-        result = ::ClipCursor(&rect);
-    }
-    else
-    {
-        result = ::ClipCursor(NULL);
+        else
+        {
+            m_PreviousClipValid = false;
+        }
     }
 
-    if (!result)
+    if (!::ClipCursor(&rect))
     {
         DWORD error = GetLastError();
         CLogger::Get().Error("ClipCursor failed with error code: %d", error);
         return false;
     }
 
+    m_CursorClipActive = true;
+    m_CurrentClipRect = rect;
+    return true;
+}
+
+bool CGamePlayer::ReleaseCursorClip()
+{
+    if (!m_CursorClipActive)
+        return true;
+
+    RECT currentClip;
+    if (::GetClipCursor(&currentClip))
+    {
+        if (!::EqualRect(&currentClip, &m_CurrentClipRect))
+        {
+            m_CursorClipActive = false;
+            m_PreviousClipValid = false;
+            return true;
+        }
+    }
+    else
+    {
+        m_CursorClipActive = false;
+        m_PreviousClipValid = false;
+        return true;
+    }
+
+    BOOL result = m_PreviousClipValid ? ::ClipCursor(&m_PreviousClipRect) : ::ClipCursor(NULL);
+    if (!result)
+    {
+        DWORD error = GetLastError();
+        CLogger::Get().Error("ClipCursor release failed with error code: %d", error);
+        return false;
+    }
+
+    m_CursorClipActive = false;
+    m_PreviousClipValid = false;
     return true;
 }
 
@@ -1133,7 +1180,7 @@ bool CGamePlayer::OpenAboutDialog()
 
 void CGamePlayer::OnDestroy()
 {
-    ::ClipCursor(NULL);
+    ReleaseCursorClip();
     ::PostQuitMessage(0);
 }
 
@@ -1179,7 +1226,7 @@ void CGamePlayer::OnActivateApp(bool active)
             if (!m_Config.alwaysHandleInput)
                 m_InputManager->Pause(TRUE);
 
-            ::ClipCursor(NULL);
+            ReleaseCursorClip();
 
             if (IsRenderFullscreen())
             {
@@ -1367,7 +1414,7 @@ void CGamePlayer::OnGoFullscreen()
 {
     Pause();
 
-    ::ClipCursor(NULL);
+    ReleaseCursorClip();
 
     if (GoFullscreen())
     {

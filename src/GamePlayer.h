@@ -86,6 +86,7 @@ private:
     bool StopFullscreen();
 
     bool ClipCursor();
+    bool ReleaseCursorClip();
 
     bool OpenSetupDialog();
     bool OpenAboutDialog();
@@ -138,6 +139,11 @@ private:
     CKTimeManager *m_TimeManager;
     CKAttributeManager *m_AttributeManager;
     CKInputManager *m_InputManager;
+
+    bool m_CursorClipActive;
+    bool m_PreviousClipValid;
+    RECT m_CurrentClipRect;
+    RECT m_PreviousClipRect;
 
     CKMessageType m_MsgClick;
     CKMessageType m_MsgDoubleClick;
