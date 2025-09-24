@@ -141,9 +141,6 @@ private:
     CKInputManager *m_InputManager;
 
     bool m_CursorClipActive;
-    bool m_PreviousClipValid;
-    RECT m_CurrentClipRect;
-    RECT m_PreviousClipRect;
 
     CKMessageType m_MsgClick;
     CKMessageType m_MsgDoubleClick;

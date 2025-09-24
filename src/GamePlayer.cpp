@@ -28,9 +28,6 @@ CGamePlayer::CGamePlayer()
       m_AttributeManager(NULL),
       m_InputManager(NULL),
       m_CursorClipActive(false),
-      m_PreviousClipValid(false),
-      m_CurrentClipRect(),
-      m_PreviousClipRect(),
       m_MsgClick(-1),
       m_MsgDoubleClick(-1),
       m_GameInfo(NULL) {}
@@ -1106,30 +1103,9 @@ bool CGamePlayer::ClipCursor()
     rect.top = p1.y;
     rect.right = p2.x;
     rect.bottom = p2.y;
-
-    if (!m_CursorClipActive)
-    {
-        RECT currentClip;
-        if (::GetClipCursor(&currentClip))
-        {
-            m_PreviousClipRect = currentClip;
-            m_PreviousClipValid = true;
-        }
-        else
-        {
-            m_PreviousClipValid = false;
-        }
-    }
-
-    if (!::ClipCursor(&rect))
-    {
-        DWORD error = GetLastError();
-        CLogger::Get().Error("ClipCursor failed with error code: %d", error);
-        return false;
-    }
+    ::ClipCursor(&rect);
 
     m_CursorClipActive = true;
-    m_CurrentClipRect = rect;
     return true;
 }
 
@@ -1138,33 +1114,9 @@ bool CGamePlayer::ReleaseCursorClip()
     if (!m_CursorClipActive)
         return true;
 
-    RECT currentClip;
-    if (::GetClipCursor(&currentClip))
-    {
-        if (!::EqualRect(&currentClip, &m_CurrentClipRect))
-        {
-            m_CursorClipActive = false;
-            m_PreviousClipValid = false;
-            return true;
-        }
-    }
-    else
-    {
-        m_CursorClipActive = false;
-        m_PreviousClipValid = false;
-        return true;
-    }
-
-    BOOL result = m_PreviousClipValid ? ::ClipCursor(&m_PreviousClipRect) : ::ClipCursor(NULL);
-    if (!result)
-    {
-        DWORD error = GetLastError();
-        CLogger::Get().Error("ClipCursor release failed with error code: %d", error);
-        return false;
-    }
+    ::ClipCursor(NULL);
 
     m_CursorClipActive = false;
-    m_PreviousClipValid = false;
     return true;
 }
 
