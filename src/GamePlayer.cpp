@@ -1371,8 +1371,7 @@ void CGamePlayer::OnGoFullscreen()
     if (GoFullscreen())
     {
         ::SetWindowLong(m_MainWindow, GWL_STYLE, WS_POPUP);
-        ::SetWindowPos(m_MainWindow, NULL, 0, 0, m_Config.width, m_Config.height,
-                       SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        ::SetWindowPos(m_MainWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
         ::ShowWindow(m_MainWindow, SW_SHOW);
         ::SetFocus(m_MainWindow);
@@ -1402,8 +1401,7 @@ void CGamePlayer::OnStopFullscreen()
         ::AdjustWindowRect(&rc, style, FALSE);
 
         ::SetWindowLong(m_MainWindow, GWL_STYLE, style);
-        ::SetWindowPos(m_MainWindow, HWND_NOTOPMOST, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left,
-                       rc.bottom - rc.top, SWP_FRAMECHANGED);
+        ::SetWindowPos(m_MainWindow, HWND_NOTOPMOST, m_Config.posX, m_Config.posY, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED);
 
         ::ShowWindow(m_MainWindow, SW_SHOW);
         ::SetFocus(m_MainWindow);
