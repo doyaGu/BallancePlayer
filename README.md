@@ -238,6 +238,16 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
+### v0.3.7 (2025-09-23)
+
+**New Features**
+
+- Added support for external configuration file change detection and merging.
+
+**Bug Fixes**
+
+- Fixed an issue where plugin calls to ClipCursor could be disrupted when the ClipCursor setting was disabled.
+
 ### v0.3.6 (2025-08-20)
 
 **Changes**

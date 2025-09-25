@@ -57,8 +57,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,3,6,0
- PRODUCTVERSION 0,3,6,0
+ FILEVERSION 0,3,7,0
+ PRODUCTVERSION 0,3,7,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -76,14 +76,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Kakuty\0"
             VALUE "FileDescription", "Ballance Player\0"
-            VALUE "FileVersion", "0.3.6.0\0"
+            VALUE "FileVersion", "0.3.7.0\0"
             VALUE "InternalName", "Player\0"
             VALUE "LegalCopyright", "Copyright (C) 2025\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "Player.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Ballance Player\0"
-            VALUE "ProductVersion", "0.3.6.0\0"
+            VALUE "ProductVersion", "0.3.7.0\0"
             VALUE "SpecialBuild", "\0"
         END
     END
