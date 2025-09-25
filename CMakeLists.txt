@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
 project(BallancePlayer
-        VERSION 0.3.7.0
+        VERSION 0.3.8.0
         DESCRIPTION "The brand-new player for Ballance"
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
         )

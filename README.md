@@ -238,6 +238,12 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
+### v0.3.8 (2025-09-25)
+
+**Bug Fixes**
+
+- Fixed an issue where the window became invisible when switching from fullscreen to windowed mode
+
 ### v0.3.7 (2025-09-23)
 
 **New Features**
