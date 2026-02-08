@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "config.h"
+#include <config.h>
 
 #include "VxMathDefines.h"
 

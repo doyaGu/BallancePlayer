@@ -1,5 +1,16 @@
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/Player.rc)
+set(_player_generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+
+configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
+        "${_player_generated_dir}/config.h"
+        @ONLY
+)
+
+configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in"
+        "${_player_generated_dir}/Player.rc"
+        @ONLY
+)
 
 set(PLAYER_HEADERS
         GamePlayer.h
@@ -21,7 +32,7 @@ set(PLAYER_SOURCES
         CmdlineParser.cpp
         Logger.cpp
         Utils.cpp
-        Player.rc
+        "${_player_generated_dir}/Player.rc"
 )
 
 add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
@@ -31,11 +42,11 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
         WIN32_EXECUTABLE TRUE
 )
 
-target_compile_definitions(${PLAYER_NAME} PRIVATE
-        UNICODE _UNICODE
-)
-
 target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
+
+target_include_directories(${PLAYER_NAME} PRIVATE
+        "${_player_generated_dir}"
+)
 
 add_executable(ConfigTool
         ConfigTool.cpp
@@ -53,11 +64,14 @@ set_target_properties(ConfigTool PROPERTIES
 )
 
 target_compile_definitions(ConfigTool PRIVATE
-        UNICODE _UNICODE
         CONFIGTOOL_STANDALONE
 )
 
 target_link_libraries(ConfigTool PRIVATE VxMath)
+
+target_include_directories(ConfigTool PRIVATE
+        "${_player_generated_dir}"
+)
 
 install(TARGETS ${PLAYER_NAME} ConfigTool RUNTIME DESTINATION Bin)
 
