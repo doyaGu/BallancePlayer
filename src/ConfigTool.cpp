@@ -645,7 +645,9 @@ static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
 
     // Handle Pixel Formats
     TCHAR buffer[MAX_PATH];
+#ifdef UNICODE
     char ansiBuffer[MAX_PATH];
+#endif
 
     ::GetDlgItemText(hDlg, IDC_EDIT_TEXVIDFORMAT, buffer, sizeof(buffer) / sizeof(TCHAR));
 #ifdef UNICODE
@@ -723,7 +725,7 @@ typedef LONG LONG_PTR;
 #define SetWindowLongPtr SetWindowLong
 #endif
 
-BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     CGameConfig *pConfig = NULL;
     if (message != WM_INITDIALOG)
