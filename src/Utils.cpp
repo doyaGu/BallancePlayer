@@ -33,7 +33,7 @@ namespace utils
 
     size_t GetCurrentPath(char *buffer, size_t size)
     {
-        return ::GetCurrentDirectoryA(size, buffer);
+        return ::GetCurrentDirectoryA(static_cast<DWORD>(size), buffer);
     }
 
     bool IsAbsolutePath(const char *path)
@@ -136,14 +136,14 @@ namespace utils
         return true;
     }
 
-    int CharToWchar(const char *charStr, wchar_t *wcharStr, int size)
+    int CharToWchar(const char *charStr, wchar_t *wcharStr, size_t size)
     {
-        return ::MultiByteToWideChar(CP_ACP, 0, charStr, -1, wcharStr, size);
+        return ::MultiByteToWideChar(CP_ACP, 0, charStr, -1, wcharStr, static_cast<int>(size));
     }
 
-    int WcharToChar(const wchar_t *wcharStr, char *charStr, int size)
+    int WcharToChar(const wchar_t *wcharStr, char *charStr, size_t size)
     {
-        return ::WideCharToMultiByte(CP_ACP, 0, wcharStr, -1, charStr, size, NULL, NULL);
+        return ::WideCharToMultiByte(CP_ACP, 0, wcharStr, -1, charStr, static_cast<int>(size), NULL, NULL);
     }
 
     /* crc32.c -- compute the CRC-32 of a data stream
@@ -211,10 +211,10 @@ namespace utils
 #define DO4(buf) DO2(buf); DO2(buf)
 #define DO8(buf) DO4(buf); DO4(buf)
 
-    void CRC32(const void *key, size_t len, size_t seed, void *out)
+    void CRC32(const void *key, size_t len, unsigned int seed, unsigned int *out)
     {
         unsigned char *buf = (unsigned char *)key;
-        size_t crc = seed ^ 0xffffffffL;
+        unsigned int crc = seed ^ 0xffffffffL;
 
         while (len >= 8)
         {
@@ -229,7 +229,7 @@ namespace utils
 
         crc ^= 0xffffffffL;
 
-        *(size_t *)out = crc;
+        *out = crc;
     }
 
     VX_PIXELFORMAT String2PixelFormat(const char *str, size_t max)
@@ -389,9 +389,9 @@ namespace utils
         return str;
     }
 
-    bool IniGetString(const char *section, const char *name, char *str, int size, const char *filename)
+    bool IniGetString(const char *section, const char *name, char *str, size_t size, const char *filename)
     {
-        return ::GetPrivateProfileStringA(section, name, "", str, size, filename) != 0;
+        return ::GetPrivateProfileStringA(section, name, "", str, static_cast<int>(size), filename) != 0;
     }
 
     bool IniGetInteger(const char *section, const char *name, int &value, const char *filename)

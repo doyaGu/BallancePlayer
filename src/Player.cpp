@@ -94,9 +94,9 @@ static HANDLE CreateNamedMutex()
     _splitpath(buf, drive, dir, filename, NULL);
     _snprintf(buf, MAX_PATH, "%s%s", drive, dir);
 
-    size_t crc = 0;
-    utils::CRC32(buf, strlen(buf), 0, &crc);
-    _snprintf(buf, MAX_PATH, "Ballance-%X", crc);
+    unsigned int crc32 = 0;
+    utils::CRC32(buf, strlen(buf), 0, &crc32);
+    _snprintf(buf, MAX_PATH, "Ballance-%X", crc32);
 
     HANDLE hMutex = ::CreateMutexA(NULL, FALSE, buf);
     DWORD error = ::GetLastError();

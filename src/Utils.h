@@ -21,15 +21,15 @@ namespace utils
     bool HasTrailingPathSeparator(const char *path);
     bool RemoveTrailingPathSeparator(char *path);
 
-    int CharToWchar(const char *charStr, wchar_t *wcharStr, int size);
-    int WcharToChar(const wchar_t *wcharStr, char *charStr, int size);
+    int CharToWchar(const char *charStr, wchar_t *wcharStr, size_t size);
+    int WcharToChar(const wchar_t *wcharStr, char *charStr, size_t size);
 
-    void CRC32(const void *key, size_t len, size_t seed, void *out);
+    void CRC32(const void *key, size_t len, unsigned int seed, unsigned int *out);
 
     VX_PIXELFORMAT String2PixelFormat(const char *str, size_t max);
     const char *PixelFormat2String(VX_PIXELFORMAT format);
 
-    bool IniGetString(const char *section, const char *name, char *str, int size, const char *filename);
+    bool IniGetString(const char *section, const char *name, char *str, size_t size, const char *filename);
     bool IniGetInteger(const char *section, const char *name, int &value, const char *filename);
     bool IniGetBoolean(const char *section, const char *name, bool &value, const char *filename);
     bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT &value, const char *filename);
