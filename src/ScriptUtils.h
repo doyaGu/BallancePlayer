@@ -533,7 +533,7 @@ namespace scriptutils
     inline CKParameterLocal *CreateLocalParameter(CKBehavior *script, const char *name = "", CKGUID type = CKPGUID_STRING)
     {
         assert(script != NULL);
-        return script->CreateLocalParameter((CKSTRING)name, type);
+        return script->CreateLocalParameter(name, type);
     }
 
     template <typename T>
@@ -554,7 +554,7 @@ namespace scriptutils
     CKParameterLocal *CreateLocalParameter<const char *>(CKBehavior *script, const char *name, const char *value, CKGUID type)
     {
         CKParameterLocal *param = CreateLocalParameter(script, name, type);
-        param->SetStringValue((CKSTRING)value);
+        param->SetStringValue(value);
         return param;
     }
 
@@ -596,14 +596,6 @@ namespace scriptutils
     CKParameterLocal *GenerateInputParameter<const char *>(CKBehavior *script, CKBehavior *beh, int inPos, const char *value)
     {
         CKParameterLocal *param = GenerateInputParameter(script, beh, inPos);
-        param->SetValue((CKSTRING)value);
-        return param;
-    }
-
-    template <>
-    CKParameterLocal *GenerateInputParameter<CKSTRING>(CKBehavior *script, CKBehavior *beh, int inPos, CKSTRING value)
-    {
-        CKParameterLocal *param = GenerateInputParameter(script, beh, inPos);
         param->SetValue(value);
         return param;
     }
@@ -638,14 +630,6 @@ namespace scriptutils
     CKParameterLocal *GenerateTargetParameter<const char *>(CKBehavior *script, CKBehavior *beh, const char *value)
     {
         CKParameterLocal *param = GenerateTargetParameter(script, beh);
-        param->SetValue((CKSTRING)value);
-        return param;
-    }
-
-    template <>
-    CKParameterLocal *GenerateTargetParameter<CKSTRING>(CKBehavior *script, CKBehavior *beh, CKSTRING value)
-    {
-        CKParameterLocal *param = GenerateTargetParameter(script, beh);
         param->SetValue(value);
         return param;
     }
@@ -664,7 +648,7 @@ namespace scriptutils
 
     inline void SetParameterString(CKParameter *param, const char *value)
     {
-        param->SetStringValue((CKSTRING)value);
+        param->SetStringValue(value);
     }
 
     template <typename T>
@@ -684,7 +668,7 @@ namespace scriptutils
     {
         assert(beh != NULL);
         CKParameter *param = beh->GetTargetParameter()->GetDirectSource();
-        param->SetValue((CKSTRING)value);
+        param->SetValue(value);
     }
 
     template <typename T>
@@ -709,7 +693,7 @@ namespace scriptutils
         if (0 <= inPos && inPos < beh->GetInputParameterCount())
         {
             CKParameter *param = beh->GetInputParameter(inPos)->GetDirectSource();
-            param->SetValue((CKSTRING)value);
+            param->SetValue(value);
         }
     }
 
@@ -735,7 +719,7 @@ namespace scriptutils
         if (0 <= pos && pos < beh->GetLocalParameterCount())
         {
             CKParameterLocal *param = beh->GetLocalParameter(pos);
-            param->SetValue((CKSTRING)value);
+            param->SetValue(value);
         }
     }
 

@@ -12,6 +12,16 @@
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
 
+#ifndef GetWindowLongPtr
+#define GetWindowLongPtr GetWindowLong
+#endif
+#ifndef SetWindowLongPtr
+#define SetWindowLongPtr SetWindowLong
+#endif
+#ifndef GWLP_USERDATA
+#define GWLP_USERDATA GWL_USERDATA
+#endif
+
 extern bool EditScript(CKLevel *level, const CGameConfig &config);
 
 CGamePlayer::CGamePlayer()
@@ -278,7 +288,7 @@ void CGamePlayer::Reset()
     CLogger::Get().Debug("Game is reset.");
 }
 
-static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *)
+static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *userData)
 {
     if (cbStruct.Reason == CKUIM_OUTTOCONSOLE ||
         cbStruct.Reason == CKUIM_OUTTOINFOBAR ||
@@ -449,7 +459,7 @@ bool CGamePlayer::InitEngine(HWND mainWindow)
     CLogger::Get().Debug("CK Engine initialized.");
 
     m_CKContext->SetVirtoolsVersion(CK_VIRTOOLS_DEV, 0x2000043);
-    m_CKContext->SetInterfaceMode(FALSE, LogRedirect, NULL);
+    m_CKContext->SetInterfaceMode(FALSE, LogRedirect, 0);
 
     if (!SetupManagers())
     {
@@ -640,8 +650,8 @@ bool CGamePlayer::FinishLoad(const char *filename)
     level->LaunchScene(NULL);
 
     // ReRegister OnClick Message in case it changed
-    m_MsgClick = m_MessageManager->AddMessageType((CKSTRING)"OnClick");
-    m_MsgDoubleClick = m_MessageManager->AddMessageType((CKSTRING)"OnDblClick");
+    m_MsgClick = m_MessageManager->AddMessageType("OnClick");
+    m_MsgDoubleClick = m_MessageManager->AddMessageType("OnDblClick");
 
     // Render the first frame
     m_RenderContext->Render();
@@ -655,8 +665,8 @@ void CGamePlayer::ReportMissingGuids(CKFile *file, const char *resolvedFile)
     const XClassArray<CKFilePluginDependencies> *p = file->GetMissingPlugins();
     for (CKFilePluginDependencies *it = p->Begin(); it != p->End(); it++)
     {
-        const int count = it->m_Guids.Size();
-        for (int i = 0; i < count; i++)
+        const size_t count = it->m_Guids.Size();
+        for (size_t i = 0; i < count; i++)
         {
             if (!it->ValidGuids[i])
             {
@@ -706,7 +716,7 @@ bool CGamePlayer::LoadRenderEngines(CKPluginManager *pluginManager)
         return false;
 
     const char *path = m_Config.GetPath(eRenderEnginePath);
-    if (!utils::DirectoryExists(path) || pluginManager->ParsePlugins((CKSTRING)(path)) == 0)
+    if (!utils::DirectoryExists(path) || pluginManager->ParsePlugins(path) == 0)
     {
         CLogger::Get().Error("Render engine parse error.");
         return false;
@@ -731,7 +741,7 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading managers from %s", path);
 
-    if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
+    if (pluginManager->ParsePlugins(path) == 0)
     {
         CLogger::Get().Error("Managers parse error.");
         return false;
@@ -756,7 +766,7 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading building blocks from %s", path);
 
-    if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
+    if (pluginManager->ParsePlugins(path) == 0)
     {
         CLogger::Get().Error("Behaviors parse error.");
         return false;
@@ -781,7 +791,7 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading plugins from %s", path);
 
-    if (pluginManager->ParsePlugins((CKSTRING)path) == 0)
+    if (pluginManager->ParsePlugins(path) == 0)
     {
         CLogger::Get().Error("Plugins parse error.");
         return false;
@@ -847,25 +857,25 @@ bool CGamePlayer::SetupManagers()
         return false;
     }
 
-    m_RenderManager->SetRenderOptions((CKSTRING)"DisablePerspectiveCorrection", m_Config.disablePerspectiveCorrection);
-    m_RenderManager->SetRenderOptions((CKSTRING)"ForceLinearFog", m_Config.forceLinearFog);
-    m_RenderManager->SetRenderOptions((CKSTRING)"ForceSoftware", m_Config.forceSoftware);
-    m_RenderManager->SetRenderOptions((CKSTRING)"DisableFilter", m_Config.disableFilter);
-    m_RenderManager->SetRenderOptions((CKSTRING)"EnsureVertexShader", m_Config.ensureVertexShader);
-    m_RenderManager->SetRenderOptions((CKSTRING)"UseIndexBuffers", m_Config.useIndexBuffers);
-    m_RenderManager->SetRenderOptions((CKSTRING)"DisableDithering", m_Config.disableDithering);
-    m_RenderManager->SetRenderOptions((CKSTRING)"Antialias", m_Config.antialias);
-    m_RenderManager->SetRenderOptions((CKSTRING)"DisableMipmap", m_Config.disableMipmap);
-    m_RenderManager->SetRenderOptions((CKSTRING)"DisableSpecular", m_Config.disableSpecular);
-    m_RenderManager->SetRenderOptions((CKSTRING)"EnableScreenDump", m_Config.enableScreenDump);
-    m_RenderManager->SetRenderOptions((CKSTRING)"EnableDebugMode", m_Config.enableDebugMode);
-    m_RenderManager->SetRenderOptions((CKSTRING)"VertexCache", m_Config.vertexCache);
-    m_RenderManager->SetRenderOptions((CKSTRING)"TextureCacheManagement", m_Config.textureCacheManagement);
-    m_RenderManager->SetRenderOptions((CKSTRING)"SortTransparentObjects", m_Config.sortTransparentObjects);
+    m_RenderManager->SetRenderOptions("DisablePerspectiveCorrection", m_Config.disablePerspectiveCorrection);
+    m_RenderManager->SetRenderOptions("ForceLinearFog", m_Config.forceLinearFog);
+    m_RenderManager->SetRenderOptions("ForceSoftware", m_Config.forceSoftware);
+    m_RenderManager->SetRenderOptions("DisableFilter", m_Config.disableFilter);
+    m_RenderManager->SetRenderOptions("EnsureVertexShader", m_Config.ensureVertexShader);
+    m_RenderManager->SetRenderOptions("UseIndexBuffers", m_Config.useIndexBuffers);
+    m_RenderManager->SetRenderOptions("DisableDithering", m_Config.disableDithering);
+    m_RenderManager->SetRenderOptions("Antialias", m_Config.antialias);
+    m_RenderManager->SetRenderOptions("DisableMipmap", m_Config.disableMipmap);
+    m_RenderManager->SetRenderOptions("DisableSpecular", m_Config.disableSpecular);
+    m_RenderManager->SetRenderOptions("EnableScreenDump", m_Config.enableScreenDump);
+    m_RenderManager->SetRenderOptions("EnableDebugMode", m_Config.enableDebugMode);
+    m_RenderManager->SetRenderOptions("VertexCache", m_Config.vertexCache);
+    m_RenderManager->SetRenderOptions("TextureCacheManagement", m_Config.textureCacheManagement);
+    m_RenderManager->SetRenderOptions("SortTransparentObjects", m_Config.sortTransparentObjects);
     if (m_Config.textureVideoFormat != UNKNOWN_PF)
-        m_RenderManager->SetRenderOptions((CKSTRING)"TextureVideoFormat", m_Config.textureVideoFormat);
+        m_RenderManager->SetRenderOptions("TextureVideoFormat", m_Config.textureVideoFormat);
     if (m_Config.spriteVideoFormat != UNKNOWN_PF)
-        m_RenderManager->SetRenderOptions((CKSTRING)"SpriteVideoFormat", m_Config.spriteVideoFormat);
+        m_RenderManager->SetRenderOptions("SpriteVideoFormat", m_Config.spriteVideoFormat);
 
     m_MessageManager = m_CKContext->GetMessageManager();
     if (!m_MessageManager)
@@ -947,7 +957,7 @@ bool CGamePlayer::SetupPaths()
 void CGamePlayer::ResizeWindow()
 {
     RECT rc = {0, 0, m_Config.width, m_Config.height};
-    DWORD style = ::GetWindowLong(m_MainWindow, GWL_STYLE);
+    DWORD style = static_cast<DWORD>(::GetWindowLongPtr(m_MainWindow, GWL_STYLE));
     ::AdjustWindowRect(&rc, style, FALSE);
     ::SetWindowPos(m_MainWindow, NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
     if (m_Config.childWindowRendering)
@@ -1370,7 +1380,7 @@ void CGamePlayer::OnGoFullscreen()
 
     if (GoFullscreen())
     {
-        ::SetWindowLong(m_MainWindow, GWL_STYLE, WS_POPUP);
+        ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(WS_POPUP));
         ::SetWindowPos(m_MainWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
         ::ShowWindow(m_MainWindow, SW_SHOW);
@@ -1400,7 +1410,7 @@ void CGamePlayer::OnStopFullscreen()
         RECT rc = {0, 0, m_Config.width, m_Config.height};
         ::AdjustWindowRect(&rc, style, FALSE);
 
-        ::SetWindowLong(m_MainWindow, GWL_STYLE, style);
+        ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(style));
         ::SetWindowPos(m_MainWindow, HWND_NOTOPMOST, m_Config.posX, m_Config.posY, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED);
 
         ::ShowWindow(m_MainWindow, SW_SHOW);
@@ -1470,7 +1480,7 @@ LRESULT CGamePlayer::HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         break;
 
     case WM_SYSKEYDOWN:
-        return OnSysKeyDown(wParam);
+        return OnSysKeyDown(static_cast<UINT>(wParam));
 
     case WM_LBUTTONDOWN:
         OnClick();
@@ -1535,7 +1545,7 @@ bool CGamePlayer::FillDriverList(HWND hWnd)
 #else
         const char *driverName = drDesc->DriverName.CStr();
 #endif
-        int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_ADDSTRING, 0, (LPARAM)driverName);
+        int index = static_cast<int>(::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_ADDSTRING, 0, (LPARAM)driverName));
         ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETITEMDATA, index, i);
         if (i == m_Config.driver)
             ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_SETCURSEL, index, 0);
@@ -1580,7 +1590,7 @@ bool CGamePlayer::FillScreenModeList(HWND hWnd, int driver)
             if (dm[i].Bpp > 8)
             {
                 sprintf(buffer, "%d x %d x %d x %dHz", dm[i].Width, dm[i].Height, dm[i].Bpp, dm[i].RefreshRate);
-                int index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_ADDSTRING, 0, (LPARAM)buffer);
+                int index = static_cast<int>(::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_ADDSTRING, 0, (LPARAM)buffer));
                 ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_SETITEMDATA, index, i);
                 if (i == m_Config.screenMode)
                 {
@@ -1652,11 +1662,11 @@ LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     {
         CREATESTRUCT *pCreate = reinterpret_cast<CREATESTRUCT *>(lParam);
         player = static_cast<CGamePlayer *>(pCreate->lpCreateParams);
-        ::SetWindowLong(hWnd, GWL_USERDATA, reinterpret_cast<LONG>(player));
+        ::SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(player));
     }
     else
     {
-        player = reinterpret_cast<CGamePlayer *>(::GetWindowLong(hWnd, GWL_USERDATA));
+        player = reinterpret_cast<CGamePlayer *>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
     }
 
     if (player) {
@@ -1666,7 +1676,7 @@ LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     WORD wNotifyCode = HIWORD(wParam);
     int wID = LOWORD(wParam);
@@ -1675,11 +1685,11 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
     if (uMsg == WM_INITDIALOG)
     {
         player = reinterpret_cast<CGamePlayer *>(lParam);
-        ::SetWindowLong(hWnd, GWL_USERDATA, reinterpret_cast<LONG>(player));
+        ::SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(player));
     }
     else
     {
-        player = reinterpret_cast<CGamePlayer *>(::GetWindowLong(hWnd, GWL_USERDATA));
+        player = reinterpret_cast<CGamePlayer *>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
     }
 
     if (!player)
@@ -1702,8 +1712,8 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
     {
         if (wNotifyCode == LBN_SELCHANGE && wID == IDC_LB_DRIVER)
         {
-            int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
-            int driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
+            int index = static_cast<int>(::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0));
+            int driver = static_cast<int>(::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0));
 
             ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_RESETCONTENT, 0, 0);
 
@@ -1715,21 +1725,21 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
         {
             if (wID == IDOK)
             {
-                int index = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0);
+                int index = static_cast<int>(::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETCURSEL, 0, 0));
                 if (index == LB_ERR)
                 {
                     ::EndDialog(hWnd, IDCANCEL);
                     return TRUE;
                 }
-                config.driver = ::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0);
+                config.driver = static_cast<int>(::SendDlgItemMessage(hWnd, IDC_LB_DRIVER, LB_GETITEMDATA, index, 0));
 
-                index = ::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETCURSEL, 0, 0);
+                index = static_cast<int>(::SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETCURSEL, 0, 0));
                 if (index == LB_ERR)
                 {
                     ::EndDialog(hWnd, IDCANCEL);
                     return TRUE;
                 }
-                config.screenMode = SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0);
+                config.screenMode = static_cast<int>(SendDlgItemMessage(hWnd, IDC_LB_SCREEN_MODE, LB_GETITEMDATA, index, 0));
 
                 VxDriverDesc *drDesc = player->GetRenderManager()->GetRenderDriverDescription(config.driver);
                 if (drDesc)
@@ -1753,7 +1763,7 @@ BOOL CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
     return FALSE;
 }
 
-BOOL CGamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK CGamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
