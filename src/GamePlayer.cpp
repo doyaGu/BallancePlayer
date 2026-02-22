@@ -665,8 +665,8 @@ void CGamePlayer::ReportMissingGuids(CKFile *file, const char *resolvedFile)
     const XClassArray<CKFilePluginDependencies> *p = file->GetMissingPlugins();
     for (CKFilePluginDependencies *it = p->Begin(); it != p->End(); it++)
     {
-        const size_t count = it->m_Guids.Size();
-        for (size_t i = 0; i < count; i++)
+        const int count = it->m_Guids.Size();
+        for (int i = 0; i < count; i++)
         {
             if (!it->ValidGuids[i])
             {
