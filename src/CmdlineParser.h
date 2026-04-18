@@ -29,6 +29,10 @@ class CmdlineParser
 {
 public:
     CmdlineParser(int argc, char **argv);
+    CmdlineParser(const char *cmdline);
+#ifdef WIN32
+    CmdlineParser(const wchar_t *cmdline);
+#endif
 
     bool Next(CmdlineArg &arg, const char *longopt, char opt = '\0', int maxValueCount = 0);
 

@@ -28,7 +28,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     LockGuard guard(hMutex);
 
-    CmdlineParser parser(__argc, __argv);
+    CmdlineParser parser(lpCmdLine);
     CGameConfig config;
 
     // Load paths from command line
@@ -284,7 +284,7 @@ static void ParseConfigsFromCmdline(CGameConfig &config, CmdlineParser &parser)
                 config.posY = value;
             continue;
         }
-        if (parser.Next(arg, "--lang", 'l'))
+        if (parser.Next(arg, "--lang", 'l', 1))
         {
             if (arg.GetValue(0, value))
                 config.langId = value;
@@ -407,8 +407,8 @@ static void LoadPaths(CGameConfig &config, CmdlineParser &parser)
     }
     parser.Reset();
 
-    // Set default value for the path if it was not specified in command line
-    for (int p = eConfigPath; p < ePathCategoryCount; ++p)
+    // Set default value for plugin/data directories if they do not exist.
+    for (int p = eRootPath; p < ePathCategoryCount; ++p)
     {
         if (!utils::DirectoryExists(config.GetPath((PathCategory)p)))
         {

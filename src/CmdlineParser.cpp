@@ -4,86 +4,129 @@
 #include <string.h>
 #include <stdlib.h>
 
-bool CmdlineArg::GetValue(int i, std::string &value) const
+#ifdef WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#endif
+
+static std::string RemoveQuotes(const std::string &text)
 {
-    if (i >= m_Size || i < 0)
-        return false;
-
-    const std::string &val = m_Values[i];
-    const int sz = (int)val.length();
-
+    std::string value;
     bool inQuote = false;
 
-    if (!m_Jointed)
+    for (size_t i = 0; i < text.length(); ++i)
     {
-        if (val[0] != '"')
+        if (text[i] == '"')
         {
-            value = val;
+            inQuote = !inQuote;
+            continue;
         }
-        else
+        value += text[i];
+    }
+
+    return value;
+}
+
+static bool IsOptionLike(const std::string &text)
+{
+    if (text.length() < 2 || text[0] != '-')
+        return false;
+
+    return !isdigit(static_cast<unsigned char>(text[1]));
+}
+
+static int CountJointedValues(const std::string &text, int optLen)
+{
+    int count = 1;
+    int start = optLen + 1;
+
+    for (int i = start; i < (int)text.length(); ++i)
+    {
+        if (text[i] == ';' && i != start)
         {
-            value = "";
-            value.resize(sz);
-            int k = 0;
-
-            for (int vi = 0; vi < sz; ++vi)
-            {
-                if (val[vi] == '"')
-                {
-                    inQuote = !inQuote;
-                    continue;
-                }
-                if (inQuote)
-                    value[k++] = val[vi];
-            }
-
-            value.resize(k);
+            ++count;
+            start = i + 1;
         }
     }
-    else
-    {
-        value = "";
-        value.resize(sz);
-        int k = 0;
 
-        int n = 0;
-        size_t foundPos = val.find('=');
-        if (foundPos == std::string::npos)
-            return false;
-        int j = (int)foundPos + 1;
-        for (int vi = j; vi < sz; ++vi)
+    return count;
+}
+
+void AppendCommandLineArgs(std::vector<std::string> &args, const char *cmdline)
+{
+    if (!cmdline)
+        return;
+
+    const char *p = cmdline;
+    while (*p)
+    {
+        while (*p && isspace(static_cast<unsigned char>(*p)))
+            ++p;
+
+        if (!*p)
+            break;
+
+        std::string arg;
+        bool inQuote = false;
+
+        while (*p)
         {
-            if (val[vi] == ';' && vi != j)
+            if (*p == '"')
             {
-                ++n;
-                j = vi + 1;
+                inQuote = !inQuote;
+                ++p;
                 continue;
             }
 
-            if (i == n)
+            if (!inQuote && isspace(static_cast<unsigned char>(*p)))
+                break;
+
+            arg += *p;
+            ++p;
+        }
+
+        args.push_back(arg);
+    }
+}
+
+bool CmdlineArg::GetValue(int i, std::string &value) const
+{
+    if (i < 0 || (!m_Jointed && i >= m_Size) || !m_Values)
+        return false;
+
+    const std::string &val = m_Jointed ? m_Values[0] : m_Values[i];
+
+    if (!m_Jointed)
+    {
+        value = RemoveQuotes(val);
+    }
+    else
+    {
+        size_t foundPos = val.find('=');
+        if (foundPos == std::string::npos)
+            return false;
+
+        int n = 0;
+        int start = (int)foundPos + 1;
+        int end = start;
+
+        for (; end <= (int)val.length(); ++end)
+        {
+            if (end == (int)val.length() || (val[end] == ';' && end != start))
             {
-                if (val[vi] != '"')
+                if (i == n)
                 {
-                    for (; vi < sz && val[vi] != ';'; ++vi)
-                        value[k++] = val[vi];
+                    value = RemoveQuotes(val.substr(start, end - start));
+                    return true;
                 }
-                else
-                {
-                    for (; vi < sz && val[vi] != ';'; ++vi)
-                    {
-                        if (val[vi] == '"')
-                        {
-                            inQuote = !inQuote;
-                            continue;
-                        }
-                        if (inQuote)
-                            value[k++] = val[vi];
-                    }
-                }
+                ++n;
+                start = end + 1;
             }
         }
 
-        value.resize(k);
+        return false;
     }
 
     return true;
@@ -91,10 +134,13 @@ bool CmdlineArg::GetValue(int i, std::string &value) const
 
 bool CmdlineArg::GetValue(int i, long &value) const
 {
-    if (i >= m_Size || i < 0)
+    if (i < 0 || (!m_Jointed && i >= m_Size) || !m_Values)
         return false;
 
-    const std::string &v = m_Values[i];
+    std::string v;
+    if (!GetValue(i, v))
+        return false;
+
     const char *s = v.c_str();
     char *e = NULL;
     long val = strtol(s, &e, 10);
@@ -115,8 +161,32 @@ CmdlineParser::CmdlineParser(int argc, char **argv) : m_Index(0)
         m_Args.push_back(argv[i]);
 }
 
+CmdlineParser::CmdlineParser(const char *cmdline) : m_Index(0)
+{
+    AppendCommandLineArgs(m_Args, cmdline);
+}
+
+#ifdef WIN32
+CmdlineParser::CmdlineParser(const wchar_t *cmdline) : m_Index(0)
+{
+    if (!cmdline)
+        return;
+
+    int size = WideCharToMultiByte(CP_ACP, 0, cmdline, -1, NULL, 0, NULL, NULL);
+    if (size <= 0)
+        return;
+
+    std::string buffer;
+    buffer.resize(size);
+    WideCharToMultiByte(CP_ACP, 0, cmdline, -1, &buffer[0], size, NULL, NULL);
+    AppendCommandLineArgs(m_Args, buffer.c_str());
+}
+#endif
+
 bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int maxValueCount)
 {
+    arg = CmdlineArg();
+
     if (Done())
         return false;
 
@@ -127,10 +197,14 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
 
     bool match = false;
 
-    int optLen = 2;
+    int optLen = 0;
     if (opt != '\0' && isalnum(opt) &&
-        s[0] == '-' && s[1] == opt)
+        s[0] == '-' && s[1] == opt &&
+        (sz == 2 || s[2] == '='))
+    {
         match = true;
+        optLen = 2;
+    }
 
     if (!match)
     {
@@ -146,55 +220,47 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
 
         if (strncmp(s.c_str(), longopt, optLen) != 0)
             return false;
+
+        if (sz != optLen && s[optLen] != '=')
+            return false;
+
+        match = true;
     }
+
+    if (sz > optLen && s[optLen] == '=')
+    {
+        arg = CmdlineArg(&m_Args[m_Index], CountJointedValues(s, optLen), true);
+        ++m_Index;
+        return true;
+    }
+
+    ++m_Index; // Skip the option itself
 
     if (maxValueCount != 0)
     {
         const std::string *values = NULL;
         int valueCount = 0;
 
-        if (sz > optLen + 1 && s[optLen] == '=')
-        {
-            values = &s;
-            ++valueCount;
-            int j = optLen + 1;
-            for (int vi = j; vi < sz; ++vi)
-            {
-                if (s[vi] == ';' && vi != j)
-                {
-                    ++valueCount;
-                    j = vi + 1;
-                }
-            }
-            arg = CmdlineArg(values, valueCount, true);
-        }
+        if (maxValueCount == -1)
+            maxValueCount = (int)(m_Args.size() - m_Index);
+
+        if (m_Index >= (int)m_Args.size() || maxValueCount == 0)
+            arg = CmdlineArg(NULL, 0);
         else
         {
-            if (maxValueCount == -1)
-                maxValueCount = (int)(m_Args.size() - m_Index);
-
-            ++m_Index; // Skip the option itself
-            if (m_Index >= (int)m_Args.size() || maxValueCount == 0)
+            values = &m_Args[m_Index];
+            while (valueCount < maxValueCount && m_Index < (int)m_Args.size())
             {
-                arg = CmdlineArg(NULL, 0);
+                const std::string &next = m_Args[m_Index];
+                if (IsOptionLike(next))
+                    break;
+                ++m_Index;
+                ++valueCount;
             }
-            else
-            {
-                values = &m_Args[m_Index]; // Start from after the option
-                while (valueCount < maxValueCount && m_Index < (int)m_Args.size())
-                {
-                    const std::string &next = m_Args[m_Index];
-                    if (next.length() != 0 && next[0] == '-')
-                        break;
-                    ++m_Index;
-                    ++valueCount;
-                }
-                arg = CmdlineArg(values, valueCount);
-            }
+            arg = CmdlineArg(values, valueCount);
         }
     }
 
-    ++m_Index;
     return true;
 }
 
