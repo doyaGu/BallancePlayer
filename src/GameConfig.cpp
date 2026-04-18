@@ -24,25 +24,17 @@ static bool SameFileTimeComponents(const FILETIME &timeValue, DWORD low, DWORD h
 }
 
 static const char *const DefaultPaths[] = {
-    "Player.ini",
-    "Player.log",
-    "base.cmo",
-    "..\\",
-    "Plugins\\",
-    "RenderEngines\\",
-    "Managers\\",
-    "BuildingBlocks\\",
-    "Sounds\\",
-    "Textures\\",
-    "",
+#define X_PATH(category, defaultPath, cliLong, validateDir) defaultPath,
+    GAMECONFIG_PATH_FIELDS
+#undef X_PATH
 };
 
 CGameConfig::CGameConfig()
 {
     // Auto-generated initialization from master list
-    #define X_BOOL(sec,key,member,def) member = def;
-    #define X_INT(sec,key,member,def)  member = def;
-    #define X_PF(sec,key,member,def)   member = def;
+    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) member = def;
+    #define X_INT(sec,key,member,def,cliLong,cliShort)  member = def;
+    #define X_PF(sec,key,member,def,cliLong,cliShort)   member = def;
         GAMECONFIG_FIELDS
     #undef X_BOOL
     #undef X_INT
@@ -63,9 +55,9 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
         return *this;
 
     // Auto-generated copying from master list
-    #define X_BOOL(sec,key,member,def) member = config.member;
-    #define X_INT(sec,key,member,def)  member = config.member;
-    #define X_PF(sec,key,member,def)   member = config.member;
+    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) member = config.member;
+    #define X_INT(sec,key,member,def,cliLong,cliShort)  member = config.member;
+    #define X_PF(sec,key,member,def,cliLong,cliShort)   member = config.member;
         GAMECONFIG_FIELDS
     #undef X_BOOL
     #undef X_INT
@@ -191,7 +183,7 @@ void CGameConfig::LoadFromIni(const char *filename)
     SetLastConfigAbsolutePath(filename);
 
     // Auto-generated loading from master list
-    #define X_BOOL(sec,key,member,def) \
+    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
         do { \
             bool tmp = member; \
             if (utils::IniGetBoolean(sec, key, tmp, filename)) { \
@@ -200,7 +192,7 @@ void CGameConfig::LoadFromIni(const char *filename)
             } \
         } while(0);
 
-    #define X_INT(sec,key,member,def) \
+    #define X_INT(sec,key,member,def,cliLong,cliShort) \
         do { \
             int tmp = member; \
             if (utils::IniGetInteger(sec, key, tmp, filename)) { \
@@ -209,7 +201,7 @@ void CGameConfig::LoadFromIni(const char *filename)
             } \
         } while(0);
 
-    #define X_PF(sec,key,member,def) \
+    #define X_PF(sec,key,member,def,cliLong,cliShort) \
         do { \
             VX_PIXELFORMAT tmp = member; \
             if (utils::IniGetPixelFormat(sec, key, tmp, filename)) { \
@@ -257,9 +249,9 @@ void CGameConfig::SaveToIni(const char *filename)
         MergeExternalChanges(filename);
 
     // Auto-generated saving from master list
-    #define X_BOOL(sec,key,member,def) utils::IniSetBoolean(sec, key, member, filename);
-    #define X_INT(sec,key,member,def)  utils::IniSetInteger(sec, key, member, filename);
-    #define X_PF(sec,key,member,def)   utils::IniSetPixelFormat(sec, key, member, filename);
+    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) utils::IniSetBoolean(sec, key, member, filename);
+    #define X_INT(sec,key,member,def,cliLong,cliShort)  utils::IniSetInteger(sec, key, member, filename);
+    #define X_PF(sec,key,member,def,cliLong,cliShort)   utils::IniSetPixelFormat(sec, key, member, filename);
         GAMECONFIG_FIELDS
     #undef X_BOOL
     #undef X_INT
@@ -359,15 +351,15 @@ bool CGameConfig::ShouldOverridePixel(int index, VX_PIXELFORMAT newValue) const
 void CGameConfig::CaptureCurrentValuesAsLoaded()
 {
     // Auto-generated snapshot capture from master list
-    #define X_BOOL(sec,key,member,def) \
+    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
         m_LoadedBools[eLoadedBool_##member].hasValue = true; \
         m_LoadedBools[eLoadedBool_##member].value = member;
 
-    #define X_INT(sec,key,member,def) \
+    #define X_INT(sec,key,member,def,cliLong,cliShort) \
         m_LoadedInts[eLoadedInt_##member].hasValue = true; \
         m_LoadedInts[eLoadedInt_##member].value = member;
 
-    #define X_PF(sec,key,member,def) \
+    #define X_PF(sec,key,member,def,cliLong,cliShort) \
         m_LoadedPixels[eLoadedPixel_##member].hasValue = true; \
         m_LoadedPixels[eLoadedPixel_##member].value = member;
 
@@ -381,7 +373,7 @@ void CGameConfig::CaptureCurrentValuesAsLoaded()
 void CGameConfig::MergeExternalChanges(const char *filename)
 {
     // Auto-generated merging from master list
-    #define X_BOOL(sec,key,member,def) \
+    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
         do { \
             bool tmp; \
             if (utils::IniGetBoolean(sec, key, tmp, filename)) { \
@@ -390,7 +382,7 @@ void CGameConfig::MergeExternalChanges(const char *filename)
             } \
         } while(0);
 
-    #define X_INT(sec,key,member,def) \
+    #define X_INT(sec,key,member,def,cliLong,cliShort) \
         do { \
             int tmp; \
             if (utils::IniGetInteger(sec, key, tmp, filename)) { \
@@ -399,7 +391,7 @@ void CGameConfig::MergeExternalChanges(const char *filename)
             } \
         } while(0);
 
-    #define X_PF(sec,key,member,def) \
+    #define X_PF(sec,key,member,def,cliLong,cliShort) \
         do { \
             VX_PIXELFORMAT tmp; \
             if (utils::IniGetPixelFormat(sec, key, tmp, filename)) { \

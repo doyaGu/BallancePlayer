@@ -154,3 +154,8 @@ set(PLAYER_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "")
 set(PLAYER_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src" CACHE INTERNAL "")
 
 add_subdirectory(src)
+
+if (PLAYER_IS_TOP_LEVEL)
+    enable_testing()
+    add_subdirectory(tests)
+endif ()

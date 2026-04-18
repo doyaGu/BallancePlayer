@@ -15,6 +15,7 @@ configure_file(
 set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
+        PlayerOptions.h
         Splash.h
         ScriptUtils.h
         CmdlineParser.h
@@ -27,6 +28,7 @@ set(PLAYER_SOURCES
         Player.cpp
         GamePlayer.cpp
         GameConfig.cpp
+        PlayerOptions.cpp
         Hotfix.cpp
         Splash.cpp
         CmdlineParser.cpp

@@ -120,6 +120,10 @@ SOURCE=.\src\Player.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\PlayerOptions.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\Splash.cpp
 # End Source File
 # Begin Source File
@@ -157,6 +161,10 @@ SOURCE=.\src\InterfaceManager.h
 # Begin Source File
 
 SOURCE=.\src\Logger.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\PlayerOptions.h
 # End Source File
 # Begin Source File
 
