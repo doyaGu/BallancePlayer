@@ -37,6 +37,17 @@ TEST(PlayerOptionsTest, ConfigPathDoesNotStopFurtherPathScanning) {
     EXPECT_STREQ(config.GetPath(eLogPath), "custom.log");
 }
 
+TEST(PlayerOptionsTest, DetectsConfigToolOptionWithoutBreakingConfigPath) {
+    CmdlineParser parser("--config-tool --config custom.ini");
+    CGameConfig config;
+
+    EXPECT_TRUE(playeroptions::IsConfigToolMode(parser));
+
+    playeroptions::ApplyPathOptions(config, parser);
+
+    EXPECT_STREQ(config.GetPath(eConfigPath), "custom.ini");
+}
+
 TEST(PlayerOptionsTest, ExposesMetadataForConfigAndPathOptions) {
     EXPECT_GT(playeroptions::GetConfigOptionCount(), 20);
     EXPECT_GT(playeroptions::GetPathOptionCount(), 5);

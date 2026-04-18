@@ -76,6 +76,8 @@ enum LogMode
   X_BOOL ("Game",     "UnlockFramerate",         unlockFramerate,         false,              "--unlock-framerate",                    'u',  true) \
   X_BOOL ("Game",     "UnlockWidescreen",        unlockWidescreen,        false,              "--unlock-widescreen",                   '\0', true) \
   X_BOOL ("Game",     "UnlockHighResolution",    unlockHighResolution,    false,              "--unlock-high-resolution",              '\0', true) \
+  X_BOOL ("Game",     "Debug",                   debug,                   false,              "--debug",                               'd',  true) \
+  X_BOOL ("Game",     "Rookie",                  rookie,                  false,              "--rookie",                              'r',  true) \
   X_PF   ("Graphics", "TextureVideoFormat",      textureVideoFormat,      UNKNOWN_PF,         "--texture-video-format",                '\0') \
   X_PF   ("Graphics", "SpriteVideoFormat",       spriteVideoFormat,       UNKNOWN_PF,         "--sprite-video-format",                 '\0')
 
@@ -106,8 +108,6 @@ public:
 
     // Non-INI members (not persisted)
     int screenMode;
-    bool debug;
-    bool rookie;
 
     CGameConfig();
     CGameConfig &operator=(const CGameConfig &config);

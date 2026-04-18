@@ -118,11 +118,6 @@ namespace playeroptions
 #undef X_INT
 #undef X_PF
 
-            if (ApplyBoolOption(config, parser, "--debug", 'd', &CGameConfig::debug, true))
-                continue;
-            if (ApplyBoolOption(config, parser, "--rookie", 'r', &CGameConfig::rookie, true))
-                continue;
-
             parser.Skip();
         }
 
@@ -139,7 +134,6 @@ namespace playeroptions
 #undef X_BOOL
 #undef X_INT
 #undef X_PF
-        count += 2; // debug, rookie
         return count;
     }
 
@@ -150,6 +144,25 @@ namespace playeroptions
         GAMECONFIG_PATH_FIELDS
 #undef X_PATH
         return count;
+    }
+
+    bool IsConfigToolMode(CmdlineParser &parser)
+    {
+        bool found = false;
+        CmdlineArg arg;
+
+        while (!parser.Done())
+        {
+            if (parser.Next(arg, "--config-tool", '\0'))
+            {
+                found = true;
+                break;
+            }
+            parser.Skip();
+        }
+
+        parser.Reset();
+        return found;
     }
 
     bool HasConfigOption(const char *longopt, char shortopt)
@@ -164,10 +177,6 @@ namespace playeroptions
 #undef X_BOOL
 #undef X_INT
 #undef X_PF
-        if (OptionNameEquals(longopt, "--debug") && shortopt == 'd')
-            return true;
-        if (OptionNameEquals(longopt, "--rookie") && shortopt == 'r')
-            return true;
         return false;
     }
 

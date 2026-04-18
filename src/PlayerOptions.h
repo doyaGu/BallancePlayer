@@ -12,6 +12,7 @@ namespace playeroptions
 
     int GetConfigOptionCount();
     int GetPathOptionCount();
+    bool IsConfigToolMode(CmdlineParser &parser);
     bool HasConfigOption(const char *longopt, char shortopt);
     bool HasPathOption(const char *longopt);
 }

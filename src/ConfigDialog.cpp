@@ -1,9 +1,9 @@
-#include "ConfigTool.h"
+#include "ConfigDialog.h"
 
 #include <tchar.h>
 
-#include "ConfigToolResource.h"
 #include "GameConfig.h"
+#include "resource.h"
 #include "Utils.h"
 
 // String Resource Management
@@ -476,196 +476,136 @@ static int GetDlgItemIntSafe(HWND hDlg, int nIDDlgItem, int defaultVal)
     return defaultVal;
 }
 
-static void CreateDefaultConfig(CGameConfig &config)
+static void SetConfigIntControl(HWND hDlg, int ctrlID, int value)
 {
-    config.logMode = eLogOverwrite;
-    config.verbose = false;
-    config.manualSetup = false;
-    config.driver = 0;
-    config.bpp = PLAYER_DEFAULT_BPP;
-    config.width = PLAYER_DEFAULT_WIDTH;
-    config.height = PLAYER_DEFAULT_HEIGHT;
-    config.fullscreen = false;
-    config.disablePerspectiveCorrection = false;
-    config.forceLinearFog = false;
-    config.forceSoftware = false;
-    config.disableFilter = false;
-    config.ensureVertexShader = false;
-    config.useIndexBuffers = true;
-    config.disableDithering = false;
-    config.antialias = 0;
-    config.disableMipmap = false;
-    config.disableSpecular = false;
-    config.enableScreenDump = false;
-    config.enableDebugMode = false;
-    config.vertexCache = 16;
-    config.textureCacheManagement = true;
-    config.sortTransparentObjects = true;
-    config.textureVideoFormat = UNKNOWN_PF;
-    config.spriteVideoFormat = UNKNOWN_PF;
-    config.childWindowRendering = false;
-    config.borderless = false;
-    config.clipCursor = false;
-    config.alwaysHandleInput = false;
-    config.posX = 2147483647;
-    config.posY = 2147483647;
-    config.langId = 1;
-    config.skipOpening = false;
-    config.applyHotfix = true;
-    config.unlockFramerate = false;
-    config.unlockWidescreen = false;
-    config.unlockHighResolution = false;
-    config.debug = false;
-    config.rookie = false;
+    if (ctrlID == IDC_COMBO_LOGMODE)
+    {
+        ::SendDlgItemMessage(hDlg, ctrlID, CB_SETCURSEL, (value == eLogAppend) ? 0 : 1, 0);
+        return;
+    }
+    if (ctrlID == IDC_COMBO_BPP)
+    {
+        ::SendDlgItemMessage(hDlg, ctrlID, CB_SETCURSEL, (value == 16) ? 0 : 1, 0);
+        return;
+    }
+    if (ctrlID == IDC_COMBO_LANG)
+    {
+        int langSel = value;
+        if (langSel < 0 || langSel > 4)
+            langSel = 1;
+        ::SendDlgItemMessage(hDlg, ctrlID, CB_SETCURSEL, langSel, 0);
+        return;
+    }
+    if (ctrlID == IDC_EDIT_POSX || ctrlID == IDC_EDIT_POSY)
+    {
+        if (value != CW_USEDEFAULT)
+            ::SetDlgItemInt(hDlg, ctrlID, value, TRUE);
+        else
+            ::SetDlgItemText(hDlg, ctrlID, TEXT(""));
+        return;
+    }
+
+    ::SetDlgItemInt(hDlg, ctrlID, value, FALSE);
+}
+
+static int GetConfigIntControl(HWND hDlg, int ctrlID, int fallback)
+{
+    if (ctrlID == IDC_COMBO_LOGMODE)
+    {
+        int sel = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCURSEL, 0, 0);
+        if (sel == CB_ERR)
+            return fallback;
+        return (sel == 0) ? eLogAppend : eLogOverwrite;
+    }
+    if (ctrlID == IDC_COMBO_BPP)
+    {
+        int sel = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCURSEL, 0, 0);
+        if (sel == CB_ERR)
+            return fallback;
+        return (sel == 0) ? 16 : 32;
+    }
+    if (ctrlID == IDC_COMBO_LANG)
+    {
+        int sel = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCURSEL, 0, 0);
+        if (sel >= 0 && sel <= 4)
+            return sel;
+        return fallback;
+    }
+    if (ctrlID == IDC_EDIT_POSX || ctrlID == IDC_EDIT_POSY)
+    {
+        return GetDlgItemIntSafe(hDlg, ctrlID, CW_USEDEFAULT);
+    }
+
+    return GetDlgItemIntSafe(hDlg, ctrlID, fallback);
+}
+
+static void SetConfigBoolControl(HWND hDlg, int ctrlID, bool value)
+{
+    ::SendDlgItemMessage(hDlg, ctrlID, BM_SETCHECK, value ? BST_CHECKED : BST_UNCHECKED, 0);
+}
+
+static bool GetConfigBoolControl(HWND hDlg, int ctrlID)
+{
+    return ::SendDlgItemMessage(hDlg, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED;
+}
+
+static void SetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT value)
+{
+    const char *format = utils::PixelFormat2String(value);
+    TCHAR buffer[32];
+#ifdef UNICODE
+    utils::CharToWchar(format, buffer, 32);
+#else
+    strcpy(buffer, format);
+#endif
+    ::SetDlgItemText(hDlg, ctrlID, buffer);
+}
+
+static VX_PIXELFORMAT GetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT fallback)
+{
+    TCHAR buffer[MAX_PATH];
+    if (!::GetDlgItemText(hDlg, ctrlID, buffer, sizeof(buffer) / sizeof(TCHAR)))
+        return fallback;
+
+#ifdef UNICODE
+    char ansiBuffer[MAX_PATH];
+    utils::WcharToChar(buffer, ansiBuffer, MAX_PATH);
+    return utils::String2PixelFormat(ansiBuffer, strlen(ansiBuffer));
+#else
+    return utils::String2PixelFormat(buffer, strlen(buffer));
+#endif
 }
 
 static void LoadConfigToDialog(HWND hDlg, const CGameConfig &config)
 {
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_SETCURSEL, (config.logMode == eLogAppend) ? 0 : 1, 0);
-    ::SetDlgItemInt(hDlg, IDC_EDIT_DRIVER, config.driver, FALSE);
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_SETCURSEL, (config.bpp == 16) ? 0 : 1, 0);
-    ::SetDlgItemInt(hDlg, IDC_EDIT_WIDTH, config.width, FALSE);
-    ::SetDlgItemInt(hDlg, IDC_EDIT_HEIGHT, config.height, FALSE);
-    ::SetDlgItemInt(hDlg, IDC_EDIT_ANTIALIAS, config.antialias, FALSE);
-    ::SetDlgItemInt(hDlg, IDC_EDIT_VERTEXCACHE, config.vertexCache, FALSE);
+#define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
+    SetConfigBoolControl(hDlg, IDC_CONFIG_##member, config.member);
+#define X_INT(sec,key,member,def,cliLong,cliShort) \
+    SetConfigIntControl(hDlg, IDC_CONFIG_##member, config.member);
+#define X_PF(sec,key,member,def,cliLong,cliShort) \
+    SetConfigPixelFormatControl(hDlg, IDC_CONFIG_##member, config.member);
+    GAMECONFIG_FIELDS
+#undef X_BOOL
+#undef X_INT
+#undef X_PF
 
-    typedef struct
-    {
-        int ctrlID;
-        bool value;
-    } BooleanMapping;
-    const BooleanMapping boolMap[] = {
-        {IDC_CHECK_VERBOSE, config.verbose}, {IDC_CHECK_MANUALSETUP, config.manualSetup},
-        {IDC_CHECK_FULLSCREEN, config.fullscreen},
-        {IDC_CHECK_DISPERSPCORRECT, config.disablePerspectiveCorrection},
-        {IDC_CHECK_FORCELINEARFOG, config.forceLinearFog},
-        {IDC_CHECK_FORCESOFTWARE, config.forceSoftware}, {IDC_CHECK_DISABLEFILTER, config.disableFilter},
-        {IDC_CHECK_ENSUREVS, config.ensureVertexShader}, {IDC_CHECK_USEINDEXBUFFERS, config.useIndexBuffers},
-        {IDC_CHECK_DISABLEDITHER, config.disableDithering}, {IDC_CHECK_DISABLEMIPMAP, config.disableMipmap},
-        {IDC_CHECK_DISABLESPECULAR, config.disableSpecular}, {IDC_CHECK_ENABLESCREENDUMP, config.enableScreenDump},
-        {IDC_CHECK_ENABLEDEBUGMODE_GFX, config.enableDebugMode},
-        {IDC_CHECK_TEXCACHEMGMT, config.textureCacheManagement},
-        {IDC_CHECK_SORTTRANSPARENT, config.sortTransparentObjects},
-        {IDC_CHECK_CHILDWINRENDER, config.childWindowRendering},
-        {IDC_CHECK_BORDERLESS, config.borderless}, {IDC_CHECK_CLIPCURSOR, config.clipCursor},
-        {IDC_CHECK_ALWAYSHANDLEINPUT, config.alwaysHandleInput}, {IDC_CHECK_SKIPOPENING, config.skipOpening},
-        {IDC_CHECK_APPLYHOTFIX, config.applyHotfix}, {IDC_CHECK_UNLOCKFRAMERATE, config.unlockFramerate},
-        {IDC_CHECK_UNLOCKWIDESCREEN, config.unlockWidescreen}, {IDC_CHECK_UNLOCKHIGHRES, config.unlockHighResolution},
-        {IDC_CHECK_DEBUG, config.debug}, {IDC_CHECK_ROOKIE, config.rookie},
-        {0, false} // Terminator
-    };
-    for (int i = 0; boolMap[i].ctrlID != 0; i++)
-    {
-        ::SendDlgItemMessage(hDlg, boolMap[i].ctrlID, BM_SETCHECK, boolMap[i].value ? BST_CHECKED : BST_UNCHECKED, 0);
-    }
-
-    // Get pixel format string from utility function
-    const char *texFormatStr = utils::PixelFormat2String(config.textureVideoFormat);
-    const char *sprFormatStr = utils::PixelFormat2String(config.spriteVideoFormat);
-
-    // Convert to TCHAR for dialog controls
-    TCHAR texFormatTStr[32];
-    TCHAR sprFormatTStr[32];
-#ifdef UNICODE
-    utils::CharToWchar(texFormatStr, texFormatTStr, 32);
-    utils::CharToWchar(sprFormatStr, sprFormatTStr, 32);
-#else
-    strcpy(texFormatTStr, texFormatStr);
-    strcpy(sprFormatTStr, sprFormatStr);
-#endif
-
-    ::SetDlgItemText(hDlg, IDC_EDIT_TEXVIDFORMAT, texFormatTStr);
-    ::SetDlgItemText(hDlg, IDC_EDIT_SPRVIDFORMAT, sprFormatTStr);
-
-    // Handle Window Position (display empty for CW_USEDEFAULT)
-    if (config.posX != CW_USEDEFAULT)
-        ::SetDlgItemInt(hDlg, IDC_EDIT_POSX, config.posX, TRUE);
-    else
-        ::SetDlgItemText(hDlg, IDC_EDIT_POSX, TEXT(""));
-    if (config.posY != CW_USEDEFAULT)
-        ::SetDlgItemInt(hDlg, IDC_EDIT_POSY, config.posY, TRUE);
-    else
-        ::SetDlgItemText(hDlg, IDC_EDIT_POSY, TEXT(""));
-
-    // Set language combobox selections
-    int langSel = config.langId;
-    if (langSel < 0 || langSel > 4)
-        langSel = 1; // Default to English
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_SETCURSEL, langSel, 0);
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_SETCURSEL, StringResource::GetLanguage(), 0);
 }
 
 static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
 {
-    int logModeSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_GETCURSEL, 0, 0);
-    config.logMode = (logModeSel == 0) ? eLogAppend : eLogOverwrite;
-    config.driver = GetDlgItemIntSafe(hDlg, IDC_EDIT_DRIVER, config.driver);
-    int bppSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_GETCURSEL, 0, 0);
-    config.bpp = (bppSel == 0) ? 16 : 32;
-    config.width = GetDlgItemIntSafe(hDlg, IDC_EDIT_WIDTH, config.width);
-    config.height = GetDlgItemIntSafe(hDlg, IDC_EDIT_HEIGHT, config.height);
-    config.antialias = GetDlgItemIntSafe(hDlg, IDC_EDIT_ANTIALIAS, config.antialias);
-    config.vertexCache = GetDlgItemIntSafe(hDlg, IDC_EDIT_VERTEXCACHE, config.vertexCache);
-    config.posX = GetDlgItemIntSafe(hDlg, IDC_EDIT_POSX, CW_USEDEFAULT);
-    config.posY = GetDlgItemIntSafe(hDlg, IDC_EDIT_POSY, CW_USEDEFAULT);
-    int langSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_GETCURSEL, 0, 0);
-    if (langSel >= 0 && langSel <= 4)
-        config.langId = langSel;
+#define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
+    config.member = GetConfigBoolControl(hDlg, IDC_CONFIG_##member);
+#define X_INT(sec,key,member,def,cliLong,cliShort) \
+    config.member = GetConfigIntControl(hDlg, IDC_CONFIG_##member, config.member);
+#define X_PF(sec,key,member,def,cliLong,cliShort) \
+    config.member = GetConfigPixelFormatControl(hDlg, IDC_CONFIG_##member, config.member);
+    GAMECONFIG_FIELDS
+#undef X_BOOL
+#undef X_INT
+#undef X_PF
 
-    // Get checkbox states using a map
-    typedef struct
-    {
-        int ctrlID;
-        bool *value;
-    } BooleanPtrMapping;
-    const BooleanPtrMapping boolMap[] = {
-        {IDC_CHECK_VERBOSE, &config.verbose}, {IDC_CHECK_MANUALSETUP, &config.manualSetup},
-        {IDC_CHECK_FULLSCREEN, &config.fullscreen},
-        {IDC_CHECK_DISPERSPCORRECT, &config.disablePerspectiveCorrection},
-        {IDC_CHECK_FORCELINEARFOG, &config.forceLinearFog},
-        {IDC_CHECK_FORCESOFTWARE, &config.forceSoftware}, {IDC_CHECK_DISABLEFILTER, &config.disableFilter},
-        {IDC_CHECK_ENSUREVS, &config.ensureVertexShader}, {IDC_CHECK_USEINDEXBUFFERS, &config.useIndexBuffers},
-        {IDC_CHECK_DISABLEDITHER, &config.disableDithering}, {IDC_CHECK_DISABLEMIPMAP, &config.disableMipmap},
-        {IDC_CHECK_DISABLESPECULAR, &config.disableSpecular}, {IDC_CHECK_ENABLESCREENDUMP, &config.enableScreenDump},
-        {IDC_CHECK_ENABLEDEBUGMODE_GFX, &config.enableDebugMode},
-        {IDC_CHECK_TEXCACHEMGMT, &config.textureCacheManagement},
-        {IDC_CHECK_SORTTRANSPARENT, &config.sortTransparentObjects},
-        {IDC_CHECK_CHILDWINRENDER, &config.childWindowRendering},
-        {IDC_CHECK_BORDERLESS, &config.borderless}, {IDC_CHECK_CLIPCURSOR, &config.clipCursor},
-        {IDC_CHECK_ALWAYSHANDLEINPUT, &config.alwaysHandleInput}, {IDC_CHECK_SKIPOPENING, &config.skipOpening},
-        {IDC_CHECK_APPLYHOTFIX, &config.applyHotfix}, {IDC_CHECK_UNLOCKFRAMERATE, &config.unlockFramerate},
-        {IDC_CHECK_UNLOCKWIDESCREEN, &config.unlockWidescreen}, {IDC_CHECK_UNLOCKHIGHRES, &config.unlockHighResolution},
-        {IDC_CHECK_DEBUG, &config.debug}, {IDC_CHECK_ROOKIE, &config.rookie},
-        {0, NULL} // Terminator
-    };
-    for (int i = 0; boolMap[i].ctrlID != 0; i++)
-    {
-        *(boolMap[i].value) = (::SendDlgItemMessage(hDlg, boolMap[i].ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED);
-    }
-
-    // Handle Pixel Formats
-    TCHAR buffer[MAX_PATH];
-#ifdef UNICODE
-    char ansiBuffer[MAX_PATH];
-#endif
-
-    ::GetDlgItemText(hDlg, IDC_EDIT_TEXVIDFORMAT, buffer, sizeof(buffer) / sizeof(TCHAR));
-#ifdef UNICODE
-    utils::WcharToChar(buffer, ansiBuffer, MAX_PATH);
-    config.textureVideoFormat = utils::String2PixelFormat(ansiBuffer, strlen(ansiBuffer));
-#else
-    config.textureVideoFormat = utils::String2PixelFormat(buffer, strlen(buffer));
-#endif
-
-    ::GetDlgItemText(hDlg, IDC_EDIT_SPRVIDFORMAT, buffer, sizeof(buffer) / sizeof(TCHAR));
-#ifdef UNICODE
-    utils::WcharToChar(buffer, ansiBuffer, MAX_PATH);
-    config.spriteVideoFormat = utils::String2PixelFormat(ansiBuffer, strlen(ansiBuffer));
-#else
-    config.spriteVideoFormat = utils::String2PixelFormat(buffer, strlen(buffer));
-#endif
-
-    // UI Language is saved separately in SaveUILanguageToIni
+    // UI Language is saved separately in SaveUILanguageToIni.
 }
 
 static void LoadUILanguageFromIni(const char *iniPath)
@@ -725,7 +665,7 @@ typedef LONG LONG_PTR;
 #define SetWindowLongPtr SetWindowLong
 #endif
 
-INT_PTR CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     CGameConfig *pConfig = NULL;
     if (message != WM_INITDIALOG)
@@ -792,7 +732,6 @@ INT_PTR CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
                                         MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES)
             {
                 CGameConfig defaultConfig;
-                CreateDefaultConfig(defaultConfig);
                 LoadConfigToDialog(hDlg, defaultConfig); // Load defaults into UI
             }
             return TRUE; // Handled
@@ -834,7 +773,7 @@ INT_PTR CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
     return FALSE; // Message is not handled
 }
 
-bool ShowConfigTool(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
+bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
 {
     if (!StringResource::Initialize(hInstance))
     {
@@ -885,15 +824,3 @@ bool ShowConfigTool(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
     }
 }
 
-#ifdef CONFIGTOOL_STANDALONE
-int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
-{
-    (void)hPrevInstance;
-    (void)lpCmdLine;
-    (void)nCmdShow; // Suppress unused warnings
-
-    CGameConfig config;
-    bool result = ShowConfigTool(hInstance, config); // Handles load, UI, save
-    return result ? 0 : 1; // 0 on success (OK), 1 on cancel/fail
-}
-#endif // CONFIGTOOL_STANDALONE

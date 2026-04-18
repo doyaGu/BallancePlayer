@@ -5,6 +5,7 @@
 #include <tchar.h>
 
 #include "CmdlineParser.h"
+#include "ConfigDialog.h"
 #include "GameConfig.h"
 #include "GamePlayer.h"
 #include "PlayerOptions.h"
@@ -18,6 +19,15 @@ static void EnableDpiAwareness();
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+    CmdlineParser parser(lpCmdLine);
+
+    if (playeroptions::IsConfigToolMode(parser))
+    {
+        CGameConfig config;
+        playeroptions::ApplyPathOptions(config, parser);
+        return ShowConfigDialog(hInstance, config, true) ? 0 : 1;
+    }
+
     HANDLE hMutex = CreateNamedMutex();
     if (!hMutex)
     {
@@ -27,7 +37,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     LockGuard guard(hMutex);
 
-    CmdlineParser parser(lpCmdLine);
     CGameConfig config;
 
     playeroptions::ApplyPathOptions(config, parser);

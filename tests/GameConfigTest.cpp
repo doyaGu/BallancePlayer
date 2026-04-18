@@ -257,6 +257,8 @@ TEST_F(GameConfigTest, SaveToIni) {
     config.langId = 3;
     config.borderless = true;
     config.unlockWidescreen = true;
+    config.debug = true;
+    config.rookie = true;
     
     config.SaveToIni(testIniPath.string().c_str());
     
@@ -287,6 +289,8 @@ TEST_F(GameConfigTest, SaveToIni) {
     EXPECT_EQ(config2.langId, 3);
     EXPECT_TRUE(config2.borderless);
     EXPECT_TRUE(config2.unlockWidescreen);
+    EXPECT_TRUE(config2.debug);
+    EXPECT_TRUE(config2.rookie);
 }
 
 // Test external change merging

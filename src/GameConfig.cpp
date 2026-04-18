@@ -42,8 +42,6 @@ CGameConfig::CGameConfig()
 
     // Non-INI members
     screenMode = -1;
-    debug = false;
-    rookie = false;
 
     ResetPath();
     ResetLoadedSnapshots();
@@ -65,8 +63,6 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
 
     // Non-INI members
     screenMode = config.screenMode;
-    debug = config.debug;
-    rookie = config.rookie;
 
     // Copy paths
     int i;
