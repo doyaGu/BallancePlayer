@@ -823,4 +823,3 @@ bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
         return false; // Cancelled or failed
     }
 }
-
