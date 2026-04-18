@@ -8,6 +8,7 @@ class CmdlineParser;
 namespace playeroptions
 {
     void ApplyPathOptions(CGameConfig &config, CmdlineParser &parser);
+    void ApplyConfigToolPathOptions(CGameConfig &config, CmdlineParser &parser);
     void ApplyConfigOptions(CGameConfig &config, CmdlineParser &parser);
 
     int GetConfigOptionCount();

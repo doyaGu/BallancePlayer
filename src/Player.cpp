@@ -24,7 +24,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
     if (playeroptions::IsConfigToolMode(parser))
     {
         CGameConfig config;
-        playeroptions::ApplyPathOptions(config, parser);
+        playeroptions::ApplyConfigToolPathOptions(config, parser);
         return ShowConfigDialog(hInstance, config, true) ? 0 : 1;
     }
 

@@ -60,6 +60,25 @@ namespace
 
 namespace playeroptions
 {
+    static bool HasConfigPathOption(CmdlineParser &parser)
+    {
+        bool found = false;
+        CmdlineArg arg;
+
+        while (!parser.Done())
+        {
+            if (parser.Next(arg, "--config", '\0', 1))
+            {
+                found = true;
+                break;
+            }
+            parser.Skip();
+        }
+
+        parser.Reset();
+        return found;
+    }
+
     void ApplyPathOptions(CGameConfig &config, CmdlineParser &parser)
     {
         CmdlineArg arg;
@@ -90,6 +109,14 @@ namespace playeroptions
             config.ResetPath(category);
         GAMECONFIG_PATH_FIELDS
 #undef X_PATH
+    }
+
+    void ApplyConfigToolPathOptions(CGameConfig &config, CmdlineParser &parser)
+    {
+        if (!HasConfigPathOption(parser))
+            config.SetPath(eConfigPath, "");
+
+        ApplyPathOptions(config, parser);
     }
 
     void ApplyConfigOptions(CGameConfig &config, CmdlineParser &parser)
