@@ -21,8 +21,16 @@
 #ifndef GWLP_USERDATA
 #define GWLP_USERDATA GWL_USERDATA
 #endif
+#ifndef LONG_PTR
+#define LONG_PTR LONG
+#endif
 
 extern bool EditScript(CKLevel *level, const CGameConfig &config);
+
+static CKSTRING ToCKString(const char *value)
+{
+    return const_cast<CKSTRING>(value);
+}
 
 static bool IsDefaultRenderEngineDll(const char *dllPath)
 {
@@ -731,7 +739,7 @@ bool CGamePlayer::LoadRenderEngines(CKPluginManager *pluginManager)
         return false;
 
     const char *path = m_Config.GetPath(eRenderEnginePath);
-    if (!utils::DirectoryExists(path) || pluginManager->ParsePlugins(path) == 0)
+    if (!utils::DirectoryExists(path) || pluginManager->ParsePlugins(ToCKString(path)) == 0)
     {
         CLogger::Get().Error("Render engine parse error.");
         return false;
@@ -756,7 +764,7 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading managers from %s", path);
 
-    if (pluginManager->ParsePlugins(path) == 0)
+    if (pluginManager->ParsePlugins(ToCKString(path)) == 0)
     {
         CLogger::Get().Error("Managers parse error.");
         return false;
@@ -781,7 +789,7 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading building blocks from %s", path);
 
-    if (pluginManager->ParsePlugins(path) == 0)
+    if (pluginManager->ParsePlugins(ToCKString(path)) == 0)
     {
         CLogger::Get().Error("Behaviors parse error.");
         return false;
@@ -806,7 +814,7 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
 
     CLogger::Get().Debug("Loading plugins from %s", path);
 
-    if (pluginManager->ParsePlugins(path) == 0)
+    if (pluginManager->ParsePlugins(ToCKString(path)) == 0)
     {
         CLogger::Get().Error("Plugins parse error.");
         return false;
@@ -1689,7 +1697,7 @@ LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-INT_PTR CALLBACK CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     WORD wNotifyCode = HIWORD(wParam);
     int wID = LOWORD(wParam);
@@ -1776,7 +1784,7 @@ INT_PTR CALLBACK CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARA
     return FALSE;
 }
 
-INT_PTR CALLBACK CGamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK CGamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {

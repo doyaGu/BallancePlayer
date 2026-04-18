@@ -16,6 +16,11 @@
 
 namespace scriptutils
 {
+    inline CKSTRING ToCKString(const char *value)
+    {
+        return const_cast<CKSTRING>(value);
+    }
+
     inline CKBehaviorLink *CreateBehaviorLink(CKBehavior *script, CKBehaviorIO *in, CKBehaviorIO *out, int delay = 0)
     {
         assert(script != NULL);
@@ -533,7 +538,7 @@ namespace scriptutils
     inline CKParameterLocal *CreateLocalParameter(CKBehavior *script, const char *name = "", CKGUID type = CKPGUID_STRING)
     {
         assert(script != NULL);
-        return script->CreateLocalParameter(name, type);
+        return script->CreateLocalParameter(ToCKString(name), type);
     }
 
     template <typename T>
@@ -554,7 +559,7 @@ namespace scriptutils
     CKParameterLocal *CreateLocalParameter<const char *>(CKBehavior *script, const char *name, const char *value, CKGUID type)
     {
         CKParameterLocal *param = CreateLocalParameter(script, name, type);
-        param->SetStringValue(value);
+        param->SetStringValue(ToCKString(value));
         return param;
     }
 
@@ -648,7 +653,7 @@ namespace scriptutils
 
     inline void SetParameterString(CKParameter *param, const char *value)
     {
-        param->SetStringValue(value);
+        param->SetStringValue(ToCKString(value));
     }
 
     template <typename T>
