@@ -12,10 +12,13 @@ configure_file(
         @ONLY
 )
 
+set(CONFIG_TOOL_BAT "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.bat")
+
 set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
         PlayerOptions.h
+        ConfigDialog.h
         Splash.h
         ScriptUtils.h
         CmdlineParser.h
@@ -26,6 +29,7 @@ set(PLAYER_HEADERS
 
 set(PLAYER_SOURCES
         Player.cpp
+        ConfigDialog.cpp
         GamePlayer.cpp
         GameConfig.cpp
         PlayerOptions.cpp
@@ -50,32 +54,15 @@ target_include_directories(${PLAYER_NAME} PRIVATE
         "${_player_generated_dir}"
 )
 
-add_executable(ConfigTool
-        ConfigTool.cpp
-        GameConfig.cpp
-        Utils.cpp
-        ConfigTool.rc
-
-        ConfigTool.h
-        GameConfig.h
-        Utils.h
+add_custom_command(TARGET ${PLAYER_NAME} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "${CONFIG_TOOL_BAT}"
+                "$<TARGET_FILE_DIR:${PLAYER_NAME}>/ConfigTool.bat"
+        COMMENT "Copying ConfigTool.bat compatibility launcher"
 )
 
-set_target_properties(ConfigTool PROPERTIES
-        WIN32_EXECUTABLE TRUE
-)
-
-target_compile_definitions(ConfigTool PRIVATE
-        CONFIGTOOL_STANDALONE
-)
-
-target_link_libraries(ConfigTool PRIVATE VxMath)
-
-target_include_directories(ConfigTool PRIVATE
-        "${_player_generated_dir}"
-)
-
-install(TARGETS ${PLAYER_NAME} ConfigTool RUNTIME DESTINATION Bin)
+install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION Bin)
+install(FILES "${CONFIG_TOOL_BAT}" DESTINATION Bin)
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Kakuty")

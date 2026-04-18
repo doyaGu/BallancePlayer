@@ -9,13 +9,20 @@ CFG=Player - Win32 Debug
 !ERROR Invalid CFG "$(CFG)". Use "Player - Win32 Release" or "Player - Win32 Debug".
 !ENDIF
 
-VC6_ROOT=C:\Users\kakut\SDK\VC6
+!IF "$(VC6_ROOT)" != ""
 CPP="$(VC6_ROOT)\Bin\cl.exe"
 RSC="$(VC6_ROOT)\Bin\rc.exe"
 LINK32="$(VC6_ROOT)\Bin\link.exe"
 
 VC6_INC=/I "$(VC6_ROOT)\ATL\Include" /I "$(VC6_ROOT)\Include" /I "$(VC6_ROOT)\MFC\Include"
 VC6_LIB=/libpath:"$(VC6_ROOT)\Lib" /libpath:"$(VC6_ROOT)\MFC\Lib"
+!ELSE
+CPP=cl.exe
+RSC=rc.exe
+LINK32=link.exe
+VC6_INC=
+VC6_LIB=
+!ENDIF
 LOCAL_INC=/I "src" /I "include"
 
 !IF "$(VIRTOOLS_SDK_PATH)" != ""
@@ -42,7 +49,7 @@ RSC_PROJ=$(VC6_INC) $(LOCAL_INC) $(VIRTOOLS_INC) /l 0x409 /fo"$(INTDIR)\Player.r
 LINK32_FLAGS=CK2.lib VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib delayimp.lib /nologo /subsystem:windows /debug /machine:I386 /out:"$(OUTDIR)\Player.exe" /pdbtype:sept /delayload:CK2.dll /delayload:VxMath.dll $(VC6_LIB) $(VIRTOOLS_LIB)
 !ENDIF
 
-ALL : "$(OUTDIR)\Player.exe"
+ALL : "$(OUTDIR)\Player.exe" "$(OUTDIR)\ConfigTool.bat"
 
 CLEAN :
 	-@if exist "$(INTDIR)\*.obj" del /q "$(INTDIR)\*.obj"
@@ -64,6 +71,7 @@ CLEAN :
 
 OBJS= \
 	"$(INTDIR)\CmdlineParser.obj" \
+	"$(INTDIR)\ConfigDialog.obj" \
 	"$(INTDIR)\GameConfig.obj" \
 	"$(INTDIR)\GamePlayer.obj" \
 	"$(INTDIR)\Hotfix.obj" \
@@ -79,8 +87,14 @@ OBJS= \
 $(LINK32_FLAGS) $(OBJS)
 <<
 
+"$(OUTDIR)\ConfigTool.bat" : ".\src\ConfigTool.bat" "$(OUTDIR)"
+	copy /Y ".\src\ConfigTool.bat" "$(OUTDIR)\ConfigTool.bat"
+
 "$(INTDIR)\CmdlineParser.obj" : ".\src\CmdlineParser.cpp" "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) ".\src\CmdlineParser.cpp"
+
+"$(INTDIR)\ConfigDialog.obj" : ".\src\ConfigDialog.cpp" "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) ".\src\ConfigDialog.cpp"
 
 "$(INTDIR)\GameConfig.obj" : ".\src\GameConfig.cpp" "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) ".\src\GameConfig.cpp"

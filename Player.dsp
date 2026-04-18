@@ -100,6 +100,14 @@ SOURCE=.\src\CmdlineParser.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\ConfigDialog.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ConfigTool.bat
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\GameConfig.cpp
 # End Source File
 # Begin Source File
@@ -137,6 +145,10 @@ SOURCE=.\src\Utils.cpp
 # Begin Source File
 
 SOURCE=.\src\CmdlineParser.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ConfigDialog.h
 # End Source File
 # Begin Source File
 

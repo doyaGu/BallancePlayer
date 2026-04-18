@@ -3,11 +3,14 @@
 # Examples:
 #   nmake /f Makefile
 #   nmake /f Makefile CFG=Release
-#   nmake /f Makefile TARGET=Player CFG=Debug
+#   nmake /f Makefile CFG=Debug
 #   nmake /f Makefile clean
 
-VC6_ROOT=C:\Users\kakut\SDK\VC6
+!IF "$(VC6_ROOT)" != ""
 NMAKE="$(VC6_ROOT)\Bin\nmake.exe"
+!ELSE
+NMAKE=nmake.exe
+!ENDIF
 
 !IF "$(CFG)" == ""
 CFG=Debug
@@ -18,25 +21,17 @@ CFG=Debug
 !ENDIF
 
 !IF "$(TARGET)" == ""
-TARGET=all
+TARGET=Player
 !ENDIF
 
-!IF "$(TARGET)" == "ConfigTool"
-build : configtool
-!ELSEIF "$(TARGET)" == "Player"
+!IF "$(TARGET)" == "Player"
 build : player
 !ELSE
-build : all
+!ERROR Invalid TARGET "$(TARGET)". Use "Player".
 !ENDIF
-
-all : configtool player
-
-configtool :
-	$(NMAKE) /nologo /f ConfigTool.mak CFG="ConfigTool - Win32 $(CFG)"
 
 player :
 	$(NMAKE) /nologo /f Player.mak CFG="Player - Win32 $(CFG)"
 
 clean :
-	$(NMAKE) /nologo /f ConfigTool.mak CFG="ConfigTool - Win32 $(CFG)" CLEAN
 	$(NMAKE) /nologo /f Player.mak CFG="Player - Win32 $(CFG)" CLEAN
