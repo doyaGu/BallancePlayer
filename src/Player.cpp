@@ -17,6 +17,7 @@
 static HANDLE CreateNamedMutex();
 static void EnableDpiAwareness();
 static void UseExecutableDirectoryAsWorkingDirectory();
+static bool EnsurePersistentConfigReady(CGameConfig &config);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
@@ -44,11 +45,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     playeroptions::ApplyPathOptions(persistentConfig, parser);
 
-    if (!utils::FileOrDirectoryExists(persistentConfig.GetPath(eConfigPath)))
-    {
-        if (!ShowConfigDialog(hInstance, persistentConfig, false))
-            return -1;
-    }
+    if (!EnsurePersistentConfigReady(persistentConfig))
+        return -1;
 
     persistentConfig.LoadFromIni();
     CGameConfig runtimeConfig = persistentConfig;
@@ -134,6 +132,26 @@ static void UseExecutableDirectoryAsWorkingDirectory()
     DWORD len = ::GetModuleFileNameA(NULL, modulePath, MAX_PATH);
     if (len > 0 && len < MAX_PATH)
         utils::SetCurrentDirectoryToFileDirectory(modulePath);
+}
+
+static bool EnsurePersistentConfigReady(CGameConfig &config)
+{
+    if (!config.EnsureConfigPath())
+    {
+        ::MessageBox(NULL, TEXT("Failed to determine configuration file path."), TEXT("Error"), MB_OK | MB_ICONERROR);
+        return false;
+    }
+
+    if (utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
+        return true;
+
+    if (!config.SaveToIni())
+    {
+        ::MessageBox(NULL, TEXT("Failed to create default configuration file."), TEXT("Error"), MB_OK | MB_ICONERROR);
+        return false;
+    }
+
+    return true;
 }
 
 static void EnableDpiAwareness()
