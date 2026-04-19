@@ -156,11 +156,15 @@ function New-PlayerPackage {
 
     $playerExe = Join-Path $BinaryDir "Player.exe"
     $configToolBat = Join-Path $BinaryDir "ConfigTool.bat"
+    $configToolVbs = Join-Path $BinaryDir "ConfigTool.vbs"
     if (-not (Test-Path $playerExe)) {
         throw "Could not find Player.exe in $BinaryDir"
     }
     if (-not (Test-Path $configToolBat)) {
         throw "Could not find ConfigTool.bat next to Player.exe in $BinaryDir"
+    }
+    if (-not (Test-Path $configToolVbs)) {
+        throw "Could not find ConfigTool.vbs next to Player.exe in $BinaryDir"
     }
 
     Remove-Item -LiteralPath $stagePath -Recurse -Force -ErrorAction SilentlyContinue
@@ -169,6 +173,7 @@ function New-PlayerPackage {
 
     Copy-Item -LiteralPath $playerExe -Destination $stagePath
     Copy-Item -LiteralPath $configToolBat -Destination $stagePath
+    Copy-Item -LiteralPath $configToolVbs -Destination $stagePath
 
     foreach ($name in @("LICENSE", "README.md", "README_zh-CN.md")) {
         $path = Join-Path $RootDir $name
@@ -198,7 +203,7 @@ function New-PlayerPackage {
     Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $shaPath -Force -ErrorAction SilentlyContinue
 
-    Compress-Archive -LiteralPath $stagePath -DestinationPath $zipPath -CompressionLevel Optimal
+    Compress-Archive -LiteralPath $stagePath -DestinationPath $zipPath -CompressionLevel Optimal -Force
     $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLowerInvariant()
     Set-Content -LiteralPath $shaPath -Value "$hash  $(Split-Path -Leaf $zipPath)" -Encoding ASCII
 

@@ -1349,6 +1349,11 @@ int CGamePlayer::OnSysKeyDown(UINT uKey)
         ::PostMessage(m_MainWindow, TT_MSG_EXIT_TO_SYS, 0, 0);
         return 1;
 
+    case 'C':
+        // ALT + C -> Open the configuration dialog
+        OpenConfigDialog();
+        return 1;
+
     default:
         break;
     }
