@@ -12,7 +12,10 @@ configure_file(
         @ONLY
 )
 
-set(CONFIG_TOOL_BAT "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.bat")
+set(CONFIG_TOOL_LAUNCHERS
+        "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.bat"
+        "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.vbs"
+)
 
 set(PLAYER_HEADERS
         GamePlayer.h
@@ -56,13 +59,13 @@ target_include_directories(${PLAYER_NAME} PRIVATE
 
 add_custom_command(TARGET ${PLAYER_NAME} POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                "${CONFIG_TOOL_BAT}"
-                "$<TARGET_FILE_DIR:${PLAYER_NAME}>/ConfigTool.bat"
-        COMMENT "Copying ConfigTool.bat compatibility launcher"
+                ${CONFIG_TOOL_LAUNCHERS}
+                "$<TARGET_FILE_DIR:${PLAYER_NAME}>"
+        COMMENT "Copying ConfigTool compatibility launchers"
 )
 
 install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION Bin)
-install(FILES "${CONFIG_TOOL_BAT}" DESTINATION Bin)
+install(FILES ${CONFIG_TOOL_LAUNCHERS} DESTINATION Bin)
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Kakuty")
