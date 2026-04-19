@@ -33,6 +33,7 @@ private:
 };
 
 static HFONT g_hFonts[LANG_UI_COUNT] = {NULL};
+static const int kChineseUIFontHeight = -16;
 
 typedef struct
 {
@@ -207,25 +208,25 @@ static void InitializeFonts()
 
     // Create Chinese Font (SimSun preferred for compatibility, GB2312 charset)
     g_hFonts[LANG_UI_CHINESE] = ::CreateFont(
-        -12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        kChineseUIFontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
         GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("SimSun"));
 
     if (!g_hFonts[LANG_UI_CHINESE])
     {
-        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(-12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(kChineseUIFontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                                                  GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                                  DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("NSimSun"));
     }
     if (!g_hFonts[LANG_UI_CHINESE])
     {
-        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(-12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(kChineseUIFontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                                                  GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                                  DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Microsoft YaHei"));
     }
     if (!g_hFonts[LANG_UI_CHINESE])
     {
-        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(-12, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(kChineseUIFontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                                                  GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                                  DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("MS Sans Serif"));
     }
