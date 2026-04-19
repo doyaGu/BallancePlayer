@@ -529,16 +529,16 @@ TEST_F(UtilsTest, IniSetPixelFormat) {
 
 // Integration tests
 TEST_F(UtilsTest, IniRoundTripOperations) {
-    const char* testFile = testIniPath.string().c_str();
+    std::string testFile = testIniPath.string();
 
     // Create the test file first (some Windows INI operations need the file to exist)
     CreateTestFile(testIniPath, "");
 
     // Set various types of values
-    EXPECT_TRUE(utils::IniSetString("Test", "StringValue", "Hello World", testFile));
-    EXPECT_TRUE(utils::IniSetInteger("Test", "IntValue", 42, testFile));
-    EXPECT_TRUE(utils::IniSetBoolean("Test", "BoolValue", true, testFile));
-    EXPECT_TRUE(utils::IniSetPixelFormat("Test", "PixelValue", _32_ARGB8888, testFile));
+    EXPECT_TRUE(utils::IniSetString("Test", "StringValue", "Hello World", testFile.c_str()));
+    EXPECT_TRUE(utils::IniSetInteger("Test", "IntValue", 42, testFile.c_str()));
+    EXPECT_TRUE(utils::IniSetBoolean("Test", "BoolValue", true, testFile.c_str()));
+    EXPECT_TRUE(utils::IniSetPixelFormat("Test", "PixelValue", _32_ARGB8888, testFile.c_str()));
 
     // Read them back and verify
     char stringBuffer[256];
@@ -546,16 +546,16 @@ TEST_F(UtilsTest, IniRoundTripOperations) {
     bool boolValue;
     VX_PIXELFORMAT pixelValue;
 
-    EXPECT_TRUE(utils::IniGetString("Test", "StringValue", stringBuffer, 256, testFile));
+    EXPECT_TRUE(utils::IniGetString("Test", "StringValue", stringBuffer, 256, testFile.c_str()));
     EXPECT_STREQ(stringBuffer, "Hello World");
 
-    EXPECT_TRUE(utils::IniGetInteger("Test", "IntValue", intValue, testFile));
+    EXPECT_TRUE(utils::IniGetInteger("Test", "IntValue", intValue, testFile.c_str()));
     EXPECT_EQ(intValue, 42);
 
-    EXPECT_TRUE(utils::IniGetBoolean("Test", "BoolValue", boolValue, testFile));
+    EXPECT_TRUE(utils::IniGetBoolean("Test", "BoolValue", boolValue, testFile.c_str()));
     EXPECT_TRUE(boolValue);
 
-    EXPECT_TRUE(utils::IniGetPixelFormat("Test", "PixelValue", pixelValue, testFile));
+    EXPECT_TRUE(utils::IniGetPixelFormat("Test", "PixelValue", pixelValue, testFile.c_str()));
     EXPECT_EQ(pixelValue, _32_ARGB8888);
 }
 
@@ -583,7 +583,7 @@ TEST_F(UtilsTest, EdgeCases) {
 
 // Performance test for operations that might be slow
 TEST_F(UtilsTest, PerformanceTest) {
-    const char* testFile = testIniPath.string().c_str();
+    std::string testFile = testIniPath.string();
 
     // Create the test file first
     CreateTestFile(testIniPath, "");
@@ -595,10 +595,10 @@ TEST_F(UtilsTest, PerformanceTest) {
         std::string section = "Section" + std::to_string(i % 10);
         std::string key = "Key" + std::to_string(i);
 
-        utils::IniSetInteger(section.c_str(), key.c_str(), i, testFile);
+        utils::IniSetInteger(section.c_str(), key.c_str(), i, testFile.c_str());
 
         int value;
-        utils::IniGetInteger(section.c_str(), key.c_str(), value, testFile);
+        utils::IniGetInteger(section.c_str(), key.c_str(), value, testFile.c_str());
         EXPECT_EQ(value, i);
     }
 
