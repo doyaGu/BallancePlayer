@@ -13,17 +13,7 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version 2.0
 
-function Get-ProjectVersion {
-    param([string]$RootDir)
-
-    $cmakeLists = Join-Path $RootDir "CMakeLists.txt"
-    $content = Get-Content $cmakeLists -Raw
-    $match = [regex]::Match($content, 'project\s*\(\s*BallancePlayer[\s\S]*?VERSION\s+([0-9]+(?:\.[0-9]+)*)')
-    if (-not $match.Success) {
-        throw "Could not read project version from $cmakeLists"
-    }
-    return $match.Groups[1].Value
-}
+. "$PSScriptRoot\ProjectVersion.ps1"
 
 function Resolve-PathUnderRoot {
     param(

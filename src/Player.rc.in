@@ -1,5 +1,0 @@
-#define PLAYER_ICON_PATH "@PLAYER_SOURCE_DIR@/Player.ico"
-#define PLAYER_VERSION_RC_PATH "PlayerVersion.generated.rc"
-
-#include "PlayerResources.rc"
-#include PLAYER_VERSION_RC_PATH

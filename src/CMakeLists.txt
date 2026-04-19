@@ -7,15 +7,14 @@ configure_file(
 )
 
 configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/Player.rc.in"
-        "${_player_generated_dir}/Player.rc"
-        @ONLY
-)
-
-configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/PlayerVersion.rc.in"
         "${_player_generated_dir}/PlayerVersion.generated.rc"
         @ONLY
+)
+
+set(_player_resource_file "${CMAKE_CURRENT_SOURCE_DIR}/Player.rc")
+set_source_files_properties("${_player_resource_file}" PROPERTIES
+        COMPILE_DEFINITIONS "PLAYER_ICON_PATH=\"${PLAYER_SOURCE_DIR}/Player.ico\";PLAYER_VERSION_RC_PATH=\"PlayerVersion.generated.rc\""
 )
 
 set(CONFIG_TOOL_LAUNCHERS
@@ -47,7 +46,7 @@ set(PLAYER_SOURCES
         CmdlineParser.cpp
         Logger.cpp
         Utils.cpp
-        "${_player_generated_dir}/Player.rc"
+        "${_player_resource_file}"
 )
 
 add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
