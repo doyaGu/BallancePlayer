@@ -9,6 +9,7 @@
 #include "GameConfig.h"
 #include "GamePlayer.h"
 #include "PlayerOptions.h"
+#include "PlayerStartup.h"
 #include "Splash.h"
 #include "LockGuard.h"
 #include "Logger.h"
@@ -44,14 +45,10 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     playeroptions::ApplyPathOptions(persistentConfig, parser);
 
-    // Flush ini file if it doesn't exist
-    if (!utils::FileOrDirectoryExists(persistentConfig.GetPath(eConfigPath)))
+    if (GetStartupConfigAction(persistentConfig) == eShowInitialConfigDialog)
     {
-        if (!persistentConfig.SaveToIni())
-        {
-            ::MessageBox(NULL, TEXT("Failed to create configuration file!"), TEXT("Error"), MB_OK | MB_ICONERROR);
+        if (!ShowConfigDialog(hInstance, persistentConfig, false))
             return -1;
-        }
     }
 
     persistentConfig.LoadFromIni();
