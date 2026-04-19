@@ -267,7 +267,15 @@ namespace utils
             return UNKNOWN_PF;
 
         VX_PIXELFORMAT format = UNKNOWN_PF;
-        if (strncmp(str, "_32_ARGB8888", max) == 0)
+        if (strncmp(str, "565", max) == 0)
+            format = _16_RGB565;
+        else if (strncmp(str, "555", max) == 0)
+            format = _16_RGB555;
+        else if (strncmp(str, "1555", max) == 0)
+            format = _16_ARGB1555;
+        else if (strncmp(str, "4444", max) == 0)
+            format = _16_ARGB4444;
+        else if (strncmp(str, "_32_ARGB8888", max) == 0)
             format = _32_ARGB8888;
         else if (strncmp(str, "_32_RGB888", max) == 0)
             format = _32_RGB888;

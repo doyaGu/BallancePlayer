@@ -308,6 +308,8 @@ TEST_F(UtilsTest, String2PixelFormat) {
     EXPECT_EQ(utils::String2PixelFormat("_24_RGB888", 10), _24_RGB888);
     EXPECT_EQ(utils::String2PixelFormat("_16_RGB565", 10), _16_RGB565);
     EXPECT_EQ(utils::String2PixelFormat("_16_RGB555", 10), _16_RGB555);
+    EXPECT_EQ(utils::String2PixelFormat("565", 3), _16_RGB565);
+    EXPECT_EQ(utils::String2PixelFormat("1555", 4), _16_ARGB1555);
     EXPECT_EQ(utils::String2PixelFormat("_DXT1", 5), _DXT1);
     EXPECT_EQ(utils::String2PixelFormat("_DXT5", 5), _DXT5);
 
