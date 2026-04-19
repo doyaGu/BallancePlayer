@@ -7,6 +7,24 @@
 
 namespace
 {
+    bool ParserContainsOption(CmdlineParser &parser, const char *longopt, char shortopt, int valueCount)
+    {
+        CmdlineArg arg;
+        bool found = false;
+        while (!parser.Done())
+        {
+            if (parser.Next(arg, longopt, shortopt, valueCount))
+            {
+                found = true;
+                break;
+            }
+            parser.Skip();
+        }
+
+        parser.Reset();
+        return found;
+    }
+
     bool OptionNameEquals(const char *lhs, const char *rhs)
     {
         if (!lhs || !rhs)
@@ -62,21 +80,7 @@ namespace playeroptions
 {
     static bool HasConfigPathOption(CmdlineParser &parser)
     {
-        bool found = false;
-        CmdlineArg arg;
-
-        while (!parser.Done())
-        {
-            if (parser.Next(arg, "--config", '\0', 1))
-            {
-                found = true;
-                break;
-            }
-            parser.Skip();
-        }
-
-        parser.Reset();
-        return found;
+        return ParserContainsOption(parser, "--config", '\0', 1);
     }
 
     void ApplyPathOptions(CGameConfig &config, CmdlineParser &parser)
@@ -188,21 +192,7 @@ namespace playeroptions
 
     bool IsConfigToolMode(CmdlineParser &parser)
     {
-        bool found = false;
-        CmdlineArg arg;
-
-        while (!parser.Done())
-        {
-            if (parser.Next(arg, "--config-tool", '\0'))
-            {
-                found = true;
-                break;
-            }
-            parser.Skip();
-        }
-
-        parser.Reset();
-        return found;
+        return ParserContainsOption(parser, "--config-tool", '\0', 0);
     }
 
     bool HasConfigOption(const char *longopt, char shortopt)
