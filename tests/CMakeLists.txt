@@ -63,11 +63,3 @@ add_player_test(CmdlineParserTest
         SOURCES CmdlineParserTest.cpp
         ${PLAYER_SOURCE_DIR}/CmdlineParser.cpp
 )
-
-add_player_test(PlayerStartupTest
-        SOURCES PlayerStartupTest.cpp
-        ${PLAYER_SOURCE_DIR}/PlayerStartup.cpp
-        ${PLAYER_SOURCE_DIR}/GameConfig.cpp
-        ${PLAYER_SOURCE_DIR}/Utils.cpp
-        DEPENDENCIES VxMath
-)

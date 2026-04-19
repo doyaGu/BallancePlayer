@@ -20,7 +20,6 @@ set(CONFIG_TOOL_LAUNCHERS
 set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
-        PlayerStartup.h
         PlayerOptions.h
         ConfigDialog.h
         Splash.h
@@ -36,7 +35,6 @@ set(PLAYER_SOURCES
         ConfigDialog.cpp
         GamePlayer.cpp
         GameConfig.cpp
-        PlayerStartup.cpp
         PlayerOptions.cpp
         Hotfix.cpp
         Splash.cpp

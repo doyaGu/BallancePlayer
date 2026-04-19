@@ -9,7 +9,6 @@
 #include "GameConfig.h"
 #include "GamePlayer.h"
 #include "PlayerOptions.h"
-#include "PlayerStartup.h"
 #include "Splash.h"
 #include "LockGuard.h"
 #include "Logger.h"
@@ -45,7 +44,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     playeroptions::ApplyPathOptions(persistentConfig, parser);
 
-    if (GetStartupConfigAction(persistentConfig) == eShowInitialConfigDialog)
+    if (!utils::FileOrDirectoryExists(persistentConfig.GetPath(eConfigPath)))
     {
         if (!ShowConfigDialog(hInstance, persistentConfig, false))
             return -1;
