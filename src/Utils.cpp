@@ -86,6 +86,35 @@ namespace utils
         return true;
     }
 
+    bool GetFileDirectory(char *buffer, size_t size, const char *filename, bool trailing)
+    {
+        if (!buffer || size == 0 || !filename || filename[0] == '\0')
+            return false;
+
+        const char *lastSep = FindLastPathSeparator(filename);
+        if (!lastSep)
+            return false;
+
+        size_t len = static_cast<size_t>(lastSep - filename);
+        if (trailing)
+            ++len;
+
+        if (len + 1 > size)
+            return false;
+
+        memcpy(buffer, filename, len);
+        buffer[len] = '\0';
+        return true;
+    }
+
+    bool SetCurrentDirectoryToFileDirectory(const char *filename)
+    {
+        char dir[MAX_PATH];
+        if (!GetFileDirectory(dir, MAX_PATH, filename))
+            return false;
+        return ::SetCurrentDirectoryA(dir) != 0;
+    }
+
     char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2)
     {
         if (!buffer)

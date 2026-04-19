@@ -14,6 +14,8 @@ namespace utils
 
     bool IsAbsolutePath(const char *path);
     bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing = false);
+    bool GetFileDirectory(char *buffer, size_t size, const char *filename, bool trailing = true);
+    bool SetCurrentDirectoryToFileDirectory(const char *filename);
 
     char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2);
 

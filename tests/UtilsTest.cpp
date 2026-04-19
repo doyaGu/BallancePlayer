@@ -184,6 +184,41 @@ TEST_F(UtilsTest, FindLastPathSeparator) {
     EXPECT_EQ(utils::FindLastPathSeparator(""), nullptr);
 }
 
+TEST_F(UtilsTest, GetFileDirectory) {
+    char buffer[MAX_PATH];
+
+    EXPECT_TRUE(utils::GetFileDirectory(buffer, sizeof(buffer), "C:\\Games\\Ballance\\Bin\\Player.exe"));
+    EXPECT_STREQ(buffer, "C:\\Games\\Ballance\\Bin\\");
+
+    EXPECT_TRUE(utils::GetFileDirectory(buffer, sizeof(buffer), "C:/Games/Ballance/Bin/Player.exe"));
+    EXPECT_STREQ(buffer, "C:/Games/Ballance/Bin/");
+
+    EXPECT_TRUE(utils::GetFileDirectory(buffer, sizeof(buffer), "C:\\Games\\Ballance\\Bin\\Player.exe", false));
+    EXPECT_STREQ(buffer, "C:\\Games\\Ballance\\Bin");
+
+    EXPECT_FALSE(utils::GetFileDirectory(buffer, sizeof(buffer), "Player.exe"));
+    EXPECT_FALSE(utils::GetFileDirectory(nullptr, sizeof(buffer), "C:\\Player.exe"));
+    EXPECT_FALSE(utils::GetFileDirectory(buffer, 3, "C:\\Player.exe"));
+}
+
+TEST_F(UtilsTest, SetCurrentDirectoryToFileDirectory) {
+    char originalDir[MAX_PATH];
+    ASSERT_GT(utils::GetCurrentPath(originalDir, sizeof(originalDir)), 0);
+
+    fs::path exeDir = testDir / "Bin";
+    fs::create_directories(exeDir);
+    fs::path fakeExe = exeDir / "Player.exe";
+    CreateTestFile(fakeExe);
+
+    ASSERT_TRUE(utils::SetCurrentDirectoryToFileDirectory(fakeExe.string().c_str()));
+
+    char currentDir[MAX_PATH];
+    ASSERT_GT(utils::GetCurrentPath(currentDir, sizeof(currentDir)), 0);
+    EXPECT_EQ(fs::weakly_canonical(currentDir), fs::weakly_canonical(exeDir));
+
+    ASSERT_TRUE(::SetCurrentDirectoryA(originalDir));
+}
+
 TEST_F(UtilsTest, HasTrailingPathSeparator) {
     // Test with trailing backslash
     EXPECT_TRUE(utils::HasTrailingPathSeparator("C:\\path\\"));
