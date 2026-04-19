@@ -1229,7 +1229,7 @@ bool CGamePlayer::OpenAboutDialog()
 bool CGamePlayer::OpenConfigDialog()
 {
     ReleaseCursorClip();
-    bool saved = ShowConfigDialog(m_hInstance, m_PersistentConfig, true);
+    bool saved = ShowConfigDialog(m_hInstance, m_PersistentConfig, false);
     ClipCursor();
 
     if (saved)
