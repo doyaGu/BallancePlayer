@@ -17,7 +17,7 @@
 static HANDLE CreateNamedMutex();
 static void EnableDpiAwareness();
 static void UseExecutableDirectoryAsWorkingDirectory();
-static bool EnsurePersistentConfigReady(CGameConfig &config);
+static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
@@ -45,7 +45,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     playeroptions::ApplyPathOptions(persistentConfig, parser);
 
-    if (!EnsurePersistentConfigReady(persistentConfig))
+    if (!EnsurePersistentConfigReady(hInstance, persistentConfig))
         return -1;
 
     persistentConfig.LoadFromIni();
@@ -134,7 +134,7 @@ static void UseExecutableDirectoryAsWorkingDirectory()
         utils::SetCurrentDirectoryToFileDirectory(modulePath);
 }
 
-static bool EnsurePersistentConfigReady(CGameConfig &config)
+static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config)
 {
     if (!config.EnsureConfigPath())
     {
@@ -145,13 +145,7 @@ static bool EnsurePersistentConfigReady(CGameConfig &config)
     if (utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
         return true;
 
-    if (!config.SaveToIni())
-    {
-        ::MessageBox(NULL, TEXT("Failed to create default configuration file."), TEXT("Error"), MB_OK | MB_ICONERROR);
-        return false;
-    }
-
-    return true;
+    return ShowConfigDialog(hInstance, config, false);
 }
 
 static void EnableDpiAwareness()
