@@ -4,11 +4,16 @@
 
 #include <ctype.h>
 #include <stdio.h>
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+
+static const char *const DefaultPaths[] = {
+#define X_PATH(category, defaultPath, cliLong, validateDir) defaultPath,
+    GAMECONFIG_PATH_FIELDS
+#undef X_PATH
+};
 
 static bool GetLastWriteTime(const char *filename, FILETIME &outTime)
 {
@@ -26,27 +31,122 @@ static bool SameFileTimeComponents(const FILETIME &timeValue, DWORD low, DWORD h
     return (timeValue.dwLowDateTime == low) && (timeValue.dwHighDateTime == high);
 }
 
-static const char *const DefaultPaths[] = {
-#define X_PATH(category, defaultPath, cliLong, validateDir) defaultPath,
-    GAMECONFIG_PATH_FIELDS
-#undef X_PATH
-};
+static bool SamePathIgnoreCase(const char *lhs, const char *rhs)
+{
+    if (!lhs || !rhs)
+        return false;
+    while (*lhs && *rhs)
+    {
+        if (toupper(static_cast<unsigned char>(*lhs++)) != toupper(static_cast<unsigned char>(*rhs++)))
+            return false;
+    }
+    return *lhs == '\0' && *rhs == '\0';
+}
 
-static std::string SerializeInt(int value)
+static bool ResolveAbsolutePath(const char *path, std::string &outPath)
+{
+    char buffer[MAX_PATH];
+    if (!utils::GetAbsolutePath(buffer, MAX_PATH, path, false))
+        return false;
+    outPath = buffer;
+    return true;
+}
+
+static bool ResolveDefaultConfigPath(std::string &outPath)
+{
+    char modulePath[MAX_PATH];
+    DWORD length = ::GetModuleFileNameA(NULL, modulePath, MAX_PATH);
+    if (length > 0 && length < MAX_PATH)
+    {
+        char dir[MAX_PATH];
+        if (utils::GetFileDirectory(dir, MAX_PATH, modulePath, true))
+        {
+            char path[MAX_PATH];
+            utils::ConcatPath(path, MAX_PATH, dir, DefaultPaths[eConfigPath]);
+            outPath = path;
+            return true;
+        }
+    }
+    return ResolveAbsolutePath(DefaultPaths[eConfigPath], outPath);
+}
+
+static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
+                              std::string &outPath, bool *shouldUpdateStoredPath)
+{
+    if (!requestedPath)
+        return false;
+
+    outPath.erase();
+    bool updateStoredPath = false;
+    const char *pathToResolve = requestedPath;
+    if (requestedPath[0] == '\0')
+    {
+        if (!storedPath || storedPath[0] == '\0')
+        {
+            if (!ResolveDefaultConfigPath(outPath))
+                return false;
+            updateStoredPath = true;
+        }
+        else
+        {
+            pathToResolve = storedPath;
+            updateStoredPath = true;
+        }
+    }
+
+    if (outPath.empty() && !ResolveAbsolutePath(pathToResolve, outPath))
+        return false;
+
+    if (!updateStoredPath && storedPath && storedPath[0] != '\0')
+    {
+        std::string storedResolvedPath;
+        updateStoredPath = ResolveAbsolutePath(storedPath, storedResolvedPath) &&
+                           SamePathIgnoreCase(outPath.c_str(), storedResolvedPath.c_str());
+    }
+
+    if (shouldUpdateStoredPath)
+        *shouldUpdateStoredPath = updateStoredPath;
+    return true;
+}
+
+static std::string SerializeValue(int value)
 {
     char buffer[64];
     sprintf(buffer, "%d", value);
     return buffer;
 }
 
-static std::string SerializeBool(bool value)
+static std::string SerializeValue(bool value)
 {
     return value ? "1" : "0";
 }
 
-static std::string SerializePixel(VX_PIXELFORMAT value)
+static std::string SerializeValue(VX_PIXELFORMAT value)
 {
     return utils::PixelFormat2String(value);
+}
+
+static bool ReadFieldValue(const char *section, const char *key, bool &value, const char *filename)
+{
+    return utils::IniGetBoolean(section, key, value, filename);
+}
+
+static bool ReadFieldValue(const char *section, const char *key, int &value, const char *filename)
+{
+    return utils::IniGetInteger(section, key, value, filename);
+}
+
+static bool ReadFieldValue(const char *section, const char *key, VX_PIXELFORMAT &value, const char *filename)
+{
+    return utils::IniGetPixelFormat(section, key, value, filename);
+}
+
+template <typename TValue>
+static void LoadFieldValue(const char *section, const char *key, TValue &member, const char *filename)
+{
+    TValue value = member;
+    if (ReadFieldValue(section, key, value, filename))
+        member = value;
 }
 
 CGameConfig::CGameConfig()
@@ -162,28 +262,28 @@ bool CGameConfig::ResetPath(PathCategory category)
     return true;
 }
 
+bool CGameConfig::EnsureConfigPath()
+{
+    std::string path;
+    if (!ResolveConfigPath("", m_Paths[eConfigPath].c_str(), path, NULL))
+        return false;
+
+    SetPath(eConfigPath, path.c_str());
+    return true;
+}
+
 void CGameConfig::LoadFromIni(const char *filename)
 {
-    if (!filename)
+    std::string path;
+    bool updateStoredPath = false;
+    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].c_str(), path, &updateStoredPath))
         return;
 
-    bool usingConfigPath = false;
-    if (filename[0] == '\0')
-    {
-        if (m_Paths[eConfigPath].size() == 0 || !utils::FileOrDirectoryExists(m_Paths[eConfigPath].c_str()))
-            return;
-        filename = m_Paths[eConfigPath].c_str();
-        usingConfigPath = true;
-    }
+    filename = path.c_str();
+    if (!utils::FileOrDirectoryExists(filename))
+        return;
 
-    char path[MAX_PATH];
-    if (!utils::IsAbsolutePath(filename))
-    {
-        utils::GetCurrentPath(path, MAX_PATH);
-        utils::ConcatPath(path, MAX_PATH, path, filename);
-        filename = path;
-    }
-    if (usingConfigPath)
+    if (updateStoredPath)
         SetPath(eConfigPath, filename);
 
     ResetFieldSnapshots();
@@ -200,28 +300,13 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     // Auto-generated loading from master list
     #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
-        do { \
-            bool tmp = member; \
-            if (utils::IniGetBoolean(sec, key, tmp, filename)) { \
-                member = tmp; \
-            } \
-        } while(0);
+        LoadFieldValue(sec, key, member, filename);
 
     #define X_INT(sec,key,member,def,cliLong,cliShort) \
-        do { \
-            int tmp = member; \
-            if (utils::IniGetInteger(sec, key, tmp, filename)) { \
-                member = tmp; \
-            } \
-        } while(0);
+        LoadFieldValue(sec, key, member, filename);
 
     #define X_PF(sec,key,member,def,cliLong,cliShort) \
-        do { \
-            VX_PIXELFORMAT tmp = member; \
-            if (utils::IniGetPixelFormat(sec, key, tmp, filename)) { \
-                member = tmp; \
-            } \
-        } while(0);
+        LoadFieldValue(sec, key, member, filename);
 
         GAMECONFIG_FIELDS
 
@@ -229,31 +314,18 @@ void CGameConfig::LoadFromIni(const char *filename)
     #undef X_INT
     #undef X_PF
 
-    CaptureCurrentValuesAsLoaded();
+    CaptureFieldValuesAsLoaded();
 }
 
 bool CGameConfig::SaveToIni(const char *filename)
 {
-    if (!filename)
+    std::string path;
+    bool updateStoredPath = false;
+    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].c_str(), path, &updateStoredPath))
         return false;
 
-    bool usingConfigPath = false;
-    if (filename[0] == '\0')
-    {
-        if (m_Paths[eConfigPath].size() == 0)
-            return false;
-        filename = m_Paths[eConfigPath].c_str();
-        usingConfigPath = true;
-    }
-
-    char path[MAX_PATH];
-    if (!utils::IsAbsolutePath(filename))
-    {
-        utils::GetCurrentPath(path, MAX_PATH);
-        utils::ConcatPath(path, MAX_PATH, path, filename);
-        filename = path;
-    }
-    if (usingConfigPath)
+    filename = path.c_str();
+    if (updateStoredPath)
         SetPath(eConfigPath, filename);
 
     bool shouldMerge = false;
@@ -284,7 +356,7 @@ bool CGameConfig::SaveToIni(const char *filename)
     if (!ok)
         return false;
 
-    CapturePersistedValuesAsLoaded();
+    CaptureFieldValuesAsLoaded();
 
     if (GetLastWriteTime(filename, fileTime))
     {
@@ -332,16 +404,24 @@ bool CGameConfig::CanAcceptExternalChange(int index, const std::string &currentV
     return m_FieldSnapshots[index].loadedValue == currentValue;
 }
 
-void CGameConfig::CapturePersistedValuesAsLoaded()
+bool CGameConfig::TryAcceptExternalValue(int index, const std::string &currentValue, const std::string &externalValue)
+{
+    if (!CanAcceptExternalChange(index, currentValue))
+        return false;
+    StoreLoadedValue(index, externalValue);
+    return true;
+}
+
+void CGameConfig::CaptureFieldValuesAsLoaded()
 {
     #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
-        StoreLoadedValue(eLoadedBool_##member, SerializeBool(member));
+        CaptureFieldValueAsLoaded(eLoadedBool_##member, member);
 
     #define X_INT(sec,key,member,def,cliLong,cliShort) \
-        StoreLoadedValue(eLoadedInt_##member, SerializeInt(member));
+        CaptureFieldValueAsLoaded(eLoadedInt_##member, member);
 
     #define X_PF(sec,key,member,def,cliLong,cliShort) \
-        StoreLoadedValue(eLoadedPixel_##member, SerializePixel(member));
+        CaptureFieldValueAsLoaded(eLoadedPixel_##member, member);
 
         GAMECONFIG_FIELDS
 
@@ -350,66 +430,56 @@ void CGameConfig::CapturePersistedValuesAsLoaded()
     #undef X_PF
 }
 
-void CGameConfig::CaptureCurrentValuesAsLoaded()
+template <typename TValue>
+void CGameConfig::CaptureFieldValueAsLoaded(int index, const TValue &value)
 {
-    // Auto-generated snapshot capture from master list
-    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
-        StoreLoadedValue(eLoadedBool_##member, SerializeBool(member));
+    StoreLoadedValue(index, SerializeValue(value));
+}
 
-    #define X_INT(sec,key,member,def,cliLong,cliShort) \
-        StoreLoadedValue(eLoadedInt_##member, SerializeInt(member));
+void CGameConfig::MergeExternalFieldValue(const char *filename, const char *section, const char *key,
+                                          bool &member, int index)
+{
+    bool externalValue;
+    if (!ReadFieldValue(section, key, externalValue, filename))
+        return;
 
-    #define X_PF(sec,key,member,def,cliLong,cliShort) \
-        StoreLoadedValue(eLoadedPixel_##member, SerializePixel(member));
+    if (TryAcceptExternalValue(index, SerializeValue(member), SerializeValue(externalValue)))
+        member = externalValue;
+}
 
-        GAMECONFIG_FIELDS
+void CGameConfig::MergeExternalFieldValue(const char *filename, const char *section, const char *key,
+                                          int &member, int index)
+{
+    int externalValue;
+    if (!ReadFieldValue(section, key, externalValue, filename))
+        return;
 
-    #undef X_BOOL
-    #undef X_INT
-    #undef X_PF
+    if (TryAcceptExternalValue(index, SerializeValue(member), SerializeValue(externalValue)))
+        member = externalValue;
+}
+
+void CGameConfig::MergeExternalFieldValue(const char *filename, const char *section, const char *key,
+                                          VX_PIXELFORMAT &member, int index)
+{
+    VX_PIXELFORMAT externalValue;
+    if (!ReadFieldValue(section, key, externalValue, filename))
+        return;
+
+    if (TryAcceptExternalValue(index, SerializeValue(member), SerializeValue(externalValue)))
+        member = externalValue;
 }
 
 void CGameConfig::MergeExternalChanges(const char *filename)
 {
     // Auto-generated merging from master list
     #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
-        do { \
-            bool tmp; \
-            if (utils::IniGetBoolean(sec, key, tmp, filename)) { \
-                std::string currentValue = SerializeBool(member); \
-                std::string externalValue = SerializeBool(tmp); \
-                if (CanAcceptExternalChange(eLoadedBool_##member, currentValue)) { \
-                    member = tmp; \
-                    StoreLoadedValue(eLoadedBool_##member, externalValue); \
-                } \
-            } \
-        } while(0);
+        MergeExternalFieldValue(filename, sec, key, member, eLoadedBool_##member);
 
     #define X_INT(sec,key,member,def,cliLong,cliShort) \
-        do { \
-            int tmp; \
-            if (utils::IniGetInteger(sec, key, tmp, filename)) { \
-                std::string currentValue = SerializeInt(member); \
-                std::string externalValue = SerializeInt(tmp); \
-                if (CanAcceptExternalChange(eLoadedInt_##member, currentValue)) { \
-                    member = tmp; \
-                    StoreLoadedValue(eLoadedInt_##member, externalValue); \
-                } \
-            } \
-        } while(0);
+        MergeExternalFieldValue(filename, sec, key, member, eLoadedInt_##member);
 
     #define X_PF(sec,key,member,def,cliLong,cliShort) \
-        do { \
-            VX_PIXELFORMAT tmp; \
-            if (utils::IniGetPixelFormat(sec, key, tmp, filename)) { \
-                std::string currentValue = SerializePixel(member); \
-                std::string externalValue = SerializePixel(tmp); \
-                if (CanAcceptExternalChange(eLoadedPixel_##member, currentValue)) { \
-                    member = tmp; \
-                    StoreLoadedValue(eLoadedPixel_##member, externalValue); \
-                } \
-            } \
-        } while(0);
+        MergeExternalFieldValue(filename, sec, key, member, eLoadedPixel_##member);
 
         GAMECONFIG_FIELDS
 
@@ -428,21 +498,8 @@ void CGameConfig::SetLastConfigAbsolutePath(const char *path)
 
 bool CGameConfig::IsSameConfigPath(const char *path) const
 {
-    if (!path)
-        return false;
-    if (m_LastConfigAbsolutePath.size() == 0)
+    if (!path || m_LastConfigAbsolutePath.size() == 0)
         return false;
 
-    const char *stored = m_LastConfigAbsolutePath.c_str();
-    while (*stored && *path)
-    {
-        unsigned char c1 = static_cast<unsigned char>(*stored);
-        unsigned char c2 = static_cast<unsigned char>(*path);
-        if (toupper(c1) != toupper(c2))
-            return false;
-        ++stored;
-        ++path;
-    }
-
-    return (*stored == '\0') && (*path == '\0');
+    return SamePathIgnoreCase(m_LastConfigAbsolutePath.c_str(), path);
 }

@@ -153,6 +153,21 @@ TEST_F(GameConfigTest, PathManagement) {
     EXPECT_STREQ(config.GetPath(eConfigPath), "Player.ini");
 }
 
+TEST_F(GameConfigTest, EnsureConfigPathNormalizesStoredRelativePath) {
+    fs::path originalCwd = fs::current_path();
+    fs::current_path(testDir);
+
+    CGameConfig config;
+    config.SetPath(eConfigPath, testIniPath.filename().string().c_str());
+
+    bool ensured = config.EnsureConfigPath();
+
+    fs::current_path(originalCwd);
+
+    ASSERT_TRUE(ensured);
+    EXPECT_EQ(fs::path(config.GetPath(eConfigPath)), fs::absolute(testIniPath));
+}
+
 // Test loading from INI file
 TEST_F(GameConfigTest, LoadFromIni) {
     std::string iniContent = R"(
@@ -380,6 +395,33 @@ TEST_F(GameConfigTest, SaveAfterLoadUsesResolvedConfigPathWhenCurrentDirectoryCh
     CGameConfig savedConfig;
     savedConfig.LoadFromIni(testIniPath.string().c_str());
     EXPECT_EQ(savedConfig.width, 1280);
+    EXPECT_FALSE(fs::exists(otherDir / testIniPath.filename()));
+}
+
+TEST_F(GameConfigTest, ExplicitLoadUsingStoredConfigPathResolvesPathForLaterWrites) {
+    CreateTestIni("[Graphics]\nWidth=640\nHeight=480\n");
+    fs::path otherDir = testDir / "other";
+    fs::create_directories(otherDir);
+
+    fs::path originalCwd = fs::current_path();
+    fs::current_path(testDir);
+
+    CGameConfig config;
+    config.SetPath(eConfigPath, testIniPath.filename().string().c_str());
+    config.LoadFromIni(config.GetPath(eConfigPath));
+
+    fs::current_path(otherDir);
+    config.width = 1440;
+    bool saved = config.SaveToIni();
+
+    fs::current_path(originalCwd);
+
+    ASSERT_TRUE(saved);
+    EXPECT_EQ(fs::path(config.GetPath(eConfigPath)), fs::absolute(testIniPath));
+
+    CGameConfig savedConfig;
+    savedConfig.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_EQ(savedConfig.width, 1440);
     EXPECT_FALSE(fs::exists(otherDir / testIniPath.filename()));
 }
 

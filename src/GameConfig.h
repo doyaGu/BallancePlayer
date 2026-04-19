@@ -116,6 +116,7 @@ public:
     const char *GetPath(PathCategory category) const;
     void SetPath(PathCategory category, const char *path);
     bool ResetPath(PathCategory category = ePathCategoryCount);
+    bool EnsureConfigPath();
 
     void LoadFromIni(const char *filename = "");
     bool SaveToIni(const char *filename = "");
@@ -151,8 +152,13 @@ private:
     void ResetFieldSnapshots();
     void StoreLoadedValue(int index, const std::string &value);
     bool CanAcceptExternalChange(int index, const std::string &currentValue) const;
-    void CapturePersistedValuesAsLoaded();
-    void CaptureCurrentValuesAsLoaded();
+    bool TryAcceptExternalValue(int index, const std::string &currentValue, const std::string &externalValue);
+    void CaptureFieldValuesAsLoaded();
+    template <typename TValue>
+    void CaptureFieldValueAsLoaded(int index, const TValue &value);
+    void MergeExternalFieldValue(const char *filename, const char *section, const char *key, bool &member, int index);
+    void MergeExternalFieldValue(const char *filename, const char *section, const char *key, int &member, int index);
+    void MergeExternalFieldValue(const char *filename, const char *section, const char *key, VX_PIXELFORMAT &member, int index);
     void MergeExternalChanges(const char *filename);
     void SetLastConfigAbsolutePath(const char *path);
     bool IsSameConfigPath(const char *path) const;

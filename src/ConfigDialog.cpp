@@ -370,87 +370,6 @@ static void UpdateDialogLanguage(HWND hDlg)
     ::UpdateWindow(hDlg);
 }
 
-// Configuration File Handling
-
-static BOOL SetConfigPath(CGameConfig &config)
-{
-    TCHAR modulePath[MAX_PATH];
-    char configPath[MAX_PATH];
-
-    // Try <ExeDirectory>\Player.ini
-    DWORD dwResult = ::GetModuleFileName(NULL, modulePath, MAX_PATH);
-    if (dwResult > 0 && dwResult < MAX_PATH)
-    {
-        modulePath[dwResult] = TEXT('\0');
-
-        // Find last path separator
-        TCHAR *lastSlash = _tcsrchr(modulePath, TEXT('\\'));
-        if (!lastSlash)
-            lastSlash = _tcsrchr(modulePath, TEXT('/'));
-
-        if (lastSlash)
-        {
-            *(lastSlash + 1) = TEXT('\0');
-
-            // Convert to narrow string for config path
-#ifdef UNICODE
-            char ansiModulePath[MAX_PATH];
-            utils::WcharToChar(modulePath, ansiModulePath, MAX_PATH);
-            sprintf(configPath, "%sPlayer.ini", ansiModulePath);
-#else
-            sprintf(configPath, "%sPlayer.ini", modulePath);
-#endif
-            config.SetPath(eConfigPath, configPath);
-            return TRUE;
-        }
-    }
-
-    // Fallback: <CurrentWorkingDirectory>\Player.ini
-    TCHAR currentDir[MAX_PATH];
-    if (::GetCurrentDirectory(MAX_PATH, currentDir))
-    {
-        size_t len = _tcslen(currentDir);
-        if (len > 0)
-        {
-            // Ensure trailing backslash
-            if (currentDir[len - 1] != TEXT('\\') && currentDir[len - 1] != TEXT('/'))
-            {
-                if (len + 1 < MAX_PATH)
-                {
-                    currentDir[len] = TEXT('\\');
-                    currentDir[len + 1] = TEXT('\0');
-                }
-                else
-                {
-                    config.SetPath(eConfigPath, "Player.ini");
-                    return FALSE;
-                }
-            }
-            else if (len + 10 >= MAX_PATH)
-            {
-                config.SetPath(eConfigPath, "Player.ini");
-                return FALSE;
-            }
-
-            // Convert to narrow string for config path
-#ifdef UNICODE
-            char ansiCurrentDir[MAX_PATH];
-            utils::WcharToChar(currentDir, ansiCurrentDir, MAX_PATH);
-            sprintf(configPath, "%sPlayer.ini", ansiCurrentDir);
-#else
-            sprintf(configPath, "%sPlayer.ini", currentDir);
-#endif
-
-            config.SetPath(eConfigPath, configPath);
-            return TRUE;
-        }
-    }
-
-    // Last resort: relative "Player.ini"
-    config.SetPath(eConfigPath, "Player.ini");
-    return FALSE;
-}
-
 static int GetDlgItemIntSafe(HWND hDlg, int nIDDlgItem, int defaultVal)
 {
     TCHAR buffer[64];
@@ -658,8 +577,15 @@ static bool SaveUILanguageToIni(const char *iniPath)
 
 static bool SaveDialogConfig(HWND hDlg, CGameConfig &config)
 {
+    if (!config.SaveToIni())
+    {
+        ::MessageBox(hDlg, StringResource::GetString(IDS_ERR_CANNOT_SAVE),
+                     StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
+        return false;
+    }
+
     const char *configPath = config.GetPath(eConfigPath);
-    if (!config.SaveToIni(configPath) || !SaveUILanguageToIni(configPath))
+    if (!SaveUILanguageToIni(configPath))
     {
         ::MessageBox(hDlg, StringResource::GetString(IDS_ERR_CANNOT_SAVE),
                      StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
@@ -796,16 +722,13 @@ bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
         return false;
     }
 
-    // Ensure config path is set, determine if necessary
-    const char *configPath = config.GetPath(eConfigPath);
-    if (!configPath || !*configPath)
+    if (!config.EnsureConfigPath())
     {
-        if (!SetConfigPath(config))
-        {
-            ::MessageBox(NULL, StringResource::GetString(IDS_WARN_CONFIG_PATH), StringResource::GetString(IDS_WARN_CONFIG_TITLE), MB_OK | MB_ICONWARNING);
-        }
-        configPath = config.GetPath(eConfigPath); // Get potentially updated path
+        ::MessageBox(NULL, StringResource::GetString(IDS_WARN_CONFIG_PATH), StringResource::GetString(IDS_WARN_CONFIG_TITLE), MB_OK | MB_ICONWARNING);
+        return false;
     }
+
+    const char *configPath = config.GetPath(eConfigPath);
 
     if (loadIni)
     {
