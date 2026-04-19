@@ -636,10 +636,10 @@ static void LoadUILanguageFromIni(const char *iniPath)
     }
 }
 
-static void SaveUILanguageToIni(const char *iniPath)
+static bool SaveUILanguageToIni(const char *iniPath)
 {
     if (!iniPath || *iniPath == '\0')
-        return;
+        return false;
 
     TCHAR buffer[16];
     _stprintf(buffer, TEXT("%d"), StringResource::GetLanguage());
@@ -652,7 +652,20 @@ static void SaveUILanguageToIni(const char *iniPath)
     strcpy(tIniPath, iniPath);
 #endif
 
-    ::WritePrivateProfileString(TEXT("Interface"), TEXT("UILanguage"), buffer, tIniPath);
+    return ::WritePrivateProfileString(TEXT("Interface"), TEXT("UILanguage"), buffer, tIniPath) != 0;
+}
+
+static bool SaveDialogConfig(HWND hDlg, CGameConfig &config)
+{
+    const char *configPath = config.GetPath(eConfigPath);
+    if (!config.SaveToIni(configPath) || !SaveUILanguageToIni(configPath))
+    {
+        ::MessageBox(hDlg, StringResource::GetString(IDS_ERR_CANNOT_SAVE),
+                     StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
+        return false;
+    }
+
+    return true;
 }
 
 // Dialog Procedure
@@ -708,7 +721,8 @@ BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
             if (pConfig)
             {
                 SaveDialogToConfig(hDlg, *pConfig); // Save UI state to config object
-                SaveUILanguageToIni(pConfig->GetPath(eConfigPath)); // Save UI language selection
+                if (!SaveDialogConfig(hDlg, *pConfig))
+                    return TRUE; // Keep dialog open so the user can retry or cancel
                 CleanupFonts();
                 ::EndDialog(hDlg, IDOK);
             }
@@ -804,10 +818,7 @@ bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
     // Show the modal dialog
     INT_PTR result = ::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_CONFIG), NULL, ConfigDlgProc, (LPARAM)&config);
     if (result == IDOK)
-    {
-        config.SaveToIni(configPath); // Save config object state to INI
         return true; // Success
-    }
     else if (result == -1)
     {
         // Dialog creation failed
