@@ -1,7 +1,13 @@
 cmake_minimum_required(VERSION 3.12)
 
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" BALLANCE_PLAYER_VERSION)
+string(STRIP "${BALLANCE_PLAYER_VERSION}" BALLANCE_PLAYER_VERSION)
+if (NOT BALLANCE_PLAYER_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "VERSION must contain a numeric four-part version, got '${BALLANCE_PLAYER_VERSION}'")
+endif ()
+
 project(BallancePlayer
-        VERSION 0.3.8.0
+        VERSION ${BALLANCE_PLAYER_VERSION}
         DESCRIPTION "The brand-new player for Ballance"
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
 )

@@ -49,6 +49,7 @@ FONT 8, "MS Sans Serif"
 BEGIN
     CTEXT           "The Brand New Ballance Player",-1,0,10,150,8
     CTEXT           "By Kakuty",-1,0,20,150,8
+    CTEXT           "Version @PROJECT_VERSION@",-1,0,30,150,8
     DEFPUSHBUTTON   "OK",IDOK,60,35,30,15,WS_GROUP
 END
 
