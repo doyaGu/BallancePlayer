@@ -10,6 +10,7 @@
 IDR_ACCEL ACCELERATORS MOVEABLE PURE 
 BEGIN
     "/",            IDM_APP_ABOUT,          ASCII,  ALT
+    "C",            IDM_APP_CONFIG,         ASCII,  ALT
 END
 
 /////////////////////////////////////////////////////////////////////////////
@@ -394,5 +395,13 @@ BEGIN
     IDS_CN_WARN_CONFIG_TITLE "配置路径警告"
 END
 
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDS_RESTART_REQUIRED    "Configuration saved. Changes will take effect after restarting the game."
+    IDS_RESTART_REQUIRED_TITLE "Restart Required"
+    IDS_CN_RESTART_REQUIRED "配置已保存。更改将在重新启动游戏后生效。"
+    IDS_CN_RESTART_REQUIRED_TITLE "需要重新启动"
+END
 #endif    // Chinese (P.R.C.) resources
 /////////////////////////////////////////////////////////////////////////////

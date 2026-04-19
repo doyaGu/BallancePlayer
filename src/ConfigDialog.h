@@ -10,5 +10,6 @@
 class CGameConfig;
 
 bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni = true);
+void ShowConfigRestartRequiredMessage(HWND owner);
 
 #endif // PLAYER_CONFIGDIALOG_H

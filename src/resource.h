@@ -6,6 +6,7 @@
 #define IDI_PLAYER                      106
 #define IDR_ACCEL                       128
 #define IDM_APP_ABOUT                   129
+#define IDM_APP_CONFIG                  133
 #define IDD_FULLSCREEN_SETUP            130
 #define IDD_ABOUT                       131
 #define IDD_CONFIG                      132
@@ -79,6 +80,8 @@
 #define IDS_ERR_CONFIG_TITLE            1066
 #define IDS_WARN_CONFIG_PATH            1067
 #define IDS_WARN_CONFIG_TITLE           1068
+#define IDS_RESTART_REQUIRED            1069
+#define IDS_RESTART_REQUIRED_TITLE      1070
 
 // Config dialog string table IDs, Chinese (2000-2999)
 #define IDS_CN_DIALOG_TITLE             2000
@@ -147,6 +150,8 @@
 #define IDS_CN_ERR_CONFIG_TITLE         2066
 #define IDS_CN_WARN_CONFIG_PATH         2067
 #define IDS_CN_WARN_CONFIG_TITLE        2068
+#define IDS_CN_RESTART_REQUIRED         2069
+#define IDS_CN_RESTART_REQUIRED_TITLE   2070
 
 // Config dialog controls
 #define IDC_BUTTON_DEFAULTS             2000

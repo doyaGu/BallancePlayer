@@ -834,3 +834,15 @@ bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
         return false; // Cancelled or failed
     }
 }
+
+void ShowConfigRestartRequiredMessage(HWND owner)
+{
+    TCHAR message[512];
+    TCHAR title[128];
+    _tcsncpy(message, StringResource::GetString(IDS_RESTART_REQUIRED), sizeof(message) / sizeof(message[0]) - 1);
+    message[sizeof(message) / sizeof(message[0]) - 1] = TEXT('\0');
+    _tcsncpy(title, StringResource::GetString(IDS_RESTART_REQUIRED_TITLE), sizeof(title) / sizeof(title[0]) - 1);
+    title[sizeof(title) / sizeof(title[0]) - 1] = TEXT('\0');
+
+    ::MessageBox(owner, message, title, MB_OK | MB_ICONINFORMATION);
+}

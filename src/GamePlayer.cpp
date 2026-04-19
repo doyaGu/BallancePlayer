@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "ConfigDialog.h"
 #include "Logger.h"
 #include "Utils.h"
 #include "InterfaceManager.h"
@@ -1225,6 +1226,18 @@ bool CGamePlayer::OpenAboutDialog()
     return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT), NULL, CGamePlayer::AboutDlgProc, reinterpret_cast<LPARAM>(this)) == IDOK;
 }
 
+bool CGamePlayer::OpenConfigDialog()
+{
+    ReleaseCursorClip();
+    bool saved = ShowConfigDialog(m_hInstance, m_PersistentConfig, true);
+    ClipCursor();
+
+    if (saved)
+        ShowConfigRestartRequiredMessage(m_MainWindow);
+
+    return saved;
+}
+
 void CGamePlayer::OnDestroy()
 {
     ReleaseCursorClip();
@@ -1383,6 +1396,10 @@ int CGamePlayer::OnCommand(UINT id, UINT code)
     if (id == IDM_APP_ABOUT)
     {
         OpenAboutDialog();
+    }
+    else if (id == IDM_APP_CONFIG)
+    {
+        OpenConfigDialog();
     }
     return 0;
 }
