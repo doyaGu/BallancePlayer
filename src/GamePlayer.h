@@ -22,6 +22,7 @@ public:
     ~CGamePlayer();
 
     bool Init(const CGameConfig &config, HINSTANCE hInstance = NULL);
+    bool Init(const CGameConfig &runtimeConfig, const CGameConfig &persistentConfig, HINSTANCE hInstance = NULL);
     bool Load(const char *filename = NULL);
 
     void Run();
@@ -35,6 +36,7 @@ public:
     void Reset();
 
     CGameConfig &GetConfig() { return m_Config; }
+    CGameConfig &GetPersistentConfig() { return m_PersistentConfig; }
     CKContext *GetCKContext() const { return m_CKContext; }
     CKRenderContext *GetRenderContext() const { return m_RenderContext; }
     CKRenderManager *GetRenderManager() const { return m_RenderManager; }
@@ -80,6 +82,8 @@ private:
     int FindScreenMode(int width, int height, int bpp, int driver);
     bool GetDisplayMode(int &width, int &height, int &bpp, int driver, int screenMode);
     void SetDefaultValuesForDriver();
+    void SyncPersistentDisplayConfig();
+    void SyncPersistentWindowPosition();
 
     bool IsRenderFullscreen() const;
     bool GoFullscreen();
@@ -108,8 +112,8 @@ private:
     void OnExitToSystem();
     void OnExitToTitle();
     int OnChangeScreenMode(int driver, int screenMode);
-    void OnGoFullscreen();
-    void OnStopFullscreen();
+    void OnGoFullscreen(bool persistChange = true);
+    void OnStopFullscreen(bool persistChange = true);
     void OnSwitchFullscreen();
 
     LRESULT HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -147,6 +151,8 @@ private:
 
     CGameInfo *m_GameInfo;
     CGameConfig m_Config;
+    CGameConfig m_PersistentConfig;
+    bool m_EnableWindowPositionPersistence;
 };
 
 #endif /* PLAYER_GAMEPLAYER_H */

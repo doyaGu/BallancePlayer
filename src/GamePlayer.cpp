@@ -47,6 +47,25 @@ static bool IsDefaultRenderEngineDll(const char *dllPath)
     return _stricmp(name, "CK2_3D") == 0;
 }
 
+static bool ResolveRuntimePath(char *buffer, size_t size, const char *path)
+{
+    if (!buffer || size == 0 || !path || !*path)
+        return false;
+
+    if (utils::IsAbsolutePath(path))
+    {
+        strncpy(buffer, path, size - 1);
+        buffer[size - 1] = '\0';
+        return true;
+    }
+
+    char currentDir[MAX_PATH];
+    if (utils::GetCurrentPath(currentDir, sizeof(currentDir)) == 0)
+        return false;
+
+    return utils::ConcatPath(buffer, size, currentDir, path) != NULL;
+}
+
 CGamePlayer::CGamePlayer()
     : m_State(eInitial),
       m_hInstance(NULL),
@@ -63,7 +82,8 @@ CGamePlayer::CGamePlayer()
       m_CursorClipActive(false),
       m_MsgClick(-1),
       m_MsgDoubleClick(-1),
-      m_GameInfo(NULL) {}
+      m_GameInfo(NULL),
+      m_EnableWindowPositionPersistence(false) {}
 
 CGamePlayer::~CGamePlayer()
 {
@@ -72,10 +92,17 @@ CGamePlayer::~CGamePlayer()
 
 bool CGamePlayer::Init(const CGameConfig &config, HINSTANCE hInstance)
 {
+    return Init(config, config, hInstance);
+}
+
+bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &persistentConfig, HINSTANCE hInstance)
+{
     if (m_State != eInitial)
         return true;
 
-    m_Config = config;
+    m_Config = runtimeConfig;
+    m_PersistentConfig = persistentConfig;
+    m_EnableWindowPositionPersistence = false;
 
     if (!hInstance)
         m_hInstance = ::GetModuleHandle(NULL);
@@ -121,12 +148,13 @@ bool CGamePlayer::Init(const CGameConfig &config, HINSTANCE hInstance)
     CLogger::Get().Debug("Render Context created.");
 
     if (m_Config.fullscreen)
-        OnGoFullscreen();
+        OnGoFullscreen(false);
 
     ::ShowWindow(m_MainWindow, SW_SHOW);
     ::SetFocus(m_MainWindow);
 
     m_State = eReady;
+    m_EnableWindowPositionPersistence = true;
     return true;
 }
 
@@ -270,6 +298,11 @@ void CGamePlayer::Render()
 
 void CGamePlayer::Shutdown()
 {
+    m_EnableWindowPositionPersistence = false;
+
+    if (m_State != eInitial && !m_PersistentConfig.SaveToIni())
+        CLogger::Get().Error("Failed to save config: %s", m_PersistentConfig.GetPath(eConfigPath));
+
     if (m_GameInfo)
     {
         delete m_GameInfo;
@@ -284,9 +317,6 @@ void CGamePlayer::Shutdown()
         m_State = eInitial;
         CLogger::Get().Debug("Player shut down.");
     }
-
-    // Save settings
-    m_Config.SaveToIni();
 }
 
 void CGamePlayer::Play()
@@ -547,8 +577,10 @@ bool CGamePlayer::InitDriver()
 
     if (m_Config.manualSetup)
     {
-        OpenSetupDialog();
+        if (OpenSetupDialog())
+            SyncPersistentDisplayConfig();
         m_Config.manualSetup = false;
+        m_PersistentConfig.manualSetup = false;
     }
 
     bool tryFailed = false;
@@ -559,7 +591,11 @@ bool CGamePlayer::InitDriver()
         CLogger::Get().Error("Unable to find driver %d", m_Config.driver);
         m_Config.driver = 0;
         tryFailed = true;
-        if (!OpenSetupDialog())
+        if (OpenSetupDialog())
+        {
+            SyncPersistentDisplayConfig();
+        }
+        else
         {
             SetDefaultValuesForDriver();
         }
@@ -586,7 +622,11 @@ bool CGamePlayer::InitDriver()
     {
         CLogger::Get().Error("Unable to find screen mode: %d x %d x %d", m_Config.width, m_Config.height, m_Config.bpp);
         tryFailed = true;
-        if (!OpenSetupDialog())
+        if (OpenSetupDialog())
+        {
+            SyncPersistentDisplayConfig();
+        }
+        else
         {
             SetDefaultValuesForDriver();
         }
@@ -939,15 +979,16 @@ bool CGamePlayer::SetupPaths()
     }
 
     char path[MAX_PATH];
-    char dir[MAX_PATH];
-    ::GetCurrentDirectoryA(MAX_PATH, dir);
-
     if (!utils::DirectoryExists(m_Config.GetPath(eDataPath)))
     {
         CLogger::Get().Error("Data path is not found.");
         return false;
     }
-    _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eDataPath));
+    if (!ResolveRuntimePath(path, MAX_PATH, m_Config.GetPath(eDataPath)))
+    {
+        CLogger::Get().Error("Failed to resolve data path.");
+        return false;
+    }
     XString dataPath = path;
     pm->AddPath(DATA_PATH_IDX, dataPath);
     CLogger::Get().Debug("Data path: %s", dataPath.CStr());
@@ -957,7 +998,11 @@ bool CGamePlayer::SetupPaths()
         CLogger::Get().Error("Sounds path is not found.");
         return false;
     }
-    _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eSoundPath));
+    if (!ResolveRuntimePath(path, MAX_PATH, m_Config.GetPath(eSoundPath)))
+    {
+        CLogger::Get().Error("Failed to resolve sounds path.");
+        return false;
+    }
     XString soundPath = path;
     pm->AddPath(SOUND_PATH_IDX, soundPath);
     CLogger::Get().Debug("Sounds path: %s", soundPath.CStr());
@@ -967,7 +1012,11 @@ bool CGamePlayer::SetupPaths()
         CLogger::Get().Error("Bitmap path is not found.");
         return false;
     }
-    _snprintf(path, MAX_PATH, "%s\\%s", dir, m_Config.GetPath(eBitmapPath));
+    if (!ResolveRuntimePath(path, MAX_PATH, m_Config.GetPath(eBitmapPath)))
+    {
+        CLogger::Get().Error("Failed to resolve bitmap path.");
+        return false;
+    }
     XString bitmapPath = path;
     pm->AddPath(BITMAP_PATH_IDX, bitmapPath);
     CLogger::Get().Debug("Bitmap path: %s", bitmapPath.CStr());
@@ -1070,6 +1119,21 @@ void CGamePlayer::SetDefaultValuesForDriver()
     m_Config.width = PLAYER_DEFAULT_WIDTH;
     m_Config.height = PLAYER_DEFAULT_HEIGHT;
     m_Config.bpp = PLAYER_DEFAULT_BPP;
+    SyncPersistentDisplayConfig();
+}
+
+void CGamePlayer::SyncPersistentDisplayConfig()
+{
+    m_PersistentConfig.driver = m_Config.driver;
+    m_PersistentConfig.width = m_Config.width;
+    m_PersistentConfig.height = m_Config.height;
+    m_PersistentConfig.bpp = m_Config.bpp;
+}
+
+void CGamePlayer::SyncPersistentWindowPosition()
+{
+    m_PersistentConfig.posX = m_Config.posX;
+    m_PersistentConfig.posY = m_Config.posY;
 }
 
 bool CGamePlayer::IsRenderFullscreen() const
@@ -1175,6 +1239,8 @@ void CGamePlayer::OnMove()
         ::GetWindowRect(m_MainWindow, &rect);
         m_Config.posX = rect.left;
         m_Config.posY = rect.top;
+        if (m_EnableWindowPositionPersistence)
+            SyncPersistentWindowPosition();
     }
 }
 
@@ -1215,7 +1281,7 @@ void CGamePlayer::OnActivateApp(bool active)
             {
                 if (firstDeActivate)
                     wasFullscreen = true;
-                OnStopFullscreen();
+                OnStopFullscreen(false);
             }
             else if (firstDeActivate)
             {
@@ -1228,7 +1294,7 @@ void CGamePlayer::OnActivateApp(bool active)
     else
     {
         if (wasFullscreen && !firstDeActivate)
-            OnGoFullscreen();
+            OnGoFullscreen(false);
 
         ClipCursor();
 
@@ -1347,7 +1413,7 @@ bool CGamePlayer::OnLoadCMO(const char *filename)
 void CGamePlayer::OnExitToSystem()
 {
     bool fullscreen = m_Config.fullscreen;
-    OnStopFullscreen();
+    OnStopFullscreen(false);
     m_Config.fullscreen = fullscreen;
     ::PostMessage(m_MainWindow, WM_CLOSE, 0, 0);
 }
@@ -1376,6 +1442,7 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
     m_Config.width = width;
     m_Config.height = height;
     m_Config.bpp = bpp;
+    SyncPersistentDisplayConfig();
 
     InterfaceManager *im = (InterfaceManager *)m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID);
     if (im)
@@ -1393,7 +1460,7 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
     return 1;
 }
 
-void CGamePlayer::OnGoFullscreen()
+void CGamePlayer::OnGoFullscreen(bool persistChange)
 {
     Pause();
 
@@ -1401,6 +1468,9 @@ void CGamePlayer::OnGoFullscreen()
 
     if (GoFullscreen())
     {
+        if (persistChange)
+            m_PersistentConfig.fullscreen = true;
+
         ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(WS_POPUP));
         ::SetWindowPos(m_MainWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
@@ -1421,12 +1491,15 @@ void CGamePlayer::OnGoFullscreen()
     Play();
 }
 
-void CGamePlayer::OnStopFullscreen()
+void CGamePlayer::OnStopFullscreen(bool persistChange)
 {
     Pause();
 
     if (StopFullscreen())
     {
+        if (persistChange)
+            m_PersistentConfig.fullscreen = false;
+
         LONG style = (m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
         RECT rc = {0, 0, m_Config.width, m_Config.height};
         ::AdjustWindowRect(&rc, style, FALSE);
@@ -1459,9 +1532,9 @@ void CGamePlayer::OnSwitchFullscreen()
         return;
 
     if (!IsRenderFullscreen())
-        OnGoFullscreen();
+        OnGoFullscreen(true);
     else
-        OnStopFullscreen();
+        OnStopFullscreen(true);
 }
 
 LRESULT CGamePlayer::HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)

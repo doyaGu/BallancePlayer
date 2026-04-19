@@ -16,9 +16,12 @@
 
 static HANDLE CreateNamedMutex();
 static void EnableDpiAwareness();
+static void UseExecutableDirectoryAsWorkingDirectory();
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
+    UseExecutableDirectoryAsWorkingDirectory();
+
     CmdlineParser parser(lpCmdLine);
 
     if (playeroptions::IsConfigToolMode(parser))
@@ -37,23 +40,30 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     LockGuard guard(hMutex);
 
-    CGameConfig config;
+    CGameConfig persistentConfig;
 
-    playeroptions::ApplyPathOptions(config, parser);
+    playeroptions::ApplyPathOptions(persistentConfig, parser);
 
     // Flush ini file if it doesn't exist
-    if (!utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
-        config.SaveToIni();
+    if (!utils::FileOrDirectoryExists(persistentConfig.GetPath(eConfigPath)))
+    {
+        if (!persistentConfig.SaveToIni())
+        {
+            ::MessageBox(NULL, TEXT("Failed to create configuration file!"), TEXT("Error"), MB_OK | MB_ICONERROR);
+            return -1;
+        }
+    }
 
-    config.LoadFromIni();
-    playeroptions::ApplyConfigOptions(config, parser);
+    persistentConfig.LoadFromIni();
+    CGameConfig runtimeConfig = persistentConfig;
+    playeroptions::ApplyConfigOptions(runtimeConfig, parser);
 
     bool overwrite = true;
-    if (config.logMode == eLogAppend)
+    if (runtimeConfig.logMode == eLogAppend)
         overwrite = false;
 
-    CLogger::Get().Open(config.GetPath(eLogPath), overwrite);
-    if (config.verbose)
+    CLogger::Get().Open(runtimeConfig.GetPath(eLogPath), overwrite);
+    if (runtimeConfig.verbose)
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
 
     EnableDpiAwareness();
@@ -62,7 +72,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
     splash.Show();
 
     CGamePlayer player;
-    if (!player.Init(config, hInstance))
+    if (!player.Init(runtimeConfig, persistentConfig, hInstance))
     {
         CLogger::Get().Error("Failed to initialize player!");
         ::MessageBox(NULL, TEXT("Failed to initialize player!"), TEXT("Error"), MB_OK);
@@ -120,6 +130,14 @@ static HANDLE CreateNamedMutex()
     }
 
     return hMutex;
+}
+
+static void UseExecutableDirectoryAsWorkingDirectory()
+{
+    char modulePath[MAX_PATH];
+    DWORD len = ::GetModuleFileNameA(NULL, modulePath, MAX_PATH);
+    if (len > 0 && len < MAX_PATH)
+        utils::SetCurrentDirectoryToFileDirectory(modulePath);
 }
 
 static void EnableDpiAwareness()
