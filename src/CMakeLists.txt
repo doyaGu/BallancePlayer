@@ -12,6 +12,12 @@ configure_file(
         @ONLY
 )
 
+configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/PlayerVersion.rc.in"
+        "${_player_generated_dir}/PlayerVersion.rc"
+        @ONLY
+)
+
 set(CONFIG_TOOL_LAUNCHERS
         "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.bat"
         "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.vbs"
@@ -54,6 +60,7 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
 target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
 
 target_include_directories(${PLAYER_NAME} PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}"
         "${_player_generated_dir}"
 )
 
