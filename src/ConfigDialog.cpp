@@ -85,6 +85,40 @@ static const LabelPosition g_LabelPositions[] = {
     {0, 0} // Terminator
 };
 
+static const VX_PIXELFORMAT g_PixelFormatOptions[] = {
+    UNKNOWN_PF,
+    _32_ARGB8888,
+    _32_RGB888,
+    _24_RGB888,
+    _16_RGB565,
+    _16_RGB555,
+    _16_ARGB1555,
+    _16_ARGB4444,
+    _8_RGB332,
+    _8_ARGB2222,
+    _32_ABGR8888,
+    _32_RGBA8888,
+    _32_BGRA8888,
+    _32_BGR888,
+    _24_BGR888,
+    _16_BGR565,
+    _16_BGR555,
+    _16_ABGR1555,
+    _16_ABGR4444,
+    _DXT1,
+    _DXT2,
+    _DXT3,
+    _DXT4,
+    _DXT5,
+    _16_V8U8,
+    _32_V16U16,
+    _16_L6V5U5,
+    _32_X8L8V8U8
+};
+
+static void PopulatePixelFormatCombo(HWND hDlg, int ctrlID);
+static void SetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT value);
+
 // StringResource Implementation
 
 HINSTANCE StringResource::m_hInstance = NULL;
@@ -309,6 +343,11 @@ static void UpdateDialogLanguage(HWND hDlg)
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_CHINESE));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_SETCURSEL, currentLang, 0);
 
+    // Pixel format combos show canonical names only. INI aliases like 565 remain readable,
+    // but the dialog normalizes them to names such as _16_RGB565.
+    PopulatePixelFormatCombo(hDlg, IDC_EDIT_TEXVIDFORMAT);
+    PopulatePixelFormatCombo(hDlg, IDC_EDIT_SPRVIDFORMAT);
+
     // Update static text labels (LTEXT) using position matching
     HWND hwndChild = ::GetWindow(hDlg, GW_CHILD);
     while (hwndChild)
@@ -469,7 +508,7 @@ static bool GetConfigBoolControl(HWND hDlg, int ctrlID)
     return ::SendDlgItemMessage(hDlg, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED;
 }
 
-static void SetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT value)
+static void AddPixelFormatComboString(HWND hDlg, int ctrlID, VX_PIXELFORMAT value)
 {
     const char *format = utils::PixelFormat2String(value);
     TCHAR buffer[32];
@@ -478,22 +517,53 @@ static void SetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT va
 #else
     strcpy(buffer, format);
 #endif
-    ::SetDlgItemText(hDlg, ctrlID, buffer);
+    int index = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_ADDSTRING, 0, (LPARAM)buffer);
+    if (index != CB_ERR && index != CB_ERRSPACE)
+        ::SendDlgItemMessage(hDlg, ctrlID, CB_SETITEMDATA, index, (LPARAM)value);
+}
+
+static VX_PIXELFORMAT GetSelectedPixelFormat(HWND hDlg, int ctrlID, VX_PIXELFORMAT fallback)
+{
+    int sel = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCURSEL, 0, 0);
+    if (sel == CB_ERR)
+        return fallback;
+
+    LRESULT itemData = ::SendDlgItemMessage(hDlg, ctrlID, CB_GETITEMDATA, sel, 0);
+    if (itemData == CB_ERR)
+        return fallback;
+
+    return (VX_PIXELFORMAT)itemData;
+}
+
+static void PopulatePixelFormatCombo(HWND hDlg, int ctrlID)
+{
+    VX_PIXELFORMAT selected = GetSelectedPixelFormat(hDlg, ctrlID, UNKNOWN_PF);
+    ::SendDlgItemMessage(hDlg, ctrlID, CB_RESETCONTENT, 0, 0);
+
+    const int count = sizeof(g_PixelFormatOptions) / sizeof(g_PixelFormatOptions[0]);
+    for (int i = 0; i < count; ++i)
+        AddPixelFormatComboString(hDlg, ctrlID, g_PixelFormatOptions[i]);
+
+    SetConfigPixelFormatControl(hDlg, ctrlID, selected);
+}
+
+static void SetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT value)
+{
+    const int count = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCOUNT, 0, 0);
+    for (int i = 0; i < count; ++i)
+    {
+        if ((VX_PIXELFORMAT)::SendDlgItemMessage(hDlg, ctrlID, CB_GETITEMDATA, i, 0) == value)
+        {
+            ::SendDlgItemMessage(hDlg, ctrlID, CB_SETCURSEL, i, 0);
+            return;
+        }
+    }
+    ::SendDlgItemMessage(hDlg, ctrlID, CB_SETCURSEL, 0, 0);
 }
 
 static VX_PIXELFORMAT GetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT fallback)
 {
-    TCHAR buffer[MAX_PATH];
-    if (!::GetDlgItemText(hDlg, ctrlID, buffer, sizeof(buffer) / sizeof(TCHAR)))
-        return fallback;
-
-#ifdef UNICODE
-    char ansiBuffer[MAX_PATH];
-    utils::WcharToChar(buffer, ansiBuffer, MAX_PATH);
-    return utils::String2PixelFormat(ansiBuffer, strlen(ansiBuffer));
-#else
-    return utils::String2PixelFormat(buffer, strlen(buffer));
-#endif
+    return GetSelectedPixelFormat(hDlg, ctrlID, fallback);
 }
 
 static void LoadConfigToDialog(HWND hDlg, const CGameConfig &config)
