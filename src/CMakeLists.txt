@@ -14,7 +14,7 @@ configure_file(
 
 configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/PlayerVersion.rc.in"
-        "${_player_generated_dir}/PlayerVersion.rc"
+        "${_player_generated_dir}/PlayerVersion.generated.rc"
         @ONLY
 )
 

@@ -49,7 +49,7 @@ RSC_PROJ=$(VC6_INC) $(LOCAL_INC) $(VIRTOOLS_INC) /l 0x409 /fo"$(INTDIR)\Player.r
 LINK32_FLAGS=CK2.lib VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib delayimp.lib /nologo /subsystem:windows /debug /machine:I386 /out:"$(OUTDIR)\Player.exe" /pdbtype:sept /delayload:CK2.dll /delayload:VxMath.dll $(VC6_LIB) $(VIRTOOLS_LIB)
 !ENDIF
 
-ALL : "$(OUTDIR)\Player.exe" "$(OUTDIR)\ConfigTool.bat"
+ALL : "$(OUTDIR)\Player.exe" "$(OUTDIR)\ConfigTool.bat" "$(OUTDIR)\ConfigTool.vbs"
 
 CLEAN :
 	-@if exist "$(INTDIR)\*.obj" del /q "$(INTDIR)\*.obj"
@@ -59,6 +59,7 @@ CLEAN :
 	-@if exist "$(INTDIR)\*.pdb" del /q "$(INTDIR)\*.pdb"
 	-@if exist "$(OUTDIR)\Player.exe" del /q "$(OUTDIR)\Player.exe"
 	-@if exist "$(OUTDIR)\Player.pdb" del /q "$(OUTDIR)\Player.pdb"
+	-@if exist ".\src\PlayerVersion.vc6.rc" del /q ".\src\PlayerVersion.vc6.rc"
 
 "$(OUTDIR)" :
 	@if not exist "$(OUTDIR)\$(NULL)" mkdir "$(OUTDIR)"
@@ -90,6 +91,9 @@ $(LINK32_FLAGS) $(OBJS)
 "$(OUTDIR)\ConfigTool.bat" : ".\src\ConfigTool.bat" "$(OUTDIR)"
 	copy /Y ".\src\ConfigTool.bat" "$(OUTDIR)\ConfigTool.bat"
 
+"$(OUTDIR)\ConfigTool.vbs" : ".\src\ConfigTool.vbs" "$(OUTDIR)"
+	copy /Y ".\src\ConfigTool.vbs" "$(OUTDIR)\ConfigTool.vbs"
+
 "$(INTDIR)\CmdlineParser.obj" : ".\src\CmdlineParser.cpp" "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) ".\src\CmdlineParser.cpp"
 
@@ -120,5 +124,8 @@ $(LINK32_FLAGS) $(OBJS)
 "$(INTDIR)\Utils.obj" : ".\src\Utils.cpp" "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) ".\src\Utils.cpp"
 
-"$(INTDIR)\Player.res" : ".\src\Player.rc" "$(INTDIR)"
+"$(INTDIR)\Player.res" : ".\src\Player.rc" ".\src\PlayerResources.rc" ".\src\PlayerVersion.rc.in" ".\src\PlayerVersion.vc6.rc" "$(INTDIR)"
 	$(RSC) $(RSC_PROJ) ".\src\Player.rc"
+
+".\src\PlayerVersion.vc6.rc" : ".\src\PlayerVersion.rc.in" ".\VERSION"
+	powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\generate-player-version-rc.ps1" -Template ".\src\PlayerVersion.rc.in" -Output ".\src\PlayerVersion.vc6.rc" -VersionFile ".\VERSION"
