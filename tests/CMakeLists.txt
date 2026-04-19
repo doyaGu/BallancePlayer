@@ -58,3 +58,8 @@ add_player_test(PlayerOptionsTest
         ${PLAYER_SOURCE_DIR}/Utils.cpp
         DEPENDENCIES VxMath
 )
+
+add_player_test(CmdlineParserTest
+        SOURCES CmdlineParserTest.cpp
+        ${PLAYER_SOURCE_DIR}/CmdlineParser.cpp
+)
