@@ -83,6 +83,7 @@ namespace playeroptions
     {
         CmdlineArg arg;
         std::string path;
+        bool explicitPaths[ePathCategoryCount] = { false };
 
         while (!parser.Done())
         {
@@ -91,7 +92,10 @@ namespace playeroptions
             if (parser.Next(arg, cliLong, '\0', 1)) \
             { \
                 if (arg.GetValue(0, path)) \
+                { \
                     config.SetPath(category, path.c_str()); \
+                    explicitPaths[category] = true; \
+                } \
                 matched = true; \
             } \
             if (matched) \
@@ -103,6 +107,15 @@ namespace playeroptions
         }
 
         parser.Reset();
+
+        if (explicitPaths[eRootPath])
+        {
+            for (int i = ePluginPath; i < ePathCategoryCount; ++i)
+            {
+                if (!explicitPaths[i])
+                    config.ResetPath((PathCategory)i);
+            }
+        }
 
 #define X_PATH(category, defaultPath, cliLong, validateDir) \
         if (validateDir && !utils::DirectoryExists(config.GetPath(category))) \
