@@ -2,6 +2,9 @@
 
 #include "Utils.h"
 
+#include <ctype.h>
+#include <stdio.h>
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -29,6 +32,23 @@ static const char *const DefaultPaths[] = {
 #undef X_PATH
 };
 
+static std::string SerializeInt(int value)
+{
+    char buffer[64];
+    sprintf(buffer, "%d", value);
+    return buffer;
+}
+
+static std::string SerializeBool(bool value)
+{
+    return value ? "1" : "0";
+}
+
+static std::string SerializePixel(VX_PIXELFORMAT value)
+{
+    return utils::PixelFormat2String(value);
+}
+
 CGameConfig::CGameConfig()
 {
     // Auto-generated initialization from master list
@@ -44,7 +64,7 @@ CGameConfig::CGameConfig()
     screenMode = -1;
 
     ResetPath();
-    ResetLoadedSnapshots();
+    ResetFieldSnapshots();
 }
 
 CGameConfig &CGameConfig::operator=(const CGameConfig &config)
@@ -69,13 +89,9 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     for (i = 0; i < ePathCategoryCount; ++i)
         m_Paths[i] = config.m_Paths[i];
 
-    // Copy loaded snapshots
+    // Copy field snapshots
     for (i = 0; i < eLoadedSentinel; ++i)
-    {
-        m_LoadedInts[i] = config.m_LoadedInts[i];
-        m_LoadedBools[i] = config.m_LoadedBools[i];
-        m_LoadedPixels[i] = config.m_LoadedPixels[i];
-    }
+        m_FieldSnapshots[i] = config.m_FieldSnapshots[i];
 
     m_ConfigTimestampLow = config.m_ConfigTimestampLow;
     m_ConfigTimestampHigh = config.m_ConfigTimestampHigh;
@@ -151,11 +167,13 @@ void CGameConfig::LoadFromIni(const char *filename)
     if (!filename)
         return;
 
+    bool usingConfigPath = false;
     if (filename[0] == '\0')
     {
         if (m_Paths[eConfigPath].size() == 0 || !utils::FileOrDirectoryExists(m_Paths[eConfigPath].c_str()))
             return;
         filename = m_Paths[eConfigPath].c_str();
+        usingConfigPath = true;
     }
 
     char path[MAX_PATH];
@@ -165,8 +183,10 @@ void CGameConfig::LoadFromIni(const char *filename)
         utils::ConcatPath(path, MAX_PATH, path, filename);
         filename = path;
     }
+    if (usingConfigPath)
+        SetPath(eConfigPath, filename);
 
-    ResetLoadedSnapshots();
+    ResetFieldSnapshots();
 
     FILETIME fileTime;
     if (GetLastWriteTime(filename, fileTime))
@@ -184,7 +204,6 @@ void CGameConfig::LoadFromIni(const char *filename)
             bool tmp = member; \
             if (utils::IniGetBoolean(sec, key, tmp, filename)) { \
                 member = tmp; \
-                StoreLoadedBool(eLoadedBool_##member, tmp); \
             } \
         } while(0);
 
@@ -193,7 +212,6 @@ void CGameConfig::LoadFromIni(const char *filename)
             int tmp = member; \
             if (utils::IniGetInteger(sec, key, tmp, filename)) { \
                 member = tmp; \
-                StoreLoadedInt(eLoadedInt_##member, tmp); \
             } \
         } while(0);
 
@@ -202,7 +220,6 @@ void CGameConfig::LoadFromIni(const char *filename)
             VX_PIXELFORMAT tmp = member; \
             if (utils::IniGetPixelFormat(sec, key, tmp, filename)) { \
                 member = tmp; \
-                StoreLoadedPixel(eLoadedPixel_##member, tmp); \
             } \
         } while(0);
 
@@ -211,18 +228,22 @@ void CGameConfig::LoadFromIni(const char *filename)
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
+
+    CaptureCurrentValuesAsLoaded();
 }
 
-void CGameConfig::SaveToIni(const char *filename)
+bool CGameConfig::SaveToIni(const char *filename)
 {
     if (!filename)
-        return;
+        return false;
 
+    bool usingConfigPath = false;
     if (filename[0] == '\0')
     {
         if (m_Paths[eConfigPath].size() == 0)
-            return;
+            return false;
         filename = m_Paths[eConfigPath].c_str();
+        usingConfigPath = true;
     }
 
     char path[MAX_PATH];
@@ -232,6 +253,8 @@ void CGameConfig::SaveToIni(const char *filename)
         utils::ConcatPath(path, MAX_PATH, path, filename);
         filename = path;
     }
+    if (usingConfigPath)
+        SetPath(eConfigPath, filename);
 
     bool shouldMerge = false;
     FILETIME fileTime;
@@ -244,16 +267,24 @@ void CGameConfig::SaveToIni(const char *filename)
     if (shouldMerge)
         MergeExternalChanges(filename);
 
+    bool ok = true;
+
     // Auto-generated saving from master list
-    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) utils::IniSetBoolean(sec, key, member, filename);
-    #define X_INT(sec,key,member,def,cliLong,cliShort)  utils::IniSetInteger(sec, key, member, filename);
-    #define X_PF(sec,key,member,def,cliLong,cliShort)   utils::IniSetPixelFormat(sec, key, member, filename);
+    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
+        ok = utils::IniSetBoolean(sec, key, member, filename) && ok;
+    #define X_INT(sec,key,member,def,cliLong,cliShort) \
+        ok = utils::IniSetInteger(sec, key, member, filename) && ok;
+    #define X_PF(sec,key,member,def,cliLong,cliShort) \
+        ok = utils::IniSetPixelFormat(sec, key, member, filename) && ok;
         GAMECONFIG_FIELDS
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
 
-    CaptureCurrentValuesAsLoaded();
+    if (!ok)
+        return false;
+
+    CapturePersistedValuesAsLoaded();
 
     if (GetLastWriteTime(filename, fileTime))
     {
@@ -267,18 +298,15 @@ void CGameConfig::SaveToIni(const char *filename)
     }
 
     SetLastConfigAbsolutePath(filename);
+    return true;
 }
 
-void CGameConfig::ResetLoadedSnapshots()
+void CGameConfig::ResetFieldSnapshots()
 {
     for (int i = 0; i < eLoadedSentinel; ++i)
     {
-        m_LoadedInts[i].hasValue = false;
-        m_LoadedInts[i].value = 0;
-        m_LoadedBools[i].hasValue = false;
-        m_LoadedBools[i].value = false;
-        m_LoadedPixels[i].hasValue = false;
-        m_LoadedPixels[i].value = UNKNOWN_PF;
+        m_FieldSnapshots[i].hasLoadedValue = false;
+        m_FieldSnapshots[i].loadedValue.erase();
     }
 
     m_ConfigTimestampLow = 0;
@@ -287,77 +315,52 @@ void CGameConfig::ResetLoadedSnapshots()
     m_LastConfigAbsolutePath.erase();
 }
 
-void CGameConfig::StoreLoadedInt(int index, int value)
+void CGameConfig::StoreLoadedValue(int index, const std::string &value)
 {
     if (index < 0 || index >= eLoadedSentinel)
         return;
-    m_LoadedInts[index].hasValue = true;
-    m_LoadedInts[index].value = value;
+    m_FieldSnapshots[index].hasLoadedValue = true;
+    m_FieldSnapshots[index].loadedValue = value;
 }
 
-void CGameConfig::StoreLoadedBool(int index, bool value)
-{
-    if (index < 0 || index >= eLoadedSentinel)
-        return;
-    m_LoadedBools[index].hasValue = true;
-    m_LoadedBools[index].value = value;
-}
-
-void CGameConfig::StoreLoadedPixel(int index, VX_PIXELFORMAT value)
-{
-    if (index < 0 || index >= eLoadedSentinel)
-        return;
-    m_LoadedPixels[index].hasValue = true;
-    m_LoadedPixels[index].value = value;
-}
-
-bool CGameConfig::ShouldOverrideInt(int index, int newValue) const
+bool CGameConfig::CanAcceptExternalChange(int index, const std::string &currentValue) const
 {
     if (index < 0 || index >= eLoadedSentinel)
         return false;
-    if (!m_LoadedInts[index].hasValue)
+    if (!m_FieldSnapshots[index].hasLoadedValue)
         return true;
-    // Return true if the current in-memory value is unchanged from what we loaded
-    // This means we should accept the external change
-    return m_LoadedInts[index].value == newValue;
+    return m_FieldSnapshots[index].loadedValue == currentValue;
 }
 
-bool CGameConfig::ShouldOverrideBool(int index, bool newValue) const
+void CGameConfig::CapturePersistedValuesAsLoaded()
 {
-    if (index < 0 || index >= eLoadedSentinel)
-        return false;
-    if (!m_LoadedBools[index].hasValue)
-        return true;
-    // Return true if the current in-memory value is unchanged from what we loaded
-    // This means we should accept the external change
-    return m_LoadedBools[index].value == newValue;
-}
+    #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
+        StoreLoadedValue(eLoadedBool_##member, SerializeBool(member));
 
-bool CGameConfig::ShouldOverridePixel(int index, VX_PIXELFORMAT newValue) const
-{
-    if (index < 0 || index >= eLoadedSentinel)
-        return false;
-    if (!m_LoadedPixels[index].hasValue)
-        return true;
-    // Return true if the current in-memory value is unchanged from what we loaded
-    // This means we should accept the external change
-    return m_LoadedPixels[index].value == newValue;
+    #define X_INT(sec,key,member,def,cliLong,cliShort) \
+        StoreLoadedValue(eLoadedInt_##member, SerializeInt(member));
+
+    #define X_PF(sec,key,member,def,cliLong,cliShort) \
+        StoreLoadedValue(eLoadedPixel_##member, SerializePixel(member));
+
+        GAMECONFIG_FIELDS
+
+    #undef X_BOOL
+    #undef X_INT
+    #undef X_PF
 }
 
 void CGameConfig::CaptureCurrentValuesAsLoaded()
 {
     // Auto-generated snapshot capture from master list
     #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
-        m_LoadedBools[eLoadedBool_##member].hasValue = true; \
-        m_LoadedBools[eLoadedBool_##member].value = member;
+        StoreLoadedValue(eLoadedBool_##member, SerializeBool(member));
 
     #define X_INT(sec,key,member,def,cliLong,cliShort) \
-        m_LoadedInts[eLoadedInt_##member].hasValue = true; \
-        m_LoadedInts[eLoadedInt_##member].value = member;
+        StoreLoadedValue(eLoadedInt_##member, SerializeInt(member));
 
     #define X_PF(sec,key,member,def,cliLong,cliShort) \
-        m_LoadedPixels[eLoadedPixel_##member].hasValue = true; \
-        m_LoadedPixels[eLoadedPixel_##member].value = member;
+        StoreLoadedValue(eLoadedPixel_##member, SerializePixel(member));
 
         GAMECONFIG_FIELDS
 
@@ -373,8 +376,12 @@ void CGameConfig::MergeExternalChanges(const char *filename)
         do { \
             bool tmp; \
             if (utils::IniGetBoolean(sec, key, tmp, filename)) { \
-                if (ShouldOverrideBool(eLoadedBool_##member, member)) \
+                std::string currentValue = SerializeBool(member); \
+                std::string externalValue = SerializeBool(tmp); \
+                if (CanAcceptExternalChange(eLoadedBool_##member, currentValue)) { \
                     member = tmp; \
+                    StoreLoadedValue(eLoadedBool_##member, externalValue); \
+                } \
             } \
         } while(0);
 
@@ -382,8 +389,12 @@ void CGameConfig::MergeExternalChanges(const char *filename)
         do { \
             int tmp; \
             if (utils::IniGetInteger(sec, key, tmp, filename)) { \
-                if (ShouldOverrideInt(eLoadedInt_##member, member)) \
+                std::string currentValue = SerializeInt(member); \
+                std::string externalValue = SerializeInt(tmp); \
+                if (CanAcceptExternalChange(eLoadedInt_##member, currentValue)) { \
                     member = tmp; \
+                    StoreLoadedValue(eLoadedInt_##member, externalValue); \
+                } \
             } \
         } while(0);
 
@@ -391,8 +402,12 @@ void CGameConfig::MergeExternalChanges(const char *filename)
         do { \
             VX_PIXELFORMAT tmp; \
             if (utils::IniGetPixelFormat(sec, key, tmp, filename)) { \
-                if (ShouldOverridePixel(eLoadedPixel_##member, member)) \
+                std::string currentValue = SerializePixel(member); \
+                std::string externalValue = SerializePixel(tmp); \
+                if (CanAcceptExternalChange(eLoadedPixel_##member, currentValue)) { \
                     member = tmp; \
+                    StoreLoadedValue(eLoadedPixel_##member, externalValue); \
+                } \
             } \
         } while(0);
 

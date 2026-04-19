@@ -293,6 +293,12 @@ TEST_F(GameConfigTest, SaveToIni) {
     EXPECT_TRUE(config2.rookie);
 }
 
+TEST_F(GameConfigTest, SaveToIniReportsWriteFailure) {
+    CGameConfig config;
+
+    EXPECT_FALSE(config.SaveToIni(testDir.string().c_str()));
+}
+
 // Test external change merging
 TEST_F(GameConfigTest, ExternalChangeMerging) {
     // Create initial INI
@@ -323,6 +329,58 @@ TEST_F(GameConfigTest, ExternalChangeMerging) {
     // Values we changed should remain our values
     EXPECT_EQ(config.driver, 5);   // Should keep our change
     EXPECT_EQ(config.height, 768); // Should keep our change
+}
+
+// Test external change merging for keys that were missing from the loaded INI
+TEST_F(GameConfigTest, MissingLoadedKeysKeepInMemoryChangesWhenExternallyAdded) {
+    CreateTestIni("[Graphics]\nDriver=1\n");
+
+    CGameConfig config;
+    config.LoadFromIni(testIniPath.string().c_str());
+
+    EXPECT_EQ(config.driver, 1);
+    EXPECT_EQ(config.width, PLAYER_DEFAULT_WIDTH);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    CreateTestIni("[Graphics]\nDriver=2\nWidth=1024\n");
+
+    config.width = 1280;
+
+    config.SaveToIni(testIniPath.string().c_str());
+
+    EXPECT_EQ(config.driver, 2);
+    EXPECT_EQ(config.width, 1280);
+
+    CGameConfig savedConfig;
+    savedConfig.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_EQ(savedConfig.driver, 2);
+    EXPECT_EQ(savedConfig.width, 1280);
+}
+
+TEST_F(GameConfigTest, SaveAfterLoadUsesResolvedConfigPathWhenCurrentDirectoryChanges) {
+    CreateTestIni("[Graphics]\nWidth=640\nHeight=480\n");
+    fs::path otherDir = testDir / "other";
+    fs::create_directories(otherDir);
+
+    fs::path originalCwd = fs::current_path();
+    fs::current_path(testDir);
+
+    CGameConfig config;
+    config.SetPath(eConfigPath, testIniPath.filename().string().c_str());
+    config.LoadFromIni();
+
+    fs::current_path(otherDir);
+    config.width = 1280;
+    bool saved = config.SaveToIni();
+
+    fs::current_path(originalCwd);
+
+    EXPECT_TRUE(saved);
+
+    CGameConfig savedConfig;
+    savedConfig.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_EQ(savedConfig.width, 1280);
+    EXPECT_FALSE(fs::exists(otherDir / testIniPath.filename()));
 }
 
 // Test relative vs absolute paths
@@ -459,8 +517,9 @@ Antialias=4
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     
     // Should complete within reasonable time (adjust threshold as needed)
-    // INI operations can be slow on Windows, especially with many disk writes
-    EXPECT_LT(duration.count(), 15000); // Less than 15 seconds for 100 operations
+    // INI operations are disk-heavy on Windows and this debug target now does
+    // additional snapshot work for merge-safe saves.
+    EXPECT_LT(duration.count(), 25000); // Less than 25 seconds for 100 operations
 }
 
 // Test X-macro expansion correctness

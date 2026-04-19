@@ -118,7 +118,7 @@ public:
     bool ResetPath(PathCategory category = ePathCategoryCount);
 
     void LoadFromIni(const char *filename = "");
-    void SaveToIni(const char *filename = "");
+    bool SaveToIni(const char *filename = "");
 
 private:
     std::string m_Paths[ePathCategoryCount];
@@ -135,41 +135,23 @@ private:
         eLoadedSentinel
     };
 
-    struct LoadedIntValue
+    struct FieldSnapshot
     {
-        bool hasValue;
-        int value;
+        bool hasLoadedValue;
+        std::string loadedValue;
     };
 
-    struct LoadedBoolValue
-    {
-        bool hasValue;
-        bool value;
-    };
-
-    struct LoadedPixelValue
-    {
-        bool hasValue;
-        VX_PIXELFORMAT value;
-    };
-
-    // Single arrays for all loaded values (indexed by enum)
-    LoadedIntValue   m_LoadedInts[eLoadedSentinel];
-    LoadedBoolValue  m_LoadedBools[eLoadedSentinel];
-    LoadedPixelValue m_LoadedPixels[eLoadedSentinel];
+    FieldSnapshot m_FieldSnapshots[eLoadedSentinel];
 
     unsigned long m_ConfigTimestampLow;
     unsigned long m_ConfigTimestampHigh;
     bool m_ConfigTimestampValid;
     std::string m_LastConfigAbsolutePath;
 
-    void ResetLoadedSnapshots();
-    void StoreLoadedInt(int index, int value);
-    void StoreLoadedBool(int index, bool value);
-    void StoreLoadedPixel(int index, VX_PIXELFORMAT value);
-    bool ShouldOverrideInt(int index, int newValue) const;
-    bool ShouldOverrideBool(int index, bool newValue) const;
-    bool ShouldOverridePixel(int index, VX_PIXELFORMAT newValue) const;
+    void ResetFieldSnapshots();
+    void StoreLoadedValue(int index, const std::string &value);
+    bool CanAcceptExternalChange(int index, const std::string &currentValue) const;
+    void CapturePersistedValuesAsLoaded();
     void CaptureCurrentValuesAsLoaded();
     void MergeExternalChanges(const char *filename);
     void SetLastConfigAbsolutePath(const char *path);
