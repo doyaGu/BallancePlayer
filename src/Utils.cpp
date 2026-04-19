@@ -1,5 +1,6 @@
 #include "Utils.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -437,10 +438,15 @@ namespace utils
         ::GetPrivateProfileStringA(section, name, "", buf, 512, filename);
         if (strcmp(buf, "") == 0)
             return false;
-        int val = strtol(buf, NULL, 10);
-        if (val == 0 && strcmp(buf, "0") != 0)
+
+        char *end = NULL;
+        long val = strtol(buf, &end, 10);
+        while (end && isspace(static_cast<unsigned char>(*end)))
+            ++end;
+        if (end == buf || !end || *end != '\0')
             return false;
-        value = val;
+
+        value = static_cast<int>(val);
         return true;
     }
 

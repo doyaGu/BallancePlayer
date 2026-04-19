@@ -255,6 +255,16 @@ TEST_F(GameConfigTest, LoadFromIniEdgeCases) {
     EXPECT_EQ(config.driver, 5); // Should remain unchanged
 }
 
+TEST_F(GameConfigTest, MalformedIntegerValuesKeepDefaults) {
+    CreateTestIni("[Graphics]\nWidth=1600abc\nHeight=abc900\nwidth1600\n");
+
+    CGameConfig config;
+    config.LoadFromIni(testIniPath.string().c_str());
+
+    EXPECT_EQ(config.width, PLAYER_DEFAULT_WIDTH);
+    EXPECT_EQ(config.height, PLAYER_DEFAULT_HEIGHT);
+}
+
 // Test saving to INI file
 TEST_F(GameConfigTest, SaveToIni) {
     CGameConfig config;

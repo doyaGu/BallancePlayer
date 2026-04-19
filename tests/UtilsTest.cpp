@@ -385,6 +385,8 @@ PositiveInt=42
 NegativeInt=-17
 Zero=0
 InvalidInt=abc
+TrailingText=1600abc
+LeadingText=abc1600
 EmptyInt=
 )");
 
@@ -402,6 +404,8 @@ EmptyInt=
 
     // Test invalid integer
     EXPECT_FALSE(utils::IniGetInteger("Numbers", "InvalidInt", value, testIniPath.string().c_str()));
+    EXPECT_FALSE(utils::IniGetInteger("Numbers", "TrailingText", value, testIniPath.string().c_str()));
+    EXPECT_FALSE(utils::IniGetInteger("Numbers", "LeadingText", value, testIniPath.string().c_str()));
 
     // Test empty value
     EXPECT_FALSE(utils::IniGetInteger("Numbers", "EmptyInt", value, testIniPath.string().c_str()));
