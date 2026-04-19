@@ -8,6 +8,7 @@ BallancePlayer is a modern, enhanced player for the game Ballance, developed by 
 
 - Portable and ready to use, no configuration needed to start the game
 - Support for `.ini` file configurations
+- Built-in configuration dialog for first-time setup and in-game changes
 - Command-line options for flexibility
 - 32-bit color mode support
 - Compatibility with monitors that don't support 640x480 resolution
@@ -47,7 +48,7 @@ To build BallancePlayer, you’ll need the Virtools SDK, which can be obtained f
 2. **Navigate to Project Directory**: Open a console and navigate to the directory containing the BallancePlayer source code.
 3. **Generate Build Files**: Run the following command to generate Visual Studio project files for 32-bit architecture:
    ```
-   cmake -B build -G "Visual Studio 16 2022" -A Win32
+   cmake -B build -G "Visual Studio 17 2022" -A Win32
    ```
 4. **Open in Visual Studio**: Navigate to the `build` directory and open the solution file `BallancePlayer.sln` in Visual Studio.
 5. **Build the Solution**: Use Visual Studio to compile the project.
@@ -55,8 +56,8 @@ To build BallancePlayer, you’ll need the Virtools SDK, which can be obtained f
 ### Building with Visual Studio 6.0
 
 1. **Install Visual Studio 6.0**: Ensure Visual Studio 6.0 is installed.
-2. **Open the Project**: Locate `Player.dsw` in the project directory and open it with Visual Studio 6.0.
-3. **Build the Project**: Use the build tools in Visual Studio 6.0 to compile the project.
+2. **Set SDK paths**: Set `VC6_ROOT` to your Visual Studio 6.0 toolchain path, or pass it to `nmake`.
+3. **Build the Project**: Run `nmake /f Makefile CFG=Release VC6_ROOT=C:\Path\To\VC6` from the project root.
 
 ### Notes
 
@@ -67,10 +68,11 @@ The official release package is built with Visual Studio 6.0 for maximum compati
 - **[Alt] + [Enter]**: Switch between windowed and fullscreen mode.
 - **[Alt] + [F4]**:  Force close the game.
 - **[Alt] + [/]**:  Display an about box.
+- **[Alt] + [C]**:  Open the configuration dialog. Changes saved during gameplay take effect after restarting the game.
 
 ## INI Settings
 
-The `Player.ini` file contains several settings that control the behavior of the game.
+The `Player.ini` file contains several settings that control the behavior of the game. If `Player.ini` does not exist in the current directory, Player opens the configuration dialog on startup so you can create it before launching the game.
 
 ### Startup
 
@@ -237,6 +239,31 @@ Player.exe [OPTIONS]
 If you have any bugs or requests, please open an issue in this repository: [BallancePlayer](https://github.com/doyaGu/BallancePlayer).
 
 ## ChangeLog
+
+### v0.3.9 (2026-04-18)
+
+**New Features**
+
+- Added a built-in configuration dialog while keeping `ConfigTool.bat` as a compatibility launcher.
+- Added an in-game configuration entry through **[Alt] + [C]**. Saved changes take effect after restarting the game.
+- Player now opens the configuration dialog on startup when `Player.ini` is missing.
+
+**Bug Fixes**
+
+- Fixed command-line option parsing so short options, long options, and option values are handled correctly.
+- Fixed the configuration tool default path so it edits the same `Player.ini` used by Player.
+- Preserved existing `Player.ini` settings when saving changes from the configuration dialog.
+- Avoided saving temporary command-line overrides back into `Player.ini`.
+- Recomputed related paths after root path overrides.
+- Preserved in-session configuration edits when opening the configuration dialog during gameplay.
+- Report configuration save failures instead of silently ignoring them.
+- Updated the configuration tool launcher so it no longer shows a command-line window.
+- Accepted shorthand 16-bit pixel formats such as `RGB565` and `ARGB1555`.
+
+**Changes**
+
+- Improved VC6 and Virtools SDK build compatibility.
+- Added release packaging support for VC6 and MSVC 2022 builds.
 
 ### v0.3.8 (2025-09-25)
 

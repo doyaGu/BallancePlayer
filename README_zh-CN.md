@@ -8,6 +8,7 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 
 - 开箱即用，无需配置即可启动游戏
 - 支持 `.ini` 文件配置
+- 内置配置对话框，支持首次启动设置和游戏中修改
 - 支持灵活的命令行选项
 - 支持 32 位色彩模式
 - 兼容不支持 640x480 分辨率的显示器
@@ -47,7 +48,7 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 2. **进入项目目录**：打开控制台，进入包含 BallancePlayer 源代码的目录。
 3. **生成构建文件**：运行以下命令生成 Visual Studio 项目文件：
    ```
-   cmake -B build -G "Visual Studio 16 2022" -A Win32
+   cmake -B build -G "Visual Studio 17 2022" -A Win32
    ```
 4. **在 Visual Studio 中打开**：进入 `build` 目录，打开 `BallancePlayer.sln` 解决方案文件。
 5. **构建解决方案**：使用 Visual Studio 的构建工具编译项目。
@@ -55,8 +56,8 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 ### 使用 Visual Studio 6.0 构建
 
 1. **安装 Visual Studio 6.0**：确保已安装 Visual Studio 6.0。
-2. **打开项目**：在项目目录中找到 `Player.dsw` 并使用 Visual Studio 6.0 打开。
-3. **构建项目**：使用 Visual Studio 6.0 的构建工具编译项目。
+2. **设置 SDK 路径**：将 `VC6_ROOT` 设置为 Visual Studio 6.0 工具链路径，或在执行 `nmake` 时传入。
+3. **构建项目**：在项目根目录运行 `nmake /f Makefile CFG=Release VC6_ROOT=C:\Path\To\VC6`。
 
 ### 注意事项
 
@@ -67,10 +68,11 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 - **[Alt] + [Enter]**：切换窗口模式和全屏模式。
 - **[Alt] + [F4]**：强制关闭游戏。
 - **[Alt] + [/]**：显示关于窗口。
+- **[Alt] + [C]**：打开配置对话框。游戏中保存的更改将在重新启动游戏后生效。
 
 ## INI 设置
 
-`Player.ini` 文件包含多个用于控制游戏行为的设置。
+`Player.ini` 文件包含多个用于控制游戏行为的设置。如果当前目录不存在 `Player.ini`，Player 会在启动时打开配置对话框，以便在进入游戏前创建配置。
 
 ### 启动
 
@@ -237,6 +239,31 @@ Player.exe [OPTIONS]
 如果你有任何问题或功能请求，请在 GitHub 上进行反馈：[BallancePlayer](https://github.com/doyaGu/BallancePlayer)。
 
 ## 更新日志
+
+### v0.3.9 (2026-04-18)
+
+**新功能**
+
+- 内置配置对话框，并保留 `ConfigTool.bat` 作为兼容启动器。
+- 添加通过 **[Alt] + [C]** 打开游戏内配置对话框的入口。保存的更改将在重新启动游戏后生效。
+- 当前目录缺少 `Player.ini` 时，Player 会在启动时打开配置对话框。
+
+**问题修复**
+
+- 修复命令行选项解析，短选项、长选项和选项值现在可以正确处理。
+- 修复配置工具默认路径，使其编辑 Player 实际使用的同一个 `Player.ini`。
+- 从配置对话框保存时会保留 `Player.ini` 中未修改的设置。
+- 避免将临时命令行覆盖项保存回 `Player.ini`。
+- 在根路径被覆盖后重新计算相关路径。
+- 修复游戏中打开配置对话框时会覆盖本次会话内配置修改的问题。
+- 配置保存失败时会显示错误，而不是静默忽略。
+- 更新配置工具启动器，使其不再显示命令行窗口。
+- 支持 `RGB565`、`ARGB1555` 等简写 16 位像素格式。
+
+**变更**
+
+- 改进 VC6 和 Virtools SDK 构建兼容性。
+- 添加 VC6 和 MSVC 2022 构建的发布打包支持。
 
 ### v0.3.8 (2025-09-25)
 
