@@ -156,7 +156,7 @@ BEGIN
     CONTROL         "Enable In-Game Debug Mode",IDC_CHECK_DEBUG,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,14,255,198,10
     CONTROL         "Enable In-Game Rookie Mode",IDC_CHECK_ROOKIE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,13,268,198,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,14,268,198,10
     GROUPBOX        "Interface",IDC_GROUP_INTERFACE,8,290,215,35
     LTEXT           "Language:",IDC_STATIC,14,305,45,8
     COMBOBOX        IDC_COMBO_LANGUAGE,70,303,145,60,CBS_DROPDOWNLIST |
