@@ -50,7 +50,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     persistentConfig.LoadFromIni();
     CGameConfig runtimeConfig = persistentConfig;
-    playeroptions::ApplyConfigOptions(runtimeConfig, parser);
+    playeroptions::ApplyRuntimeOptions(runtimeConfig, parser);
 
     bool overwrite = true;
     if (runtimeConfig.logMode == eLogAppend)
@@ -73,7 +73,8 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
         return -1;
     }
 
-    if (!player.Load())
+    CLogger::Get().Debug("Loading game composition: %s", runtimeConfig.GetPath(eCmoPath));
+    if (!player.Load(runtimeConfig.GetPath(eCmoPath)))
     {
         CLogger::Get().Error("Failed to load game composition!");
         ::MessageBox(NULL, TEXT("Failed to load game composition!"), TEXT("Error"), MB_OK);

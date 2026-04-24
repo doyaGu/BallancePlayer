@@ -40,6 +40,22 @@ TEST(PlayerOptionsTest, CommandLineConfigOptionsApplyOnlyToRuntimeCopy) {
     EXPECT_FALSE(persistentConfig.fullscreen);
 }
 
+TEST(PlayerOptionsTest, RuntimeOptionsCanOverrideCompositionPath) {
+    CmdlineParser parser("--cmo custom.cmo --width=800");
+    CGameConfig persistentConfig;
+    persistentConfig.SetPath(eCmoPath, "base.cmo");
+    persistentConfig.width = 640;
+
+    CGameConfig runtimeConfig = persistentConfig;
+
+    playeroptions::ApplyRuntimeOptions(runtimeConfig, parser);
+
+    EXPECT_STREQ(runtimeConfig.GetPath(eCmoPath), "custom.cmo");
+    EXPECT_EQ(runtimeConfig.width, 800);
+    EXPECT_STREQ(persistentConfig.GetPath(eCmoPath), "base.cmo");
+    EXPECT_EQ(persistentConfig.width, 640);
+}
+
 TEST(PlayerOptionsTest, AppliesPathOptionsWithoutResettingFilePaths) {
     CmdlineParser parser("--log custom.log --config custom.ini --root-path ..\\");
     CGameConfig config;

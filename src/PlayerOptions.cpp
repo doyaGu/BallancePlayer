@@ -168,6 +168,12 @@ namespace playeroptions
         parser.Reset();
     }
 
+    void ApplyRuntimeOptions(CGameConfig &config, CmdlineParser &parser)
+    {
+        ApplyPathOptions(config, parser);
+        ApplyConfigOptions(config, parser);
+    }
+
     int GetConfigOptionCount()
     {
         int count = 0;
