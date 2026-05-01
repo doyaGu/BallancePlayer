@@ -13,6 +13,12 @@
 
 #include "GameConfig.h"
 
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+typedef BOOL PLAYER_DIALOG_RESULT;
+#else
+typedef INT_PTR PLAYER_DIALOG_RESULT;
+#endif
+
 class CGameInfo;
 
 class CGamePlayer
@@ -128,8 +134,8 @@ private:
     static bool UnregisterRenderWindowClass(HINSTANCE hInstance);
 
     static LRESULT CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    static BOOL CALLBACK FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    static BOOL CALLBACK AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    static PLAYER_DIALOG_RESULT CALLBACK FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+    static PLAYER_DIALOG_RESULT CALLBACK AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     int m_State;
     HINSTANCE m_hInstance;

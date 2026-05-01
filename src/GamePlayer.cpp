@@ -13,6 +13,7 @@
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
 
+#ifndef _WIN64
 #ifndef GetWindowLongPtr
 #define GetWindowLongPtr GetWindowLong
 #endif
@@ -24,6 +25,7 @@
 #endif
 #ifndef LONG_PTR
 #define LONG_PTR LONG
+#endif
 #endif
 
 extern bool EditScript(CKLevel *level, const CGameConfig &config);
@@ -1792,7 +1794,7 @@ LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
     return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-BOOL CALLBACK CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+PLAYER_DIALOG_RESULT CALLBACK CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     WORD wNotifyCode = HIWORD(wParam);
     int wID = LOWORD(wParam);
@@ -1879,7 +1881,7 @@ BOOL CALLBACK CGamePlayer::FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM w
     return FALSE;
 }
 
-BOOL CALLBACK CGamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+PLAYER_DIALOG_RESULT CALLBACK CGamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
