@@ -121,7 +121,10 @@ void CLogger::Log(const char *level, const char *fmt, va_list args)
                 sys.wMonth, sys.wDay, sys.wYear,
                 sys.wHour, sys.wMinute, sys.wSecond, sys.wMilliseconds);
         fprintf(out, "[%s]: ", level);
-        vfprintf(out, fmt, args);
+        va_list argsCopy;
+        va_copy(argsCopy, args);
+        vfprintf(out, fmt, argsCopy);
+        va_end(argsCopy);
         fputc('\n', out);
         fflush(out);
     }
