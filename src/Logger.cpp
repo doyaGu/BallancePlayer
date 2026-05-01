@@ -5,6 +5,12 @@
 #endif
 #include <Windows.h>
 
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+#define PLAYER_VA_COPY(dest, src) ((dest) = (src))
+#else
+#define PLAYER_VA_COPY(dest, src) va_copy(dest, src)
+#endif
+
 CLogger &CLogger::Get()
 {
     static CLogger logger;
@@ -122,7 +128,7 @@ void CLogger::Log(const char *level, const char *fmt, va_list args)
                 sys.wHour, sys.wMinute, sys.wSecond, sys.wMilliseconds);
         fprintf(out, "[%s]: ", level);
         va_list argsCopy;
-        va_copy(argsCopy, args);
+        PLAYER_VA_COPY(argsCopy, args);
         vfprintf(out, fmt, argsCopy);
         va_end(argsCopy);
         fputc('\n', out);
