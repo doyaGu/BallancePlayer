@@ -35,6 +35,12 @@ private:
 static HFONT g_hFonts[LANG_UI_COUNT] = {NULL};
 static const int kChineseUIFontHeight = -16;
 
+#if defined(_MSC_VER) && (_MSC_VER <= 1200)
+typedef BOOL PLAYER_DIALOG_RESULT;
+#else
+typedef INT_PTR PLAYER_DIALOG_RESULT;
+#endif
+
 typedef struct
 {
     int ctrlID;
@@ -679,7 +685,7 @@ typedef LONG LONG_PTR;
 #define SetWindowLongPtr SetWindowLong
 #endif
 
-BOOL CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     CGameConfig *pConfig = NULL;
     if (message != WM_INITDIALOG)
