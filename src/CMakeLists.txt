@@ -17,11 +17,6 @@ set_source_files_properties("${_player_resource_file}" PROPERTIES
         COMPILE_DEFINITIONS "PLAYER_ICON_PATH=\"${PLAYER_SOURCE_DIR}/Player.ico\";PLAYER_VERSION_RC_PATH=\"PlayerVersion.generated.rc\""
 )
 
-set(CONFIG_TOOL_LAUNCHERS
-        "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.bat"
-        "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.vbs"
-)
-
 set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
@@ -63,15 +58,7 @@ target_include_directories(${PLAYER_NAME} PRIVATE
         "${_player_generated_dir}"
 )
 
-add_custom_command(TARGET ${PLAYER_NAME} POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-                ${CONFIG_TOOL_LAUNCHERS}
-                "$<TARGET_FILE_DIR:${PLAYER_NAME}>"
-        COMMENT "Copying ConfigTool compatibility launchers"
-)
-
 install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION Bin)
-install(FILES ${CONFIG_TOOL_LAUNCHERS} DESTINATION Bin)
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Kakuty")
