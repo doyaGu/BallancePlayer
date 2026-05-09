@@ -63,7 +63,6 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
 
     set(_ballance_static_player_module_targets
             CK2_3DStatic
-            CKBgfxRasterizerStatic
             Dx8InputManagerStatic
             Dx8SoundManagerStatic
             ParameterOperationsStatic
@@ -95,6 +94,17 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
             TT_ParticleSystems_RTStatic
             TT_Toolbox_RTStatic
     )
+
+    set(_ballance_static_player_rasterizer_targets)
+    foreach (_rasterizer_target IN ITEMS CKDX9RasterizerStatic CKBgfxRasterizerStatic)
+        if (TARGET ${_rasterizer_target})
+            list(APPEND _ballance_static_player_rasterizer_targets ${_rasterizer_target})
+        endif ()
+    endforeach ()
+    if (NOT _ballance_static_player_rasterizer_targets)
+        message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER requires a static rasterizer target")
+    endif ()
+    list(APPEND _ballance_static_player_module_targets ${_ballance_static_player_rasterizer_targets})
 
     foreach (_static_module_target IN LISTS _ballance_static_player_module_targets)
         if (NOT TARGET ${_static_module_target})
