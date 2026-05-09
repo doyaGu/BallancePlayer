@@ -18,6 +18,7 @@ set_source_files_properties("${_player_resource_file}" PROPERTIES
 )
 
 set(PLAYER_HEADERS
+        StaticPlugins.h
         GamePlayer.h
         GameConfig.h
         PlayerOptions.h
@@ -44,6 +45,10 @@ set(PLAYER_SOURCES
         "${_player_resource_file}"
 )
 
+if (BALLANCE_BUILD_STATIC_PLAYER)
+    list(APPEND PLAYER_SOURCES StaticPlugins.cpp)
+endif ()
+
 add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
 
 set_target_properties(${PLAYER_NAME} PROPERTIES
@@ -52,6 +57,53 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
 )
 
 target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
+
+if (BALLANCE_BUILD_STATIC_PLAYER)
+    target_compile_definitions(${PLAYER_NAME} PRIVATE BALLANCE_STATIC_MODULES)
+
+    set(_ballance_static_player_module_targets
+            CK2_3DStatic
+            CKBgfxRasterizerStatic
+            Dx8InputManagerStatic
+            Dx8SoundManagerStatic
+            ParameterOperationsStatic
+            AVIReaderStatic
+            ImageReaderStatic
+            WavReaderStatic
+            VirtoolsLoaderStatic
+            3DTransStatic
+            CamerasStatic
+            CharactersStatic
+            CollisionStatic
+            ControllersStatic
+            GridsStatic
+            InterfaceStatic
+            LightsStatic
+            LogicsStatic
+            MaterialsStatic
+            MeshModifiersStatic
+            MidiManagerStatic
+            NarrativesStatic
+            SoundsStatic
+            VisualsStatic
+            WorldEnvironmentStatic
+            BuildingBlocksAddons1Static
+            physics_RTStatic
+            TT_DatabaseManager_RTStatic
+            TT_Gravity_RTStatic
+            TT_InterfaceManager_RTStatic
+            TT_ParticleSystems_RTStatic
+            TT_Toolbox_RTStatic
+    )
+
+    foreach (_static_module_target IN LISTS _ballance_static_player_module_targets)
+        if (NOT TARGET ${_static_module_target})
+            message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER requires target ${_static_module_target}")
+        endif ()
+    endforeach ()
+
+    target_link_libraries(${PLAYER_NAME} PRIVATE ${_ballance_static_player_module_targets})
+endif ()
 
 target_include_directories(${PLAYER_NAME} PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}"

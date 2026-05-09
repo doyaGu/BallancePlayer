@@ -146,6 +146,11 @@ static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config
     if (utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
         return true;
 
+#ifdef BALLANCE_STATIC_MODULES
+    if (config.SaveToIni())
+        return true;
+#endif
+
     return ShowConfigDialog(hInstance, config, false);
 }
 

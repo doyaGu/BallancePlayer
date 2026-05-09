@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef BALLANCE_STATIC_MODULES
+#include "StaticPlugins.h"
+#endif
 #include "ConfigDialog.h"
 #include "Logger.h"
 #include "Utils.h"
@@ -749,6 +752,16 @@ bool CGamePlayer::InitPlugins(CKPluginManager *pluginManager)
     if (!pluginManager)
         return false;
 
+#ifdef BALLANCE_STATIC_MODULES
+    if (!RegisterStaticPlugins(pluginManager))
+    {
+        CLogger::Get().Error("Failed to register static plugins.");
+        return false;
+    }
+
+    CLogger::Get().Debug("Static plugins registered.");
+    return true;
+#else
     if (!LoadRenderEngines(pluginManager))
     {
         CLogger::Get().Error("Failed to load render engine!");
@@ -774,6 +787,7 @@ bool CGamePlayer::InitPlugins(CKPluginManager *pluginManager)
     }
 
     return true;
+#endif
 }
 
 bool CGamePlayer::LoadRenderEngines(CKPluginManager *pluginManager)
