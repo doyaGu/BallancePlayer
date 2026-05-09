@@ -7,4 +7,8 @@
 #endif
 
 #include "PlayerResources.rc"
+#ifdef PLAYER_USE_GENERATED_VERSION_RC
+#include "PlayerVersion.generated.rc"
+#else
 #include PLAYER_VERSION_RC_PATH
+#endif

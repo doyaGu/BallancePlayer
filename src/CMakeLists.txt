@@ -14,7 +14,7 @@ configure_file(
 
 set(_player_resource_file "${CMAKE_CURRENT_SOURCE_DIR}/Player.rc")
 set_source_files_properties("${_player_resource_file}" PROPERTIES
-        COMPILE_DEFINITIONS "PLAYER_ICON_PATH=\"${PLAYER_SOURCE_DIR}/Player.ico\";PLAYER_VERSION_RC_PATH=\"PlayerVersion.generated.rc\""
+        COMPILE_DEFINITIONS "PLAYER_ICON_PATH=\"${PLAYER_SOURCE_DIR}/Player.ico\";PLAYER_USE_GENERATED_VERSION_RC=1"
 )
 
 set(PLAYER_HEADERS
