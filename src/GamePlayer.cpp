@@ -137,8 +137,16 @@ static bool SetCompositionEnvironment(const char *resolvedFile)
     if (!utils::GetFileDirectory(compositionDir, sizeof(compositionDir), resolvedFile, true))
         return false;
 
+#if defined(_MSC_VER) && _MSC_VER < 1400
+    char envBuf[sizeof("Gravity=") + MAX_PATH] = {0};
+    _snprintf(envBuf, sizeof(envBuf) - 1, "Gravity=%s", compositionDir);
+    envBuf[sizeof(envBuf) - 1] = '\0';
+    if (_putenv(envBuf) != 0)
+        return false;
+#else
     if (_putenv_s("Gravity", compositionDir) != 0)
         return false;
+#endif
 
     return ::SetEnvironmentVariableA("Gravity", compositionDir) != 0;
 }
@@ -1328,24 +1336,15 @@ void CGamePlayer::SetFullscreenWindowStyle()
     if (!m_MainWindow)
         return;
 
-    HMONITOR monitor = ::MonitorFromWindow(m_MainWindow, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO mi;
-    memset(&mi, 0, sizeof(mi));
-    mi.cbSize = sizeof(mi);
-    if (!monitor || !::GetMonitorInfo(monitor, &mi))
-    {
-        mi.rcMonitor.left = 0;
-        mi.rcMonitor.top = 0;
-        mi.rcMonitor.right = m_Config.width;
-        mi.rcMonitor.bottom = m_Config.height;
-    }
+    RECT monitorRect;
+    utils::GetMonitorRectForWindow(m_MainWindow, monitorRect);
 
-    const int width = mi.rcMonitor.right - mi.rcMonitor.left;
-    const int height = mi.rcMonitor.bottom - mi.rcMonitor.top;
+    const int width = monitorRect.right - monitorRect.left;
+    const int height = monitorRect.bottom - monitorRect.top;
 
     ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(WS_POPUP));
     ::SetWindowPos(m_MainWindow, HWND_TOP,
-                   mi.rcMonitor.left, mi.rcMonitor.top,
+                   monitorRect.left, monitorRect.top,
                    width, height,
                    SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 

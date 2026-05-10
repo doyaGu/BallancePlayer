@@ -16,6 +16,75 @@
 
 namespace utils
 {
+    // Multi-monitor API support without link-time dependency (VC6-friendly).
+    // We resolve APIs from user32.dll once and cache the function pointers.
+#ifndef HMONITOR
+    DECLARE_HANDLE(HMONITOR);
+#endif
+#ifndef MONITOR_DEFAULTTONEAREST
+#define MONITOR_DEFAULTTONEAREST 2
+#endif
+
+    typedef struct tagBP_MONITORINFO
+    {
+        DWORD cbSize;
+        RECT rcMonitor;
+        RECT rcWork;
+        DWORD dwFlags;
+    } BP_MONITORINFO, *LPBP_MONITORINFO;
+
+    typedef HMONITOR(WINAPI *MonitorFromWindowProc)(HWND, DWORD);
+    typedef BOOL(WINAPI *GetMonitorInfoAProc)(HMONITOR, LPBP_MONITORINFO);
+
+    static HMODULE g_User32 = NULL;
+    static MonitorFromWindowProc g_pMonitorFromWindow = NULL;
+    static GetMonitorInfoAProc g_pGetMonitorInfoA = NULL;
+    static int g_MonitorApiInitialized = 0;
+
+    static void EnsureMonitorApisLoaded()
+    {
+        if (g_MonitorApiInitialized)
+            return;
+        g_MonitorApiInitialized = 1;
+
+        g_User32 = ::GetModuleHandleA("user32.dll");
+        if (!g_User32)
+            g_User32 = ::LoadLibraryA("user32.dll");
+        if (!g_User32)
+            return;
+
+        g_pMonitorFromWindow = (MonitorFromWindowProc)::GetProcAddress(g_User32, "MonitorFromWindow");
+        g_pGetMonitorInfoA = (GetMonitorInfoAProc)::GetProcAddress(g_User32, "GetMonitorInfoA");
+    }
+
+    bool GetMonitorRectForWindow(HWND window, RECT &outRect)
+    {
+        // Default: primary screen metrics.
+        outRect.left = 0;
+        outRect.top = 0;
+        outRect.right = ::GetSystemMetrics(SM_CXSCREEN);
+        outRect.bottom = ::GetSystemMetrics(SM_CYSCREEN);
+
+        if (!window)
+            return false;
+
+        EnsureMonitorApisLoaded();
+        if (!g_pMonitorFromWindow || !g_pGetMonitorInfoA)
+            return true;
+
+        HMONITOR monitor = g_pMonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+        if (!monitor)
+            return true;
+
+        BP_MONITORINFO mi;
+        memset(&mi, 0, sizeof(mi));
+        mi.cbSize = sizeof(mi);
+        if (g_pGetMonitorInfoA(monitor, &mi))
+            outRect = mi.rcMonitor;
+
+        return true;
+    }
+
     bool FileOrDirectoryExists(const char *file)
     {
         if (!file || file[0] == '\0')

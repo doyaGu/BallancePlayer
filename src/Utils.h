@@ -2,6 +2,7 @@
 #define PLAYER_UTILS_H
 
 #include <wchar.h>
+#include <Windows.h>
 
 #include "VxMathDefines.h"
 
@@ -39,6 +40,10 @@ namespace utils
     bool IniSetInteger(const char *section, const char *name, int value, const char *filename);
     bool IniSetBoolean(const char *section, const char *name, bool value, const char *filename);
     bool IniSetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT value, const char *filename);
+
+    // Returns the monitor bounds for the monitor nearest to the specified window.
+    // Falls back to primary monitor metrics if multi-monitor APIs are unavailable.
+    bool GetMonitorRectForWindow(HWND window, RECT &outRect);
 }
 
 #endif // PLAYER_UTILS_H
