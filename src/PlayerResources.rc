@@ -56,15 +56,15 @@ LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
 // Dialog
 //
 
-IDD_CONFIG DIALOG DISCARDABLE  0, 0, 450, 370
+IDD_CONFIG DIALOG DISCARDABLE  0, 0, 450, 385
 STYLE DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION |
     WS_SYSMENU
 CAPTION "Ballance Configuration"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,205,340,40,14
-    PUSHBUTTON      "Cancel",IDCANCEL,249,340,40,14
-    PUSHBUTTON      "Defaults",IDC_BUTTON_DEFAULTS,159,340,40,14
+    DEFPUSHBUTTON   "OK",IDOK,205,355,40,14
+    PUSHBUTTON      "Cancel",IDCANCEL,249,355,40,14
+    PUSHBUTTON      "Defaults",IDC_BUTTON_DEFAULTS,159,355,40,14
     GROUPBOX        "Startup",IDC_GROUP_STARTUP,7,5,215,60
     LTEXT           "Log Mode:",IDC_STATIC,14,20,45,8
     COMBOBOX        IDC_COMBO_LOGMODE,70,18,145,45,CBS_DROPDOWNLIST |
@@ -73,7 +73,7 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,14,35,198,10
     CONTROL         "Manual Setup Dialog on Start",IDC_CHECK_MANUALSETUP,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,48,198,10
-    GROUPBOX        "Graphics",IDC_GROUP_GRAPHICS,228,5,215,320
+    GROUPBOX        "Graphics",IDC_GROUP_GRAPHICS,228,5,215,333
     LTEXT           "Driver ID:",IDC_STATIC,235,20,40,8
     EDITTEXT        IDC_CONFIG_EDIT_DRIVER,280,18,40,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "BPP:",IDC_STATIC,330,20,20,8
@@ -140,7 +140,7 @@ BEGIN
     EDITTEXT        IDC_EDIT_POSX,60,137,50,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "Pos Y:",IDC_STATIC,115,139,40,8
     EDITTEXT        IDC_EDIT_POSY,160,137,50,12,ES_AUTOHSCROLL | ES_NUMBER
-    GROUPBOX        "Game",IDC_GROUP_GAME,7,160,215,125
+    GROUPBOX        "Game",IDC_GROUP_GAME,7,160,215,138
     LTEXT           "Language:",IDC_STATIC,14,175,45,8
     COMBOBOX        IDC_COMBO_LANG,70,173,145,60,CBS_DROPDOWNLIST |
                     WS_VSCROLL | WS_TABSTOP
@@ -148,20 +148,22 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,14,190,198,10
     CONTROL         "Apply Script Hotfixes",IDC_CHECK_APPLYHOTFIX,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,14,203,198,10
+    CONTROL         "Use CMO Root Path",IDC_CHECK_USECMOROOTPATH,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,216,198,10
     CONTROL         "Unlock Framerate",IDC_CHECK_UNLOCKFRAMERATE,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,14,216,198,10
+                    BS_AUTOCHECKBOX | WS_TABSTOP,14,229,198,10
     CONTROL         "Unlock Widescreen (Non-4:3)",IDC_CHECK_UNLOCKWIDESCREEN,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,229,198,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,242,198,10
     CONTROL         "Unlock High Resolution (>1600w)",
                     IDC_CHECK_UNLOCKHIGHRES,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,14,242,198,10
+                    WS_TABSTOP,14,255,198,10
     CONTROL         "Enable In-Game Debug Mode",IDC_CHECK_DEBUG,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,14,255,198,10
-    CONTROL         "Enable In-Game Rookie Mode",IDC_CHECK_ROOKIE,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,14,268,198,10
-    GROUPBOX        "Interface",IDC_GROUP_INTERFACE,8,290,215,35
-    LTEXT           "Language:",IDC_STATIC,14,305,45,8
-    COMBOBOX        IDC_COMBO_LANGUAGE,70,303,145,60,CBS_DROPDOWNLIST |
+    CONTROL         "Enable In-Game Rookie Mode",IDC_CHECK_ROOKIE,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,14,281,198,10
+    GROUPBOX        "Interface",IDC_GROUP_INTERFACE,8,303,215,35
+    LTEXT           "Language:",IDC_STATIC,14,318,45,8
+    COMBOBOX        IDC_COMBO_LANGUAGE,70,316,145,60,CBS_DROPDOWNLIST |
                     WS_VSCROLL | WS_TABSTOP
 END
 
@@ -245,6 +247,7 @@ STRINGTABLE DISCARDABLE
 BEGIN
     IDS_SKIP_OPENING        "Skip Opening Animation"
     IDS_APPLY_HOTFIX        "Apply Script Hotfixes"
+    IDS_USE_CMO_ROOT_PATH "Use CMO Root Path"
     IDS_UNLOCK_FRAMERATE    "Unlock Framerate"
     IDS_UNLOCK_WIDESCREEN   "Unlock Widescreen (Non-4:3)"
     IDS_UNLOCK_HIGHRES      "Unlock High Resolution (>1600)"
@@ -327,6 +330,7 @@ BEGIN
     IDS_CN_UI_CHINESE       "中文"
     IDS_CN_SKIP_OPENING     "跳过开场动画"
     IDS_CN_APPLY_HOTFIX     "应用脚本热修复"
+    IDS_CN_USE_CMO_ROOT_PATH "使用 CMO 根路径"
     IDS_CN_UNLOCK_FRAMERATE "解锁帧率限制"
     IDS_CN_UNLOCK_WIDESCREEN "解锁宽屏支持 (非4:3)"
     IDS_CN_UNLOCK_HIGHRES   "解锁高分辨率 (>1600)"

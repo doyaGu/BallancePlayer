@@ -74,6 +74,7 @@
 #define IDS_UNLOCK_HIGHRES              1060
 #define IDS_DEBUG                       1061
 #define IDS_ROOKIE                      1062
+#define IDS_USE_CMO_ROOT_PATH           1071
 #define IDS_ERR_NO_CONFIG               1063
 #define IDS_ERR_CANNOT_SAVE             1064
 #define IDS_ERR_DIALOG_CREATE           1065
@@ -144,6 +145,7 @@
 #define IDS_CN_UNLOCK_HIGHRES           2060
 #define IDS_CN_DEBUG                    2061
 #define IDS_CN_ROOKIE                   2062
+#define IDS_CN_USE_CMO_ROOT_PATH        2071
 #define IDS_CN_ERR_NO_CONFIG            2063
 #define IDS_CN_ERR_CANNOT_SAVE          2064
 #define IDS_CN_ERR_DIALOG_CREATE        2065
@@ -197,6 +199,7 @@
 #define IDC_CHECK_UNLOCKHIGHRES         2306
 #define IDC_CHECK_DEBUG                 2307
 #define IDC_CHECK_ROOKIE                2308
+#define IDC_CHECK_USECMOROOTPATH        2309
 
 #define IDC_GROUP_STARTUP               2401
 #define IDC_GROUP_GRAPHICS              2402
@@ -238,6 +241,7 @@
 #define IDC_CONFIG_alwaysHandleInput    IDC_CHECK_ALWAYSHANDLEINPUT
 #define IDC_CONFIG_skipOpening          IDC_CHECK_SKIPOPENING
 #define IDC_CONFIG_applyHotfix          IDC_CHECK_APPLYHOTFIX
+#define IDC_CONFIG_useCmoRootPath       IDC_CHECK_USECMOROOTPATH
 #define IDC_CONFIG_unlockFramerate      IDC_CHECK_UNLOCKFRAMERATE
 #define IDC_CONFIG_unlockWidescreen     IDC_CHECK_UNLOCKWIDESCREEN
 #define IDC_CONFIG_unlockHighResolution IDC_CHECK_UNLOCKHIGHRES

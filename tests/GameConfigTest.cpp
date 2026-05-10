@@ -77,6 +77,7 @@ TEST_F(GameConfigTest, DefaultConstructor) {
     EXPECT_FALSE(config.alwaysHandleInput);
     EXPECT_FALSE(config.skipOpening);
     EXPECT_TRUE(config.applyHotfix);
+    EXPECT_TRUE(config.useCmoRootPath);
     EXPECT_FALSE(config.unlockFramerate);
     EXPECT_FALSE(config.unlockWidescreen);
     EXPECT_FALSE(config.unlockHighResolution);
@@ -199,6 +200,7 @@ ClipCursor=1
 Language=2
 SkipOpening=1
 UnlockFramerate=1
+UseCmoRootPath=0
 )";
     
     CreateTestIni(iniContent);
@@ -225,6 +227,7 @@ UnlockFramerate=1
     EXPECT_TRUE(config.clipCursor);
     EXPECT_EQ(config.langId, 2);
     EXPECT_TRUE(config.skipOpening);
+    EXPECT_FALSE(config.useCmoRootPath);
     EXPECT_TRUE(config.unlockFramerate);
     
     // Test values not in INI keep defaults
@@ -281,6 +284,7 @@ TEST_F(GameConfigTest, SaveToIni) {
     config.posY = 75;
     config.langId = 3;
     config.borderless = true;
+    config.useCmoRootPath = false;
     config.unlockWidescreen = true;
     config.debug = true;
     config.rookie = true;
@@ -297,6 +301,7 @@ TEST_F(GameConfigTest, SaveToIni) {
     EXPECT_NE(content.find("Verbose"), std::string::npos);
     EXPECT_NE(content.find("Driver"), std::string::npos);
     EXPECT_NE(content.find("Width"), std::string::npos);
+    EXPECT_NE(content.find("UseCmoRootPath"), std::string::npos);
     
     // Test loading back the saved file
     CGameConfig config2;
@@ -313,6 +318,7 @@ TEST_F(GameConfigTest, SaveToIni) {
     EXPECT_EQ(config2.posY, 75);
     EXPECT_EQ(config2.langId, 3);
     EXPECT_TRUE(config2.borderless);
+    EXPECT_FALSE(config2.useCmoRootPath);
     EXPECT_TRUE(config2.unlockWidescreen);
     EXPECT_TRUE(config2.debug);
     EXPECT_TRUE(config2.rookie);
