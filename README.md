@@ -244,20 +244,19 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 **New Features**
 
-- Added a built-in configuration dialog while keeping `ConfigTool.bat` as a compatibility launcher.
+- Added a built-in configuration dialog.
 - Added an in-game configuration entry through **[Alt] + [C]**. Saved changes take effect after restarting the game.
 - Player now opens the configuration dialog on startup when `Player.ini` is missing.
 
 **Bug Fixes**
 
 - Fixed command-line option parsing so short options, long options, and option values are handled correctly.
-- Fixed the configuration tool default path so it edits the same `Player.ini` used by Player.
+- Fixed configuration default path handling so it always targets the same `Player.ini` used by Player.
 - Preserved existing `Player.ini` settings when saving changes from the configuration dialog.
 - Avoided saving temporary command-line overrides back into `Player.ini`.
 - Recomputed related paths after root path overrides.
 - Preserved in-session configuration edits when opening the configuration dialog during gameplay.
 - Report configuration save failures instead of silently ignoring them.
-- Updated the configuration tool launcher so it no longer shows a command-line window.
 - Accepted shorthand 16-bit pixel formats such as `RGB565` and `ARGB1555`.
 
 **Changes**
