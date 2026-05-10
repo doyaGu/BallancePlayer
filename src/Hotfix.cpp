@@ -262,24 +262,22 @@ static bool UnlockFramerate(CKBehavior *synchToScreen)
     if (!synchToScreen)
         return false;
 
-    bool res = false;
-
+    bool changed = false;
     for (int i = 0; i < synchToScreen->GetSubBehaviorCount(); ++i)
     {
         CKBehavior *beh = synchToScreen->GetSubBehavior(i);
-        if (strcmp(beh->GetName(), "Time Settings") == 0)
+        if (strcmp(beh->GetName(), "Time Settings") == 0 && beh->GetInputParameterCount() > 0)
         {
             CKDWORD *frameRate = (CKDWORD *)beh->GetInputParameterReadDataPtr(0);
-            if (*frameRate == 3) // Frame Rate == Limit
+            if (frameRate && *frameRate != 1)
             {
-                *frameRate = 1; // Frame Rate = Free
-                res = true;
-                break;
+                scriptutils::GenerateInputParameter(synchToScreen, beh, 0, 1);
+                changed = true;
             }
         }
     }
 
-    return res;
+    return changed;
 }
 
 static bool SkipResolutionCheck(CKBehavior *synchToScreen)
