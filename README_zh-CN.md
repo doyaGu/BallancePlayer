@@ -33,8 +33,17 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 
 ## 安装说明
 
+BallancePlayer 支持原版 `Bin` 布局和扁平布局。
+
+### 原版 `Bin` 布局
+
 1. 将提供的压缩包解压至游戏文件夹中的 `Bin` 目录。
-2. 运行 `Player.exe` 启动游戏，无需设置兼容模式。
+2. 保持 `base.cmo`、`Database.tdb`、`Sounds`、`Textures`、`3D Entities` 等资源位于游戏文件夹。
+3. 运行 `Bin\Player.exe` 启动游戏，无需设置兼容模式。
+
+### 扁平布局
+
+也可以将 `Player.exe`、`base.cmo`、`Database.tdb`、资源文件夹和运行时 DLL 放在同一目录。若 `Player.exe` 旁存在 `base.cmo`，默认根路径会自动使用可执行文件所在目录。
 
 ## 从源码构建
 
@@ -234,6 +243,20 @@ Player.exe [OPTIONS]
 - `d`, `--debug`：启用游戏内调试模式。
 - `r`, `--rookie`：启用游戏内新手模式。
 
+### 路径选项
+
+- `--config <file>`：使用指定的 `Player.ini` 文件。
+- `--log <file>`：将日志写入指定文件。
+- `--cmo <file>`：加载指定的 composition 文件。这是文件路径，不会改变资源根路径。
+- `--root-path <dir>`：设置资源根路径。除非被显式覆盖，插件、渲染引擎、管理器、Building Block、声音、贴图和数据路径都会从该根路径派生。
+- `--plugin-path <dir>`：设置插件目录。
+- `--render-engine-path <dir>`：设置渲染引擎目录。
+- `--manager-path <dir>`：设置管理器目录。
+- `--building-block-path <dir>`：设置 Building Block 目录。
+- `--sound-path <dir>`：设置声音目录。
+- `--bitmap-path <dir>`：设置贴图/位图目录。
+- `--data-path <dir>`：设置数据目录，用于解析 `base.cmo` 等相对 composition 文件。
+
 ## 联系方式
 
 如果你有任何问题或功能请求，请在 GitHub 上进行反馈：[BallancePlayer](https://github.com/doyaGu/BallancePlayer)。
@@ -255,6 +278,8 @@ Player.exe [OPTIONS]
 - 从配置对话框保存时会保留 `Player.ini` 中未修改的设置。
 - 避免将临时命令行覆盖项保存回 `Player.ini`。
 - 在根路径被覆盖后重新计算相关路径。
+- 当 `base.cmo` 与 `Player.exe` 位于同一目录时，会识别为扁平运行布局，并默认使用可执行文件所在目录作为根路径。
+- 明确路径处理语义：`--config`、`--log`、`--cmo` 保持为文件路径，`--root-path` 负责控制资源目录。
 - 修复游戏中打开配置对话框时会覆盖本次会话内配置修改的问题。
 - 配置保存失败时会显示错误，而不是静默忽略。
 - 支持 `RGB565`、`ARGB1555` 等简写 16 位像素格式。

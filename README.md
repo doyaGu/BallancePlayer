@@ -33,8 +33,17 @@ Supports the following Windows versions:
 
 ## Installation
 
+BallancePlayer supports both the original `Bin` layout and a flat layout.
+
+### Original `Bin` layout
+
 1. Extract the provided package into the `Bin` directory of your game folder.
-2. Launch the game by running `Player.exe`. No need to set compatibility mode.
+2. Keep game assets such as `base.cmo`, `Database.tdb`, `Sounds`, `Textures`, and `3D Entities` in the game folder.
+3. Launch the game by running `Bin\Player.exe`. No need to set compatibility mode.
+
+### Flat layout
+
+You may also place `Player.exe`, `base.cmo`, `Database.tdb`, asset folders, and runtime DLLs in the same directory. When `base.cmo` is found next to `Player.exe`, the default root path becomes the executable directory.
 
 ## Building from Source
 
@@ -234,6 +243,20 @@ Player.exe [OPTIONS]
 - `d`, `--debug`: Enable in-game debug mode.
 - `r`, `--rookie`: Enable in-game rookie mode.
 
+### Path Options
+
+- `--config <file>`: Use a specific `Player.ini` file.
+- `--log <file>`: Write logs to a specific file.
+- `--cmo <file>`: Load a specific composition file. This is a file path and does not change the resource root.
+- `--root-path <dir>`: Set the resource root. Unless explicitly overridden, plugin, render engine, manager, building block, sound, bitmap, and data paths are derived from this root.
+- `--plugin-path <dir>`: Set the plugin directory.
+- `--render-engine-path <dir>`: Set the render engine directory.
+- `--manager-path <dir>`: Set the manager directory.
+- `--building-block-path <dir>`: Set the building block directory.
+- `--sound-path <dir>`: Set the sound directory.
+- `--bitmap-path <dir>`: Set the texture/bitmap directory.
+- `--data-path <dir>`: Set the data directory used to resolve relative composition files such as `base.cmo`.
+
 ## Contact
 
 If you have any bugs or requests, please open an issue in this repository: [BallancePlayer](https://github.com/doyaGu/BallancePlayer).
@@ -255,6 +278,8 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 - Preserved existing `Player.ini` settings when saving changes from the configuration dialog.
 - Avoided saving temporary command-line overrides back into `Player.ini`.
 - Recomputed related paths after root path overrides.
+- Detected flat runtime layouts by using the executable directory as the default root when `base.cmo` is next to `Player.exe`.
+- Clarified path handling so `--config`, `--log`, and `--cmo` remain file paths while `--root-path` controls resource directories.
 - Preserved in-session configuration edits when opening the configuration dialog during gameplay.
 - Report configuration save failures instead of silently ignoring them.
 - Accepted shorthand 16-bit pixel formats such as `RGB565` and `ARGB1555`.
