@@ -130,7 +130,9 @@ target_include_directories(${PLAYER_NAME} PRIVATE
         "${_player_generated_dir}"
 )
 
-install(TARGETS ${PLAYER_NAME} RUNTIME DESTINATION Bin)
+install(TARGETS ${PLAYER_NAME}
+        RUNTIME DESTINATION Bin COMPONENT Runtime
+)
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Kakuty")
