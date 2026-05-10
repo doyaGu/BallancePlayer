@@ -1,6 +1,7 @@
 #include "GamePlayer.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #ifdef BALLANCE_STATIC_MODULES
@@ -31,7 +32,7 @@
 #endif
 #endif
 
-extern bool EditScript(CKLevel *level, const CGameConfig &config);
+extern bool EditScript(CKLevel *level, const CGameConfig &config, const char *resolvedFile);
 
 static CKSTRING ToCKString(const char *value)
 {
@@ -70,6 +71,56 @@ static bool ResolveRuntimePath(char *buffer, size_t size, const char *path)
         return false;
 
     return utils::ConcatPath(buffer, size, currentDir, path) != NULL;
+}
+
+static bool AddPathIfMissing(CKPathManager *pathManager, int category, const char *path)
+{
+    if (!pathManager || !path || !*path)
+        return false;
+
+    XString ckPath = path;
+    if (pathManager->GetPathIndex(category, ckPath) >= 0)
+        return true;
+
+    return pathManager->AddPath(category, ckPath) >= 0;
+}
+
+static void AddDirectoryPathIfExists(CKPathManager *pathManager, int category, const char *basePath, const char *relativePath)
+{
+    char path[MAX_PATH];
+    if (!utils::ConcatPath(path, sizeof(path), basePath, relativePath))
+        return;
+    if (utils::DirectoryExists(path))
+        AddPathIfMissing(pathManager, category, path);
+}
+
+static void RegisterCmoRootPaths(CKPathManager *pathManager, const char *resolvedFile)
+{
+    char cmoRootPath[MAX_PATH];
+    if (!utils::GetFileDirectory(cmoRootPath, sizeof(cmoRootPath), resolvedFile, true))
+        return;
+
+    AddPathIfMissing(pathManager, DATA_PATH_IDX, cmoRootPath);
+    AddDirectoryPathIfExists(pathManager, DATA_PATH_IDX, cmoRootPath, "3D Entities\\");
+
+    AddPathIfMissing(pathManager, SOUND_PATH_IDX, cmoRootPath);
+    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, cmoRootPath, "Sounds\\");
+    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, cmoRootPath, "Sounds_low\\");
+
+    AddPathIfMissing(pathManager, BITMAP_PATH_IDX, cmoRootPath);
+    AddDirectoryPathIfExists(pathManager, BITMAP_PATH_IDX, cmoRootPath, "Textures\\");
+}
+
+static bool SetCmoRootEnvironment(const char *resolvedFile)
+{
+    char cmoRootPath[MAX_PATH];
+    if (!utils::GetFileDirectory(cmoRootPath, sizeof(cmoRootPath), resolvedFile, true))
+        return false;
+
+    if (_putenv_s("Gravity", cmoRootPath) != 0)
+        return false;
+
+    return ::SetEnvironmentVariableA("Gravity", cmoRootPath) != 0;
 }
 
 CGamePlayer::CGamePlayer()
@@ -199,6 +250,13 @@ bool CGamePlayer::Load(const char *filename)
         return false;
     }
 
+    if (m_Config.useCmoRootPath)
+    {
+        RegisterCmoRootPaths(pm, resolvedFile.CStr());
+        if (!SetCmoRootEnvironment(resolvedFile.CStr()))
+            CLogger::Get().Warn("Failed to set CMO root environment path.");
+    }
+
     m_CKContext->Reset();
     m_CKContext->ClearAll();
 
@@ -245,7 +303,7 @@ bool CGamePlayer::Load(const char *filename)
     m_CKContext->DeleteCKFile(f);
     DeleteCKObjectArray(array);
 
-    return FinishLoad(filename);
+    return FinishLoad(filename, resolvedFile.CStr());
 }
 
 void CGamePlayer::Run()
@@ -650,7 +708,7 @@ bool CGamePlayer::InitDriver()
     return true;
 }
 
-bool CGamePlayer::FinishLoad(const char *filename)
+bool CGamePlayer::FinishLoad(const char *filename, const char *resolvedFile)
 {
     if (!filename)
         return false;
@@ -704,7 +762,7 @@ bool CGamePlayer::FinishLoad(const char *filename)
 
     if (m_Config.applyHotfix && m_CKContext->GetManagerByGuid(TT_INTERFACE_MANAGER_GUID) != NULL)
     {
-        if (!EditScript(level, m_Config))
+        if (!EditScript(level, m_Config, resolvedFile))
         {
             CLogger::Get().Warn("Failed to apply hotfixes on script!");
         }

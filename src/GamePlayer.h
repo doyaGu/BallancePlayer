@@ -68,7 +68,7 @@ private:
 
     bool InitDriver();
 
-    bool FinishLoad(const char *filename);
+    bool FinishLoad(const char *filename, const char *resolvedFile);
     void ReportMissingGuids(CKFile *file, const char *resolvedFile);
 
     bool InitPlugins(CKPluginManager *pluginManager);

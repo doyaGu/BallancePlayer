@@ -4,6 +4,53 @@
 #include "ScriptUtils.h"
 #include "InterfaceManager.h"
 #include "GameConfig.h"
+#include "Utils.h"
+
+static bool GetCmoRootPath(char *buffer, size_t size, const char *resolvedFile, bool trailing)
+{
+    return utils::GetFileDirectory(buffer, size, resolvedFile, trailing);
+}
+
+static bool PatchReplacePathRoot(CKBehavior *defaultLevel, const char *resolvedFile)
+{
+    CKBehavior *getSystemVersion = scriptutils::GetBehavior(defaultLevel, "GetSystemVersion");
+    if (!getSystemVersion)
+        return false;
+
+    CKBehavior *replacePath = scriptutils::GetBehavior(getSystemVersion, "TT_ReplacePath");
+    if (!replacePath || replacePath->GetInputParameterCount() <= 2)
+        return false;
+
+    char cmoRootPath[MAX_PATH];
+    if (!GetCmoRootPath(cmoRootPath, sizeof(cmoRootPath), resolvedFile, false))
+        return false;
+
+    scriptutils::GenerateInputParameter(getSystemVersion, replacePath, 2, cmoRootPath);
+    return true;
+}
+
+static bool PatchPlayerActiveRoot(CKBehavior *defaultLevel, const char *resolvedFile)
+{
+    CKBehavior *playerActive = scriptutils::GetBehavior(defaultLevel, "Player Active?");
+    if (!playerActive)
+        return false;
+
+    char cmoRootPath[MAX_PATH];
+    if (!GetCmoRootPath(cmoRootPath, sizeof(cmoRootPath), resolvedFile, true))
+        return false;
+
+    for (int i = 0; i < playerActive->GetLocalParameterCount(); ++i)
+    {
+        CKParameterLocal *param = playerActive->GetLocalParameter(i);
+        if (param && param->GetName() && strcmp(param->GetName(), "pIn 1") == 0)
+        {
+            scriptutils::SetParameterString(param, cmoRootPath);
+            return true;
+        }
+    }
+
+    return false;
+}
 
 static bool SetDebugMode(CKBehavior *setDebugMode)
 {
@@ -336,9 +383,9 @@ static bool SkipOpeningAnimation(CKBehavior *defaultLevel, CKBehavior *synchToSc
     return true;
 }
 
-bool EditScript(CKLevel *level, const CGameConfig &config)
+bool EditScript(CKLevel *level, const CGameConfig &config, const char *resolvedFile)
 {
-    if (!level)
+    if (!level || !resolvedFile || !*resolvedFile)
         return false;
 
     CKBehavior *defaultLevel = scriptutils::GetBehavior(level->ComputeObjectList(CKCID_BEHAVIOR), "Default Level");
@@ -346,6 +393,12 @@ bool EditScript(CKLevel *level, const CGameConfig &config)
     {
         CLogger::Get().Warn("Unable to find Default Level");
         return false;
+    }
+
+    if (config.useCmoRootPath)
+    {
+        PatchReplacePathRoot(defaultLevel, resolvedFile);
+        PatchPlayerActiveRoot(defaultLevel, resolvedFile);
     }
 
     // Set debug mode
