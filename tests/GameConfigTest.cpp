@@ -571,7 +571,7 @@ Antialias=4
     // Should complete within reasonable time (adjust threshold as needed)
     // INI operations are disk-heavy on Windows and this debug target now does
     // additional snapshot work for merge-safe saves.
-    EXPECT_LT(duration.count(), 25000); // Less than 25 seconds for 100 operations
+    EXPECT_LT(duration.count(), 60000); // Less than 60 seconds for 100 operations
 }
 
 // Test X-macro expansion correctness

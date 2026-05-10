@@ -279,7 +279,7 @@ TEST_F(UtilsTest, WcharToChar) {
 // CRC32 tests
 TEST_F(UtilsTest, CRC32) {
     const char* testData = "Hello, World!";
-    size_t result1, result2;
+    unsigned int result1, result2;
 
     // Test basic CRC calculation
     utils::CRC32(testData, strlen(testData), 0, &result1);
@@ -290,12 +290,12 @@ TEST_F(UtilsTest, CRC32) {
 
     // Different input should produce different output
     const char* differentData = "Hello, World?";
-    size_t result3;
+    unsigned int result3;
     utils::CRC32(differentData, strlen(differentData), 0, &result3);
     EXPECT_NE(result1, result3);
 
     // Different seed should produce different output
-    size_t result4;
+    unsigned int result4;
     utils::CRC32(testData, strlen(testData), 12345, &result4);
     EXPECT_NE(result1, result4);
 }
