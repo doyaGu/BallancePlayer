@@ -49,7 +49,7 @@ RSC_PROJ=$(VC6_INC) $(LOCAL_INC) $(VIRTOOLS_INC) /l 0x409 /fo"$(INTDIR)\Player.r
 LINK32_FLAGS=CK2.lib VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib delayimp.lib /nologo /subsystem:windows /debug /machine:I386 /out:"$(OUTDIR)\Player.exe" /pdbtype:sept /delayload:CK2.dll /delayload:VxMath.dll $(VC6_LIB) $(VIRTOOLS_LIB)
 !ENDIF
 
-ALL : "$(OUTDIR)\Player.exe" "$(OUTDIR)\ConfigTool.bat" "$(OUTDIR)\ConfigTool.vbs"
+ALL : "$(OUTDIR)\Player.exe"
 
 CLEAN :
 	-@if exist "$(INTDIR)\*.obj" del /q "$(INTDIR)\*.obj"
@@ -87,12 +87,6 @@ OBJS= \
 	$(LINK32) @<<
 $(LINK32_FLAGS) $(OBJS)
 <<
-
-"$(OUTDIR)\ConfigTool.bat" : ".\src\ConfigTool.bat" "$(OUTDIR)"
-	copy /Y ".\src\ConfigTool.bat" "$(OUTDIR)\ConfigTool.bat"
-
-"$(OUTDIR)\ConfigTool.vbs" : ".\src\ConfigTool.vbs" "$(OUTDIR)"
-	copy /Y ".\src\ConfigTool.vbs" "$(OUTDIR)\ConfigTool.vbs"
 
 "$(INTDIR)\CmdlineParser.obj" : ".\src\CmdlineParser.cpp" "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) ".\src\CmdlineParser.cpp"

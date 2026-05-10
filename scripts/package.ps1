@@ -155,16 +155,8 @@ function New-PlayerPackage {
     $shaPath = "$zipPath.sha256"
 
     $playerExe = Join-Path $BinaryDir "Player.exe"
-    $configToolBat = Join-Path $BinaryDir "ConfigTool.bat"
-    $configToolVbs = Join-Path $BinaryDir "ConfigTool.vbs"
     if (-not (Test-Path $playerExe)) {
         throw "Could not find Player.exe in $BinaryDir"
-    }
-    if (-not (Test-Path $configToolBat)) {
-        throw "Could not find ConfigTool.bat next to Player.exe in $BinaryDir"
-    }
-    if (-not (Test-Path $configToolVbs)) {
-        throw "Could not find ConfigTool.vbs next to Player.exe in $BinaryDir"
     }
 
     Remove-Item -LiteralPath $stagePath -Recurse -Force -ErrorAction SilentlyContinue
@@ -172,8 +164,6 @@ function New-PlayerPackage {
     New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
 
     Copy-Item -LiteralPath $playerExe -Destination $stagePath
-    Copy-Item -LiteralPath $configToolBat -Destination $stagePath
-    Copy-Item -LiteralPath $configToolVbs -Destination $stagePath
 
     foreach ($name in @("LICENSE", "README.md", "README_zh-CN.md")) {
         $path = Join-Path $RootDir $name

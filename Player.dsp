@@ -104,10 +104,6 @@ SOURCE=.\src\ConfigDialog.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\ConfigTool.bat
-# End Source File
-# Begin Source File
-
 SOURCE=.\src\GameConfig.cpp
 # End Source File
 # Begin Source File

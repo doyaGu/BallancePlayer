@@ -104,7 +104,6 @@ $($packageLines -join "`n")
 
 Each package contains:
 - Player.exe
-- ConfigTool.bat compatibility launcher for Player.exe --config-tool
 - README.md / README_zh-CN.md
 - LICENSE
 
