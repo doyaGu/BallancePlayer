@@ -11,6 +11,21 @@
 
 namespace fs = std::filesystem;
 
+class ScopedCurrentDirectory {
+public:
+    explicit ScopedCurrentDirectory(const fs::path& path)
+        : m_Previous(fs::current_path()) {
+        fs::current_path(path);
+    }
+
+    ~ScopedCurrentDirectory() {
+        fs::current_path(m_Previous);
+    }
+
+private:
+    fs::path m_Previous;
+};
+
 class GameConfigTest : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -77,7 +92,6 @@ TEST_F(GameConfigTest, DefaultConstructor) {
     EXPECT_FALSE(config.alwaysHandleInput);
     EXPECT_FALSE(config.skipOpening);
     EXPECT_TRUE(config.applyHotfix);
-    EXPECT_TRUE(config.useCmoRootPath);
     EXPECT_FALSE(config.unlockFramerate);
     EXPECT_FALSE(config.unlockWidescreen);
     EXPECT_FALSE(config.unlockHighResolution);
@@ -200,7 +214,6 @@ ClipCursor=1
 Language=2
 SkipOpening=1
 UnlockFramerate=1
-UseCmoRootPath=0
 )";
     
     CreateTestIni(iniContent);
@@ -227,7 +240,6 @@ UseCmoRootPath=0
     EXPECT_TRUE(config.clipCursor);
     EXPECT_EQ(config.langId, 2);
     EXPECT_TRUE(config.skipOpening);
-    EXPECT_FALSE(config.useCmoRootPath);
     EXPECT_TRUE(config.unlockFramerate);
     
     // Test values not in INI keep defaults
@@ -284,7 +296,6 @@ TEST_F(GameConfigTest, SaveToIni) {
     config.posY = 75;
     config.langId = 3;
     config.borderless = true;
-    config.useCmoRootPath = false;
     config.unlockWidescreen = true;
     config.debug = true;
     config.rookie = true;
@@ -301,8 +312,6 @@ TEST_F(GameConfigTest, SaveToIni) {
     EXPECT_NE(content.find("Verbose"), std::string::npos);
     EXPECT_NE(content.find("Driver"), std::string::npos);
     EXPECT_NE(content.find("Width"), std::string::npos);
-    EXPECT_NE(content.find("UseCmoRootPath"), std::string::npos);
-    
     // Test loading back the saved file
     CGameConfig config2;
     config2.LoadFromIni(testIniPath.string().c_str());
@@ -318,7 +327,6 @@ TEST_F(GameConfigTest, SaveToIni) {
     EXPECT_EQ(config2.posY, 75);
     EXPECT_EQ(config2.langId, 3);
     EXPECT_TRUE(config2.borderless);
-    EXPECT_FALSE(config2.useCmoRootPath);
     EXPECT_TRUE(config2.unlockWidescreen);
     EXPECT_TRUE(config2.debug);
     EXPECT_TRUE(config2.rookie);
@@ -578,6 +586,44 @@ Antialias=4
     // INI operations are disk-heavy on Windows and this debug target now does
     // additional snapshot work for merge-safe saves.
     EXPECT_LT(duration.count(), 60000); // Less than 60 seconds for 100 operations
+}
+
+TEST_F(GameConfigTest, FlatLayoutUsesExecutableDirectoryAsRootPath) {
+    fs::path testDir = fs::temp_directory_path() / "gameconfig_flat_root";
+    fs::path cmoFile = testDir / "base.cmo";
+    fs::create_directories(testDir);
+    std::ofstream(cmoFile.string()).close();
+
+    {
+        ScopedCurrentDirectory scopedDir(testDir);
+        CGameConfig config;
+
+        EXPECT_STREQ(config.GetPath(eRootPath), ".\\");
+        EXPECT_STREQ(config.GetPath(eDataPath), ".\\");
+        EXPECT_STREQ(config.GetPath(eConfigPath), "Player.ini");
+        EXPECT_STREQ(config.GetPath(eLogPath), "Player.log");
+        EXPECT_STREQ(config.GetPath(eCmoPath), "base.cmo");
+    }
+
+    fs::remove_all(testDir);
+}
+
+TEST_F(GameConfigTest, DefaultLayoutUsesParentDirectoryAsRootPath) {
+    fs::path testDir = fs::temp_directory_path() / "gameconfig_parent_root";
+    fs::create_directories(testDir);
+
+    {
+        ScopedCurrentDirectory scopedDir(testDir);
+        CGameConfig config;
+
+        EXPECT_STREQ(config.GetPath(eRootPath), "..\\");
+        EXPECT_STREQ(config.GetPath(eDataPath), "..\\");
+        EXPECT_STREQ(config.GetPath(eConfigPath), "Player.ini");
+        EXPECT_STREQ(config.GetPath(eLogPath), "Player.log");
+        EXPECT_STREQ(config.GetPath(eCmoPath), "base.cmo");
+    }
+
+    fs::remove_all(testDir);
 }
 
 // Test X-macro expansion correctness

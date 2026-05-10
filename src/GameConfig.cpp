@@ -70,6 +70,29 @@ static bool ResolveDefaultConfigPath(std::string &outPath)
     return ResolveAbsolutePath(DefaultPaths[eConfigPath], outPath);
 }
 
+static bool GetDefaultRootPath(char *buffer, size_t size)
+{
+    if (!buffer || size == 0)
+        return false;
+
+    char currentDir[MAX_PATH];
+    char path[MAX_PATH];
+    if (utils::GetCurrentPath(currentDir, sizeof(currentDir)) == 0)
+        return false;
+
+    if (utils::ConcatPath(path, sizeof(path), currentDir, DefaultPaths[eCmoPath]) &&
+        utils::FileOrDirectoryExists(path))
+    {
+        strncpy(buffer, ".\\", size - 1);
+        buffer[size - 1] = '\0';
+        return true;
+    }
+
+    strncpy(buffer, DefaultPaths[eRootPath], size - 1);
+    buffer[size - 1] = '\0';
+    return true;
+}
+
 static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
                               std::string &outPath, bool *shouldUpdateStoredPath)
 {
@@ -229,12 +252,23 @@ bool CGameConfig::ResetPath(PathCategory category)
 
     if (category == ePathCategoryCount)
     {
+        char rootPath[MAX_PATH];
+        if (!GetDefaultRootPath(rootPath, sizeof(rootPath)))
+        {
+            strncpy(rootPath, DefaultPaths[eRootPath], sizeof(rootPath));
+            rootPath[sizeof(rootPath) - 1] = '\0';
+        }
+
         // Reset all paths
         for (int i = 0; i < ePathCategoryCount; ++i)
         {
-            if (i < ePluginPath)
+            if (i < eRootPath)
             {
                 SetPath((PathCategory)i, DefaultPaths[i]);
+            }
+            else if (i == eRootPath)
+            {
+                SetPath((PathCategory)i, rootPath);
             }
             else
             {
@@ -247,9 +281,19 @@ bool CGameConfig::ResetPath(PathCategory category)
     else
     {
         // Reset specific path
-        if (category < ePluginPath)
+        if (category < eRootPath)
         {
             SetPath(category, DefaultPaths[category]);
+        }
+        else if (category == eRootPath)
+        {
+            char rootPath[MAX_PATH];
+            if (!GetDefaultRootPath(rootPath, sizeof(rootPath)))
+            {
+                strncpy(rootPath, DefaultPaths[eRootPath], sizeof(rootPath));
+                rootPath[sizeof(rootPath) - 1] = '\0';
+            }
+            SetPath(category, rootPath);
         }
         else
         {

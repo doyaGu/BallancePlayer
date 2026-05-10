@@ -73,6 +73,26 @@ static bool ResolveRuntimePath(char *buffer, size_t size, const char *path)
     return utils::ConcatPath(buffer, size, currentDir, path) != NULL;
 }
 
+static bool GetExecutableDirectory(char *buffer, size_t size)
+{
+    char modulePath[MAX_PATH];
+    DWORD length = ::GetModuleFileNameA(NULL, modulePath, MAX_PATH);
+    return length > 0 && length < MAX_PATH && utils::GetFileDirectory(buffer, size, modulePath, true);
+}
+
+static bool ParsePluginsFromExecutableDirectory(CKPluginManager *pluginManager)
+{
+    char path[MAX_PATH];
+    if (!pluginManager || !GetExecutableDirectory(path, sizeof(path)))
+        return false;
+
+    if (!utils::DirectoryExists(path))
+        return false;
+
+    pluginManager->ParsePlugins(ToCKString(path));
+    return true;
+}
+
 static bool AddPathIfMissing(CKPathManager *pathManager, int category, const char *path)
 {
     if (!pathManager || !path || !*path)
@@ -94,33 +114,33 @@ static void AddDirectoryPathIfExists(CKPathManager *pathManager, int category, c
         AddPathIfMissing(pathManager, category, path);
 }
 
-static void RegisterCmoRootPaths(CKPathManager *pathManager, const char *resolvedFile)
+static void RegisterCompositionPaths(CKPathManager *pathManager, const char *resolvedFile)
 {
-    char cmoRootPath[MAX_PATH];
-    if (!utils::GetFileDirectory(cmoRootPath, sizeof(cmoRootPath), resolvedFile, true))
+    char compositionDir[MAX_PATH];
+    if (!utils::GetFileDirectory(compositionDir, sizeof(compositionDir), resolvedFile, true))
         return;
 
-    AddPathIfMissing(pathManager, DATA_PATH_IDX, cmoRootPath);
-    AddDirectoryPathIfExists(pathManager, DATA_PATH_IDX, cmoRootPath, "3D Entities\\");
+    AddPathIfMissing(pathManager, DATA_PATH_IDX, compositionDir);
+    AddDirectoryPathIfExists(pathManager, DATA_PATH_IDX, compositionDir, "3D Entities\\");
 
-    AddPathIfMissing(pathManager, SOUND_PATH_IDX, cmoRootPath);
-    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, cmoRootPath, "Sounds\\");
-    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, cmoRootPath, "Sounds_low\\");
+    AddPathIfMissing(pathManager, SOUND_PATH_IDX, compositionDir);
+    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, compositionDir, "Sounds\\");
+    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, compositionDir, "Sounds_low\\");
 
-    AddPathIfMissing(pathManager, BITMAP_PATH_IDX, cmoRootPath);
-    AddDirectoryPathIfExists(pathManager, BITMAP_PATH_IDX, cmoRootPath, "Textures\\");
+    AddPathIfMissing(pathManager, BITMAP_PATH_IDX, compositionDir);
+    AddDirectoryPathIfExists(pathManager, BITMAP_PATH_IDX, compositionDir, "Textures\\");
 }
 
-static bool SetCmoRootEnvironment(const char *resolvedFile)
+static bool SetCompositionEnvironment(const char *resolvedFile)
 {
-    char cmoRootPath[MAX_PATH];
-    if (!utils::GetFileDirectory(cmoRootPath, sizeof(cmoRootPath), resolvedFile, true))
+    char compositionDir[MAX_PATH];
+    if (!utils::GetFileDirectory(compositionDir, sizeof(compositionDir), resolvedFile, true))
         return false;
 
-    if (_putenv_s("Gravity", cmoRootPath) != 0)
+    if (_putenv_s("Gravity", compositionDir) != 0)
         return false;
 
-    return ::SetEnvironmentVariableA("Gravity", cmoRootPath) != 0;
+    return ::SetEnvironmentVariableA("Gravity", compositionDir) != 0;
 }
 
 CGamePlayer::CGamePlayer()
@@ -250,12 +270,9 @@ bool CGamePlayer::Load(const char *filename)
         return false;
     }
 
-    if (m_Config.useCmoRootPath)
-    {
-        RegisterCmoRootPaths(pm, resolvedFile.CStr());
-        if (!SetCmoRootEnvironment(resolvedFile.CStr()))
-            CLogger::Get().Warn("Failed to set CMO root environment path.");
-    }
+    RegisterCompositionPaths(pm, resolvedFile.CStr());
+    if (!SetCompositionEnvironment(resolvedFile.CStr()))
+        CLogger::Get().Warn("Failed to set composition environment path.");
 
     m_CKContext->Reset();
     m_CKContext->ClearAll();
@@ -851,7 +868,8 @@ bool CGamePlayer::LoadRenderEngines(CKPluginManager *pluginManager)
         return false;
 
     const char *path = m_Config.GetPath(eRenderEnginePath);
-    if (!utils::DirectoryExists(path) || pluginManager->ParsePlugins(ToCKString(path)) == 0)
+    if ((!utils::DirectoryExists(path) || pluginManager->ParsePlugins(ToCKString(path)) == 0) &&
+        !ParsePluginsFromExecutableDirectory(pluginManager))
     {
         CLogger::Get().Error("Render engine parse error.");
         return false;
@@ -870,8 +888,13 @@ bool CGamePlayer::LoadManagers(CKPluginManager *pluginManager)
     const char *path = m_Config.GetPath(eManagerPath);
     if (!utils::DirectoryExists(path))
     {
-        CLogger::Get().Error("Managers directory does not exist!");
-        return false;
+        if (!ParsePluginsFromExecutableDirectory(pluginManager))
+        {
+            CLogger::Get().Error("Managers directory does not exist!");
+            return false;
+        }
+        CLogger::Get().Debug("Managers loaded.");
+        return true;
     }
 
     CLogger::Get().Debug("Loading managers from %s", path);
@@ -895,8 +918,13 @@ bool CGamePlayer::LoadBuildingBlocks(CKPluginManager *pluginManager)
     const char *path = m_Config.GetPath(eBuildingBlockPath);
     if (!utils::DirectoryExists(path))
     {
-        CLogger::Get().Error("BuildingBlocks directory does not exist!");
-        return false;
+        if (!ParsePluginsFromExecutableDirectory(pluginManager))
+        {
+            CLogger::Get().Error("BuildingBlocks directory does not exist!");
+            return false;
+        }
+        CLogger::Get().Debug("Building blocks loaded.");
+        return true;
     }
 
     CLogger::Get().Debug("Loading building blocks from %s", path);
@@ -920,8 +948,13 @@ bool CGamePlayer::LoadPlugins(CKPluginManager *pluginManager)
     const char *path = m_Config.GetPath(ePluginPath);
     if (!utils::DirectoryExists(path))
     {
-        CLogger::Get().Error("Plugins directory does not exist!");
-        return false;
+        if (!ParsePluginsFromExecutableDirectory(pluginManager))
+        {
+            CLogger::Get().Error("Plugins directory does not exist!");
+            return false;
+        }
+        CLogger::Get().Debug("Plugins loaded.");
+        return true;
     }
 
     CLogger::Get().Debug("Loading plugins from %s", path);
