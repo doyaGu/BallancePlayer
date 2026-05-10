@@ -56,7 +56,17 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
         WIN32_EXECUTABLE TRUE
 )
 
-target_link_libraries(${PLAYER_NAME} PRIVATE CK2 VxMath)
+set(_player_ck2_dep CK2)
+set(_player_vxmath_dep VxMath)
+if (BALLANCE_BUILD_STATIC_PLAYER)
+    if (TARGET CK2Static)
+        set(_player_ck2_dep CK2Static)
+    endif ()
+    if (TARGET VxMathStatic)
+        set(_player_vxmath_dep VxMathStatic)
+    endif ()
+endif ()
+target_link_libraries(${PLAYER_NAME} PRIVATE ${_player_ck2_dep} ${_player_vxmath_dep})
 
 if (BALLANCE_BUILD_STATIC_PLAYER)
     target_compile_definitions(${PLAYER_NAME} PRIVATE BALLANCE_STATIC_MODULES)

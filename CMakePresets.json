@@ -1,0 +1,91 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/build/${presetName}/stage"
+      }
+    },
+    {
+      "name": "player-runtime-msvc-win32",
+      "inherits": "base",
+      "architecture": "Win32",
+      "cacheVariables": {
+        "BALLANCE_BUILD_STATIC_PLAYER": "OFF"
+      }
+    },
+    {
+      "name": "player-runtime-msvc-x64",
+      "inherits": "base",
+      "architecture": "x64",
+      "cacheVariables": {
+        "BALLANCE_BUILD_STATIC_PLAYER": "OFF"
+      }
+    },
+    {
+      "name": "player-static-msvc-win32",
+      "inherits": "base",
+      "architecture": "Win32",
+      "cacheVariables": {
+        "BALLANCE_BUILD_STATIC_PLAYER": "ON"
+      }
+    },
+    {
+      "name": "player-static-msvc-x64",
+      "inherits": "base",
+      "architecture": "x64",
+      "cacheVariables": {
+        "BALLANCE_BUILD_STATIC_PLAYER": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "player-runtime-win32-release",
+      "configurePreset": "player-runtime-msvc-win32",
+      "configuration": "Release"
+    },
+    {
+      "name": "player-runtime-x64-release",
+      "configurePreset": "player-runtime-msvc-x64",
+      "configuration": "Release"
+    },
+    {
+      "name": "player-static-win32-release",
+      "configurePreset": "player-static-msvc-win32",
+      "configuration": "Release"
+    },
+    {
+      "name": "player-static-x64-release",
+      "configurePreset": "player-static-msvc-x64",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "player-runtime-win32-release",
+      "configurePreset": "player-runtime-msvc-win32",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "player-runtime-x64-release",
+      "configurePreset": "player-runtime-msvc-x64",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

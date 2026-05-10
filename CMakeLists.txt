@@ -10,6 +10,7 @@ project(BallancePlayer
         VERSION ${BALLANCE_PLAYER_VERSION}
         DESCRIPTION "The brand-new player for Ballance"
         HOMEPAGE_URL https://github.com/doyaGu/BallancePlayer
+        LANGUAGES C CXX
 )
 
 # Determine if BallancePlayer is built as a subproject (using add_subdirectory) or if it is the main project.
@@ -33,6 +34,8 @@ endif ()
 include(GenerateExportHeader)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+
+option(BALLANCE_BUILD_STATIC_PLAYER "Build Player with Virtools modules linked statically" OFF)
 
 # Use folders to organize targets in an IDE (only when top-level)
 if (PLAYER_IS_TOP_LEVEL)
@@ -77,6 +80,26 @@ add_compile_definitions(
 #
 # When built standalone, prefer the bundled sibling directories (../CK2, ../VxMath)
 # if present (this workspace layout), and fall back to the legacy external SDK flow.
+
+if (NOT TARGET CK2 OR NOT TARGET VxMath)
+    if (NOT TARGET VxMath AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../VxMath/CMakeLists.txt")
+        if (BALLANCE_BUILD_STATIC_PLAYER)
+            set(VXMATH_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+            set(VXMATH_BUILD_STATIC ON CACHE BOOL "" FORCE)
+        endif ()
+        set(VXMATH_INSTALL ON CACHE BOOL "Generate install target" FORCE)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../VxMath" "${CMAKE_CURRENT_BINARY_DIR}/VxMath")
+    endif ()
+
+    if (NOT TARGET CK2 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../CK2/CMakeLists.txt")
+        if (BALLANCE_BUILD_STATIC_PLAYER)
+            set(CK2_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+            set(CK2_BUILD_STATIC ON CACHE BOOL "" FORCE)
+        endif ()
+        set(CK2_INSTALL ON CACHE BOOL "Generate install target" FORCE)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../CK2" "${CMAKE_CURRENT_BINARY_DIR}/CK2")
+    endif ()
+endif ()
 
 if (NOT TARGET CK2 OR NOT TARGET VxMath)
     # Legacy external SDK flow (kept for compatibility with the standalone BallancePlayer repo)
@@ -154,6 +177,43 @@ if (NOT DEFINED PLAYER_SCREEN_HEIGHT)
 endif ()
 if (NOT DEFINED PLAYER_SCREEN_BPP)
     set(PLAYER_SCREEN_BPP 32 CACHE STRING "Player screen bpp default value")
+endif ()
+
+if (BALLANCE_BUILD_STATIC_PLAYER)
+    if (NOT TARGET CK2_3DStatic AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../RenderEngine/CMakeLists.txt")
+        set(CKRE_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+        set(CKRE_BUILD_STATIC ON CACHE BOOL "" FORCE)
+        set(CKRE_INSTALL ON CACHE BOOL "Generate install target" FORCE)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../RenderEngine" "${CMAKE_CURRENT_BINARY_DIR}/RenderEngine")
+    endif ()
+
+    if (NOT TARGET Dx8InputManagerStatic AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../Managers/CMakeLists.txt")
+        set(DX8INPUT_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+        set(DX8INPUT_BUILD_STATIC ON CACHE BOOL "" FORCE)
+        set(DX8INPUT_INSTALL ON CACHE BOOL "Generate install target" FORCE)
+        set(DX8SOUND_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+        set(DX8SOUND_BUILD_STATIC ON CACHE BOOL "" FORCE)
+        set(DX8SOUND_INSTALL ON CACHE BOOL "Generate install target" FORCE)
+        set(CKPARAMOP_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+        set(CKPARAMOP_BUILD_STATIC ON CACHE BOOL "" FORCE)
+        set(CKPARAMOP_INSTALL ON CACHE BOOL "Generate install target" FORCE)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../Managers" "${CMAKE_CURRENT_BINARY_DIR}/Managers")
+    endif ()
+
+    if (NOT TARGET AVIReaderStatic AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../Plugins/CMakeLists.txt")
+        set(CKPLUGINS_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+        set(CKPLUGINS_BUILD_STATIC ON CACHE BOOL "" FORCE)
+        set(CKPLUGINS_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+        set(CKPLUGINS_INSTALL ON CACHE BOOL "Generate install target" FORCE)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../Plugins" "${CMAKE_CURRENT_BINARY_DIR}/Plugins")
+    endif ()
+
+    if (NOT TARGET physics_RTStatic AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../BuildingBlocks/CMakeLists.txt")
+        set(CKBB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+        set(CKBB_BUILD_STATIC ON CACHE BOOL "" FORCE)
+        set(CKBB_INSTALL ON CACHE BOOL "Generate install target" FORCE)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../BuildingBlocks" "${CMAKE_CURRENT_BINARY_DIR}/BuildingBlocks")
+    endif ()
 endif ()
 
 set(PLAYER_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/include" CACHE INTERNAL "")
