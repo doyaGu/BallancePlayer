@@ -230,7 +230,6 @@ static bool UnlockWidescreen(CKBehavior *screenModes, CKBehavior *minWidth)
         return false;
 
     CKBehavior *sc = linkScIc->GetInBehaviorIO()->GetOwner();
-    screenModes->RemoveSubBehaviorLink(linkScIc);
     CKDestroyObject(linkScIc);
 
     scriptutils::RemoveBehaviorLink(screenModes, "Remove Column", minWidth, 0, 0, true);
