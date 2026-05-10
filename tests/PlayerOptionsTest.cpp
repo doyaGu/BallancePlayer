@@ -8,6 +8,28 @@
 
 namespace fs = std::filesystem;
 
+namespace {
+struct PathOptionCase {
+    const char *option;
+    PathCategory category;
+    const char *value;
+};
+
+const PathOptionCase kPathOptionCases[] = {
+    {"--config", eConfigPath, "custom.ini"},
+    {"--log", eLogPath, "custom.log"},
+    {"--cmo", eCmoPath, "custom.cmo"},
+    {"--root-path", eRootPath, "root"},
+    {"--plugin-path", ePluginPath, "plugins"},
+    {"--render-engine-path", eRenderEnginePath, "renderengines"},
+    {"--manager-path", eManagerPath, "managers"},
+    {"--building-block-path", eBuildingBlockPath, "buildingblocks"},
+    {"--sound-path", eSoundPath, "sounds"},
+    {"--bitmap-path", eBitmapPath, "textures"},
+    {"--data-path", eDataPath, "data"},
+};
+}
+
 TEST(PlayerOptionsTest, AppliesConfigOptionsFromLongAndShortOptions) {
     CmdlineParser parser("--verbose --width=800 --height 600 --disable-sort-transparent-objects -C");
     CGameConfig config;
@@ -74,6 +96,54 @@ TEST(PlayerOptionsTest, ConfigPathDoesNotStopFurtherPathScanning) {
 
     EXPECT_STREQ(config.GetPath(eConfigPath), "custom.ini");
     EXPECT_STREQ(config.GetPath(eLogPath), "custom.log");
+}
+
+TEST(PlayerOptionsTest, AppliesEveryDocumentedPathOption) {
+    fs::path testRoot = fs::temp_directory_path() / "playeroptions_all_paths";
+    fs::remove_all(testRoot);
+    fs::create_directories(testRoot);
+
+    std::string cmdline;
+    for (const auto &testCase : kPathOptionCases) {
+        fs::path valuePath = testRoot / testCase.value;
+        if (testCase.category >= eRootPath)
+            fs::create_directories(valuePath);
+
+        cmdline += testCase.option;
+        cmdline += " \"";
+        cmdline += valuePath.string();
+        cmdline += "\" ";
+    }
+
+    CmdlineParser parser(cmdline.c_str());
+    CGameConfig config;
+
+    playeroptions::ApplyPathOptions(config, parser);
+
+    for (const auto &testCase : kPathOptionCases) {
+        fs::path valuePath = testRoot / testCase.value;
+        EXPECT_STREQ(config.GetPath(testCase.category), valuePath.string().c_str()) << testCase.option;
+        EXPECT_TRUE(playeroptions::HasPathOption(testCase.option)) << testCase.option;
+    }
+
+    fs::remove_all(testRoot);
+}
+
+TEST(PlayerOptionsTest, CompositionPathDoesNotRecomputeRootDerivedPaths) {
+    CmdlineParser parser("--cmo custom.cmo");
+    CGameConfig config;
+    const std::string rootPath = config.GetPath(eRootPath);
+    const std::string dataPath = config.GetPath(eDataPath);
+    const std::string soundPath = config.GetPath(eSoundPath);
+    const std::string bitmapPath = config.GetPath(eBitmapPath);
+
+    playeroptions::ApplyPathOptions(config, parser);
+
+    EXPECT_STREQ(config.GetPath(eCmoPath), "custom.cmo");
+    EXPECT_EQ(config.GetPath(eRootPath), rootPath);
+    EXPECT_EQ(config.GetPath(eDataPath), dataPath);
+    EXPECT_EQ(config.GetPath(eSoundPath), soundPath);
+    EXPECT_EQ(config.GetPath(eBitmapPath), bitmapPath);
 }
 
 TEST(PlayerOptionsTest, RootPathRecomputesImplicitDependentPaths) {
