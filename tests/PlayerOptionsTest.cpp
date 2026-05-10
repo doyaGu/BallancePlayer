@@ -171,16 +171,6 @@ TEST(PlayerOptionsTest, ExposesMetadataForConfigAndPathOptions) {
     EXPECT_GT(playeroptions::GetPathOptionCount(), 5);
     EXPECT_TRUE(playeroptions::HasConfigOption("--disable-sort-transparent-objects", 'o'));
     EXPECT_TRUE(playeroptions::HasConfigOption("--child-window-rendering", 'C'));
-    EXPECT_TRUE(playeroptions::HasConfigOption("--disable-cmo-root-path", '\0'));
     EXPECT_FALSE(playeroptions::HasConfigOption("--child-window-rendering", 's'));
     EXPECT_TRUE(playeroptions::HasPathOption("--log"));
-}
-
-TEST(PlayerOptionsTest, CanDisableCmoRootPath) {
-    CmdlineParser parser("--disable-cmo-root-path");
-    CGameConfig config;
-
-    playeroptions::ApplyConfigOptions(config, parser);
-
-    EXPECT_FALSE(config.useCmoRootPath);
 }

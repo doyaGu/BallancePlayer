@@ -73,7 +73,6 @@ enum LogMode
   X_BOOL ("Window",   "AlwaysHandleInput",       alwaysHandleInput,       false,              "--always-handle-input",                 '\0', true) \
   X_BOOL ("Game",     "SkipOpening",             skipOpening,             false,              "--skip-opening",                        '\0', true) \
   X_BOOL ("Game",     "ApplyHotfix",             applyHotfix,             true,               "--disable-hotfix",                      '\0', false) \
-  X_BOOL ("Game",     "UseCmoRootPath",          useCmoRootPath,          true,               "--disable-cmo-root-path",               '\0', false) \
   X_BOOL ("Game",     "UnlockFramerate",         unlockFramerate,         false,              "--unlock-framerate",                    'u',  true) \
   X_BOOL ("Game",     "UnlockWidescreen",        unlockWidescreen,        false,              "--unlock-widescreen",                   '\0', true) \
   X_BOOL ("Game",     "UnlockHighResolution",    unlockHighResolution,    false,              "--unlock-high-resolution",              '\0', true) \
