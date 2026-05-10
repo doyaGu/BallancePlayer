@@ -94,6 +94,10 @@ private:
     bool IsRenderFullscreen() const;
     bool GoFullscreen();
     bool StopFullscreen();
+    void SetFullscreenDisplayMode();
+    void RestoreDisplayMode();
+    void SetFullscreenWindowStyle();
+    void SetWindowedWindowStyle();
 
     bool ClipCursor();
     bool ReleaseCursorClip();
@@ -151,15 +155,12 @@ private:
     CKAttributeManager *m_AttributeManager;
     CKInputManager *m_InputManager;
 
-    bool m_CursorClipActive;
-
     CKMessageType m_MsgClick;
     CKMessageType m_MsgDoubleClick;
 
     CGameInfo *m_GameInfo;
     CGameConfig m_Config;
     CGameConfig m_PersistentConfig;
-    bool m_EnableWindowPositionPersistence;
 };
 
 #endif /* PLAYER_GAMEPLAYER_H */

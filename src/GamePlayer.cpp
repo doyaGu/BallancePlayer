@@ -85,11 +85,9 @@ CGamePlayer::CGamePlayer()
       m_TimeManager(NULL),
       m_AttributeManager(NULL),
       m_InputManager(NULL),
-      m_CursorClipActive(false),
       m_MsgClick(-1),
       m_MsgDoubleClick(-1),
-      m_GameInfo(NULL),
-      m_EnableWindowPositionPersistence(false) {}
+      m_GameInfo(NULL) {}
 
 CGamePlayer::~CGamePlayer()
 {
@@ -108,7 +106,6 @@ bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &pers
 
     m_Config = runtimeConfig;
     m_PersistentConfig = persistentConfig;
-    m_EnableWindowPositionPersistence = false;
 
     if (!hInstance)
         m_hInstance = ::GetModuleHandle(NULL);
@@ -160,7 +157,6 @@ bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &pers
     ::SetFocus(m_MainWindow);
 
     m_State = eReady;
-    m_EnableWindowPositionPersistence = true;
     return true;
 }
 
@@ -304,8 +300,6 @@ void CGamePlayer::Render()
 
 void CGamePlayer::Shutdown()
 {
-    m_EnableWindowPositionPersistence = false;
-
     if (m_State != eInitial && !m_PersistentConfig.SaveToIni())
         CLogger::Get().Error("Failed to save config: %s", m_PersistentConfig.GetPath(eConfigPath));
 
@@ -458,6 +452,9 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
 
 void CGamePlayer::ShutdownWindow()
 {
+    if (m_Config.fullscreen)
+        RestoreDisplayMode();
+
     if (m_hAccelTable)
     {
         ::DestroyAcceleratorTable(m_hAccelTable);
@@ -1168,8 +1165,20 @@ bool CGamePlayer::GoFullscreen()
     if (IsRenderFullscreen())
         return true;
 
+    int width = m_Config.width;
+    int height = m_Config.height;
+    if (m_MainWindow)
+    {
+        RECT rc;
+        if (::GetClientRect(m_MainWindow, &rc) && rc.right > rc.left && rc.bottom > rc.top)
+        {
+            width = rc.right - rc.left;
+            height = rc.bottom - rc.top;
+        }
+    }
+
     m_Config.fullscreen = true;
-    if (m_RenderContext->GoFullScreen(m_Config.width, m_Config.height, m_Config.bpp, m_Config.driver) != CK_OK)
+    if (m_RenderContext->GoFullScreen(width, height, m_Config.bpp, m_Config.driver) != CK_OK)
     {
         CLogger::Get().Debug("GoFullScreen Failed");
         m_Config.fullscreen = false;
@@ -1181,8 +1190,14 @@ bool CGamePlayer::GoFullscreen()
 
 bool CGamePlayer::StopFullscreen()
 {
-    if (!m_RenderContext || !IsRenderFullscreen())
+    if (!m_RenderContext)
         return false;
+
+    if (!IsRenderFullscreen())
+    {
+        m_Config.fullscreen = false;
+        return true;
+    }
 
     if (m_RenderContext->StopFullScreen() != CK_OK)
     {
@@ -1192,6 +1207,78 @@ bool CGamePlayer::StopFullscreen()
 
     m_Config.fullscreen = false;
     return true;
+}
+
+void CGamePlayer::SetFullscreenDisplayMode()
+{
+    DEVMODEA dm;
+    memset(&dm, 0, sizeof(dm));
+    dm.dmSize = sizeof(dm);
+    dm.dmPelsWidth = static_cast<DWORD>(m_Config.width);
+    dm.dmPelsHeight = static_cast<DWORD>(m_Config.height);
+    dm.dmBitsPerPel = static_cast<DWORD>((m_Config.bpp > 0) ? m_Config.bpp : PLAYER_DEFAULT_BPP);
+    dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_BITSPERPEL;
+
+    LONG result = ::ChangeDisplaySettingsA(&dm, CDS_FULLSCREEN);
+    if (result == DISP_CHANGE_SUCCESSFUL)
+        return;
+
+    CLogger::Get().Debug("ChangeDisplaySettings failed for %dx%d %dbpp: %ld",
+                         m_Config.width, m_Config.height, (int)dm.dmBitsPerPel, result);
+}
+
+void CGamePlayer::RestoreDisplayMode()
+{
+    ::ChangeDisplaySettingsA(NULL, 0);
+}
+
+void CGamePlayer::SetFullscreenWindowStyle()
+{
+    if (!m_MainWindow)
+        return;
+
+    HMONITOR monitor = ::MonitorFromWindow(m_MainWindow, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO mi;
+    memset(&mi, 0, sizeof(mi));
+    mi.cbSize = sizeof(mi);
+    if (!monitor || !::GetMonitorInfo(monitor, &mi))
+    {
+        mi.rcMonitor.left = 0;
+        mi.rcMonitor.top = 0;
+        mi.rcMonitor.right = m_Config.width;
+        mi.rcMonitor.bottom = m_Config.height;
+    }
+
+    const int width = mi.rcMonitor.right - mi.rcMonitor.left;
+    const int height = mi.rcMonitor.bottom - mi.rcMonitor.top;
+
+    ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(WS_POPUP));
+    ::SetWindowPos(m_MainWindow, HWND_TOP,
+                   mi.rcMonitor.left, mi.rcMonitor.top,
+                   width, height,
+                   SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+
+    if (m_Config.childWindowRendering && m_RenderWindow)
+        ::SetWindowPos(m_RenderWindow, NULL, 0, 0, width, height, SWP_NOZORDER);
+}
+
+void CGamePlayer::SetWindowedWindowStyle()
+{
+    if (!m_MainWindow)
+        return;
+
+    DWORD style = (m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
+    RECT rc = {0, 0, m_Config.width, m_Config.height};
+    ::AdjustWindowRect(&rc, style, FALSE);
+
+    ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(style));
+    ::SetWindowPos(m_MainWindow, HWND_NOTOPMOST,
+                   m_Config.posX, m_Config.posY,
+                   rc.right - rc.left, rc.bottom - rc.top,
+                   SWP_FRAMECHANGED);
+
+    if (m_Config.childWindowRendering && m_RenderWindow)
+        ::SetWindowPos(m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOZORDER);
 }
 
 bool CGamePlayer::ClipCursor()
@@ -1217,18 +1304,12 @@ bool CGamePlayer::ClipCursor()
     rect.bottom = p2.y;
     ::ClipCursor(&rect);
 
-    m_CursorClipActive = true;
     return true;
 }
 
 bool CGamePlayer::ReleaseCursorClip()
 {
-    if (!m_CursorClipActive)
-        return true;
-
     ::ClipCursor(NULL);
-
-    m_CursorClipActive = false;
     return true;
 }
 
@@ -1268,7 +1349,7 @@ void CGamePlayer::OnMove()
         ::GetWindowRect(m_MainWindow, &rect);
         m_Config.posX = rect.left;
         m_Config.posY = rect.top;
-        if (m_EnableWindowPositionPersistence)
+        if (m_State != eInitial)
             SyncPersistentWindowPosition();
     }
 }
@@ -1471,7 +1552,7 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
 
     bool fullscreen = m_Config.fullscreen;
     if (fullscreen)
-        StopFullscreen();
+        OnStopFullscreen(false);
 
     ClipCursor();
 
@@ -1493,7 +1574,7 @@ int CGamePlayer::OnChangeScreenMode(int driver, int screenMode)
     m_RenderContext->Resize();
 
     if (fullscreen)
-        GoFullscreen();
+        OnGoFullscreen(false);
 
     return 1;
 }
@@ -1504,13 +1585,14 @@ void CGamePlayer::OnGoFullscreen(bool persistChange)
 
     ReleaseCursorClip();
 
+    m_Config.fullscreen = true;
+    SetFullscreenDisplayMode();
+    SetFullscreenWindowStyle();
+
     if (GoFullscreen())
     {
         if (persistChange)
             m_PersistentConfig.fullscreen = true;
-
-        ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(WS_POPUP));
-        ::SetWindowPos(m_MainWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
         ::ShowWindow(m_MainWindow, SW_SHOW);
         ::SetFocus(m_MainWindow);
@@ -1525,6 +1607,11 @@ void CGamePlayer::OnGoFullscreen(bool persistChange)
         if (m_Config.childWindowRendering)
             ::UpdateWindow(m_RenderWindow);
     }
+    else
+    {
+        RestoreDisplayMode();
+        SetWindowedWindowStyle();
+    }
 
     Play();
 }
@@ -1533,24 +1620,23 @@ void CGamePlayer::OnStopFullscreen(bool persistChange)
 {
     Pause();
 
+    bool fullscreen = m_Config.fullscreen || IsRenderFullscreen();
     if (StopFullscreen())
     {
         if (persistChange)
             m_PersistentConfig.fullscreen = false;
 
-        LONG style = (m_Config.borderless) ? WS_POPUP : WS_POPUP | WS_CAPTION;
-        RECT rc = {0, 0, m_Config.width, m_Config.height};
-        ::AdjustWindowRect(&rc, style, FALSE);
-
-        ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(style));
-        ::SetWindowPos(m_MainWindow, HWND_NOTOPMOST, m_Config.posX, m_Config.posY, rc.right - rc.left, rc.bottom - rc.top, SWP_FRAMECHANGED);
+        if (fullscreen)
+        {
+            RestoreDisplayMode();
+            SetWindowedWindowStyle();
+        }
 
         ::ShowWindow(m_MainWindow, SW_SHOW);
         ::SetFocus(m_MainWindow);
 
         if (m_Config.childWindowRendering)
         {
-            ::SetWindowPos(m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
             ::SetFocus(m_RenderWindow);
         }
 
