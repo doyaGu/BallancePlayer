@@ -1170,6 +1170,7 @@ int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
     const int dmCount = dm.Size();
 #endif
 
+    bool found = false;
     int refreshRate = 0;
     for (int i = 0; i < dmCount; ++i)
     {
@@ -1177,14 +1178,15 @@ int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
             dm[i].Height == height &&
             dm[i].Bpp == bpp)
         {
+            found = true;
             if (dm[i].RefreshRate > refreshRate)
                 refreshRate = dm[i].RefreshRate;
         }
     }
 
-    if (refreshRate == 0)
+    if (!found)
     {
-        CLogger::Get().Error("No matching refresh rate found for %d x %d x %d", width, height, bpp);
+        CLogger::Get().Error("No matching screen mode found for %d x %d x %d", width, height, bpp);
         return -1;
     }
 
