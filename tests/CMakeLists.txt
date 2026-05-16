@@ -44,12 +44,6 @@ add_player_test(GameConfigTest
         DEPENDENCIES VxMath
 )
 
-add_player_test(UtilsTest
-        SOURCES UtilsTest.cpp
-        ${PLAYER_SOURCE_DIR}/Utils.cpp
-        DEPENDENCIES VxMath
-)
-
 add_player_test(PlayerOptionsTest
         SOURCES PlayerOptionsTest.cpp
         ${PLAYER_SOURCE_DIR}/PlayerOptions.cpp

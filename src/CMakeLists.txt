@@ -81,56 +81,53 @@ target_compile_definitions(${PLAYER_NAME} PRIVATE SDL_MAIN_HANDLED)
 if (BALLANCE_BUILD_STATIC_PLAYER)
     target_compile_definitions(${PLAYER_NAME} PRIVATE BALLANCE_STATIC_MODULES)
 
-    set(_ballance_static_player_module_targets
-            CK2_3DStatic
-            SdlInputManagerStatic
-            SdlSoundManagerStatic
-            ParameterOperationsStatic
-            AVIReaderStatic
-            ImageReaderStatic
-            WavReaderStatic
-            VirtoolsLoaderStatic
-            3DTransStatic
-            CamerasStatic
-            CharactersStatic
-            CollisionStatic
-            ControllersStatic
-            GridsStatic
-            InterfaceStatic
-            LightsStatic
-            LogicsStatic
-            MaterialsStatic
-            MeshModifiersStatic
-            MidiManagerStatic
-            NarrativesStatic
-            SoundsStatic
-            VisualsStatic
-            WorldEnvironmentStatic
-            BuildingBlocksAddons1Static
-            physics_RTStatic
-            TT_DatabaseManager_RTStatic
-            TT_Gravity_RTStatic
-            TT_InterfaceManager_RTStatic
-            TT_ParticleSystems_RTStatic
-            TT_Toolbox_RTStatic
-    )
-
-    set(_ballance_static_player_rasterizer_targets)
-    foreach (_rasterizer_target IN ITEMS CKBgfxRasterizerStatic)
-        if (TARGET ${_rasterizer_target})
-            list(APPEND _ballance_static_player_rasterizer_targets ${_rasterizer_target})
+    set(_ballance_static_player_module_targets)
+    function(_player_add_static_module target_name macro_name required)
+        if (TARGET ${target_name})
+            list(APPEND _ballance_static_player_module_targets ${target_name})
+            target_compile_definitions(${PLAYER_NAME} PRIVATE "${macro_name}=1")
+        elseif (required)
+            message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER requires target ${target_name}")
         endif ()
-    endforeach ()
-    if (NOT _ballance_static_player_rasterizer_targets)
-        message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER requires a static rasterizer target")
+        set(_ballance_static_player_module_targets "${_ballance_static_player_module_targets}" PARENT_SCOPE)
+    endfunction()
+
+    _player_add_static_module(CK2_3DStatic BALLANCE_STATIC_HAVE_CK2_3D TRUE)
+    _player_add_static_module(SdlInputManagerStatic BALLANCE_STATIC_HAVE_SDLINPUTMANAGER TRUE)
+    _player_add_static_module(SdlSoundManagerStatic BALLANCE_STATIC_HAVE_SDLSOUNDMANAGER TRUE)
+    _player_add_static_module(ParameterOperationsStatic BALLANCE_STATIC_HAVE_PARAMETEROPERATIONS TRUE)
+    _player_add_static_module(AVIReaderStatic BALLANCE_STATIC_HAVE_AVIREADER TRUE)
+    _player_add_static_module(ImageReaderStatic BALLANCE_STATIC_HAVE_IMAGEREADER TRUE)
+    _player_add_static_module(WavReaderStatic BALLANCE_STATIC_HAVE_WAVREADER TRUE)
+    _player_add_static_module(VirtoolsLoaderStatic BALLANCE_STATIC_HAVE_VIRTOOLSLOADER TRUE)
+    _player_add_static_module(3DTransStatic BALLANCE_STATIC_HAVE_3DTRANS FALSE)
+    _player_add_static_module(CamerasStatic BALLANCE_STATIC_HAVE_CAMERAS FALSE)
+    _player_add_static_module(CharactersStatic BALLANCE_STATIC_HAVE_CHARACTERS FALSE)
+    _player_add_static_module(CollisionStatic BALLANCE_STATIC_HAVE_COLLISION FALSE)
+    _player_add_static_module(ControllersStatic BALLANCE_STATIC_HAVE_CONTROLLERS FALSE)
+    _player_add_static_module(GridsStatic BALLANCE_STATIC_HAVE_GRIDS FALSE)
+    _player_add_static_module(InterfaceStatic BALLANCE_STATIC_HAVE_INTERFACE FALSE)
+    _player_add_static_module(LightsStatic BALLANCE_STATIC_HAVE_LIGHTS FALSE)
+    _player_add_static_module(LogicsStatic BALLANCE_STATIC_HAVE_LOGICS FALSE)
+    _player_add_static_module(MaterialsStatic BALLANCE_STATIC_HAVE_MATERIALS FALSE)
+    _player_add_static_module(MeshModifiersStatic BALLANCE_STATIC_HAVE_MESHMODIFIERS FALSE)
+    _player_add_static_module(MidiManagerStatic BALLANCE_STATIC_HAVE_MIDIMANAGER FALSE)
+    _player_add_static_module(NarrativesStatic BALLANCE_STATIC_HAVE_NARRATIVES FALSE)
+    _player_add_static_module(SoundsStatic BALLANCE_STATIC_HAVE_SOUNDS FALSE)
+    _player_add_static_module(VisualsStatic BALLANCE_STATIC_HAVE_VISUALS FALSE)
+    _player_add_static_module(WorldEnvironmentStatic BALLANCE_STATIC_HAVE_WORLDENVIRONMENT FALSE)
+    _player_add_static_module(BuildingBlocksAddons1Static BALLANCE_STATIC_HAVE_BUILDINGBLOCKSADDONS1 FALSE)
+    _player_add_static_module(physics_RTStatic BALLANCE_STATIC_HAVE_PHYSICS_RT FALSE)
+    _player_add_static_module(TT_DatabaseManager_RTStatic BALLANCE_STATIC_HAVE_TT_DATABASEMANAGER_RT FALSE)
+    _player_add_static_module(TT_Gravity_RTStatic BALLANCE_STATIC_HAVE_TT_GRAVITY_RT FALSE)
+    _player_add_static_module(TT_InterfaceManager_RTStatic BALLANCE_STATIC_HAVE_TT_INTERFACEMANAGER_RT FALSE)
+    _player_add_static_module(TT_ParticleSystems_RTStatic BALLANCE_STATIC_HAVE_TT_PARTICLESYSTEMS_RT FALSE)
+    _player_add_static_module(TT_Toolbox_RTStatic BALLANCE_STATIC_HAVE_TT_TOOLBOX_RT FALSE)
+    _player_add_static_module(CKBgfxRasterizerStatic BALLANCE_STATIC_HAVE_CKBGFXRASTERIZER TRUE)
+
+    if (NOT _ballance_static_player_module_targets)
+        message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER did not find any static module targets")
     endif ()
-    list(APPEND _ballance_static_player_module_targets ${_ballance_static_player_rasterizer_targets})
-
-    foreach (_static_module_target IN LISTS _ballance_static_player_module_targets)
-        if (NOT TARGET ${_static_module_target})
-            message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER requires target ${_static_module_target}")
-        endif ()
-    endforeach ()
 
     target_link_libraries(${PLAYER_NAME} PRIVATE ${_ballance_static_player_module_targets})
 endif ()
