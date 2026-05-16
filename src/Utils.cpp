@@ -5,19 +5,35 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#include <direct.h>
 
 #ifndef INVALID_FILE_ATTRIBUTES
 #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
+#endif
+#else
+#include <errno.h>
+#include <limits.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
+#include <string>
+#include <vector>
+
+#ifndef MAX_PATH
+#define MAX_PATH 260
 #endif
 
 namespace utils
 {
     // Multi-monitor API support without link-time dependency (VC6-friendly).
     // We resolve APIs from user32.dll once and cache the function pointers.
+#if defined(_WIN32)
 #ifndef HMONITOR
     DECLARE_HANDLE(HMONITOR);
 #endif
@@ -57,7 +73,7 @@ namespace utils
         g_pGetMonitorInfoA = (GetMonitorInfoAProc)::GetProcAddress(g_User32, "GetMonitorInfoA");
     }
 
-    bool GetMonitorRectForWindow(HWND window, RECT &outRect)
+    bool GetMonitorRectForWindow(WIN_HANDLE window, CKRECT &outRect)
     {
         // Default: primary screen metrics.
         outRect.left = 0;
@@ -72,7 +88,7 @@ namespace utils
         if (!g_pMonitorFromWindow || !g_pGetMonitorInfoA)
             return true;
 
-        HMONITOR monitor = g_pMonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+        HMONITOR monitor = g_pMonitorFromWindow((HWND)window, MONITOR_DEFAULTTONEAREST);
         if (!monitor)
             return true;
 
@@ -80,30 +96,62 @@ namespace utils
         memset(&mi, 0, sizeof(mi));
         mi.cbSize = sizeof(mi);
         if (g_pGetMonitorInfoA(monitor, &mi))
-            outRect = mi.rcMonitor;
+        {
+            outRect.left = mi.rcMonitor.left;
+            outRect.top = mi.rcMonitor.top;
+            outRect.right = mi.rcMonitor.right;
+            outRect.bottom = mi.rcMonitor.bottom;
+        }
 
         return true;
     }
+#else
+    bool GetMonitorRectForWindow(WIN_HANDLE window, CKRECT &outRect)
+    {
+        (void)window;
+        outRect.left = 0;
+        outRect.top = 0;
+        outRect.right = 1920;
+        outRect.bottom = 1080;
+        return true;
+    }
+#endif
 
     bool FileOrDirectoryExists(const char *file)
     {
         if (!file || file[0] == '\0')
             return false;
+#if defined(_WIN32)
         const DWORD attributes = ::GetFileAttributesA(file);
         return attributes != INVALID_FILE_ATTRIBUTES;
+#else
+        struct stat st;
+        return stat(file, &st) == 0;
+#endif
     }
 
     bool DirectoryExists(const char *dir)
     {
         if (!dir || dir[0] == '\0')
             return false;
+#if defined(_WIN32)
         const DWORD attributes = ::GetFileAttributesA(dir);
         return attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY);
+#else
+        struct stat st;
+        return stat(dir, &st) == 0 && S_ISDIR(st.st_mode);
+#endif
     }
 
     size_t GetCurrentPath(char *buffer, size_t size)
     {
+#if defined(_WIN32)
         return ::GetCurrentDirectoryA(static_cast<DWORD>(size), buffer);
+#else
+        if (!buffer || size == 0)
+            return 0;
+        return getcwd(buffer, size) ? strlen(buffer) : 0;
+#endif
     }
 
     bool IsAbsolutePath(const char *path)
@@ -111,10 +159,12 @@ namespace utils
         if (!path || path[0] == '\0')
             return false;
 
-        if (strlen(path) < 2 || !isalpha(path[0]) || path[1] != ':')
-            return false;
-
-        return true;
+#if defined(_WIN32)
+        return (strlen(path) >= 2 && isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':') ||
+               (path[0] == '\\' && path[1] == '\\');
+#else
+        return path[0] == '/';
+#endif
     }
 
     bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing)
@@ -125,31 +175,34 @@ namespace utils
         if (!buffer)
             return false;
 
-        size_t len;
         if (IsAbsolutePath(path))
         {
-            len = strlen(path);
-            strncpy(buffer, path, size);
+            strncpy(buffer, path, size - 1);
+            buffer[size - 1] = '\0';
         }
         else
         {
-            size_t n = GetCurrentPath(buffer, size);
-            n = size - 1 - n;
-            strncat(buffer, "\\", n);
-            --n;
-            strncat(buffer, path, n);
-            len = strlen(path);
+            char current[MAX_PATH];
+            size_t n = GetCurrentPath(current, sizeof(current));
+            if (n == 0 || n >= size - 1)
+                return false;
+            ConcatPath(buffer, size, current, path);
         }
 
-        if (trailing && !HasTrailingPathSeparator(path))
+        size_t len = strlen(buffer);
+        if (trailing && !HasTrailingPathSeparator(buffer))
         {
             if (size > len + 2)
             {
+#if defined(_WIN32)
                 buffer[len] = '\\';
+#else
+                buffer[len] = '/';
+#endif
                 buffer[len + 1] = '\0';
             }
         }
-        else if (!trailing && HasTrailingPathSeparator(path))
+        else if (!trailing && HasTrailingPathSeparator(buffer))
         {
             buffer[len - 1] = '\0';
         }
@@ -182,7 +235,11 @@ namespace utils
         char dir[MAX_PATH];
         if (!GetFileDirectory(dir, MAX_PATH, filename))
             return false;
+#if defined(_WIN32)
         return ::SetCurrentDirectoryA(dir) != 0;
+#else
+        return chdir(dir) == 0;
+#endif
     }
 
     char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2)
@@ -193,14 +250,20 @@ namespace utils
         if (!path1 || path1[0] == '\0')
         {
             strncpy(buffer, path2, size);
+            buffer[size - 1] = '\0';
         }
         else if (path2)
         {
             strncpy(buffer, path1, size);
+            buffer[size - 1] = '\0';
             RemoveTrailingPathSeparator(buffer);
             size_t len2 = strlen(path2);
             size_t n = size - 1 - len2;
+#if defined(_WIN32)
             strncat(buffer, "\\", n);
+#else
+            strncat(buffer, "/", n);
+#endif
             --n;
             strncat(buffer, path2, n);
         }
@@ -237,12 +300,22 @@ namespace utils
 
     int CharToWchar(const char *charStr, wchar_t *wcharStr, size_t size)
     {
+#if defined(_WIN32)
         return ::MultiByteToWideChar(CP_ACP, 0, charStr, -1, wcharStr, static_cast<int>(size));
+#else
+        size_t converted = mbstowcs(wcharStr, charStr, size);
+        return converted == (size_t)-1 ? 0 : static_cast<int>(converted + 1);
+#endif
     }
 
     int WcharToChar(const wchar_t *wcharStr, char *charStr, size_t size)
     {
+#if defined(_WIN32)
         return ::WideCharToMultiByte(CP_ACP, 0, wcharStr, -1, charStr, static_cast<int>(size), NULL, NULL);
+#else
+        size_t converted = wcstombs(charStr, wcharStr, size);
+        return converted == (size_t)-1 ? 0 : static_cast<int>(converted + 1);
+#endif
     }
 
     /* crc32.c -- compute the CRC-32 of a data stream
@@ -498,13 +571,72 @@ namespace utils
 
     bool IniGetString(const char *section, const char *name, char *str, size_t size, const char *filename)
     {
+#if defined(_WIN32)
         return ::GetPrivateProfileStringA(section, name, "", str, static_cast<int>(size), filename) != 0;
+#else
+        if (!section || !name || !str || size == 0 || !filename)
+            return false;
+
+        FILE *file = fopen(filename, "r");
+        if (!file)
+            return false;
+
+        bool inSection = false;
+        bool found = false;
+        char line[1024];
+        while (fgets(line, sizeof(line), file))
+        {
+            char *p = line;
+            while (isspace(static_cast<unsigned char>(*p)))
+                ++p;
+            if (*p == ';' || *p == '#' || *p == '\0')
+                continue;
+            if (*p == '[')
+            {
+                char *end = strchr(p, ']');
+                if (!end)
+                    continue;
+                *end = '\0';
+                inSection = strcmp(p + 1, section) == 0;
+                continue;
+            }
+            if (!inSection)
+                continue;
+            char *eq = strchr(p, '=');
+            if (!eq)
+                continue;
+            *eq = '\0';
+            char *keyEnd = eq - 1;
+            while (keyEnd >= p && isspace(static_cast<unsigned char>(*keyEnd)))
+                *keyEnd-- = '\0';
+            if (strcmp(p, name) != 0)
+                continue;
+            char *value = eq + 1;
+            while (isspace(static_cast<unsigned char>(*value)))
+                ++value;
+            char *valueEnd = value + strlen(value);
+            while (valueEnd > value && isspace(static_cast<unsigned char>(valueEnd[-1])))
+                *--valueEnd = '\0';
+            strncpy(str, value, size - 1);
+            str[size - 1] = '\0';
+            found = str[0] != '\0';
+            break;
+        }
+
+        fclose(file);
+        return found;
+#endif
     }
 
     bool IniGetInteger(const char *section, const char *name, int &value, const char *filename)
     {
         char buf[512];
+#if defined(_WIN32)
         ::GetPrivateProfileStringA(section, name, "", buf, 512, filename);
+#else
+        if (!IniGetString(section, name, buf, sizeof(buf), filename))
+            return false;
+#endif
         if (strcmp(buf, "") == 0)
             return false;
 
@@ -521,44 +653,155 @@ namespace utils
 
     bool IniGetBoolean(const char *section, const char *name, bool &value, const char *filename)
     {
+#if defined(_WIN32)
         UINT val = ::GetPrivateProfileIntA(section, name, -1, filename);
         if (val == -1)
             return false;
         value = val != 0;
         return true;
+#else
+        int val = -1;
+        if (!IniGetInteger(section, name, val, filename))
+            return false;
+        value = val != 0;
+        return true;
+#endif
     }
 
     bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT &value, const char *filename)
     {
         char buf[16];
+#if defined(_WIN32)
         ::GetPrivateProfileStringA(section, name, "", buf, 16, filename);
         if (strcmp(buf, "") == 0)
             return false;
+#else
+        if (!IniGetString(section, name, buf, sizeof(buf), filename))
+            return false;
+#endif
 
         value = String2PixelFormat(buf, sizeof(buf));
         return true;
     }
 
+    static bool IniSetValue(const char *section, const char *name, const char *value, const char *filename)
+    {
+        if (!section || !name || !value || !filename)
+            return false;
+
+        std::vector<std::string> lines;
+        FILE *file = fopen(filename, "r");
+        if (file)
+        {
+            char line[1024];
+            while (fgets(line, sizeof(line), file))
+                lines.push_back(line);
+            fclose(file);
+        }
+
+        bool inSection = false;
+        bool sectionFound = false;
+        bool keyWritten = false;
+        std::string replacement = std::string(name) + "=" + value + "\n";
+
+        for (size_t i = 0; i < lines.size(); ++i)
+        {
+            std::string probe = lines[i];
+            size_t first = probe.find_first_not_of(" \t\r\n");
+            if (first == std::string::npos)
+                continue;
+            if (probe[first] == '[')
+            {
+                size_t end = probe.find(']', first + 1);
+                if (end != std::string::npos)
+                {
+                    if (inSection && !keyWritten)
+                    {
+                        lines.insert(lines.begin() + static_cast<std::vector<std::string>::difference_type>(i), replacement);
+                        keyWritten = true;
+                        break;
+                    }
+                    std::string sectionName = probe.substr(first + 1, end - first - 1);
+                    inSection = sectionName == section;
+                    sectionFound = sectionFound || inSection;
+                }
+                continue;
+            }
+
+            if (!inSection)
+                continue;
+
+            size_t eq = probe.find('=');
+            if (eq == std::string::npos)
+                continue;
+            std::string key = probe.substr(first, eq - first);
+            size_t keyEnd = key.find_last_not_of(" \t\r\n");
+            if (keyEnd != std::string::npos)
+                key.erase(keyEnd + 1);
+            if (key == name)
+            {
+                lines[i] = replacement;
+                keyWritten = true;
+                break;
+            }
+        }
+
+        if (!keyWritten)
+        {
+            if (!sectionFound)
+            {
+                if (!lines.empty() && lines.back().size() && lines.back()[lines.back().size() - 1] != '\n')
+                    lines.push_back("\n");
+                lines.push_back(std::string("[") + section + "]\n");
+            }
+            lines.push_back(replacement);
+        }
+
+        file = fopen(filename, "w");
+        if (!file)
+            return false;
+        for (size_t i = 0; i < lines.size(); ++i)
+            fputs(lines[i].c_str(), file);
+        fclose(file);
+        return true;
+    }
+
     bool IniSetString(const char *section, const char *name, const char *str, const char *filename)
     {
+#if defined(_WIN32)
         return ::WritePrivateProfileStringA(section, name, str, filename) != 0;
+#else
+        return IniSetValue(section, name, str ? str : "", filename);
+#endif
     }
 
     bool IniSetInteger(const char *section, const char *name, int value, const char *filename)
     {
         char buf[64];
         sprintf(buf, "%d", value);
+#if defined(_WIN32)
         return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
+#else
+        return IniSetValue(section, name, buf, filename);
+#endif
     }
 
     bool IniSetBoolean(const char *section, const char *name, bool value, const char *filename)
     {
         const char *buf = (value) ? "1" : "0";
+#if defined(_WIN32)
         return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
+#else
+        return IniSetValue(section, name, buf, filename);
+#endif
     }
 
     bool IniSetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT value, const char *filename)
     {
+#if defined(_WIN32)
         return ::WritePrivateProfileStringA(section, name, utils::PixelFormat2String(value), filename) != 0;
+#else
+        return IniSetValue(section, name, utils::PixelFormat2String(value), filename);
+#endif
     }
 }

@@ -1,24 +1,86 @@
+#if !PLAYER_ENABLE_SDL3
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
 #include <tchar.h>
+#else
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+#endif
 
 #include "CmdlineParser.h"
+#if !PLAYER_ENABLE_SDL3
 #include "ConfigDialog.h"
+#endif
 #include "GameConfig.h"
 #include "GamePlayer.h"
 #include "PlayerOptions.h"
+#if !PLAYER_ENABLE_SDL3
 #include "Splash.h"
 #include "LockGuard.h"
+#endif
 #include "Logger.h"
 #include "Utils.h"
+#include "VxWindowFunctions.h"
 
+#if !PLAYER_ENABLE_SDL3
 static HANDLE CreateNamedMutex();
 static void EnableDpiAwareness();
-static void UseExecutableDirectoryAsWorkingDirectory();
 static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config);
+#else
+static bool EnsurePersistentConfigReady(CGameConfig &config);
+#endif
+static void UseExecutableDirectoryAsWorkingDirectory();
+static void ShowErrorMessage(const char *text);
 
+#if PLAYER_ENABLE_SDL3
+int main(int argc, char **argv)
+{
+    SDL_SetMainReady();
+    UseExecutableDirectoryAsWorkingDirectory();
+
+    CmdlineParser parser(argc, argv);
+
+    CGameConfig persistentConfig;
+    playeroptions::ApplyPathOptions(persistentConfig, parser);
+
+    if (!EnsurePersistentConfigReady(persistentConfig))
+        return -1;
+
+    persistentConfig.LoadFromIni();
+    CGameConfig runtimeConfig = persistentConfig;
+    playeroptions::ApplyRuntimeOptions(runtimeConfig, parser);
+
+    bool overwrite = runtimeConfig.logMode != eLogAppend;
+    CLogger::Get().Open(runtimeConfig.GetPath(eLogPath), overwrite);
+    if (runtimeConfig.verbose)
+        CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
+
+    CGamePlayer player;
+    if (!player.Init(runtimeConfig, persistentConfig))
+    {
+        CLogger::Get().Error("Failed to initialize player!");
+        ShowErrorMessage("Failed to initialize player!");
+        return -1;
+    }
+
+    CLogger::Get().Debug("Loading game composition: %s", runtimeConfig.GetPath(eCmoPath));
+    if (!player.Load(runtimeConfig.GetPath(eCmoPath)))
+    {
+        CLogger::Get().Error("Failed to load game composition!");
+        ShowErrorMessage("Failed to load game composition!");
+        player.Shutdown();
+        return -1;
+    }
+
+    player.Play();
+    player.Run();
+    player.Shutdown();
+
+    return 0;
+}
+#else
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
     UseExecutableDirectoryAsWorkingDirectory();
@@ -88,7 +150,9 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 
     return 0;
 }
+#endif
 
+#if !PLAYER_ENABLE_SDL3
 static HANDLE CreateNamedMutex()
 {
     char buf[MAX_PATH];
@@ -126,15 +190,17 @@ static HANDLE CreateNamedMutex()
 
     return hMutex;
 }
+#endif
 
 static void UseExecutableDirectoryAsWorkingDirectory()
 {
     char modulePath[MAX_PATH];
-    DWORD len = ::GetModuleFileNameA(NULL, modulePath, MAX_PATH);
+    size_t len = VxGetModuleFileName(NULL, modulePath, MAX_PATH);
     if (len > 0 && len < MAX_PATH)
         utils::SetCurrentDirectoryToFileDirectory(modulePath);
 }
 
+#if !PLAYER_ENABLE_SDL3
 static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config)
 {
     if (!config.EnsureConfigPath())
@@ -153,7 +219,23 @@ static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config
 
     return ShowConfigDialog(hInstance, config, false);
 }
+#else
+static bool EnsurePersistentConfigReady(CGameConfig &config)
+{
+    if (!config.EnsureConfigPath())
+    {
+        ShowErrorMessage("Failed to determine configuration file path.");
+        return false;
+    }
 
+    if (utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
+        return true;
+
+    return config.SaveToIni();
+}
+#endif
+
+#if !PLAYER_ENABLE_SDL3
 static void EnableDpiAwareness()
 {
     // DPI awareness enums and types for VC6.0 compatibility
@@ -246,4 +328,14 @@ static void EnableDpiAwareness()
         }
         ::FreeLibrary(user32_dll);
     }
+}
+#endif
+
+static void ShowErrorMessage(const char *text)
+{
+#if PLAYER_ENABLE_SDL3
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", text ? text : "Error", NULL);
+#else
+    ::MessageBoxA(NULL, text ? text : "Error", "Error", MB_OK | MB_ICONERROR);
+#endif
 }

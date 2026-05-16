@@ -2,9 +2,15 @@
 #define PLAYER_UTILS_H
 
 #include <wchar.h>
-#include <Windows.h>
 
 #include "VxMathDefines.h"
+
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#endif
 
 namespace utils
 {
@@ -43,7 +49,7 @@ namespace utils
 
     // Returns the monitor bounds for the monitor nearest to the specified window.
     // Falls back to primary monitor metrics if multi-monitor APIs are unavailable.
-    bool GetMonitorRectForWindow(HWND window, RECT &outRect);
+    bool GetMonitorRectForWindow(WIN_HANDLE window, CKRECT &outRect);
 }
 
 #endif // PLAYER_UTILS_H

@@ -1,13 +1,20 @@
 #include "GameConfig.h"
 
 #include "Utils.h"
+#include "VxWindowFunctions.h"
 
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
+
+#if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <Windows.h>
+#else
+#include <sys/stat.h>
+#endif
 
 static const char *const DefaultPaths[] = {
 #define X_PATH(category, defaultPath, cliLong, validateDir) defaultPath,
@@ -15,32 +22,53 @@ static const char *const DefaultPaths[] = {
 #undef X_PATH
 };
 
-static bool GetLastWriteTime(const char *filename, FILETIME &outTime)
+struct ConfigFileTime
 {
+    unsigned long low;
+    unsigned long high;
+};
+
+static bool GetLastWriteTime(const char *filename, ConfigFileTime &outTime)
+{
+#if defined(_WIN32)
     WIN32_FIND_DATAA findData;
     HANDLE handle = ::FindFirstFileA(filename, &findData);
     if (handle == INVALID_HANDLE_VALUE)
         return false;
-    outTime = findData.ftLastWriteTime;
+    outTime.low = findData.ftLastWriteTime.dwLowDateTime;
+    outTime.high = findData.ftLastWriteTime.dwHighDateTime;
     ::FindClose(handle);
     return true;
+#else
+    struct stat st;
+    if (stat(filename, &st) != 0)
+        return false;
+    unsigned long long value = static_cast<unsigned long long>(st.st_mtime);
+    outTime.low = static_cast<unsigned long>(value & 0xffffffffu);
+    outTime.high = static_cast<unsigned long>((value >> 32) & 0xffffffffu);
+    return true;
+#endif
 }
 
-static bool SameFileTimeComponents(const FILETIME &timeValue, DWORD low, DWORD high)
+static bool SameFileTimeComponents(const ConfigFileTime &timeValue, unsigned long low, unsigned long high)
 {
-    return (timeValue.dwLowDateTime == low) && (timeValue.dwHighDateTime == high);
+    return (timeValue.low == low) && (timeValue.high == high);
 }
 
 static bool SamePathIgnoreCase(const char *lhs, const char *rhs)
 {
     if (!lhs || !rhs)
         return false;
+#if defined(_WIN32)
     while (*lhs && *rhs)
     {
         if (toupper(static_cast<unsigned char>(*lhs++)) != toupper(static_cast<unsigned char>(*rhs++)))
             return false;
     }
     return *lhs == '\0' && *rhs == '\0';
+#else
+    return strcmp(lhs, rhs) == 0;
+#endif
 }
 
 static bool ResolveAbsolutePath(const char *path, std::string &outPath)
@@ -55,7 +83,7 @@ static bool ResolveAbsolutePath(const char *path, std::string &outPath)
 static bool ResolveDefaultConfigPath(std::string &outPath)
 {
     char modulePath[MAX_PATH];
-    DWORD length = ::GetModuleFileNameA(NULL, modulePath, MAX_PATH);
+    size_t length = VxGetModuleFileName(NULL, modulePath, MAX_PATH);
     if (length > 0 && length < MAX_PATH)
     {
         char dir[MAX_PATH];
@@ -83,7 +111,7 @@ static bool GetDefaultRootPath(char *buffer, size_t size)
     if (utils::ConcatPath(path, sizeof(path), currentDir, DefaultPaths[eCmoPath]) &&
         utils::FileOrDirectoryExists(path))
     {
-        strncpy(buffer, ".\\", size - 1);
+        strncpy(buffer, "./", size - 1);
         buffer[size - 1] = '\0';
         return true;
     }
@@ -332,11 +360,11 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     ResetFieldSnapshots();
 
-    FILETIME fileTime;
+    ConfigFileTime fileTime;
     if (GetLastWriteTime(filename, fileTime))
     {
-        m_ConfigTimestampLow = fileTime.dwLowDateTime;
-        m_ConfigTimestampHigh = fileTime.dwHighDateTime;
+        m_ConfigTimestampLow = fileTime.low;
+        m_ConfigTimestampHigh = fileTime.high;
         m_ConfigTimestampValid = true;
     }
 
@@ -373,7 +401,7 @@ bool CGameConfig::SaveToIni(const char *filename)
         SetPath(eConfigPath, filename);
 
     bool shouldMerge = false;
-    FILETIME fileTime;
+    ConfigFileTime fileTime;
     if (m_ConfigTimestampValid && IsSameConfigPath(filename) && GetLastWriteTime(filename, fileTime))
     {
         if (!SameFileTimeComponents(fileTime, m_ConfigTimestampLow, m_ConfigTimestampHigh))
@@ -404,8 +432,8 @@ bool CGameConfig::SaveToIni(const char *filename)
 
     if (GetLastWriteTime(filename, fileTime))
     {
-        m_ConfigTimestampLow = fileTime.dwLowDateTime;
-        m_ConfigTimestampHigh = fileTime.dwHighDateTime;
+        m_ConfigTimestampLow = fileTime.low;
+        m_ConfigTimestampHigh = fileTime.high;
         m_ConfigTimestampValid = true;
     }
     else

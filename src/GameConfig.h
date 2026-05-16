@@ -85,13 +85,13 @@ enum LogMode
   X_PATH(eConfigPath,          "Player.ini",        "--config",               false) \
   X_PATH(eLogPath,             "Player.log",        "--log",                  false) \
   X_PATH(eCmoPath,             "base.cmo",          "--cmo",                  false) \
-  X_PATH(eRootPath,            "..\\",              "--root-path",            true) \
-  X_PATH(ePluginPath,          "Plugins\\",         "--plugin-path",          true) \
-  X_PATH(eRenderEnginePath,    "RenderEngines\\",   "--render-engine-path",   true) \
-  X_PATH(eManagerPath,         "Managers\\",        "--manager-path",         true) \
-  X_PATH(eBuildingBlockPath,   "BuildingBlocks\\",  "--building-block-path",  true) \
-  X_PATH(eSoundPath,           "Sounds\\",          "--sound-path",           true) \
-  X_PATH(eBitmapPath,          "Textures\\",        "--bitmap-path",          true) \
+  X_PATH(eRootPath,            "../",               "--root-path",            true) \
+  X_PATH(ePluginPath,          "Plugins/",          "--plugin-path",          true) \
+  X_PATH(eRenderEnginePath,    "RenderEngines/",    "--render-engine-path",   true) \
+  X_PATH(eManagerPath,         "Managers/",         "--manager-path",         true) \
+  X_PATH(eBuildingBlockPath,   "BuildingBlocks/",   "--building-block-path",  true) \
+  X_PATH(eSoundPath,           "Sounds/",           "--sound-path",           true) \
+  X_PATH(eBitmapPath,          "Textures/",         "--bitmap-path",          true) \
   X_PATH(eDataPath,            "",                  "--data-path",            true)
 
 class CGameConfig

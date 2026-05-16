@@ -6,44 +6,45 @@ configure_file(
         @ONLY
 )
 
-configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/PlayerVersion.rc.in"
-        "${_player_generated_dir}/PlayerVersion.generated.rc"
-        @ONLY
-)
+if (WIN32 AND NOT PLAYER_ENABLE_SDL3)
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/PlayerVersion.rc.in"
+            "${_player_generated_dir}/PlayerVersion.generated.rc"
+            @ONLY
+    )
 
-set(_player_resource_file "${CMAKE_CURRENT_SOURCE_DIR}/Player.rc")
-set_source_files_properties("${_player_resource_file}" PROPERTIES
-        COMPILE_DEFINITIONS "PLAYER_ICON_PATH=\"${PLAYER_SOURCE_DIR}/Player.ico\";PLAYER_USE_GENERATED_VERSION_RC=1"
-)
+    set(_player_resource_file "${CMAKE_CURRENT_SOURCE_DIR}/Player.rc")
+    set_source_files_properties("${_player_resource_file}" PROPERTIES
+            COMPILE_DEFINITIONS "PLAYER_ICON_PATH=\"${PLAYER_SOURCE_DIR}/Player.ico\";PLAYER_USE_GENERATED_VERSION_RC=1"
+    )
+endif ()
 
 set(PLAYER_HEADERS
         StaticPlugins.h
         GamePlayer.h
         GameConfig.h
         PlayerOptions.h
-        ConfigDialog.h
-        Splash.h
         ScriptUtils.h
         CmdlineParser.h
-        LockGuard.h
         Logger.h
         Utils.h
 )
 
 set(PLAYER_SOURCES
         Player.cpp
-        ConfigDialog.cpp
         GamePlayer.cpp
         GameConfig.cpp
         PlayerOptions.cpp
         Hotfix.cpp
-        Splash.cpp
         CmdlineParser.cpp
         Logger.cpp
         Utils.cpp
-        "${_player_resource_file}"
 )
+
+if (WIN32 AND NOT PLAYER_ENABLE_SDL3)
+    list(APPEND PLAYER_HEADERS ConfigDialog.h Splash.h LockGuard.h)
+    list(APPEND PLAYER_SOURCES ConfigDialog.cpp Splash.cpp "${_player_resource_file}")
+endif ()
 
 if (BALLANCE_BUILD_STATIC_PLAYER)
     list(APPEND PLAYER_SOURCES StaticPlugins.cpp)
@@ -53,7 +54,7 @@ add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
 
 set_target_properties(${PLAYER_NAME} PROPERTIES
         OUTPUT_NAME ${PLAYER_NAME}
-        WIN32_EXECUTABLE TRUE
+        WIN32_EXECUTABLE $<AND:$<BOOL:${WIN32}>,$<NOT:$<BOOL:${PLAYER_ENABLE_SDL3}>>>
 )
 
 set(_player_ck2_dep CK2)

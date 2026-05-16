@@ -1,5 +1,6 @@
 #include "GamePlayer.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,17 +14,18 @@
 #ifdef BALLANCE_STATIC_MODULES
 #include "StaticPlugins.h"
 #endif
+#if !PLAYER_ENABLE_SDL3
 #include "ConfigDialog.h"
+#include "resource.h"
+#endif
 #include "Logger.h"
 #include "Utils.h"
 #include "InterfaceManager.h"
 
-#include "resource.h"
-
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
 
-#ifndef _WIN64
+#if !PLAYER_ENABLE_SDL3 && !defined(_WIN64)
 #ifndef GetWindowLongPtr
 #define GetWindowLongPtr GetWindowLong
 #endif
@@ -40,13 +42,25 @@
 
 extern bool EditScript(CKLevel *level, const CGameConfig &config, const char *resolvedFile);
 
-#if PLAYER_ENABLE_SDL3
-static const char *kSdlPlayerWindowProp = "Ballanced.GamePlayer";
-#endif
-
 static CKSTRING ToCKString(const char *value)
 {
     return const_cast<CKSTRING>(value);
+}
+
+static int AsciiICompare(const char *lhs, const char *rhs)
+{
+    if (!lhs || !rhs)
+        return lhs == rhs ? 0 : (lhs ? 1 : -1);
+    while (*lhs && *rhs)
+    {
+        int lc = tolower(static_cast<unsigned char>(*lhs));
+        int rc = tolower(static_cast<unsigned char>(*rhs));
+        if (lc != rc)
+            return lc - rc;
+        ++lhs;
+        ++rhs;
+    }
+    return tolower(static_cast<unsigned char>(*lhs)) - tolower(static_cast<unsigned char>(*rhs));
 }
 
 static bool IsDefaultRenderEngineDll(const char *dllPath)
@@ -54,14 +68,23 @@ static bool IsDefaultRenderEngineDll(const char *dllPath)
     if (!dllPath || !*dllPath)
         return false;
 
-    char filename[_MAX_FNAME] = {0};
-    _splitpath(dllPath, NULL, NULL, filename, NULL);
+    const char *name = utils::FindLastPathSeparator(dllPath);
+    name = name ? name + 1 : dllPath;
 
-    const char *name = filename;
-    if (!_strnicmp(name, "lib", 3))
+    char filename[MAX_PATH] = {0};
+    strncpy(filename, name, sizeof(filename) - 1);
+    char *extension = strrchr(filename, '.');
+    if (extension)
+        *extension = '\0';
+
+    name = filename;
+    if (strlen(name) >= 3 &&
+        tolower(static_cast<unsigned char>(name[0])) == 'l' &&
+        tolower(static_cast<unsigned char>(name[1])) == 'i' &&
+        tolower(static_cast<unsigned char>(name[2])) == 'b')
         name += 3;
 
-    return _stricmp(name, "CK2_3D") == 0;
+    return AsciiICompare(name, "CK2_3D") == 0;
 }
 
 static bool ResolveRuntimePath(char *buffer, size_t size, const char *path)
@@ -86,7 +109,7 @@ static bool ResolveRuntimePath(char *buffer, size_t size, const char *path)
 static bool GetExecutableDirectory(char *buffer, size_t size)
 {
     char modulePath[MAX_PATH];
-    DWORD length = ::GetModuleFileNameA(NULL, modulePath, MAX_PATH);
+    size_t length = VxGetModuleFileName(NULL, modulePath, MAX_PATH);
     return length > 0 && length < MAX_PATH && utils::GetFileDirectory(buffer, size, modulePath, true);
 }
 
@@ -153,23 +176,31 @@ static bool SetCompositionEnvironment(const char *resolvedFile)
     envBuf[sizeof(envBuf) - 1] = '\0';
     if (_putenv(envBuf) != 0)
         return false;
-#else
+#elif defined(_WIN32)
     if (_putenv_s("Gravity", compositionDir) != 0)
+        return false;
+#else
+    if (setenv("Gravity", compositionDir, 1) != 0)
         return false;
 #endif
 
+#if defined(_WIN32)
     return ::SetEnvironmentVariableA("Gravity", compositionDir) != 0;
+#else
+    return true;
+#endif
 }
 
 CGamePlayer::CGamePlayer()
     : m_State(eInitial),
       m_hInstance(NULL),
+#if !PLAYER_ENABLE_SDL3
       m_hAccelTable(NULL),
+#endif
       m_MainWindow(NULL),
       m_RenderWindow(NULL),
 #if PLAYER_ENABLE_SDL3
       m_SdlWindow(NULL),
-      m_SdlPreviousWndProc(NULL),
 #endif
       m_CKContext(NULL),
       m_RenderContext(NULL),
@@ -187,12 +218,12 @@ CGamePlayer::~CGamePlayer()
     Shutdown();
 }
 
-bool CGamePlayer::Init(const CGameConfig &config, HINSTANCE hInstance)
+bool CGamePlayer::Init(const CGameConfig &config, PLAYER_INSTANCE_HANDLE hInstance)
 {
     return Init(config, config, hInstance);
 }
 
-bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &persistentConfig, HINSTANCE hInstance)
+bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &persistentConfig, PLAYER_INSTANCE_HANDLE hInstance)
 {
     if (m_State != eInitial)
         return true;
@@ -201,7 +232,11 @@ bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &pers
     m_PersistentConfig = persistentConfig;
 
     if (!hInstance)
+#if PLAYER_ENABLE_SDL3
+        m_hInstance = NULL;
+#else
         m_hInstance = ::GetModuleHandle(NULL);
+#endif
     else
         m_hInstance = hInstance;
 
@@ -224,14 +259,14 @@ bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &pers
         return false;
     }
 
-    RECT rc;
-    ::GetClientRect(m_MainWindow, &rc);
+    CKRECT rc;
+    VxGetClientRect(m_MainWindow, &rc);
     if (rc.right - rc.left != m_Config.width || rc.bottom - rc.top != m_Config.height)
     {
         ResizeWindow();
     }
 
-    HWND handle = (!m_Config.childWindowRendering) ? m_MainWindow : m_RenderWindow;
+    WIN_HANDLE handle = (!m_Config.childWindowRendering) ? m_MainWindow : m_RenderWindow;
     CKRECT rect = {0, 0, m_Config.width, m_Config.height};
     m_RenderContext = m_RenderManager->CreateRenderContext(handle, m_Config.driver, &rect, FALSE, m_Config.bpp);
     if (!m_RenderContext)
@@ -247,10 +282,14 @@ bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &pers
 
 #if PLAYER_ENABLE_SDL3
     if (m_SdlWindow)
+    {
         SDL_ShowWindow(m_SdlWindow);
+        SDL_RaiseWindow(m_SdlWindow);
+    }
+#else
+    ::ShowWindow((HWND)m_MainWindow, SW_SHOW);
+    ::SetFocus((HWND)m_MainWindow);
 #endif
-    ::ShowWindow(m_MainWindow, SW_SHOW);
-    ::SetFocus(m_MainWindow);
 
     m_State = eReady;
     return true;
@@ -356,15 +395,9 @@ void CGamePlayer::Run()
 
 bool CGamePlayer::Update()
 {
-#if PLAYER_ENABLE_SDL3
-    MSG msg;
-    while (::PeekMessage(&msg, m_MainWindow, TT_MSG_NO_GAMEINFO, TT_MSG_STOP_FULLSCREEN, PM_REMOVE))
-    {
-        HandleMessage(msg.hwnd ? msg.hwnd : m_MainWindow, msg.message, msg.wParam, msg.lParam);
-    }
-    if (::PeekMessage(&msg, NULL, WM_QUIT, WM_QUIT, PM_REMOVE))
-        return false;
+    DrainPlayerCommands();
 
+#if PLAYER_ENABLE_SDL3
     SDL_PumpEvents();
     SDL_Event event;
     if (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_QUIT, SDL_EVENT_QUIT) > 0)
@@ -402,6 +435,17 @@ bool CGamePlayer::Update()
         }
     }
 
+    SDL_Event keyEvents[16];
+    int keyEventCount = SDL_PeepEvents(keyEvents, 16, SDL_GETEVENT,
+                                       SDL_EVENT_KEY_DOWN, SDL_EVENT_KEY_DOWN);
+    for (int i = 0; i < keyEventCount; ++i)
+    {
+        if ((keyEvents[i].key.mod & SDL_KMOD_ALT) && keyEvents[i].key.key == SDLK_RETURN)
+            OnSwitchFullscreen();
+        else if ((keyEvents[i].key.mod & SDL_KMOD_ALT) && keyEvents[i].key.key == SDLK_F4)
+            return false;
+    }
+
     float beforeRender = 0.0f;
     float beforeProcess = 0.0f;
     m_TimeManager->GetTimeToWaitForLimits(beforeRender, beforeProcess);
@@ -424,7 +468,7 @@ bool CGamePlayer::Update()
         if (msg.message == WM_QUIT)
             return false;
 
-        if (!::TranslateAccelerator(m_MainWindow, m_hAccelTable, &msg))
+        if (!::TranslateAccelerator((HWND)m_MainWindow, m_hAccelTable, &msg))
         {
             ::TranslateMessage(&msg);
             ::DispatchMessage(&msg);
@@ -520,10 +564,12 @@ static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *userData)
     return CK_OK;
 }
 
-bool CGamePlayer::InitWindow(HINSTANCE hInstance)
+bool CGamePlayer::InitWindow(PLAYER_INSTANCE_HANDLE hInstance)
 {
+#if !PLAYER_ENABLE_SDL3
     if (!hInstance)
         return false;
+#endif
 
 #if PLAYER_ENABLE_SDL3
     SDL_SetMainReady();
@@ -549,38 +595,20 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
         return false;
     }
 
-    int screenWidth = ::GetSystemMetrics(SM_CXSCREEN);
-    int screenHeight = ::GetSystemMetrics(SM_CYSCREEN);
     int x = m_Config.posX;
-    if (x <= -m_Config.width || x >= screenWidth)
-        x = (screenWidth - m_Config.width) / 2;
     int y = m_Config.posY;
-    if (y <= -m_Config.height || y >= screenHeight)
-        y = (screenHeight - m_Config.height) / 2;
-    SDL_SetWindowPosition(m_SdlWindow, x, y);
-
-    SDL_PropertiesID props = SDL_GetWindowProperties(m_SdlWindow);
-    m_MainWindow = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
-    if (!m_MainWindow)
+    if (x == 2147483647 || y == 2147483647)
     {
-        CLogger::Get().Error("Failed to get HWND from SDL window: %s", SDL_GetError());
-        SDL_DestroyWindow(m_SdlWindow);
-        m_SdlWindow = NULL;
-        SDL_QuitSubSystem(SDL_INIT_VIDEO);
-        return false;
+        SDL_SetWindowPosition(m_SdlWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+        SDL_GetWindowPosition(m_SdlWindow, &x, &y);
+    }
+    else
+    {
+        SDL_SetWindowPosition(m_SdlWindow, x, y);
     }
 
-    if (!::SetPropA(m_MainWindow, kSdlPlayerWindowProp, reinterpret_cast<HANDLE>(this)))
-    {
-        CLogger::Get().Error("Failed to attach SDL player window property.");
-        SDL_DestroyWindow(m_SdlWindow);
-        m_SdlWindow = NULL;
-        SDL_QuitSubSystem(SDL_INIT_VIDEO);
-        return false;
-    }
-
-    m_SdlPreviousWndProc = (WNDPROC)::SetWindowLongPtr(m_MainWindow, GWLP_WNDPROC,
-                                                       reinterpret_cast<LONG_PTR>(CGamePlayer::MainWndProc));
+    m_MainWindow = (WIN_HANDLE)m_SdlWindow;
+    m_RenderWindow = NULL;
 
     m_Config.posX = x;
     m_Config.posY = y;
@@ -626,7 +654,7 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     if (y <= -height || y >= screenHeight)
         y = (screenHeight - height) / 2;
 
-    m_MainWindow = ::CreateWindowEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
+    m_MainWindow = (WIN_HANDLE)::CreateWindowEx(WS_EX_LEFT, TEXT("Ballance"), TEXT("Ballance"), style,
                                x, y, width, height, NULL, NULL, hInstance, this);
     if (!m_MainWindow)
     {
@@ -641,8 +669,8 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
 
     if (m_Config.childWindowRendering)
     {
-        m_RenderWindow = ::CreateWindowEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"),
-                                          WS_CHILD | WS_VISIBLE, 0, 0, m_Config.width, m_Config.height, m_MainWindow,
+            m_RenderWindow = (WIN_HANDLE)::CreateWindowEx(WS_EX_TOPMOST, TEXT("Ballance Render"), TEXT("Ballance Render"),
+                                          WS_CHILD | WS_VISIBLE, 0, 0, m_Config.width, m_Config.height, (HWND)m_MainWindow,
                                           NULL, hInstance, this);
         if (!m_RenderWindow)
         {
@@ -660,9 +688,9 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     if (!m_hAccelTable)
     {
         CLogger::Get().Error("Failed to load the accelerator table!");
-        ::DestroyWindow(m_MainWindow);
+        ::DestroyWindow((HWND)m_MainWindow);
         if (m_Config.childWindowRendering)
-            ::DestroyWindow(m_RenderWindow);
+            ::DestroyWindow((HWND)m_RenderWindow);
         UnregisterMainWindowClass(hInstance);
         if (m_Config.childWindowRendering)
             UnregisterRenderWindowClass(hInstance);
@@ -681,15 +709,6 @@ void CGamePlayer::ShutdownWindow()
 #if PLAYER_ENABLE_SDL3
     if (m_Config.fullscreen)
         RestoreDisplayMode();
-
-    if (m_MainWindow && m_SdlPreviousWndProc)
-    {
-        ::SetWindowLongPtr(m_MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_SdlPreviousWndProc));
-        m_SdlPreviousWndProc = NULL;
-    }
-
-    if (m_MainWindow)
-        ::RemovePropA(m_MainWindow, kSdlPlayerWindowProp);
 
     if (m_SdlWindow)
     {
@@ -712,8 +731,8 @@ void CGamePlayer::ShutdownWindow()
     }
 
     if (m_Config.childWindowRendering)
-        ::DestroyWindow(m_RenderWindow);
-    ::DestroyWindow(m_MainWindow);
+        ::DestroyWindow((HWND)m_RenderWindow);
+    ::DestroyWindow((HWND)m_MainWindow);
 
     if (m_hInstance)
     {
@@ -724,7 +743,7 @@ void CGamePlayer::ShutdownWindow()
 #endif
 }
 
-bool CGamePlayer::InitEngine(HWND mainWindow)
+bool CGamePlayer::InitEngine(WIN_HANDLE mainWindow)
 {
     if (CKStartUp() != CK_OK)
     {
@@ -1247,7 +1266,83 @@ bool CGamePlayer::SetupManagers()
         return false;
     }
 
+    InterfaceManager *interfaceManager = InterfaceManager::GetManager(m_CKContext);
+    if (interfaceManager)
+        interfaceManager->SetPlayerCommandHandler(&CGamePlayer::HandlePlayerCommand, this);
+
     return true;
+}
+
+void CGamePlayer::DrainPlayerCommands()
+{
+    if (!m_CKContext)
+        return;
+
+    InterfaceManager *interfaceManager = InterfaceManager::GetManager(m_CKContext);
+    if (!interfaceManager)
+        return;
+
+    TTPlayerCommand command;
+    while (interfaceManager->PollPlayerCommand(command))
+        ExecutePlayerCommand(interfaceManager, command);
+}
+
+int CGamePlayer::ExecutePlayerCommand(InterfaceManager *manager, const TTPlayerCommand &command)
+{
+    (void)manager;
+
+    switch (command.type)
+    {
+    case TT_PLAYER_COMMAND_NO_GAMEINFO:
+        OnExceptionCMO();
+        return 1;
+
+    case TT_PLAYER_COMMAND_CMO_RESTART:
+        OnReturn();
+        return 1;
+
+    case TT_PLAYER_COMMAND_CMO_LOAD:
+        return OnLoadCMO(command.text) ? 1 : 0;
+
+    case TT_PLAYER_COMMAND_EXIT_TO_SYSTEM:
+        OnExitToSystem();
+        return 1;
+
+    case TT_PLAYER_COMMAND_EXIT_TO_TITLE:
+        OnExitToTitle();
+        return 1;
+
+    case TT_PLAYER_COMMAND_LIMIT_FPS:
+        if (m_TimeManager && command.param0 > 0)
+        {
+            m_TimeManager->SetFrameRateLimit((float)command.param0);
+            m_TimeManager->ChangeLimitOptions(CK_FRAMERATE_LIMIT);
+        }
+        return 1;
+
+    case TT_PLAYER_COMMAND_SCREEN_MODE_CHANGE:
+        return OnChangeScreenMode(command.param1, command.param0);
+
+    case TT_PLAYER_COMMAND_GO_FULLSCREEN:
+        OnGoFullscreen();
+        return 1;
+
+    case TT_PLAYER_COMMAND_STOP_FULLSCREEN:
+        OnStopFullscreen();
+        return 1;
+
+    default:
+        CLogger::Get().Warn("Unknown player command: %d", command.type);
+        return 0;
+    }
+}
+
+int CGamePlayer::HandlePlayerCommand(InterfaceManager *manager, const TTPlayerCommand &command, void *userData)
+{
+    CGamePlayer *player = (CGamePlayer *)userData;
+    if (!player)
+        return 0;
+    return player->ExecutePlayerCommand(manager, command);
 }
 
 bool CGamePlayer::SetupPaths()
@@ -1313,11 +1408,11 @@ void CGamePlayer::ResizeWindow()
     return;
 #else
     RECT rc = {0, 0, m_Config.width, m_Config.height};
-    DWORD style = static_cast<DWORD>(::GetWindowLongPtr(m_MainWindow, GWL_STYLE));
+    DWORD style = static_cast<DWORD>(::GetWindowLongPtr((HWND)m_MainWindow, GWL_STYLE));
     ::AdjustWindowRect(&rc, style, FALSE);
-    ::SetWindowPos(m_MainWindow, NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
+    ::SetWindowPos((HWND)m_MainWindow, NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
     if (m_Config.childWindowRendering)
-        ::SetWindowPos(m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+        ::SetWindowPos((HWND)m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
 #endif
 }
 
@@ -1444,8 +1539,8 @@ bool CGamePlayer::GoFullscreen()
     int height = m_Config.height;
     if (m_MainWindow)
     {
-        RECT rc;
-        if (::GetClientRect(m_MainWindow, &rc) && rc.right > rc.left && rc.bottom > rc.top)
+        CKRECT rc;
+        if (VxGetClientRect(m_MainWindow, &rc) && rc.right > rc.left && rc.bottom > rc.top)
         {
             width = rc.right - rc.left;
             height = rc.bottom - rc.top;
@@ -1528,20 +1623,20 @@ void CGamePlayer::SetFullscreenWindowStyle()
     if (!m_MainWindow)
         return;
 
-    RECT monitorRect;
+    CKRECT monitorRect;
     utils::GetMonitorRectForWindow(m_MainWindow, monitorRect);
 
     const int width = monitorRect.right - monitorRect.left;
     const int height = monitorRect.bottom - monitorRect.top;
 
-    ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(WS_POPUP));
-    ::SetWindowPos(m_MainWindow, HWND_TOP,
+    ::SetWindowLongPtr((HWND)m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(WS_POPUP));
+    ::SetWindowPos((HWND)m_MainWindow, HWND_TOP,
                    monitorRect.left, monitorRect.top,
                    width, height,
                    SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 
     if (m_Config.childWindowRendering && m_RenderWindow)
-        ::SetWindowPos(m_RenderWindow, NULL, 0, 0, width, height, SWP_NOZORDER);
+        ::SetWindowPos((HWND)m_RenderWindow, NULL, 0, 0, width, height, SWP_NOZORDER);
 #endif
 }
 
@@ -1564,14 +1659,14 @@ void CGamePlayer::SetWindowedWindowStyle()
     RECT rc = {0, 0, m_Config.width, m_Config.height};
     ::AdjustWindowRect(&rc, style, FALSE);
 
-    ::SetWindowLongPtr(m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(style));
-    ::SetWindowPos(m_MainWindow, HWND_NOTOPMOST,
+    ::SetWindowLongPtr((HWND)m_MainWindow, GWL_STYLE, static_cast<LONG_PTR>(style));
+    ::SetWindowPos((HWND)m_MainWindow, HWND_NOTOPMOST,
                    m_Config.posX, m_Config.posY,
                    rc.right - rc.left, rc.bottom - rc.top,
                    SWP_FRAMECHANGED);
 
     if (m_Config.childWindowRendering && m_RenderWindow)
-        ::SetWindowPos(m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOZORDER);
+        ::SetWindowPos((HWND)m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOZORDER);
 #endif
 }
 
@@ -1586,7 +1681,7 @@ bool CGamePlayer::ClipCursor()
         return ReleaseCursorClip();
 
     RECT rect;
-    if (!::GetClientRect(m_MainWindow, &rect))
+    if (!::GetClientRect((HWND)m_MainWindow, &rect))
     {
         CLogger::Get().Error("Failed to get client rect for cursor clipping");
         return false;
@@ -1594,8 +1689,8 @@ bool CGamePlayer::ClipCursor()
 
     POINT p1 = {rect.left, rect.top};
     POINT p2 = {rect.right, rect.bottom};
-    ::ClientToScreen(m_MainWindow, &p1);
-    ::ClientToScreen(m_MainWindow, &p2);
+    ::ClientToScreen((HWND)m_MainWindow, &p1);
+    ::ClientToScreen((HWND)m_MainWindow, &p2);
 
     rect.left = p1.x;
     rect.top = p1.y;
@@ -1620,16 +1715,27 @@ bool CGamePlayer::ReleaseCursorClip()
 
 bool CGamePlayer::OpenSetupDialog()
 {
+#if PLAYER_ENABLE_SDL3
+    return false;
+#else
     return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_FULLSCREEN_SETUP), NULL, CGamePlayer::FullscreenSetupDlgProc, reinterpret_cast<LPARAM>(this)) == IDOK;
+#endif
 }
 
 bool CGamePlayer::OpenAboutDialog()
 {
+#if PLAYER_ENABLE_SDL3
+    return false;
+#else
     return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT), NULL, CGamePlayer::AboutDlgProc, reinterpret_cast<LPARAM>(this)) == IDOK;
+#endif
 }
 
 bool CGamePlayer::OpenConfigDialog()
 {
+#if PLAYER_ENABLE_SDL3
+    return false;
+#else
     ReleaseCursorClip();
     bool saved = ShowConfigDialog(m_hInstance, m_PersistentConfig, false);
     ClipCursor();
@@ -1638,22 +1744,30 @@ bool CGamePlayer::OpenConfigDialog()
         ShowConfigRestartRequiredMessage(m_MainWindow);
 
     return saved;
+#endif
 }
 
 void CGamePlayer::OnDestroy()
 {
+#if !PLAYER_ENABLE_SDL3
     ReleaseCursorClip();
     ::PostQuitMessage(0);
+#endif
 }
 
 void CGamePlayer::OnMove()
 {
     if (!m_Config.fullscreen)
     {
+#if PLAYER_ENABLE_SDL3
+        if (m_SdlWindow)
+            SDL_GetWindowPosition(m_SdlWindow, &m_Config.posX, &m_Config.posY);
+#else
         RECT rect;
-        ::GetWindowRect(m_MainWindow, &rect);
+        ::GetWindowRect((HWND)m_MainWindow, &rect);
         m_Config.posX = rect.left;
         m_Config.posY = rect.top;
+#endif
         if (m_State != eInitial)
             SyncPersistentWindowPosition();
     }
@@ -1678,7 +1792,7 @@ void CGamePlayer::OnClose()
     quitEvent.type = SDL_EVENT_QUIT;
     SDL_PushEvent(&quitEvent);
 #else
-    ::DestroyWindow(m_MainWindow);
+    ::DestroyWindow((HWND)m_MainWindow);
 #endif
 }
 
@@ -1728,6 +1842,7 @@ void CGamePlayer::OnActivateApp(bool active)
     }
 }
 
+#if !PLAYER_ENABLE_SDL3
 void CGamePlayer::OnSetCursor()
 {
     if (m_State == ePaused)
@@ -1755,7 +1870,7 @@ int CGamePlayer::OnSysKeyDown(UINT uKey)
 
     case VK_F4:
         // ALT + F4 -> Quit the application
-        ::PostMessage(m_MainWindow, TT_MSG_EXIT_TO_SYS, 0, 0);
+        ::PostMessage((HWND)m_MainWindow, TT_MSG_EXIT_TO_SYS, 0, 0);
         return 1;
 
     case 'C':
@@ -1768,23 +1883,34 @@ int CGamePlayer::OnSysKeyDown(UINT uKey)
     }
     return 0;
 }
+#endif
 
 void CGamePlayer::OnClick(bool dblClk)
 {
     if (!m_RenderManager)
         return;
 
+#if PLAYER_ENABLE_SDL3
+    float mouseX = 0.0f;
+    float mouseY = 0.0f;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    int pickX = static_cast<int>(mouseX);
+    int pickY = static_cast<int>(mouseY);
+#else
     POINT pt;
     ::GetCursorPos(&pt);
     if (m_Config.childWindowRendering)
-        ::ScreenToClient(m_RenderWindow, &pt);
+        ::ScreenToClient((HWND)m_RenderWindow, &pt);
     else
-        ::ScreenToClient(m_MainWindow, &pt);
+        ::ScreenToClient((HWND)m_MainWindow, &pt);
+    int pickX = pt.x;
+    int pickY = pt.y;
+#endif
 
     CKMessageType msgType = (!dblClk) ? m_MsgClick : m_MsgDoubleClick;
 
 #if CKVERSION == 0x13022002
-    CKPOINT ckpt = {(int)pt.x, (int)pt.y};
+    CKPOINT ckpt = {pickX, pickY};
     CKPICKRESULT res;
     CKObject *obj = m_RenderContext->Pick(ckpt, &res, FALSE);
     if (obj && CKIsChildClassOf(obj, CKCID_BEOBJECT))
@@ -1797,7 +1923,7 @@ void CGamePlayer::OnClick(bool dblClk)
     }
 #else
     VxIntersectionDesc desc;
-    CKObject *obj = m_RenderContext->Pick(pt.x, pt.y, &desc);
+    CKObject *obj = m_RenderContext->Pick(pickX, pickY, &desc);
     if (obj && CKIsChildClassOf(obj, CKCID_BEOBJECT))
         m_MessageManager->SendMessageSingle(msgType, (CKBeObject *)obj);
     if (desc.Sprite)
@@ -1805,6 +1931,7 @@ void CGamePlayer::OnClick(bool dblClk)
 #endif
 }
 
+#if !PLAYER_ENABLE_SDL3
 int CGamePlayer::OnCommand(UINT id, UINT code)
 {
     if (id == IDM_APP_ABOUT)
@@ -1817,11 +1944,12 @@ int CGamePlayer::OnCommand(UINT id, UINT code)
     }
     return 0;
 }
+#endif
 
 void CGamePlayer::OnExceptionCMO()
 {
     CLogger::Get().Error("Exception in the CMO - Abort");
-    ::PostMessage(m_MainWindow, TT_MSG_EXIT_TO_SYS, 0, 0);
+    OnExitToSystem();
 }
 
 void CGamePlayer::OnReturn()
@@ -1846,7 +1974,7 @@ void CGamePlayer::OnExitToSystem()
     bool fullscreen = m_Config.fullscreen;
     OnStopFullscreen(false);
     m_Config.fullscreen = fullscreen;
-    ::PostMessage(m_MainWindow, WM_CLOSE, 0, 0);
+    OnClose();
 }
 
 void CGamePlayer::OnExitToTitle()
@@ -1906,18 +2034,26 @@ void CGamePlayer::OnGoFullscreen(bool persistChange)
         if (persistChange)
             m_PersistentConfig.fullscreen = true;
 
-        ::ShowWindow(m_MainWindow, SW_SHOW);
-        ::SetFocus(m_MainWindow);
+#if PLAYER_ENABLE_SDL3
+        if (m_SdlWindow)
+        {
+            SDL_ShowWindow(m_SdlWindow);
+            SDL_RaiseWindow(m_SdlWindow);
+        }
+#else
+        ::ShowWindow((HWND)m_MainWindow, SW_SHOW);
+        ::SetFocus((HWND)m_MainWindow);
 
         if (m_Config.childWindowRendering)
         {
-            ::ShowWindow(m_RenderWindow, SW_SHOW);
-            ::SetFocus(m_RenderWindow);
+            ::ShowWindow((HWND)m_RenderWindow, SW_SHOW);
+            ::SetFocus((HWND)m_RenderWindow);
         }
 
-        ::UpdateWindow(m_MainWindow);
+        ::UpdateWindow((HWND)m_MainWindow);
         if (m_Config.childWindowRendering)
-            ::UpdateWindow(m_RenderWindow);
+            ::UpdateWindow((HWND)m_RenderWindow);
+#endif
     }
     else
     {
@@ -1944,17 +2080,25 @@ void CGamePlayer::OnStopFullscreen(bool persistChange)
             SetWindowedWindowStyle();
         }
 
-        ::ShowWindow(m_MainWindow, SW_SHOW);
-        ::SetFocus(m_MainWindow);
+#if PLAYER_ENABLE_SDL3
+        if (m_SdlWindow)
+        {
+            SDL_ShowWindow(m_SdlWindow);
+            SDL_RaiseWindow(m_SdlWindow);
+        }
+#else
+        ::ShowWindow((HWND)m_MainWindow, SW_SHOW);
+        ::SetFocus((HWND)m_MainWindow);
 
         if (m_Config.childWindowRendering)
         {
-            ::SetFocus(m_RenderWindow);
+            ::SetFocus((HWND)m_RenderWindow);
         }
 
-        ::UpdateWindow(m_MainWindow);
+        ::UpdateWindow((HWND)m_MainWindow);
         if (m_Config.childWindowRendering)
-            ::UpdateWindow(m_RenderWindow);
+            ::UpdateWindow((HWND)m_RenderWindow);
+#endif
     }
 
     ClipCursor();
@@ -1973,6 +2117,7 @@ void CGamePlayer::OnSwitchFullscreen()
         OnStopFullscreen(true);
 }
 
+#if !PLAYER_ENABLE_SDL3
 LRESULT CGamePlayer::HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
@@ -2329,3 +2474,4 @@ PLAYER_DIALOG_RESULT CALLBACK CGamePlayer::AboutDlgProc(HWND hWnd, UINT uMsg, WP
 
     return FALSE;
 }
+#endif
