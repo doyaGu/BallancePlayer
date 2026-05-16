@@ -67,14 +67,18 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
     endif ()
 endif ()
 target_link_libraries(${PLAYER_NAME} PRIVATE ${_player_ck2_dep} ${_player_vxmath_dep})
+if (PLAYER_ENABLE_SDL3)
+    target_link_libraries(${PLAYER_NAME} PRIVATE SDL3::SDL3)
+    target_compile_definitions(${PLAYER_NAME} PRIVATE PLAYER_ENABLE_SDL3=1 SDL_MAIN_HANDLED)
+endif ()
 
 if (BALLANCE_BUILD_STATIC_PLAYER)
     target_compile_definitions(${PLAYER_NAME} PRIVATE BALLANCE_STATIC_MODULES)
 
     set(_ballance_static_player_module_targets
             CK2_3DStatic
-            Dx8InputManagerStatic
-            Dx8SoundManagerStatic
+            SdlInputManagerStatic
+            SdlSoundManagerStatic
             ParameterOperationsStatic
             AVIReaderStatic
             ImageReaderStatic

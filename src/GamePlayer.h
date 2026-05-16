@@ -13,6 +13,10 @@
 
 #include "GameConfig.h"
 
+#if PLAYER_ENABLE_SDL3
+struct SDL_Window;
+#endif
+
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
 typedef BOOL PLAYER_DIALOG_RESULT;
 #else
@@ -146,6 +150,10 @@ private:
     HACCEL m_hAccelTable;
     HWND m_MainWindow;
     HWND m_RenderWindow;
+#if PLAYER_ENABLE_SDL3
+    SDL_Window *m_SdlWindow;
+    WNDPROC m_SdlPreviousWndProc;
+#endif
 
     CKContext *m_CKContext;
     CKRenderContext *m_RenderContext;

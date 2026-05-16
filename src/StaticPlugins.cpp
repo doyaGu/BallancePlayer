@@ -108,8 +108,8 @@ extern void Register_TT_Toolbox_BehaviorDeclarations(XObjectDeclarationArray *);
 
 static const StaticPlugin kStaticPlugins[] = {
     {"CK2_3D", NULL, CKGet_CK2_3D_PluginInfo, NULL, NULL},
-    {"Dx8InputManager", NULL, CKGet_InputManager_PluginInfo, NULL, NULL},
-    {"Dx8SoundManager", NULL, CKGet_SoundManager_PluginInfo, NULL, NULL},
+    {"SdlInputManager", NULL, CKGet_InputManager_PluginInfo, NULL, NULL},
+    {"SdlSoundManager", NULL, CKGet_SoundManager_PluginInfo, NULL, NULL},
     {"ParameterOperations", NULL, CKGet_ParamOp_PluginInfo, NULL, NULL},
     {"AVIReader", CKGet_AviReader_PluginInfoCount, CKGet_AviReader_PluginInfo, CKGet_AviReader_Reader, NULL},
     {"ImageReader", CKGet_ImageReader_PluginInfoCount, CKGet_ImageReader_PluginInfo, CKGet_ImageReader_Reader, NULL},

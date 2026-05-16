@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if PLAYER_ENABLE_SDL3
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+#include <SDL3/SDL_video.h>
+#endif
+
 #ifdef BALLANCE_STATIC_MODULES
 #include "StaticPlugins.h"
 #endif
@@ -33,6 +39,10 @@
 #endif
 
 extern bool EditScript(CKLevel *level, const CGameConfig &config, const char *resolvedFile);
+
+#if PLAYER_ENABLE_SDL3
+static const char *kSdlPlayerWindowProp = "Ballanced.GamePlayer";
+#endif
 
 static CKSTRING ToCKString(const char *value)
 {
@@ -157,6 +167,10 @@ CGamePlayer::CGamePlayer()
       m_hAccelTable(NULL),
       m_MainWindow(NULL),
       m_RenderWindow(NULL),
+#if PLAYER_ENABLE_SDL3
+      m_SdlWindow(NULL),
+      m_SdlPreviousWndProc(NULL),
+#endif
       m_CKContext(NULL),
       m_RenderContext(NULL),
       m_RenderManager(NULL),
@@ -197,7 +211,6 @@ bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &pers
         ShutdownWindow();
         return false;
     }
-
     if (!InitEngine(m_MainWindow))
     {
         CLogger::Get().Error("Failed to initialize CK Engine!");
@@ -232,6 +245,10 @@ bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &pers
     if (m_Config.fullscreen)
         OnGoFullscreen(false);
 
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlWindow)
+        SDL_ShowWindow(m_SdlWindow);
+#endif
     ::ShowWindow(m_MainWindow, SW_SHOW);
     ::SetFocus(m_MainWindow);
 
@@ -339,6 +356,68 @@ void CGamePlayer::Run()
 
 bool CGamePlayer::Update()
 {
+#if PLAYER_ENABLE_SDL3
+    MSG msg;
+    while (::PeekMessage(&msg, m_MainWindow, TT_MSG_NO_GAMEINFO, TT_MSG_STOP_FULLSCREEN, PM_REMOVE))
+    {
+        HandleMessage(msg.hwnd ? msg.hwnd : m_MainWindow, msg.message, msg.wParam, msg.lParam);
+    }
+    if (::PeekMessage(&msg, NULL, WM_QUIT, WM_QUIT, PM_REMOVE))
+        return false;
+
+    SDL_PumpEvents();
+    SDL_Event event;
+    if (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_QUIT, SDL_EVENT_QUIT) > 0)
+        return false;
+
+    SDL_Event windowEvents[16];
+    int windowEventCount = SDL_PeepEvents(windowEvents, 16, SDL_GETEVENT,
+                                          SDL_EVENT_WINDOW_FIRST, SDL_EVENT_WINDOW_LAST);
+    for (int i = 0; i < windowEventCount; ++i)
+    {
+        const SDL_Event &windowEvent = windowEvents[i];
+
+        switch (windowEvent.type)
+        {
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+            return false;
+        case SDL_EVENT_WINDOW_RESIZED:
+            m_Config.width = windowEvent.window.data1;
+            m_Config.height = windowEvent.window.data2;
+            OnSize();
+            break;
+        case SDL_EVENT_WINDOW_MOVED:
+            m_Config.posX = windowEvent.window.data1;
+            m_Config.posY = windowEvent.window.data2;
+            SyncPersistentWindowPosition();
+            break;
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+            OnActivateApp(true);
+            break;
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
+            OnActivateApp(false);
+            break;
+        default:
+            break;
+        }
+    }
+
+    float beforeRender = 0.0f;
+    float beforeProcess = 0.0f;
+    m_TimeManager->GetTimeToWaitForLimits(beforeRender, beforeProcess);
+    if (beforeProcess <= 0)
+    {
+        m_TimeManager->ResetChronos(FALSE, TRUE);
+        Process();
+    }
+    if (beforeRender <= 0)
+    {
+        m_TimeManager->ResetChronos(TRUE, FALSE);
+        Render();
+    }
+
+    return true;
+#else
     MSG msg;
     if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
     {
@@ -369,6 +448,7 @@ bool CGamePlayer::Update()
     }
 
     return true;
+#endif
 }
 
 void CGamePlayer::Process()
@@ -445,6 +525,68 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     if (!hInstance)
         return false;
 
+#if PLAYER_ENABLE_SDL3
+    SDL_SetMainReady();
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
+    {
+        CLogger::Get().Error("Failed to initialize SDL video backend: %s", SDL_GetError());
+        return false;
+    }
+
+    m_Config.childWindowRendering = false;
+
+    SDL_WindowFlags flags = SDL_WINDOW_HIDDEN;
+    if (m_Config.borderless)
+        flags = (SDL_WindowFlags)(flags | SDL_WINDOW_BORDERLESS);
+    if (m_Config.fullscreen)
+        flags = (SDL_WindowFlags)(flags | SDL_WINDOW_FULLSCREEN);
+
+    m_SdlWindow = SDL_CreateWindow("Ballance", m_Config.width, m_Config.height, flags);
+    if (!m_SdlWindow)
+    {
+        CLogger::Get().Error("Failed to create SDL window: %s", SDL_GetError());
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        return false;
+    }
+
+    int screenWidth = ::GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = ::GetSystemMetrics(SM_CYSCREEN);
+    int x = m_Config.posX;
+    if (x <= -m_Config.width || x >= screenWidth)
+        x = (screenWidth - m_Config.width) / 2;
+    int y = m_Config.posY;
+    if (y <= -m_Config.height || y >= screenHeight)
+        y = (screenHeight - m_Config.height) / 2;
+    SDL_SetWindowPosition(m_SdlWindow, x, y);
+
+    SDL_PropertiesID props = SDL_GetWindowProperties(m_SdlWindow);
+    m_MainWindow = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    if (!m_MainWindow)
+    {
+        CLogger::Get().Error("Failed to get HWND from SDL window: %s", SDL_GetError());
+        SDL_DestroyWindow(m_SdlWindow);
+        m_SdlWindow = NULL;
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        return false;
+    }
+
+    if (!::SetPropA(m_MainWindow, kSdlPlayerWindowProp, reinterpret_cast<HANDLE>(this)))
+    {
+        CLogger::Get().Error("Failed to attach SDL player window property.");
+        SDL_DestroyWindow(m_SdlWindow);
+        m_SdlWindow = NULL;
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        return false;
+    }
+
+    m_SdlPreviousWndProc = (WNDPROC)::SetWindowLongPtr(m_MainWindow, GWLP_WNDPROC,
+                                                       reinterpret_cast<LONG_PTR>(CGamePlayer::MainWndProc));
+
+    m_Config.posX = x;
+    m_Config.posY = y;
+
+    return true;
+#else
     if (!RegisterMainWindowClass(hInstance))
     {
         CLogger::Get().Error("Failed to register main window class!");
@@ -531,10 +673,35 @@ bool CGamePlayer::InitWindow(HINSTANCE hInstance)
     m_Config.posY = y;
 
     return true;
+#endif
 }
 
 void CGamePlayer::ShutdownWindow()
 {
+#if PLAYER_ENABLE_SDL3
+    if (m_Config.fullscreen)
+        RestoreDisplayMode();
+
+    if (m_MainWindow && m_SdlPreviousWndProc)
+    {
+        ::SetWindowLongPtr(m_MainWindow, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_SdlPreviousWndProc));
+        m_SdlPreviousWndProc = NULL;
+    }
+
+    if (m_MainWindow)
+        ::RemovePropA(m_MainWindow, kSdlPlayerWindowProp);
+
+    if (m_SdlWindow)
+    {
+        SDL_DestroyWindow(m_SdlWindow);
+        m_SdlWindow = NULL;
+    }
+    m_MainWindow = NULL;
+    m_RenderWindow = NULL;
+
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    return;
+#else
     if (m_Config.fullscreen)
         RestoreDisplayMode();
 
@@ -554,6 +721,7 @@ void CGamePlayer::ShutdownWindow()
             UnregisterRenderWindowClass(m_hInstance);
         UnregisterMainWindowClass(m_hInstance);
     }
+#endif
 }
 
 bool CGamePlayer::InitEngine(HWND mainWindow)
@@ -1139,12 +1307,18 @@ bool CGamePlayer::SetupPaths()
 
 void CGamePlayer::ResizeWindow()
 {
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlWindow)
+        SDL_SetWindowSize(m_SdlWindow, m_Config.width, m_Config.height);
+    return;
+#else
     RECT rc = {0, 0, m_Config.width, m_Config.height};
     DWORD style = static_cast<DWORD>(::GetWindowLongPtr(m_MainWindow, GWL_STYLE));
     ::AdjustWindowRect(&rc, style, FALSE);
     ::SetWindowPos(m_MainWindow, NULL, 0, 0, rc.right - rc.left, rc.bottom - rc.top, SWP_NOMOVE | SWP_NOZORDER);
     if (m_Config.childWindowRendering)
         ::SetWindowPos(m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOMOVE | SWP_NOZORDER);
+#endif
 }
 
 int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
@@ -1312,6 +1486,11 @@ bool CGamePlayer::StopFullscreen()
 
 void CGamePlayer::SetFullscreenDisplayMode()
 {
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlWindow)
+        SDL_SetWindowFullscreen(m_SdlWindow, true);
+    return;
+#else
     DEVMODEA dm;
     memset(&dm, 0, sizeof(dm));
     dm.dmSize = sizeof(dm);
@@ -1326,15 +1505,26 @@ void CGamePlayer::SetFullscreenDisplayMode()
 
     CLogger::Get().Debug("ChangeDisplaySettings failed for %dx%d %dbpp: %ld",
                          m_Config.width, m_Config.height, (int)dm.dmBitsPerPel, result);
+#endif
 }
 
 void CGamePlayer::RestoreDisplayMode()
 {
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlWindow)
+        SDL_SetWindowFullscreen(m_SdlWindow, false);
+#else
     ::ChangeDisplaySettingsA(NULL, 0);
+#endif
 }
 
 void CGamePlayer::SetFullscreenWindowStyle()
 {
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlWindow)
+        SDL_SetWindowFullscreen(m_SdlWindow, true);
+    return;
+#else
     if (!m_MainWindow)
         return;
 
@@ -1352,10 +1542,21 @@ void CGamePlayer::SetFullscreenWindowStyle()
 
     if (m_Config.childWindowRendering && m_RenderWindow)
         ::SetWindowPos(m_RenderWindow, NULL, 0, 0, width, height, SWP_NOZORDER);
+#endif
 }
 
 void CGamePlayer::SetWindowedWindowStyle()
 {
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlWindow)
+    {
+        SDL_SetWindowFullscreen(m_SdlWindow, false);
+        SDL_SetWindowBordered(m_SdlWindow, !m_Config.borderless);
+        SDL_SetWindowSize(m_SdlWindow, m_Config.width, m_Config.height);
+        SDL_SetWindowPosition(m_SdlWindow, m_Config.posX, m_Config.posY);
+    }
+    return;
+#else
     if (!m_MainWindow)
         return;
 
@@ -1371,10 +1572,16 @@ void CGamePlayer::SetWindowedWindowStyle()
 
     if (m_Config.childWindowRendering && m_RenderWindow)
         ::SetWindowPos(m_RenderWindow, NULL, 0, 0, m_Config.width, m_Config.height, SWP_NOZORDER);
+#endif
 }
 
 bool CGamePlayer::ClipCursor()
 {
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlWindow)
+        SDL_SetWindowMouseGrab(m_SdlWindow, m_Config.clipCursor ? true : false);
+    return true;
+#else
     if (!m_Config.clipCursor)
         return ReleaseCursorClip();
 
@@ -1397,11 +1604,17 @@ bool CGamePlayer::ClipCursor()
     ::ClipCursor(&rect);
 
     return true;
+#endif
 }
 
 bool CGamePlayer::ReleaseCursorClip()
 {
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlWindow)
+        SDL_SetWindowMouseGrab(m_SdlWindow, false);
+#else
     ::ClipCursor(NULL);
+#endif
     return true;
 }
 
@@ -1459,7 +1672,14 @@ void CGamePlayer::OnPaint()
 
 void CGamePlayer::OnClose()
 {
+#if PLAYER_ENABLE_SDL3
+    SDL_Event quitEvent;
+    SDL_zero(quitEvent);
+    quitEvent.type = SDL_EVENT_QUIT;
+    SDL_PushEvent(&quitEvent);
+#else
     ::DestroyWindow(m_MainWindow);
+#endif
 }
 
 void CGamePlayer::OnActivateApp(bool active)
@@ -1838,6 +2058,10 @@ LRESULT CGamePlayer::HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         break;
     }
 
+#if PLAYER_ENABLE_SDL3
+    if (m_SdlPreviousWndProc)
+        return ::CallWindowProc(m_SdlPreviousWndProc, hWnd, uMsg, wParam, lParam);
+#endif
     return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
@@ -1968,16 +2192,27 @@ bool CGamePlayer::UnregisterRenderWindowClass(HINSTANCE hInstance)
 LRESULT CGamePlayer::MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     CGamePlayer *player = NULL;
+#if PLAYER_ENABLE_SDL3
+    player = reinterpret_cast<CGamePlayer *>(::GetPropA(hWnd, kSdlPlayerWindowProp));
+#endif
     if (uMsg == WM_NCCREATE)
     {
         CREATESTRUCT *pCreate = reinterpret_cast<CREATESTRUCT *>(lParam);
-        player = static_cast<CGamePlayer *>(pCreate->lpCreateParams);
+        CGamePlayer *createPlayer = static_cast<CGamePlayer *>(pCreate->lpCreateParams);
+#if PLAYER_ENABLE_SDL3
+        if (createPlayer)
+            player = createPlayer;
+#else
+        player = createPlayer;
         ::SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(player));
+#endif
     }
+#if !PLAYER_ENABLE_SDL3
     else
     {
         player = reinterpret_cast<CGamePlayer *>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
     }
+#endif
 
     if (player) {
         return player->HandleMessage(hWnd, uMsg, wParam, lParam);
