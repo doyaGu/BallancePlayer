@@ -57,6 +57,13 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
         OUTPUT_NAME ${PLAYER_NAME}
 )
 
+if (WIN32)
+    set_target_properties(${PLAYER_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
+    if (MSVC)
+        target_link_options(${PLAYER_NAME} PRIVATE "/ENTRY:mainCRTStartup")
+    endif ()
+endif ()
+
 set(_player_ck2_dep CK2)
 set(_player_vxmath_dep VxMath)
 if (BALLANCE_BUILD_STATIC_PLAYER)
