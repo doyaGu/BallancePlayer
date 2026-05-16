@@ -40,7 +40,6 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 option(BALLANCE_BUILD_STATIC_PLAYER "Build Player with Virtools modules linked statically" OFF)
-option(PLAYER_ENABLE_SDL3 "Use SDL3 player window backend" OFF)
 
 # Use folders to organize targets in an IDE (only when top-level)
 if (PLAYER_IS_TOP_LEVEL)
@@ -48,11 +47,7 @@ if (PLAYER_IS_TOP_LEVEL)
     set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
 endif ()
 
-if (NOT WIN32 AND NOT PLAYER_ENABLE_SDL3)
-    message(FATAL_ERROR "Only Windows is supported without PLAYER_ENABLE_SDL3.")
-endif ()
-
-if (PLAYER_ENABLE_SDL3 AND NOT TARGET SDL3::SDL3)
+if (NOT TARGET SDL3::SDL3)
     find_package(SDL3 CONFIG REQUIRED)
 endif ()
 
@@ -197,7 +192,6 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
     endif ()
 
     if (NOT TARGET SdlInputManagerStatic AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../Managers/CMakeLists.txt")
-        set(CKMANAGERS_ENABLE_SDL3 ON CACHE BOOL "" FORCE)
         set(SDLINPUT_BUILD_SHARED OFF CACHE BOOL "" FORCE)
         set(SDLINPUT_BUILD_STATIC ON CACHE BOOL "" FORCE)
         set(SDLINPUT_INSTALL ON CACHE BOOL "Generate install target" FORCE)

@@ -1,14 +1,3 @@
-IDD_ABOUT DIALOGEX 0, 0, 150, 60
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "About"
-FONT 8, "MS Sans Serif"
-BEGIN
-    CTEXT           "The Brand New Ballance Player",-1,0,10,150,8
-    CTEXT           "By Kakuty",-1,0,20,150,8
-    CTEXT           "Version @PROJECT_VERSION@",-1,0,30,150,8
-    DEFPUSHBUTTON   "OK",IDOK,60,35,30,15,WS_GROUP
-END
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version

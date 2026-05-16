@@ -1,10 +1,6 @@
 #ifndef PLAYER_CMDLINEPARSER_H
 #define PLAYER_CMDLINEPARSER_H
 
-#ifdef WIN32
-#pragma warning (disable: 4514 4786)
-#endif
-
 #include <string>
 #include <vector>
 
@@ -30,9 +26,6 @@ class CmdlineParser
 public:
     CmdlineParser(int argc, char **argv);
     CmdlineParser(const char *cmdline);
-#ifdef WIN32
-    CmdlineParser(const wchar_t *cmdline);
-#endif
 
     bool Next(CmdlineArg &arg, const char *longopt, char opt = '\0', int maxValueCount = 0);
 

@@ -186,10 +186,6 @@ function New-PlayerPackage {
         }
     }
 
-    if (Test-Path (Join-Path $stagePath "ConfigTool.exe")) {
-        throw "Package staging unexpectedly contains ConfigTool.exe"
-    }
-
     Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $shaPath -Force -ErrorAction SilentlyContinue
 

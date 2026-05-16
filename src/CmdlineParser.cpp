@@ -4,13 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef WIN32
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <Windows.h>
-#endif
-
 static std::string RemoveQuotes(const std::string &text)
 {
     std::string value;
@@ -165,23 +158,6 @@ CmdlineParser::CmdlineParser(const char *cmdline) : m_Index(0)
 {
     AppendCommandLineArgs(m_Args, cmdline);
 }
-
-#ifdef WIN32
-CmdlineParser::CmdlineParser(const wchar_t *cmdline) : m_Index(0)
-{
-    if (!cmdline)
-        return;
-
-    int size = WideCharToMultiByte(CP_ACP, 0, cmdline, -1, NULL, 0, NULL, NULL);
-    if (size <= 0)
-        return;
-
-    std::string buffer;
-    buffer.resize(size);
-    WideCharToMultiByte(CP_ACP, 0, cmdline, -1, &buffer[0], size, NULL, NULL);
-    AppendCommandLineArgs(m_Args, buffer.c_str());
-}
-#endif
 
 bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int maxValueCount)
 {

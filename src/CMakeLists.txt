@@ -6,7 +6,7 @@ configure_file(
         @ONLY
 )
 
-if (WIN32 AND NOT PLAYER_ENABLE_SDL3)
+if (WIN32)
     configure_file(
             "${CMAKE_CURRENT_SOURCE_DIR}/PlayerVersion.rc.in"
             "${_player_generated_dir}/PlayerVersion.generated.rc"
@@ -24,6 +24,7 @@ set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
         PlayerOptions.h
+        PlayerSdlShortcuts.h
         ScriptUtils.h
         CmdlineParser.h
         Logger.h
@@ -35,15 +36,15 @@ set(PLAYER_SOURCES
         GamePlayer.cpp
         GameConfig.cpp
         PlayerOptions.cpp
+        PlayerSdlShortcuts.cpp
         Hotfix.cpp
         CmdlineParser.cpp
         Logger.cpp
         Utils.cpp
 )
 
-if (WIN32 AND NOT PLAYER_ENABLE_SDL3)
-    list(APPEND PLAYER_HEADERS ConfigDialog.h Splash.h LockGuard.h)
-    list(APPEND PLAYER_SOURCES ConfigDialog.cpp Splash.cpp "${_player_resource_file}")
+if (WIN32)
+    list(APPEND PLAYER_SOURCES "${_player_resource_file}")
 endif ()
 
 if (BALLANCE_BUILD_STATIC_PLAYER)
@@ -54,7 +55,6 @@ add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
 
 set_target_properties(${PLAYER_NAME} PROPERTIES
         OUTPUT_NAME ${PLAYER_NAME}
-        WIN32_EXECUTABLE $<AND:$<BOOL:${WIN32}>,$<NOT:$<BOOL:${PLAYER_ENABLE_SDL3}>>>
 )
 
 set(_player_ck2_dep CK2)
@@ -68,10 +68,8 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
     endif ()
 endif ()
 target_link_libraries(${PLAYER_NAME} PRIVATE ${_player_ck2_dep} ${_player_vxmath_dep})
-if (PLAYER_ENABLE_SDL3)
-    target_link_libraries(${PLAYER_NAME} PRIVATE SDL3::SDL3)
-    target_compile_definitions(${PLAYER_NAME} PRIVATE PLAYER_ENABLE_SDL3=1 SDL_MAIN_HANDLED)
-endif ()
+target_link_libraries(${PLAYER_NAME} PRIVATE SDL3::SDL3)
+target_compile_definitions(${PLAYER_NAME} PRIVATE SDL_MAIN_HANDLED)
 
 if (BALLANCE_BUILD_STATIC_PLAYER)
     target_compile_definitions(${PLAYER_NAME} PRIVATE BALLANCE_STATIC_MODULES)
@@ -111,7 +109,7 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
     )
 
     set(_ballance_static_player_rasterizer_targets)
-    foreach (_rasterizer_target IN ITEMS CKDX9RasterizerStatic CKBgfxRasterizerStatic)
+    foreach (_rasterizer_target IN ITEMS CKBgfxRasterizerStatic)
         if (TARGET ${_rasterizer_target})
             list(APPEND _ballance_static_player_rasterizer_targets ${_rasterizer_target})
         endif ()

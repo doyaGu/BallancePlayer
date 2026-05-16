@@ -25,97 +25,47 @@
 #include <string>
 #include <vector>
 
+#include <SDL3/SDL.h>
+
 #ifndef MAX_PATH
 #define MAX_PATH 260
 #endif
 
 namespace utils
 {
-    // Multi-monitor API support without link-time dependency (VC6-friendly).
-    // We resolve APIs from user32.dll once and cache the function pointers.
-#if defined(_WIN32)
-#ifndef HMONITOR
-    DECLARE_HANDLE(HMONITOR);
-#endif
-#ifndef MONITOR_DEFAULTTONEAREST
-#define MONITOR_DEFAULTTONEAREST 2
-#endif
-
-    typedef struct tagBP_MONITORINFO
-    {
-        DWORD cbSize;
-        RECT rcMonitor;
-        RECT rcWork;
-        DWORD dwFlags;
-    } BP_MONITORINFO, *LPBP_MONITORINFO;
-
-    typedef HMONITOR(WINAPI *MonitorFromWindowProc)(HWND, DWORD);
-    typedef BOOL(WINAPI *GetMonitorInfoAProc)(HMONITOR, LPBP_MONITORINFO);
-
-    static HMODULE g_User32 = NULL;
-    static MonitorFromWindowProc g_pMonitorFromWindow = NULL;
-    static GetMonitorInfoAProc g_pGetMonitorInfoA = NULL;
-    static int g_MonitorApiInitialized = 0;
-
-    static void EnsureMonitorApisLoaded()
-    {
-        if (g_MonitorApiInitialized)
-            return;
-        g_MonitorApiInitialized = 1;
-
-        g_User32 = ::GetModuleHandleA("user32.dll");
-        if (!g_User32)
-            g_User32 = ::LoadLibraryA("user32.dll");
-        if (!g_User32)
-            return;
-
-        g_pMonitorFromWindow = (MonitorFromWindowProc)::GetProcAddress(g_User32, "MonitorFromWindow");
-        g_pGetMonitorInfoA = (GetMonitorInfoAProc)::GetProcAddress(g_User32, "GetMonitorInfoA");
-    }
-
     bool GetMonitorRectForWindow(WIN_HANDLE window, CKRECT &outRect)
     {
-        // Default: primary screen metrics.
-        outRect.left = 0;
-        outRect.top = 0;
-        outRect.right = ::GetSystemMetrics(SM_CXSCREEN);
-        outRect.bottom = ::GetSystemMetrics(SM_CYSCREEN);
-
-        if (!window)
-            return false;
-
-        EnsureMonitorApisLoaded();
-        if (!g_pMonitorFromWindow || !g_pGetMonitorInfoA)
-            return true;
-
-        HMONITOR monitor = g_pMonitorFromWindow((HWND)window, MONITOR_DEFAULTTONEAREST);
-        if (!monitor)
-            return true;
-
-        BP_MONITORINFO mi;
-        memset(&mi, 0, sizeof(mi));
-        mi.cbSize = sizeof(mi);
-        if (g_pGetMonitorInfoA(monitor, &mi))
-        {
-            outRect.left = mi.rcMonitor.left;
-            outRect.top = mi.rcMonitor.top;
-            outRect.right = mi.rcMonitor.right;
-            outRect.bottom = mi.rcMonitor.bottom;
-        }
-
-        return true;
-    }
-#else
-    bool GetMonitorRectForWindow(WIN_HANDLE window, CKRECT &outRect)
-    {
-        (void)window;
         outRect.left = 0;
         outRect.top = 0;
         outRect.right = 1920;
         outRect.bottom = 1080;
-        return true;
+
+        SDL_DisplayID display = 0;
+        if (window)
+            display = SDL_GetDisplayForWindow(static_cast<SDL_Window *>(window));
+
+        int displayCount = 0;
+        SDL_DisplayID *displays = NULL;
+        if (!display)
+        {
+            displays = SDL_GetDisplays(&displayCount);
+            if (displays && displayCount > 0)
+                display = displays[0];
+        }
+
+        SDL_Rect bounds;
+        bool ok = display && SDL_GetDisplayBounds(display, &bounds);
+        if (ok)
+        {
+            outRect.left = bounds.x;
+            outRect.top = bounds.y;
+            outRect.right = bounds.x + bounds.w;
+            outRect.bottom = bounds.y + bounds.h;
+        }
+
+        SDL_free(displays);
+        return ok;
     }
-#endif
 
     bool FileOrDirectoryExists(const char *file)
     {

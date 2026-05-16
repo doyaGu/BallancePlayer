@@ -1,31 +1,11 @@
-#ifndef PLAYER_GAMEPLAYER_H
+﻿#ifndef PLAYER_GAMEPLAYER_H
 #define PLAYER_GAMEPLAYER_H
 
 #include "CKAll.h"
 
 #include "GameConfig.h"
 
-#if PLAYER_ENABLE_SDL3
 struct SDL_Window;
-typedef void *PLAYER_INSTANCE_HANDLE;
-#else
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <Windows.h>
-#ifdef WIN32_LEAN_AND_MEAN
-#undef WIN32_LEAN_AND_MEAN
-#endif
-typedef HINSTANCE PLAYER_INSTANCE_HANDLE;
-#endif
-
-#if !PLAYER_ENABLE_SDL3
-#if defined(_MSC_VER) && (_MSC_VER <= 1200)
-typedef BOOL PLAYER_DIALOG_RESULT;
-#else
-typedef INT_PTR PLAYER_DIALOG_RESULT;
-#endif
-#endif
 
 class CGameInfo;
 class InterfaceManager;
@@ -37,8 +17,8 @@ public:
     CGamePlayer();
     ~CGamePlayer();
 
-    bool Init(const CGameConfig &config, PLAYER_INSTANCE_HANDLE hInstance = NULL);
-    bool Init(const CGameConfig &runtimeConfig, const CGameConfig &persistentConfig, PLAYER_INSTANCE_HANDLE hInstance = NULL);
+    bool Init(const CGameConfig &config);
+    bool Init(const CGameConfig &runtimeConfig, const CGameConfig &persistentConfig);
     bool Load(const char *filename = NULL);
 
     void Run();
@@ -70,7 +50,7 @@ private:
     CGamePlayer(const CGamePlayer &);
     CGamePlayer &operator=(const CGamePlayer &);
 
-    bool InitWindow(PLAYER_INSTANCE_HANDLE hInstance);
+    bool InitWindow();
     void ShutdownWindow();
 
     bool InitEngine(WIN_HANDLE mainWindow);
@@ -115,8 +95,6 @@ private:
     bool ReleaseCursorClip();
 
     bool OpenSetupDialog();
-    bool OpenAboutDialog();
-    bool OpenConfigDialog();
 
     void OnDestroy();
     void OnMove();
@@ -124,15 +102,7 @@ private:
     void OnPaint();
     void OnClose();
     void OnActivateApp(bool active);
-#if !PLAYER_ENABLE_SDL3
-    void OnSetCursor();
-    void OnGetMinMaxInfo(LPMINMAXINFO lpmmi);
-    int OnSysKeyDown(UINT uKey);
-#endif
     void OnClick(bool dblClk = false);
-#if !PLAYER_ENABLE_SDL3
-    int OnCommand(UINT id, UINT code);
-#endif
     void OnExceptionCMO();
     void OnReturn();
     bool OnLoadCMO(const char *filename);
@@ -143,33 +113,12 @@ private:
     void OnStopFullscreen(bool persistChange = true);
     void OnSwitchFullscreen();
 
-#if !PLAYER_ENABLE_SDL3
-    LRESULT HandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-    bool FillDriverList(HWND hWnd);
-    bool FillScreenModeList(HWND hWnd, int driver);
-
-    static bool RegisterMainWindowClass(HINSTANCE hInstance);
-    static bool RegisterRenderWindowClass(HINSTANCE hInstance);
-    static bool UnregisterMainWindowClass(HINSTANCE hInstance);
-    static bool UnregisterRenderWindowClass(HINSTANCE hInstance);
-
-    static LRESULT CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    static PLAYER_DIALOG_RESULT CALLBACK FullscreenSetupDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-    static PLAYER_DIALOG_RESULT CALLBACK AboutDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-#endif
     static int HandlePlayerCommand(InterfaceManager *manager, const TTPlayerCommand &command, void *userData);
 
     int m_State;
-    PLAYER_INSTANCE_HANDLE m_hInstance;
-#if !PLAYER_ENABLE_SDL3
-    HACCEL m_hAccelTable;
-#endif
     WIN_HANDLE m_MainWindow;
     WIN_HANDLE m_RenderWindow;
-#if PLAYER_ENABLE_SDL3
     SDL_Window *m_SdlWindow;
-#endif
 
     CKContext *m_CKContext;
     CKRenderContext *m_RenderContext;
@@ -183,6 +132,8 @@ private:
     CKMessageType m_MsgDoubleClick;
 
     CGameInfo *m_GameInfo;
+    bool m_AltEnterShortcutDown;
+    bool m_AltF4ShortcutDown;
     CGameConfig m_Config;
     CGameConfig m_PersistentConfig;
 };
