@@ -67,6 +67,57 @@ static bool IsDefaultRenderEngineDll(const char *dllPath)
     return AsciiICompare(name, "CK2_3D") == 0;
 }
 
+static int FindHighestRefreshMatch(const VxDisplayMode *modes, int modeCount,
+                                   int width, int height, int bpp,
+                                   bool exactBpp)
+{
+    if (!modes)
+        return -1;
+
+    int bestIndex = -1;
+    int bestRefresh = -1;
+    for (int i = 0; i < modeCount; ++i)
+    {
+        const VxDisplayMode &mode = modes[i];
+        if (mode.Width != width || mode.Height != height)
+            continue;
+
+        if (exactBpp)
+        {
+            if (mode.Bpp != bpp)
+                continue;
+        }
+        else if (mode.Bpp <= 8)
+        {
+            continue;
+        }
+
+        if (mode.RefreshRate > bestRefresh)
+        {
+            bestRefresh = mode.RefreshRate;
+            bestIndex = i;
+        }
+    }
+    return bestIndex;
+}
+
+static int FindBestDisplayModeIndex(const VxDisplayMode *modes, int modeCount,
+                                    int width, int height, int bpp)
+{
+    int index = FindHighestRefreshMatch(modes, modeCount, width, height, bpp, true);
+    if (index >= 0)
+        return index;
+
+    if (bpp != 32)
+    {
+        index = FindHighestRefreshMatch(modes, modeCount, width, height, 32, true);
+        if (index >= 0)
+            return index;
+    }
+
+    return FindHighestRefreshMatch(modes, modeCount, width, height, bpp, false);
+}
+
 static bool ResolveRuntimePath(char *buffer, size_t size, const char *path)
 {
     if (!buffer || size == 0 || !path || !*path)
@@ -310,10 +361,8 @@ bool CGamePlayer::Load(const char *filename)
     CKERROR res = f->OpenFile(resolvedFile.Str(), (CK_LOAD_FLAGS)(CK_LOAD_DEFAULT | CK_LOAD_CHECKDEPENDENCIES));
     if (res != CK_OK)
     {
-        // something failed
         if (res == CKERR_PLUGINSMISSING)
         {
-            // log the missing guids
             ReportMissingGuids(f, resolvedFile.CStr());
         }
         m_CKContext->DeleteCKFile(f);
@@ -1236,49 +1285,24 @@ int CGamePlayer::FindScreenMode(int width, int height, int bpp, int driver)
     if (!drDesc)
     {
         CLogger::Get().Error("Unable to find render driver %d.", driver);
-        return false;
-    }
-
-#if CKVERSION == 0x13022002
-    VxDisplayMode *dm = drDesc->DisplayModes;
-    const int dmCount = drDesc->DisplayModeCount;
-#else
-    XArray<VxDisplayMode> &dm = drDesc->DisplayModes;
-    const int dmCount = dm.Size();
-#endif
-
-    bool found = false;
-    int refreshRate = 0;
-    for (int i = 0; i < dmCount; ++i)
-    {
-        if (dm[i].Width == width &&
-            dm[i].Height == height &&
-            dm[i].Bpp == bpp)
-        {
-            found = true;
-            if (dm[i].RefreshRate > refreshRate)
-                refreshRate = dm[i].RefreshRate;
-        }
-    }
-
-    if (!found)
-    {
-        CLogger::Get().Error("No matching screen mode found for %d x %d x %d", width, height, bpp);
         return -1;
     }
 
-    int screenMode = -1;
-    for (int j = 0; j < dmCount; ++j)
-    {
-        if (dm[j].Width == width &&
-            dm[j].Height == height &&
-            dm[j].Bpp == bpp &&
-            dm[j].RefreshRate == refreshRate)
-        {
-            screenMode = j;
-            break;
-        }
-    }
+#if CKVERSION == 0x13022002
+    const VxDisplayMode *displayModes = drDesc->DisplayModes;
+    const int displayModeCount = drDesc->DisplayModeCount;
+#else
+    XArray<VxDisplayMode> &displayModes = drDesc->DisplayModes;
+    const int displayModeCount = displayModes.Size();
+#endif
+
+#if CKVERSION == 0x13022002
+    int screenMode = FindBestDisplayModeIndex(displayModes, displayModeCount, width, height, bpp);
+#else
+    int screenMode = FindBestDisplayModeIndex(displayModes.Begin(), displayModeCount, width, height, bpp);
+#endif
+    if (screenMode < 0)
+        CLogger::Get().Error("No matching screen mode found for %d x %d x %d", width, height, bpp);
 
     return screenMode;
 }
@@ -1390,21 +1414,26 @@ bool CGamePlayer::StopFullscreen()
 void CGamePlayer::SetFullscreenDisplayMode()
 {
     if (m_SdlWindow)
-        SDL_SetWindowFullscreen(m_SdlWindow, true);
+    {
+        if (!SDL_SetWindowFullscreenMode(m_SdlWindow, NULL))
+            CLogger::Get().Warn("Failed to set borderless fullscreen display mode: %s", SDL_GetError());
+        if (!SDL_SetWindowFullscreen(m_SdlWindow, true))
+            CLogger::Get().Warn("Failed to enter fullscreen: %s", SDL_GetError());
+        if (!SDL_SyncWindow(m_SdlWindow))
+            CLogger::Get().Warn("Failed to sync fullscreen window: %s", SDL_GetError());
+    }
     return;
 }
 
 void CGamePlayer::RestoreDisplayMode()
 {
     if (m_SdlWindow)
-        SDL_SetWindowFullscreen(m_SdlWindow, false);
-}
-
-void CGamePlayer::SetFullscreenWindowStyle()
-{
-    if (m_SdlWindow)
-        SDL_SetWindowFullscreen(m_SdlWindow, true);
-    return;
+    {
+        if (!SDL_SetWindowFullscreen(m_SdlWindow, false))
+            CLogger::Get().Warn("Failed to leave fullscreen: %s", SDL_GetError());
+        if (!SDL_SyncWindow(m_SdlWindow))
+            CLogger::Get().Warn("Failed to sync windowed mode: %s", SDL_GetError());
+    }
 }
 
 void CGamePlayer::SetWindowedWindowStyle()
@@ -1415,6 +1444,7 @@ void CGamePlayer::SetWindowedWindowStyle()
         SDL_SetWindowBordered(m_SdlWindow, !m_Config.borderless);
         SDL_SetWindowSize(m_SdlWindow, m_Config.width, m_Config.height);
         SDL_SetWindowPosition(m_SdlWindow, m_Config.posX, m_Config.posY);
+        SDL_SyncWindow(m_SdlWindow);
     }
     return;
 }
@@ -1636,7 +1666,6 @@ void CGamePlayer::OnGoFullscreen(bool persistChange)
 
     m_Config.fullscreen = true;
     SetFullscreenDisplayMode();
-    SetFullscreenWindowStyle();
 
     if (GoFullscreen())
     {
@@ -1696,4 +1725,3 @@ void CGamePlayer::OnSwitchFullscreen()
     else
         OnStopFullscreen(true);
 }
-

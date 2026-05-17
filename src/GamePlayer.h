@@ -88,7 +88,6 @@ private:
     bool StopFullscreen();
     void SetFullscreenDisplayMode();
     void RestoreDisplayMode();
-    void SetFullscreenWindowStyle();
     void SetWindowedWindowStyle();
 
     bool ClipCursor();
