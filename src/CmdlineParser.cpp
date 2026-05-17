@@ -1,6 +1,7 @@
 #include "CmdlineParser.h"
 
 #include <ctype.h>
+#include <limits.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -186,18 +187,21 @@ bool CmdlineParser::Next(CmdlineArg &arg, const char *longopt, char opt, int max
     {
         if (!longopt) return false;
 
-        optLen = (int)strlen(longopt);
-        if (optLen > 0)
+        size_t longOptLen = strlen(longopt);
+        if (longOptLen > static_cast<size_t>(INT_MAX) || s.length() < longOptLen)
+            return false;
+        optLen = static_cast<int>(longOptLen);
+        if (longOptLen > 0)
         {
-            for (int l = 0; l < optLen; ++l)
+            for (size_t l = 0; l < longOptLen; ++l)
                 if (!isalnum(longopt[l]) && longopt[l] != '-' && longopt[l] != '_')
                     return false;
         }
 
-        if (strncmp(s.c_str(), longopt, optLen) != 0)
+        if (s.compare(0, longOptLen, longopt, longOptLen) != 0)
             return false;
 
-        if (sz != optLen && s[optLen] != '=')
+        if (s.length() != longOptLen && s[longOptLen] != '=')
             return false;
 
         match = true;
