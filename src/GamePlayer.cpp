@@ -185,14 +185,14 @@ static void RegisterCompositionPaths(CKPathManager *pathManager, const char *res
         return;
 
     AddPathIfMissing(pathManager, DATA_PATH_IDX, compositionDir);
-    AddDirectoryPathIfExists(pathManager, DATA_PATH_IDX, compositionDir, "3D Entities\\");
+    AddDirectoryPathIfExists(pathManager, DATA_PATH_IDX, compositionDir, "3D Entities");
 
     AddPathIfMissing(pathManager, SOUND_PATH_IDX, compositionDir);
-    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, compositionDir, "Sounds\\");
-    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, compositionDir, "Sounds_low\\");
+    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, compositionDir, "Sounds");
+    AddDirectoryPathIfExists(pathManager, SOUND_PATH_IDX, compositionDir, "Sounds_low");
 
     AddPathIfMissing(pathManager, BITMAP_PATH_IDX, compositionDir);
-    AddDirectoryPathIfExists(pathManager, BITMAP_PATH_IDX, compositionDir, "Textures\\");
+    AddDirectoryPathIfExists(pathManager, BITMAP_PATH_IDX, compositionDir, "Textures");
 }
 
 static bool SetCompositionEnvironment(const char *resolvedFile)
