@@ -1490,6 +1490,30 @@ void CGamePlayer::OnMove()
 
 void CGamePlayer::OnSize()
 {
+    if (m_MainWindow)
+    {
+        CKRECT rc;
+        if (VxGetClientRect(m_MainWindow, &rc))
+        {
+            const int width = rc.right - rc.left;
+            const int height = rc.bottom - rc.top;
+            if (width > 0 && height > 0)
+            {
+                if (!m_Config.fullscreen && !IsRenderFullscreen())
+                {
+                    m_Config.width = width;
+                    m_Config.height = height;
+                    if (m_RenderContext)
+                    {
+                        CKERROR res = m_RenderContext->Resize(0, 0, width, height, VX_RESIZE_NOMOVE);
+                        if (res != CK_OK)
+                            CLogger::Get().Warn("Failed to resize render context: %d", res);
+                    }
+                }
+            }
+        }
+    }
+
     ClipCursor();
 }
 
