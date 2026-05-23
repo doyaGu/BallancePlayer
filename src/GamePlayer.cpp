@@ -428,14 +428,10 @@ bool CGamePlayer::Update()
         case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
             return false;
         case SDL_EVENT_WINDOW_RESIZED:
-            m_Config.width = windowEvent.window.data1;
-            m_Config.height = windowEvent.window.data2;
             OnSize();
             break;
         case SDL_EVENT_WINDOW_MOVED:
-            m_Config.posX = windowEvent.window.data1;
-            m_Config.posY = windowEvent.window.data2;
-            SyncPersistentWindowPosition();
+            OnMove();
             break;
         case SDL_EVENT_WINDOW_FOCUS_GAINED:
             OnActivateApp(true);
