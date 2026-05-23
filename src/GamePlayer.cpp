@@ -218,6 +218,13 @@ static bool SetCompositionEnvironment(const char *resolvedFile)
     return true;
 }
 
+static void ConfigureSdlVideoDriver()
+{
+#if defined(__linux__)
+    SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "x11,wayland", SDL_HINT_DEFAULT);
+#endif
+}
+
 CGamePlayer::CGamePlayer()
     : m_State(eInitial),
       m_MainWindow(NULL),
@@ -549,6 +556,8 @@ static CKERROR LogRedirect(CKUICallbackStruct &cbStruct, void *userData)
 bool CGamePlayer::InitWindow()
 {
     SDL_SetMainReady();
+    ConfigureSdlVideoDriver();
+
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
     {
         CLogger::Get().Error("Failed to initialize SDL video backend: %s", SDL_GetError());
