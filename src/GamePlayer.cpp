@@ -1721,6 +1721,8 @@ void CGamePlayer::OnStopFullscreen(bool persistChange)
     Pause();
 
     bool fullscreen = m_Config.fullscreen || IsRenderFullscreen();
+    const int windowedWidth = m_Config.width;
+    const int windowedHeight = m_Config.height;
     if (StopFullscreen())
     {
         if (persistChange)
@@ -1729,6 +1731,8 @@ void CGamePlayer::OnStopFullscreen(bool persistChange)
         if (fullscreen)
         {
             RestoreDisplayMode();
+            m_Config.width = windowedWidth;
+            m_Config.height = windowedHeight;
             SetWindowedWindowStyle();
         }
 
