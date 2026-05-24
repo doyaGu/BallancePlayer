@@ -47,7 +47,7 @@ if (WIN32)
     list(APPEND PLAYER_SOURCES "${_player_resource_file}")
 endif ()
 
-if (BALLANCE_BUILD_STATIC_PLAYER)
+if (BALLANCE_BUILD_STATIC)
     list(APPEND PLAYER_SOURCES StaticPlugins.cpp)
 endif ()
 
@@ -66,7 +66,7 @@ endif ()
 
 set(_player_ck2_dep CK2)
 set(_player_vxmath_dep VxMath)
-if (BALLANCE_BUILD_STATIC_PLAYER)
+if (BALLANCE_BUILD_STATIC)
     if (TARGET CK2Static)
         set(_player_ck2_dep CK2Static)
     endif ()
@@ -78,18 +78,18 @@ target_link_libraries(${PLAYER_NAME} PRIVATE ${_player_ck2_dep} ${_player_vxmath
 target_link_libraries(${PLAYER_NAME} PRIVATE SDL3::SDL3)
 target_compile_definitions(${PLAYER_NAME} PRIVATE SDL_MAIN_HANDLED)
 
-if (BALLANCE_BUILD_STATIC_PLAYER)
+if (BALLANCE_BUILD_STATIC)
     target_compile_definitions(${PLAYER_NAME} PRIVATE BALLANCE_STATIC_MODULES)
 
-    set(_ballance_static_player_module_targets)
+    set(_ballance_static_module_targets)
     function(_player_add_static_module target_name macro_name required)
         if (TARGET ${target_name})
-            list(APPEND _ballance_static_player_module_targets ${target_name})
+            list(APPEND _ballance_static_module_targets ${target_name})
             target_compile_definitions(${PLAYER_NAME} PRIVATE "${macro_name}=1")
         elseif (required)
-            message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER requires target ${target_name}")
+            message(FATAL_ERROR "BALLANCE_BUILD_STATIC requires target ${target_name}")
         endif ()
-        set(_ballance_static_player_module_targets "${_ballance_static_player_module_targets}" PARENT_SCOPE)
+        set(_ballance_static_module_targets "${_ballance_static_module_targets}" PARENT_SCOPE)
     endfunction()
 
     _player_add_static_module(CK2_3DStatic BALLANCE_STATIC_HAVE_CK2_3D TRUE)
@@ -125,11 +125,11 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
     _player_add_static_module(TT_Toolbox_RTStatic BALLANCE_STATIC_HAVE_TT_TOOLBOX_RT FALSE)
     _player_add_static_module(CKBgfxRasterizerStatic BALLANCE_STATIC_HAVE_CKBGFXRASTERIZER TRUE)
 
-    if (NOT _ballance_static_player_module_targets)
-        message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER did not find any static module targets")
+    if (NOT _ballance_static_module_targets)
+        message(FATAL_ERROR "BALLANCE_BUILD_STATIC did not find any static module targets")
     endif ()
 
-    target_link_libraries(${PLAYER_NAME} PRIVATE ${_ballance_static_player_module_targets})
+    target_link_libraries(${PLAYER_NAME} PRIVATE ${_ballance_static_module_targets})
 endif ()
 
 target_include_directories(${PLAYER_NAME} PRIVATE
