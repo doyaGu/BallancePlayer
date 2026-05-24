@@ -45,7 +45,7 @@ set(PLAYER_SOURCES
         "${_player_resource_file}"
 )
 
-if (BALLANCE_BUILD_STATIC_PLAYER)
+if (BALLANCE_BUILD_STATIC)
     list(APPEND PLAYER_SOURCES StaticPlugins.cpp)
 endif ()
 
@@ -58,7 +58,7 @@ set_target_properties(${PLAYER_NAME} PROPERTIES
 
 set(_player_ck2_dep CK2)
 set(_player_vxmath_dep VxMath)
-if (BALLANCE_BUILD_STATIC_PLAYER)
+if (BALLANCE_BUILD_STATIC)
     if (TARGET CK2Static)
         set(_player_ck2_dep CK2Static)
     endif ()
@@ -68,10 +68,10 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
 endif ()
 target_link_libraries(${PLAYER_NAME} PRIVATE ${_player_ck2_dep} ${_player_vxmath_dep})
 
-if (BALLANCE_BUILD_STATIC_PLAYER)
+if (BALLANCE_BUILD_STATIC)
     target_compile_definitions(${PLAYER_NAME} PRIVATE BALLANCE_STATIC_MODULES)
 
-    set(_ballance_static_player_module_targets
+    set(_ballance_static_module_targets
             CK2_3DStatic
             Dx8InputManagerStatic
             Dx8SoundManagerStatic
@@ -105,24 +105,24 @@ if (BALLANCE_BUILD_STATIC_PLAYER)
             TT_Toolbox_RTStatic
     )
 
-    set(_ballance_static_player_rasterizer_targets)
+    set(_ballance_static_rasterizer_targets)
     foreach (_rasterizer_target IN ITEMS CKDX9RasterizerStatic CKBgfxRasterizerStatic)
         if (TARGET ${_rasterizer_target})
-            list(APPEND _ballance_static_player_rasterizer_targets ${_rasterizer_target})
+            list(APPEND _ballance_static_rasterizer_targets ${_rasterizer_target})
         endif ()
     endforeach ()
-    if (NOT _ballance_static_player_rasterizer_targets)
-        message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER requires a static rasterizer target")
+    if (NOT _ballance_static_rasterizer_targets)
+        message(FATAL_ERROR "BALLANCE_BUILD_STATIC requires a static rasterizer target")
     endif ()
-    list(APPEND _ballance_static_player_module_targets ${_ballance_static_player_rasterizer_targets})
+    list(APPEND _ballance_static_module_targets ${_ballance_static_rasterizer_targets})
 
-    foreach (_static_module_target IN LISTS _ballance_static_player_module_targets)
+    foreach (_static_module_target IN LISTS _ballance_static_module_targets)
         if (NOT TARGET ${_static_module_target})
-            message(FATAL_ERROR "BALLANCE_BUILD_STATIC_PLAYER requires target ${_static_module_target}")
+            message(FATAL_ERROR "BALLANCE_BUILD_STATIC requires target ${_static_module_target}")
         endif ()
     endforeach ()
 
-    target_link_libraries(${PLAYER_NAME} PRIVATE ${_ballance_static_player_module_targets})
+    target_link_libraries(${PLAYER_NAME} PRIVATE ${_ballance_static_module_targets})
 endif ()
 
 target_include_directories(${PLAYER_NAME} PRIVATE
