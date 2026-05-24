@@ -97,12 +97,6 @@ namespace playeroptions
                     config.ResetPath((PathCategory)i);
             }
         }
-
-#define X_PATH(category, defaultPath, cliLong, validateDir) \
-        if (validateDir && !utils::DirectoryExists(config.GetPath(category))) \
-            config.ResetPath(category);
-        GAMECONFIG_PATH_FIELDS
-#undef X_PATH
     }
 
     void ApplyConfigOptions(CGameConfig &config, CmdlineParser &parser)

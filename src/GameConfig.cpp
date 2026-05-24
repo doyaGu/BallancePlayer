@@ -121,6 +121,21 @@ static bool GetDefaultRootPath(char *buffer, size_t size)
     return true;
 }
 
+static std::string JoinConfigPath(const char *basePath, const char *relativePath)
+{
+    if (!basePath || basePath[0] == '\0')
+        return relativePath ? relativePath : "";
+
+    std::string result = basePath;
+    while (!result.empty() && (result[result.size() - 1] == '\\' || result[result.size() - 1] == '/'))
+        result.erase(result.size() - 1);
+
+    result += "\\";
+    if (relativePath)
+        result += relativePath;
+    return result;
+}
+
 static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
                               std::string &outPath, bool *shouldUpdateStoredPath)
 {
@@ -300,9 +315,7 @@ bool CGameConfig::ResetPath(PathCategory category)
             }
             else
             {
-                char szPath[MAX_PATH];
-                utils::ConcatPath(szPath, MAX_PATH, GetPath(eRootPath), DefaultPaths[i]);
-                SetPath((PathCategory)i, szPath);
+                SetPath((PathCategory)i, JoinConfigPath(GetPath(eRootPath), DefaultPaths[i]).c_str());
             }
         }
     }
@@ -325,9 +338,7 @@ bool CGameConfig::ResetPath(PathCategory category)
         }
         else
         {
-            char szPath[MAX_PATH];
-            utils::ConcatPath(szPath, MAX_PATH, GetPath(eRootPath), DefaultPaths[category]);
-            SetPath(category, szPath);
+            SetPath(category, JoinConfigPath(GetPath(eRootPath), DefaultPaths[category]).c_str());
         }
     }
 
