@@ -129,6 +129,41 @@ TEST(PlayerOptionsTest, AppliesEveryDocumentedPathOption) {
     fs::remove_all(testRoot);
 }
 
+TEST(PlayerOptionsTest, ExplicitDirectoryPathOptionsDoNotRequireExistingDirectories) {
+    fs::path testRoot = fs::temp_directory_path() / "playeroptions_missing_paths";
+    fs::remove_all(testRoot);
+
+    const PathOptionCase directoryPathOptions[] = {
+        {"--root-path", eRootPath, "missing-root"},
+        {"--plugin-path", ePluginPath, "missing-plugins"},
+        {"--render-engine-path", eRenderEnginePath, "missing-renderengines"},
+        {"--manager-path", eManagerPath, "missing-managers"},
+        {"--building-block-path", eBuildingBlockPath, "missing-buildingblocks"},
+        {"--sound-path", eSoundPath, "missing-sounds"},
+        {"--bitmap-path", eBitmapPath, "missing-textures"},
+        {"--data-path", eDataPath, "missing-data"},
+    };
+
+    std::string cmdline;
+    for (const auto &testCase : directoryPathOptions) {
+        fs::path valuePath = testRoot / testCase.value;
+        cmdline += testCase.option;
+        cmdline += " \"";
+        cmdline += valuePath.string();
+        cmdline += "\" ";
+    }
+
+    CmdlineParser parser(cmdline.c_str());
+    CGameConfig config;
+
+    playeroptions::ApplyPathOptions(config, parser);
+
+    for (const auto &testCase : directoryPathOptions) {
+        fs::path valuePath = testRoot / testCase.value;
+        EXPECT_STREQ(config.GetPath(testCase.category), valuePath.string().c_str()) << testCase.option;
+    }
+}
+
 TEST(PlayerOptionsTest, CompositionPathDoesNotRecomputeRootDerivedPaths) {
     CmdlineParser parser("--cmo custom.cmo");
     CGameConfig config;
@@ -178,6 +213,23 @@ TEST(PlayerOptionsTest, RootPathRecomputesImplicitDependentPaths) {
     EXPECT_STREQ(config.GetPath(eDataPath), expected);
 
     fs::remove_all(testRoot);
+}
+
+TEST(PlayerOptionsTest, LongRootPathRecomputesImplicitDependentPathsWithoutTruncation) {
+    std::string longName(220, 'r');
+    fs::path testRoot = fs::temp_directory_path() / longName;
+    std::string rootString = testRoot.string();
+    ASSERT_LT(rootString.size(), static_cast<size_t>(MAX_PATH));
+
+    std::string cmdline = "--root-path \"" + rootString + "\"";
+    CmdlineParser parser(cmdline.c_str());
+    CGameConfig config;
+
+    playeroptions::ApplyPathOptions(config, parser);
+
+    std::string expectedPluginPath = rootString + "\\Plugins\\";
+    ASSERT_GT(expectedPluginPath.size(), static_cast<size_t>(MAX_PATH));
+    EXPECT_STREQ(config.GetPath(ePluginPath), expectedPluginPath.c_str());
 }
 
 TEST(PlayerOptionsTest, ExplicitDependentPathOverridesRootPathDerivedPath) {
