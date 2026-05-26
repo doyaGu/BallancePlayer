@@ -1,9 +1,11 @@
-#include "ConfigDialog.h"
+#include "ConfigTool.h"
 
+#include <string>
 #include <tchar.h>
 
+#include "CmdlineParser.h"
 #include "GameConfig.h"
-#include "resource.h"
+#include "ConfigToolResource.h"
 #include "Utils.h"
 
 // String Resource Management
@@ -33,7 +35,7 @@ private:
 };
 
 static HFONT g_hFonts[LANG_UI_COUNT] = {NULL};
-static const int kChineseUIFontHeight = -16;
+static const int kChineseUIFontHeight = -14;
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
 typedef BOOL PLAYER_DIALOG_RESULT;
@@ -790,7 +792,7 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
     return FALSE; // Message is not handled
 }
 
-bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
+bool ShowConfigTool(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
 {
     if (!StringResource::Initialize(hInstance))
     {
@@ -824,7 +826,7 @@ bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
         // Dialog creation failed
         DWORD dwError = ::GetLastError();
         TCHAR errMsg[256];
-        _stprintf(errMsg, TEXT("%s"), StringResource::GetString(IDS_ERR_DIALOG_CREATE));
+        _stprintf(errMsg, StringResource::GetString(IDS_ERR_DIALOG_CREATE), dwError);
         ::MessageBox(NULL, errMsg, StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
         return false; // Failure
     }
@@ -835,14 +837,34 @@ bool ShowConfigDialog(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
     }
 }
 
-void ShowConfigRestartRequiredMessage(HWND owner)
+static std::string GetCommandLineConfigPath(LPTSTR lpCmdLine)
 {
-    TCHAR message[512];
-    TCHAR title[128];
-    _tcsncpy(message, StringResource::GetString(IDS_RESTART_REQUIRED), sizeof(message) / sizeof(message[0]) - 1);
-    message[sizeof(message) / sizeof(message[0]) - 1] = TEXT('\0');
-    _tcsncpy(title, StringResource::GetString(IDS_RESTART_REQUIRED_TITLE), sizeof(title) / sizeof(title[0]) - 1);
-    title[sizeof(title) / sizeof(title[0]) - 1] = TEXT('\0');
-
-    ::MessageBox(owner, message, title, MB_OK | MB_ICONINFORMATION);
+    CmdlineParser parser(lpCmdLine);
+    CmdlineArg arg;
+    std::string path;
+    while (!parser.Done())
+    {
+        if (parser.Next(arg, "--config", '\0', 1))
+        {
+            arg.GetValue(0, path);
+            break;
+        }
+        parser.Skip();
+    }
+    return path;
 }
+
+#ifdef CONFIGTOOL_STANDALONE
+int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
+{
+    (void)hPrevInstance;
+    (void)nCmdShow;
+
+    CGameConfig config;
+    std::string configPath = GetCommandLineConfigPath(lpCmdLine);
+    if (!configPath.empty())
+        config.SetPath(eConfigPath, configPath.c_str());
+
+    return ShowConfigTool(hInstance, config, true) ? 0 : 1;
+}
+#endif // CONFIGTOOL_STANDALONE

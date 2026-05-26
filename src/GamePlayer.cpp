@@ -7,7 +7,6 @@
 #ifdef BALLANCE_STATIC_MODULES
 #include "StaticPlugins.h"
 #endif
-#include "ConfigDialog.h"
 #include "Logger.h"
 #include "Utils.h"
 #include "InterfaceManager.h"
@@ -1415,18 +1414,6 @@ bool CGamePlayer::OpenAboutDialog()
     return ::DialogBoxParam(m_hInstance, MAKEINTRESOURCE(IDD_ABOUT), NULL, CGamePlayer::AboutDlgProc, reinterpret_cast<LPARAM>(this)) == IDOK;
 }
 
-bool CGamePlayer::OpenConfigDialog()
-{
-    ReleaseCursorClip();
-    bool saved = ShowConfigDialog(m_hInstance, m_PersistentConfig, false);
-    ClipCursor();
-
-    if (saved)
-        ShowConfigRestartRequiredMessage(m_MainWindow);
-
-    return saved;
-}
-
 void CGamePlayer::OnDestroy()
 {
     ReleaseCursorClip();
@@ -1538,11 +1525,6 @@ int CGamePlayer::OnSysKeyDown(UINT uKey)
         ::PostMessage(m_MainWindow, TT_MSG_EXIT_TO_SYS, 0, 0);
         return 1;
 
-    case 'C':
-        // ALT + C -> Open the configuration dialog
-        OpenConfigDialog();
-        return 1;
-
     default:
         break;
     }
@@ -1590,10 +1572,6 @@ int CGamePlayer::OnCommand(UINT id, UINT code)
     if (id == IDM_APP_ABOUT)
     {
         OpenAboutDialog();
-    }
-    else if (id == IDM_APP_CONFIG)
-    {
-        OpenConfigDialog();
     }
     return 0;
 }

@@ -100,6 +100,7 @@ function Build-MSVC2022 {
 
     Invoke-Checked @("cmake", "-S", $RootDir, "-B", $BuildPath, "-G", "Visual Studio 17 2022", "-A", "Win32")
     Invoke-Checked @("cmake", "--build", $BuildPath, "--config", $ConfigName, "--target", "Player")
+    Invoke-Checked @("cmake", "--build", $BuildPath, "--config", $ConfigName, "--target", "ConfigTool")
 }
 
 function Get-BinaryDir {
@@ -112,10 +113,10 @@ function Get-BinaryDir {
 
     if ($ToolchainId -eq "vc6-x86") {
         $dir = Join-Path $RootDir "Bin"
-        if (Test-Path (Join-Path $dir "Player.exe")) {
+        if ((Test-Path (Join-Path $dir "Player.exe")) -and (Test-Path (Join-Path $dir "ConfigTool.exe"))) {
             return $dir
         }
-        throw "Could not find VC6 Player.exe in $dir"
+        throw "Could not find VC6 Player.exe and ConfigTool.exe in $dir"
     }
 
     $candidateDirs = @(
@@ -124,12 +125,12 @@ function Get-BinaryDir {
     )
 
     foreach ($dir in $candidateDirs) {
-        if (Test-Path (Join-Path $dir "Player.exe")) {
+        if ((Test-Path (Join-Path $dir "Player.exe")) -and (Test-Path (Join-Path $dir "ConfigTool.exe"))) {
             return $dir
         }
     }
 
-    throw "Could not find MSVC 2022 Player.exe under $BuildPath"
+    throw "Could not find MSVC 2022 Player.exe and ConfigTool.exe under $BuildPath"
 }
 
 function New-PlayerPackage {
@@ -158,12 +159,17 @@ function New-PlayerPackage {
     if (-not (Test-Path $playerExe)) {
         throw "Could not find Player.exe in $BinaryDir"
     }
+    $configToolExe = Join-Path $BinaryDir "ConfigTool.exe"
+    if (-not (Test-Path $configToolExe)) {
+        throw "Could not find ConfigTool.exe in $BinaryDir"
+    }
 
     Remove-Item -LiteralPath $stagePath -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path $stagePath -Force | Out-Null
     New-Item -ItemType Directory -Path $OutputPath -Force | Out-Null
 
     Copy-Item -LiteralPath $playerExe -Destination $stagePath
+    Copy-Item -LiteralPath $configToolExe -Destination $stagePath
 
     foreach ($name in @("LICENSE", "README.md", "README_zh-CN.md")) {
         $path = Join-Path $RootDir $name
@@ -180,14 +186,12 @@ function New-PlayerPackage {
     }
 
     if ($ShouldIncludePdb) {
-        $pdb = Join-Path $BinaryDir "Player.pdb"
-        if (Test-Path $pdb) {
-            Copy-Item -LiteralPath $pdb -Destination $stagePath
+        foreach ($pdbName in @("Player.pdb", "ConfigTool.pdb")) {
+            $pdb = Join-Path $BinaryDir $pdbName
+            if (Test-Path $pdb) {
+                Copy-Item -LiteralPath $pdb -Destination $stagePath
+            }
         }
-    }
-
-    if (Test-Path (Join-Path $stagePath "ConfigTool.exe")) {
-        throw "Package staging unexpectedly contains ConfigTool.exe"
     }
 
     Remove-Item -LiteralPath $zipPath -Force -ErrorAction SilentlyContinue

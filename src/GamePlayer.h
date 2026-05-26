@@ -104,7 +104,6 @@ private:
 
     bool OpenSetupDialog();
     bool OpenAboutDialog();
-    bool OpenConfigDialog();
 
     void OnDestroy();
     void OnMove();

@@ -8,7 +8,7 @@ BallancePlayer is a modern, enhanced player for the game Ballance, developed by 
 
 - Portable and ready to use, no configuration needed to start the game
 - Support for `.ini` file configurations
-- Built-in configuration dialog for first-time setup and in-game changes
+- Standalone `ConfigTool.exe` for editing `Player.ini`
 - Command-line options for flexibility
 - 32-bit color mode support
 - Compatibility with monitors that don't support 640x480 resolution
@@ -77,11 +77,10 @@ The official release package is built with Visual Studio 6.0 for maximum compati
 - **[Alt] + [Enter]**: Switch between windowed and fullscreen mode.
 - **[Alt] + [F4]**:  Force close the game.
 - **[Alt] + [/]**:  Display an about box.
-- **[Alt] + [C]**:  Open the configuration dialog. Changes saved during gameplay take effect after restarting the game.
 
 ## INI Settings
 
-The `Player.ini` file contains several settings that control the behavior of the game. If `Player.ini` does not exist in the current directory, Player opens the configuration dialog on startup so you can create it before launching the game.
+The `Player.ini` file contains several settings that control the behavior of the game. If `Player.ini` does not exist in the current directory, Player creates one with default settings. Use `ConfigTool.exe` to edit it with a graphical interface.
 
 ### Startup
 

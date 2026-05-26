@@ -21,17 +21,25 @@ CFG=Debug
 !ENDIF
 
 !IF "$(TARGET)" == ""
-TARGET=Player
+TARGET=All
 !ENDIF
 
 !IF "$(TARGET)" == "Player"
 build : player
+!ELSEIF "$(TARGET)" == "ConfigTool"
+build : configtool
+!ELSEIF "$(TARGET)" == "All"
+build : player configtool
 !ELSE
-!ERROR Invalid TARGET "$(TARGET)". Use "Player".
+!ERROR Invalid TARGET "$(TARGET)". Use "Player", "ConfigTool", or "All".
 !ENDIF
 
 player :
 	$(NMAKE) /nologo /f Player.mak CFG="Player - Win32 $(CFG)"
 
+configtool :
+	$(NMAKE) /nologo /f ConfigTool.mak CFG="ConfigTool - Win32 $(CFG)"
+
 clean :
 	$(NMAKE) /nologo /f Player.mak CFG="Player - Win32 $(CFG)" CLEAN
+	$(NMAKE) /nologo /f ConfigTool.mak CFG="ConfigTool - Win32 $(CFG)" CLEAN

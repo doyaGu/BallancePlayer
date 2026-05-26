@@ -1,24 +1,24 @@
-# Microsoft Developer Studio Project File - Name="Player" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="ConfigTool" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Application" 0x0101
 
-CFG=Player - Win32 Debug
+CFG=ConfigTool - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
-!MESSAGE NMAKE /f "Player.mak".
+!MESSAGE NMAKE /f "ConfigTool.mak".
 !MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "Player.mak" CFG="Player - Win32 Debug"
+!MESSAGE NMAKE /f "ConfigTool.mak" CFG="ConfigTool - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "Player - Win32 Release" (based on "Win32 (x86) Application")
-!MESSAGE "Player - Win32 Debug" (based on "Win32 (x86) Application")
+!MESSAGE "ConfigTool - Win32 Release" (based on "Win32 (x86) Application")
+!MESSAGE "ConfigTool - Win32 Debug" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
@@ -29,7 +29,7 @@ CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "Player - Win32 Release"
+!IF  "$(CFG)" == "ConfigTool - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /I "include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_UNICODE" /FD /c
+# ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "include" /I "src" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "UNICODE" /D "_UNICODE" /D "CONFIGTOOL_STANDALONE" /FD /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -53,11 +53,11 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 CK2.lib VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib delayimp.lib /nologo /subsystem:windows /machine:I386 /out:"Bin/Player.exe" /delayload:CK2.dll /delayload:VxMath.dll
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /machine:I386
+# ADD LINK32 VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /machine:I386 /out:"Bin/ConfigTool.exe"
 # SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "Player - Win32 Debug"
+!ELSEIF  "$(CFG)" == "ConfigTool - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -70,8 +70,8 @@ LINK32=link.exe
 # PROP Intermediate_Dir "Debug"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "include" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_UNICODE" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "include" /I "src" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_UNICODE" /D "CONFIGTOOL_STANDALONE" /FR /FD /GZ /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -81,16 +81,16 @@ BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
 LINK32=link.exe
-# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 CK2.lib VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib delayimp.lib /nologo /subsystem:windows /debug /machine:I386 /out:"Bin/Player.exe" /pdbtype:sept /delayload:CK2.dll /delayload:VxMath.dll
+# ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"Bin/ConfigTool.exe" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
 # Begin Target
 
-# Name "Player - Win32 Release"
-# Name "Player - Win32 Debug"
+# Name "ConfigTool - Win32 Release"
+# Name "ConfigTool - Win32 Debug"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
@@ -100,31 +100,11 @@ SOURCE=.\src\CmdlineParser.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\ConfigTool.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\GameConfig.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\GamePlayer.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Hotfix.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Logger.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Player.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\PlayerOptions.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Splash.cpp
 # End Source File
 # Begin Source File
 
@@ -140,43 +120,19 @@ SOURCE=.\src\CmdlineParser.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\ConfigTool.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\ConfigToolResource.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\config.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\src\GameConfig.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\GameInfo.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\GamePlayer.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\InterfaceManager.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Logger.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\PlayerOptions.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\resource.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\ScriptUtils.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Splash.h
 # End Source File
 # Begin Source File
 
@@ -192,7 +148,7 @@ SOURCE=.\src\Player.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\src\Player.rc
+SOURCE=.\src\ConfigTool.rc
 # End Source File
 # End Group
 # End Target

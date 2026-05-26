@@ -7,24 +7,6 @@
 
 namespace
 {
-    bool ParserContainsOption(CmdlineParser &parser, const char *longopt, char shortopt, int valueCount)
-    {
-        CmdlineArg arg;
-        bool found = false;
-        while (!parser.Done())
-        {
-            if (parser.Next(arg, longopt, shortopt, valueCount))
-            {
-                found = true;
-                break;
-            }
-            parser.Skip();
-        }
-
-        parser.Reset();
-        return found;
-    }
-
     bool OptionNameEquals(const char *lhs, const char *rhs)
     {
         if (!lhs || !rhs)
@@ -78,11 +60,6 @@ namespace
 
 namespace playeroptions
 {
-    static bool HasConfigPathOption(CmdlineParser &parser)
-    {
-        return ParserContainsOption(parser, "--config", '\0', 1);
-    }
-
     void ApplyPathOptions(CGameConfig &config, CmdlineParser &parser)
     {
         CmdlineArg arg;
@@ -120,14 +97,6 @@ namespace playeroptions
                     config.ResetPath((PathCategory)i);
             }
         }
-    }
-
-    void ApplyConfigToolPathOptions(CGameConfig &config, CmdlineParser &parser)
-    {
-        if (!HasConfigPathOption(parser))
-            config.SetPath(eConfigPath, "");
-
-        ApplyPathOptions(config, parser);
     }
 
     void ApplyConfigOptions(CGameConfig &config, CmdlineParser &parser)
@@ -188,11 +157,6 @@ namespace playeroptions
         GAMECONFIG_PATH_FIELDS
 #undef X_PATH
         return count;
-    }
-
-    bool IsConfigToolMode(CmdlineParser &parser)
-    {
-        return ParserContainsOption(parser, "--config-tool", '\0', 0);
     }
 
     bool HasConfigOption(const char *longopt, char shortopt)

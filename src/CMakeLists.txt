@@ -12,9 +12,20 @@ configure_file(
         @ONLY
 )
 
+configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/ConfigToolVersion.rc.in"
+        "${_player_generated_dir}/ConfigToolVersion.generated.rc"
+        @ONLY
+)
+
 set(_player_resource_file "${CMAKE_CURRENT_SOURCE_DIR}/Player.rc")
 set_source_files_properties("${_player_resource_file}" PROPERTIES
         COMPILE_DEFINITIONS "PLAYER_ICON_PATH=\"${PLAYER_SOURCE_DIR}/Player.ico\";PLAYER_USE_GENERATED_VERSION_RC=1"
+)
+
+set(_config_tool_resource_file "${CMAKE_CURRENT_SOURCE_DIR}/ConfigTool.rc")
+set_source_files_properties("${_config_tool_resource_file}" PROPERTIES
+        COMPILE_DEFINITIONS "CONFIG_TOOL_ICON_PATH=\"${PLAYER_SOURCE_DIR}/Player.ico\";CONFIG_TOOL_USE_GENERATED_VERSION_RC=1"
 )
 
 set(PLAYER_HEADERS
@@ -22,7 +33,6 @@ set(PLAYER_HEADERS
         GamePlayer.h
         GameConfig.h
         PlayerOptions.h
-        ConfigDialog.h
         Splash.h
         ScriptUtils.h
         CmdlineParser.h
@@ -33,7 +43,6 @@ set(PLAYER_HEADERS
 
 set(PLAYER_SOURCES
         Player.cpp
-        ConfigDialog.cpp
         GamePlayer.cpp
         GameConfig.cpp
         PlayerOptions.cpp
@@ -130,7 +139,36 @@ target_include_directories(${PLAYER_NAME} PRIVATE
         "${_player_generated_dir}"
 )
 
-install(TARGETS ${PLAYER_NAME}
+add_executable(ConfigTool
+        ConfigTool.cpp
+        GameConfig.cpp
+        CmdlineParser.cpp
+        Utils.cpp
+        "${_config_tool_resource_file}"
+
+        ConfigTool.h
+        ConfigToolResource.h
+        GameConfig.h
+        CmdlineParser.h
+        Utils.h
+)
+
+set_target_properties(ConfigTool PROPERTIES
+        WIN32_EXECUTABLE TRUE
+)
+
+target_compile_definitions(ConfigTool PRIVATE
+        CONFIGTOOL_STANDALONE
+)
+
+target_link_libraries(ConfigTool PRIVATE ${_player_vxmath_dep})
+
+target_include_directories(ConfigTool PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${_player_generated_dir}"
+)
+
+install(TARGETS ${PLAYER_NAME} ConfigTool
         RUNTIME DESTINATION Bin COMPONENT Runtime
 )
 

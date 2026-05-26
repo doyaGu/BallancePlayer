@@ -72,7 +72,6 @@ CLEAN :
 
 OBJS= \
 	"$(INTDIR)\CmdlineParser.obj" \
-	"$(INTDIR)\ConfigDialog.obj" \
 	"$(INTDIR)\GameConfig.obj" \
 	"$(INTDIR)\GamePlayer.obj" \
 	"$(INTDIR)\Hotfix.obj" \
@@ -90,9 +89,6 @@ $(LINK32_FLAGS) $(OBJS)
 
 "$(INTDIR)\CmdlineParser.obj" : ".\src\CmdlineParser.cpp" "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) ".\src\CmdlineParser.cpp"
-
-"$(INTDIR)\ConfigDialog.obj" : ".\src\ConfigDialog.cpp" "$(INTDIR)"
-	$(CPP) $(CPP_PROJ) ".\src\ConfigDialog.cpp"
 
 "$(INTDIR)\GameConfig.obj" : ".\src\GameConfig.cpp" "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) ".\src\GameConfig.cpp"

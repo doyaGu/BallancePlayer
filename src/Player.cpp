@@ -5,7 +5,6 @@
 #include <tchar.h>
 
 #include "CmdlineParser.h"
-#include "ConfigDialog.h"
 #include "GameConfig.h"
 #include "GamePlayer.h"
 #include "PlayerOptions.h"
@@ -24,13 +23,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
     UseExecutableDirectoryAsWorkingDirectory();
 
     CmdlineParser parser(lpCmdLine);
-
-    if (playeroptions::IsConfigToolMode(parser))
-    {
-        CGameConfig config;
-        playeroptions::ApplyConfigToolPathOptions(config, parser);
-        return ShowConfigDialog(hInstance, config, true) ? 0 : 1;
-    }
 
     HANDLE hMutex = CreateNamedMutex();
     if (!hMutex)
@@ -146,12 +138,11 @@ static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config
     if (utils::FileOrDirectoryExists(config.GetPath(eConfigPath)))
         return true;
 
-#ifdef BALLANCE_STATIC_MODULES
     if (config.SaveToIni())
         return true;
-#endif
 
-    return ShowConfigDialog(hInstance, config, false);
+    ::MessageBox(NULL, TEXT("Failed to create default configuration file."), TEXT("Error"), MB_OK | MB_ICONERROR);
+    return false;
 }
 
 static void EnableDpiAwareness()
