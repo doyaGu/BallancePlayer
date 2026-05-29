@@ -7,20 +7,19 @@
 #include "PlayerOptions.h"
 #include "Logger.h"
 #include "Utils.h"
-#include "VxWindowFunctions.h"
 
 static bool EnsurePersistentConfigReady(CGameConfig &config);
-static void UseExecutableDirectoryAsWorkingDirectory();
 static void ShowErrorMessage(const char *text);
 
 int main(int argc, char **argv)
 {
     SDL_SetMainReady();
-    UseExecutableDirectoryAsWorkingDirectory();
+    XString runtimeBase = utils::GetExecutableDirectory();
 
     CmdlineParser parser(argc, argv);
 
     CGameConfig persistentConfig;
+    persistentConfig.SetRuntimeBasePath(runtimeBase.CStr());
     playeroptions::ApplyPathOptions(persistentConfig, parser);
 
     if (!EnsurePersistentConfigReady(persistentConfig))
@@ -31,7 +30,8 @@ int main(int argc, char **argv)
     playeroptions::ApplyRuntimeOptions(runtimeConfig, parser);
 
     bool overwrite = runtimeConfig.logMode != eLogAppend;
-    CLogger::Get().Open(runtimeConfig.GetPath(eLogPath), overwrite);
+    XString logPath;
+    CLogger::Get().Open(runtimeConfig.ResolvePath(eLogPath, logPath) ? logPath.CStr() : runtimeConfig.GetPath(eLogPath), overwrite);
     if (runtimeConfig.verbose)
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
 
@@ -57,14 +57,6 @@ int main(int argc, char **argv)
     player.Shutdown();
 
     return 0;
-}
-
-static void UseExecutableDirectoryAsWorkingDirectory()
-{
-    char modulePath[MAX_PATH];
-    size_t len = VxGetModuleFileName(NULL, modulePath, MAX_PATH);
-    if (len > 0 && len < MAX_PATH)
-        utils::SetCurrentDirectoryToFileDirectory(modulePath);
 }
 
 static bool EnsurePersistentConfigReady(CGameConfig &config)

@@ -4,6 +4,7 @@
 #include <wchar.h>
 
 #include "VxMathDefines.h"
+#include "XString.h"
 
 namespace utils
 {
@@ -15,9 +16,14 @@ namespace utils
     bool IsAbsolutePath(const char *path);
     bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing = false);
     bool GetFileDirectory(char *buffer, size_t size, const char *filename, bool trailing = true);
-    bool SetCurrentDirectoryToFileDirectory(const char *filename);
 
     char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2);
+    XString GetExecutableDirectory();
+    XString GetFileDirectory(const char *filename, bool trailing = true);
+    XString JoinPath(const char *path1, const char *path2, bool trailing = false);
+    XString ResolvePathAgainstBase(const char *basePath, const char *path, bool trailing = false);
+    XString WithTrailingPathSeparator(const char *path);
+    XString WithoutTrailingPathSeparator(const char *path);
 
     const char *FindLastPathSeparator(const char *path);
     bool HasTrailingPathSeparator(const char *path);

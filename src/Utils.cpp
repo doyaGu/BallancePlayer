@@ -1,5 +1,7 @@
 #include "Utils.h"
 
+#include "IniFile.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,17 +24,47 @@
 #include <unistd.h>
 #endif
 
-#include <string>
-#include <vector>
-
 #include <SDL3/SDL.h>
-
-#ifndef MAX_PATH
-#define MAX_PATH 260
-#endif
 
 namespace utils
 {
+    static char PreferredPathSeparator()
+    {
+#if defined(_WIN32)
+        return '\\';
+#else
+        return '/';
+#endif
+    }
+
+    static XString GetCurrentPathString()
+    {
+#if defined(_WIN32)
+        DWORD required = ::GetCurrentDirectoryA(0, NULL);
+        if (required == 0)
+            return XString();
+
+        char *buffer = new char[required];
+        DWORD written = ::GetCurrentDirectoryA(required, buffer);
+        if (written == 0 || written >= required)
+        {
+            delete[] buffer;
+            return XString();
+        }
+
+        XString result(buffer, (int)written);
+        delete[] buffer;
+        return result;
+#else
+        char *buffer = getcwd(NULL, 0);
+        if (!buffer)
+            return XString();
+        XString result(buffer);
+        free(buffer);
+        return result;
+#endif
+    }
+
     bool GetMonitorRectForWindow(WIN_HANDLE window, CKRECT &outRect)
     {
         outRect.left = 0;
@@ -132,11 +164,13 @@ namespace utils
         }
         else
         {
-            char current[MAX_PATH];
-            size_t n = GetCurrentPath(current, sizeof(current));
-            if (n == 0 || n >= size - 1)
+            XString current = GetCurrentPathString();
+            if (current.IsEmpty())
                 return false;
-            ConcatPath(buffer, size, current, path);
+            XString resolved = JoinPath(current.CStr(), path, trailing);
+            if (resolved.Length() + 1 > size)
+                return false;
+            memcpy(buffer, resolved.CStr(), resolved.Length() + 1);
         }
 
         size_t len = strlen(buffer);
@@ -180,18 +214,6 @@ namespace utils
         return true;
     }
 
-    bool SetCurrentDirectoryToFileDirectory(const char *filename)
-    {
-        char dir[MAX_PATH];
-        if (!GetFileDirectory(dir, MAX_PATH, filename))
-            return false;
-#if defined(_WIN32)
-        return ::SetCurrentDirectoryA(dir) != 0;
-#else
-        return chdir(dir) == 0;
-#endif
-    }
-
     char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2)
     {
         if (!buffer)
@@ -219,6 +241,78 @@ namespace utils
         }
 
         return buffer;
+    }
+
+    XString WithTrailingPathSeparator(const char *path)
+    {
+        XString result = WithoutTrailingPathSeparator(path);
+        if (!result.IsEmpty())
+            result += PreferredPathSeparator();
+        return result;
+    }
+
+    XString WithoutTrailingPathSeparator(const char *path)
+    {
+        XString result = path ? path : "";
+        while (!result.IsEmpty() && (result[(int)result.Length() - 1] == '\\' || result[(int)result.Length() - 1] == '/'))
+            result.Cut(result.Length() - 1, 1);
+        return result;
+    }
+
+    XString GetFileDirectory(const char *filename, bool trailing)
+    {
+        if (!filename || filename[0] == '\0')
+            return XString();
+
+        const char *lastSep = FindLastPathSeparator(filename);
+        if (!lastSep)
+            return XString();
+
+        size_t len = static_cast<size_t>(lastSep - filename);
+        if (trailing)
+            ++len;
+        return XString(filename, (int)len);
+    }
+
+    XString GetExecutableDirectory()
+    {
+        const char *basePath = SDL_GetBasePath();
+        if (basePath && basePath[0] != '\0')
+            return WithTrailingPathSeparator(basePath);
+
+        return WithTrailingPathSeparator(GetCurrentPathString().CStr());
+    }
+
+    XString JoinPath(const char *path1, const char *path2, bool trailing)
+    {
+        if (path2 && IsAbsolutePath(path2))
+            return trailing ? WithTrailingPathSeparator(path2) : WithoutTrailingPathSeparator(path2);
+
+        XString result = WithoutTrailingPathSeparator(path1);
+        XString leaf = path2 ? path2 : "";
+        while (!leaf.IsEmpty() && (leaf[0] == '\\' || leaf[0] == '/'))
+            leaf.Cut(0, 1);
+
+        if (result.IsEmpty())
+            result = leaf;
+        else if (!leaf.IsEmpty())
+        {
+            result += PreferredPathSeparator();
+            result += leaf;
+        }
+
+        if (trailing)
+            return WithTrailingPathSeparator(result.CStr());
+        return WithoutTrailingPathSeparator(result.CStr());
+    }
+
+    XString ResolvePathAgainstBase(const char *basePath, const char *path, bool trailing)
+    {
+        if (!path || path[0] == '\0')
+            return XString();
+        if (IsAbsolutePath(path))
+            return trailing ? WithTrailingPathSeparator(path) : WithoutTrailingPathSeparator(path);
+        return JoinPath(basePath, path, trailing);
     }
 
     const char *FindLastPathSeparator(const char *path)
@@ -521,72 +615,27 @@ namespace utils
 
     bool IniGetString(const char *section, const char *name, char *str, size_t size, const char *filename)
     {
-#if defined(_WIN32)
-        return ::GetPrivateProfileStringA(section, name, "", str, static_cast<int>(size), filename) != 0;
-#else
         if (!section || !name || !str || size == 0 || !filename)
             return false;
 
-        FILE *file = fopen(filename, "r");
-        if (!file)
+        IniFile ini;
+        if (!ini.ParseFromFile(filename))
             return false;
 
-        bool inSection = false;
-        bool found = false;
-        char line[1024];
-        while (fgets(line, sizeof(line), file))
-        {
-            char *p = line;
-            while (isspace(static_cast<unsigned char>(*p)))
-                ++p;
-            if (*p == ';' || *p == '#' || *p == '\0')
-                continue;
-            if (*p == '[')
-            {
-                char *end = strchr(p, ']');
-                if (!end)
-                    continue;
-                *end = '\0';
-                inSection = strcmp(p + 1, section) == 0;
-                continue;
-            }
-            if (!inSection)
-                continue;
-            char *eq = strchr(p, '=');
-            if (!eq)
-                continue;
-            *eq = '\0';
-            char *keyEnd = eq - 1;
-            while (keyEnd >= p && isspace(static_cast<unsigned char>(*keyEnd)))
-                *keyEnd-- = '\0';
-            if (strcmp(p, name) != 0)
-                continue;
-            char *value = eq + 1;
-            while (isspace(static_cast<unsigned char>(*value)))
-                ++value;
-            char *valueEnd = value + strlen(value);
-            while (valueEnd > value && isspace(static_cast<unsigned char>(valueEnd[-1])))
-                *--valueEnd = '\0';
-            strncpy(str, value, size - 1);
-            str[size - 1] = '\0';
-            found = str[0] != '\0';
-            break;
-        }
+        XString value = ini.GetValue(section, name);
+        if (value.IsEmpty())
+            return false;
 
-        fclose(file);
-        return found;
-#endif
+        strncpy(str, value.CStr(), size - 1);
+        str[size - 1] = '\0';
+        return true;
     }
 
     bool IniGetInteger(const char *section, const char *name, int &value, const char *filename)
     {
         char buf[512];
-#if defined(_WIN32)
-        ::GetPrivateProfileStringA(section, name, "", buf, 512, filename);
-#else
         if (!IniGetString(section, name, buf, sizeof(buf), filename))
             return false;
-#endif
         if (strcmp(buf, "") == 0)
             return false;
 
@@ -603,32 +652,18 @@ namespace utils
 
     bool IniGetBoolean(const char *section, const char *name, bool &value, const char *filename)
     {
-#if defined(_WIN32)
-        UINT val = ::GetPrivateProfileIntA(section, name, -1, filename);
-        if (val == -1)
-            return false;
-        value = val != 0;
-        return true;
-#else
         int val = -1;
         if (!IniGetInteger(section, name, val, filename))
             return false;
         value = val != 0;
         return true;
-#endif
     }
 
     bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT &value, const char *filename)
     {
         char buf[16];
-#if defined(_WIN32)
-        ::GetPrivateProfileStringA(section, name, "", buf, 16, filename);
-        if (strcmp(buf, "") == 0)
-            return false;
-#else
         if (!IniGetString(section, name, buf, sizeof(buf), filename))
             return false;
-#endif
 
         value = String2PixelFormat(buf, sizeof(buf));
         return true;
@@ -639,119 +674,33 @@ namespace utils
         if (!section || !name || !value || !filename)
             return false;
 
-        std::vector<std::string> lines;
-        FILE *file = fopen(filename, "r");
-        if (file)
-        {
-            char line[1024];
-            while (fgets(line, sizeof(line), file))
-                lines.push_back(line);
-            fclose(file);
-        }
-
-        bool inSection = false;
-        bool sectionFound = false;
-        bool keyWritten = false;
-        std::string replacement = std::string(name) + "=" + value + "\n";
-
-        for (size_t i = 0; i < lines.size(); ++i)
-        {
-            std::string probe = lines[i];
-            size_t first = probe.find_first_not_of(" \t\r\n");
-            if (first == std::string::npos)
-                continue;
-            if (probe[first] == '[')
-            {
-                size_t end = probe.find(']', first + 1);
-                if (end != std::string::npos)
-                {
-                    if (inSection && !keyWritten)
-                    {
-                        lines.insert(lines.begin() + static_cast<std::vector<std::string>::difference_type>(i), replacement);
-                        keyWritten = true;
-                        break;
-                    }
-                    std::string sectionName = probe.substr(first + 1, end - first - 1);
-                    inSection = sectionName == section;
-                    sectionFound = sectionFound || inSection;
-                }
-                continue;
-            }
-
-            if (!inSection)
-                continue;
-
-            size_t eq = probe.find('=');
-            if (eq == std::string::npos)
-                continue;
-            std::string key = probe.substr(first, eq - first);
-            size_t keyEnd = key.find_last_not_of(" \t\r\n");
-            if (keyEnd != std::string::npos)
-                key.erase(keyEnd + 1);
-            if (key == name)
-            {
-                lines[i] = replacement;
-                keyWritten = true;
-                break;
-            }
-        }
-
-        if (!keyWritten)
-        {
-            if (!sectionFound)
-            {
-                if (!lines.empty() && lines.back().size() && lines.back()[lines.back().size() - 1] != '\n')
-                    lines.push_back("\n");
-                lines.push_back(std::string("[") + section + "]\n");
-            }
-            lines.push_back(replacement);
-        }
-
-        file = fopen(filename, "w");
-        if (!file)
+        IniFile ini;
+        ini.ParseFromFile(filename);
+        if (!ini.SetValue(section, name, value))
             return false;
-        for (size_t i = 0; i < lines.size(); ++i)
-            fputs(lines[i].c_str(), file);
-        fclose(file);
-        return true;
+        return ini.WriteToFile(filename);
     }
 
     bool IniSetString(const char *section, const char *name, const char *str, const char *filename)
     {
-#if defined(_WIN32)
-        return ::WritePrivateProfileStringA(section, name, str, filename) != 0;
-#else
         return IniSetValue(section, name, str ? str : "", filename);
-#endif
     }
 
     bool IniSetInteger(const char *section, const char *name, int value, const char *filename)
     {
         char buf[64];
         sprintf(buf, "%d", value);
-#if defined(_WIN32)
-        return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
-#else
         return IniSetValue(section, name, buf, filename);
-#endif
     }
 
     bool IniSetBoolean(const char *section, const char *name, bool value, const char *filename)
     {
         const char *buf = (value) ? "1" : "0";
-#if defined(_WIN32)
-        return ::WritePrivateProfileStringA(section, name, buf, filename) != 0;
-#else
         return IniSetValue(section, name, buf, filename);
-#endif
     }
 
     bool IniSetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT value, const char *filename)
     {
-#if defined(_WIN32)
-        return ::WritePrivateProfileStringA(section, name, utils::PixelFormat2String(value), filename) != 0;
-#else
         return IniSetValue(section, name, utils::PixelFormat2String(value), filename);
-#endif
     }
 }

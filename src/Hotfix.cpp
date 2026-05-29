@@ -6,11 +6,6 @@
 #include "GameConfig.h"
 #include "Utils.h"
 
-static bool GetCompositionDirectory(char *buffer, size_t size, const char *resolvedFile, bool trailing)
-{
-    return utils::GetFileDirectory(buffer, size, resolvedFile, trailing);
-}
-
 static bool PatchReplacePathRoot(CKBehavior *defaultLevel, const char *resolvedFile)
 {
     CKBehavior *getSystemVersion = scriptutils::GetBehavior(defaultLevel, "GetSystemVersion");
@@ -21,11 +16,11 @@ static bool PatchReplacePathRoot(CKBehavior *defaultLevel, const char *resolvedF
     if (!replacePath || replacePath->GetInputParameterCount() <= 2)
         return false;
 
-    char compositionDir[MAX_PATH];
-    if (!GetCompositionDirectory(compositionDir, sizeof(compositionDir), resolvedFile, false))
+    XString compositionDir = utils::GetFileDirectory(resolvedFile, false);
+    if (compositionDir.IsEmpty())
         return false;
 
-    scriptutils::GenerateInputParameter(getSystemVersion, replacePath, 2, compositionDir);
+    scriptutils::GenerateInputParameter(getSystemVersion, replacePath, 2, compositionDir.CStr());
     return true;
 }
 
@@ -35,8 +30,8 @@ static bool PatchPlayerActiveRoot(CKBehavior *defaultLevel, const char *resolved
     if (!playerActive)
         return false;
 
-    char compositionDir[MAX_PATH];
-    if (!GetCompositionDirectory(compositionDir, sizeof(compositionDir), resolvedFile, true))
+    XString compositionDir = utils::GetFileDirectory(resolvedFile, true);
+    if (compositionDir.IsEmpty())
         return false;
 
     for (int i = 0; i < playerActive->GetLocalParameterCount(); ++i)
@@ -44,7 +39,7 @@ static bool PatchPlayerActiveRoot(CKBehavior *defaultLevel, const char *resolved
         CKParameterLocal *param = playerActive->GetLocalParameter(i);
         if (param && param->GetName() && strcmp(param->GetName(), "pIn 1") == 0)
         {
-            scriptutils::SetParameterString(param, compositionDir);
+            scriptutils::SetParameterString(param, compositionDir.CStr());
             return true;
         }
     }
