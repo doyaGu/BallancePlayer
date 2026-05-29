@@ -71,85 +71,46 @@ static bool SamePathIgnoreCase(const char *lhs, const char *rhs)
 #endif
 }
 
-static bool ResolveAbsolutePath(const char *path, std::string &outPath)
+static bool ResolveAbsolutePath(const char *path, const char *basePath, XString &outPath, bool trailing = false)
 {
-    char buffer[MAX_PATH];
-    if (!utils::GetAbsolutePath(buffer, MAX_PATH, path, false))
+    outPath = utils::ResolvePathAgainstBase(basePath, path, trailing);
+    if (outPath.IsEmpty())
         return false;
-    outPath = buffer;
     return true;
 }
 
-static bool ResolveDefaultConfigPath(std::string &outPath)
+static bool ResolveDefaultConfigPath(const char *basePath, XString &outPath)
 {
-    char modulePath[MAX_PATH];
-    size_t length = VxGetModuleFileName(NULL, modulePath, MAX_PATH);
-    if (length > 0 && length < MAX_PATH)
-    {
-        char dir[MAX_PATH];
-        if (utils::GetFileDirectory(dir, MAX_PATH, modulePath, true))
-        {
-            char path[MAX_PATH];
-            utils::ConcatPath(path, MAX_PATH, dir, DefaultPaths[eConfigPath]);
-            outPath = path;
-            return true;
-        }
-    }
-    return ResolveAbsolutePath(DefaultPaths[eConfigPath], outPath);
+    return ResolveAbsolutePath(DefaultPaths[eConfigPath], basePath, outPath);
 }
 
-static bool GetDefaultRootPath(char *buffer, size_t size)
+static XString GetDefaultRootPath(const char *basePath)
 {
-    if (!buffer || size == 0)
-        return false;
-
-    char currentDir[MAX_PATH];
-    char path[MAX_PATH];
-    if (utils::GetCurrentPath(currentDir, sizeof(currentDir)) == 0)
-        return false;
-
-    if (utils::ConcatPath(path, sizeof(path), currentDir, DefaultPaths[eCmoPath]) &&
-        utils::FileOrDirectoryExists(path))
-    {
-        strncpy(buffer, "./", size - 1);
-        buffer[size - 1] = '\0';
-        return true;
-    }
-
-    strncpy(buffer, DefaultPaths[eRootPath], size - 1);
-    buffer[size - 1] = '\0';
-    return true;
+    XString cmoPath = utils::ResolvePathAgainstBase(basePath, DefaultPaths[eCmoPath], false);
+    if (!cmoPath.IsEmpty() && utils::FileOrDirectoryExists(cmoPath.CStr()))
+        return ".\\";
+    return utils::WithTrailingPathSeparator(DefaultPaths[eRootPath]);
 }
 
-static std::string JoinConfigPath(const char *basePath, const char *relativePath)
+static XString JoinConfigPath(const char *basePath, const char *relativePath)
 {
-    if (!basePath || basePath[0] == '\0')
-        return relativePath ? relativePath : "";
-
-    std::string result = basePath;
-    while (!result.empty() && (result[result.size() - 1] == '\\' || result[result.size() - 1] == '/'))
-        result.erase(result.size() - 1);
-
-    result += "\\";
-    if (relativePath)
-        result += relativePath;
-    return result;
+    return utils::JoinPath(basePath, relativePath, true);
 }
 
 static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
-                              std::string &outPath, bool *shouldUpdateStoredPath)
+                              const char *basePath, XString &outPath, bool *shouldUpdateStoredPath)
 {
     if (!requestedPath)
         return false;
 
-    outPath.erase();
+    outPath.Clear();
     bool updateStoredPath = false;
     const char *pathToResolve = requestedPath;
     if (requestedPath[0] == '\0')
     {
         if (!storedPath || storedPath[0] == '\0')
         {
-            if (!ResolveDefaultConfigPath(outPath))
+            if (!ResolveDefaultConfigPath(basePath, outPath))
                 return false;
             updateStoredPath = true;
         }
@@ -160,14 +121,14 @@ static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
         }
     }
 
-    if (outPath.empty() && !ResolveAbsolutePath(pathToResolve, outPath))
+    if (outPath.IsEmpty() && !ResolveAbsolutePath(pathToResolve, basePath, outPath))
         return false;
 
     if (!updateStoredPath && storedPath && storedPath[0] != '\0')
     {
-        std::string storedResolvedPath;
-        updateStoredPath = ResolveAbsolutePath(storedPath, storedResolvedPath) &&
-                           SamePathIgnoreCase(outPath.c_str(), storedResolvedPath.c_str());
+        XString storedResolvedPath;
+        updateStoredPath = ResolveAbsolutePath(storedPath, basePath, storedResolvedPath) &&
+                           SamePathIgnoreCase(outPath.CStr(), storedResolvedPath.CStr());
     }
 
     if (shouldUpdateStoredPath)
@@ -175,19 +136,19 @@ static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
     return true;
 }
 
-static std::string SerializeValue(int value)
+static XString SerializeValue(int value)
 {
     char buffer[64];
     sprintf(buffer, "%d", value);
     return buffer;
 }
 
-static std::string SerializeValue(bool value)
+static XString SerializeValue(bool value)
 {
     return value ? "1" : "0";
 }
 
-static std::string SerializeValue(VX_PIXELFORMAT value)
+static XString SerializeValue(VX_PIXELFORMAT value)
 {
     return utils::PixelFormat2String(value);
 }
@@ -229,6 +190,7 @@ CGameConfig::CGameConfig()
     // Non-INI members
     screenMode = -1;
 
+    m_RuntimeBasePath = utils::GetExecutableDirectory();
     ResetPath();
     ResetFieldSnapshots();
 }
@@ -263,6 +225,7 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     m_ConfigTimestampHigh = config.m_ConfigTimestampHigh;
     m_ConfigTimestampValid = config.m_ConfigTimestampValid;
     m_LastConfigAbsolutePath = config.m_LastConfigAbsolutePath;
+    m_RuntimeBasePath = config.m_RuntimeBasePath;
 
     return *this;
 }
@@ -271,14 +234,14 @@ bool CGameConfig::HasPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
         return false;
-    return m_Paths[category].size() != 0;
+    return !m_Paths[category].IsEmpty();
 }
 
 const char *CGameConfig::GetPath(PathCategory category) const
 {
     if (category < 0 || category >= ePathCategoryCount)
         return NULL;
-    return m_Paths[category].c_str();
+    return m_Paths[category].CStr();
 }
 
 void CGameConfig::SetPath(PathCategory category, const char *path)
@@ -288,6 +251,26 @@ void CGameConfig::SetPath(PathCategory category, const char *path)
     m_Paths[category] = path;
 }
 
+void CGameConfig::SetRuntimeBasePath(const char *path)
+{
+    m_RuntimeBasePath = path && path[0] != '\0' ? utils::WithTrailingPathSeparator(path) : utils::GetExecutableDirectory();
+    ResetPath();
+}
+
+const char *CGameConfig::GetRuntimeBasePath() const
+{
+    return m_RuntimeBasePath.CStr();
+}
+
+bool CGameConfig::ResolvePath(PathCategory category, XString &outPath, bool trailing) const
+{
+    outPath.Clear();
+    if (category < 0 || category >= ePathCategoryCount)
+        return false;
+    outPath = utils::ResolvePathAgainstBase(m_RuntimeBasePath.CStr(), GetPath(category), trailing);
+    return !outPath.IsEmpty();
+}
+
 bool CGameConfig::ResetPath(PathCategory category)
 {
     if (category < 0 || category > ePathCategoryCount)
@@ -295,12 +278,7 @@ bool CGameConfig::ResetPath(PathCategory category)
 
     if (category == ePathCategoryCount)
     {
-        char rootPath[MAX_PATH];
-        if (!GetDefaultRootPath(rootPath, sizeof(rootPath)))
-        {
-            strncpy(rootPath, DefaultPaths[eRootPath], sizeof(rootPath));
-            rootPath[sizeof(rootPath) - 1] = '\0';
-        }
+        XString rootPath = GetDefaultRootPath(m_RuntimeBasePath.CStr());
 
         // Reset all paths
         for (int i = 0; i < ePathCategoryCount; ++i)
@@ -311,11 +289,11 @@ bool CGameConfig::ResetPath(PathCategory category)
             }
             else if (i == eRootPath)
             {
-                SetPath((PathCategory)i, rootPath);
+                SetPath((PathCategory)i, rootPath.CStr());
             }
             else
             {
-                SetPath((PathCategory)i, JoinConfigPath(GetPath(eRootPath), DefaultPaths[i]).c_str());
+                SetPath((PathCategory)i, JoinConfigPath(GetPath(eRootPath), DefaultPaths[i]).CStr());
             }
         }
     }
@@ -328,17 +306,12 @@ bool CGameConfig::ResetPath(PathCategory category)
         }
         else if (category == eRootPath)
         {
-            char rootPath[MAX_PATH];
-            if (!GetDefaultRootPath(rootPath, sizeof(rootPath)))
-            {
-                strncpy(rootPath, DefaultPaths[eRootPath], sizeof(rootPath));
-                rootPath[sizeof(rootPath) - 1] = '\0';
-            }
-            SetPath(category, rootPath);
+            XString rootPath = GetDefaultRootPath(m_RuntimeBasePath.CStr());
+            SetPath(category, rootPath.CStr());
         }
         else
         {
-            SetPath(category, JoinConfigPath(GetPath(eRootPath), DefaultPaths[category]).c_str());
+            SetPath(category, JoinConfigPath(GetPath(eRootPath), DefaultPaths[category]).CStr());
         }
     }
 
@@ -347,22 +320,22 @@ bool CGameConfig::ResetPath(PathCategory category)
 
 bool CGameConfig::EnsureConfigPath()
 {
-    std::string path;
-    if (!ResolveConfigPath("", m_Paths[eConfigPath].c_str(), path, NULL))
+    XString path;
+    if (!ResolveConfigPath("", m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path, NULL))
         return false;
 
-    SetPath(eConfigPath, path.c_str());
+    SetPath(eConfigPath, path.CStr());
     return true;
 }
 
 void CGameConfig::LoadFromIni(const char *filename)
 {
-    std::string path;
+    XString path;
     bool updateStoredPath = false;
-    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].c_str(), path, &updateStoredPath))
+    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path, &updateStoredPath))
         return;
 
-    filename = path.c_str();
+    filename = path.CStr();
     if (!utils::FileOrDirectoryExists(filename))
         return;
 
@@ -402,12 +375,12 @@ void CGameConfig::LoadFromIni(const char *filename)
 
 bool CGameConfig::SaveToIni(const char *filename)
 {
-    std::string path;
+    XString path;
     bool updateStoredPath = false;
-    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].c_str(), path, &updateStoredPath))
+    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path, &updateStoredPath))
         return false;
 
-    filename = path.c_str();
+    filename = path.CStr();
     if (updateStoredPath)
         SetPath(eConfigPath, filename);
 
@@ -461,16 +434,16 @@ void CGameConfig::ResetFieldSnapshots()
     for (int i = 0; i < eLoadedSentinel; ++i)
     {
         m_FieldSnapshots[i].hasLoadedValue = false;
-        m_FieldSnapshots[i].loadedValue.erase();
+        m_FieldSnapshots[i].loadedValue.Clear();
     }
 
     m_ConfigTimestampLow = 0;
     m_ConfigTimestampHigh = 0;
     m_ConfigTimestampValid = false;
-    m_LastConfigAbsolutePath.erase();
+    m_LastConfigAbsolutePath.Clear();
 }
 
-void CGameConfig::StoreLoadedValue(int index, const std::string &value)
+void CGameConfig::StoreLoadedValue(int index, const XString &value)
 {
     if (index < 0 || index >= eLoadedSentinel)
         return;
@@ -478,16 +451,16 @@ void CGameConfig::StoreLoadedValue(int index, const std::string &value)
     m_FieldSnapshots[index].loadedValue = value;
 }
 
-bool CGameConfig::CanAcceptExternalChange(int index, const std::string &currentValue) const
+bool CGameConfig::CanAcceptExternalChange(int index, const XString &currentValue) const
 {
     if (index < 0 || index >= eLoadedSentinel)
         return false;
     if (!m_FieldSnapshots[index].hasLoadedValue)
         return true;
-    return m_FieldSnapshots[index].loadedValue == currentValue;
+    return m_FieldSnapshots[index].loadedValue.Compare(currentValue) == 0;
 }
 
-bool CGameConfig::TryAcceptExternalValue(int index, const std::string &currentValue, const std::string &externalValue)
+bool CGameConfig::TryAcceptExternalValue(int index, const XString &currentValue, const XString &externalValue)
 {
     if (!CanAcceptExternalChange(index, currentValue))
         return false;
@@ -576,13 +549,13 @@ void CGameConfig::SetLastConfigAbsolutePath(const char *path)
     if (path && path[0] != '\0')
         m_LastConfigAbsolutePath = path;
     else
-        m_LastConfigAbsolutePath.erase();
+        m_LastConfigAbsolutePath.Clear();
 }
 
 bool CGameConfig::IsSameConfigPath(const char *path) const
 {
-    if (!path || m_LastConfigAbsolutePath.size() == 0)
+    if (!path || m_LastConfigAbsolutePath.IsEmpty())
         return false;
 
-    return SamePathIgnoreCase(m_LastConfigAbsolutePath.c_str(), path);
+    return SamePathIgnoreCase(m_LastConfigAbsolutePath.CStr(), path);
 }

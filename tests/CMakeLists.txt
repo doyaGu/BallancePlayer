@@ -40,6 +40,7 @@ endfunction()
 add_player_test(GameConfigTest
         SOURCES GameConfigTest.cpp
         ${PLAYER_SOURCE_DIR}/GameConfig.cpp
+        ${PLAYER_SOURCE_DIR}/IniFile.cpp
         ${PLAYER_SOURCE_DIR}/Utils.cpp
         DEPENDENCIES VxMath
 )
@@ -49,6 +50,7 @@ add_player_test(PlayerOptionsTest
         ${PLAYER_SOURCE_DIR}/PlayerOptions.cpp
         ${PLAYER_SOURCE_DIR}/CmdlineParser.cpp
         ${PLAYER_SOURCE_DIR}/GameConfig.cpp
+        ${PLAYER_SOURCE_DIR}/IniFile.cpp
         ${PLAYER_SOURCE_DIR}/Utils.cpp
         DEPENDENCIES VxMath
 )
@@ -56,4 +58,5 @@ add_player_test(PlayerOptionsTest
 add_player_test(CmdlineParserTest
         SOURCES CmdlineParserTest.cpp
         ${PLAYER_SOURCE_DIR}/CmdlineParser.cpp
+        DEPENDENCIES VxMath
 )

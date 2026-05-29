@@ -27,6 +27,7 @@ set(PLAYER_HEADERS
         PlayerSdlShortcuts.h
         ScriptUtils.h
         CmdlineParser.h
+        IniFile.h
         Logger.h
         Utils.h
 )
@@ -39,6 +40,7 @@ set(PLAYER_SOURCES
         PlayerSdlShortcuts.cpp
         Hotfix.cpp
         CmdlineParser.cpp
+        IniFile.cpp
         Logger.cpp
         Utils.cpp
 )

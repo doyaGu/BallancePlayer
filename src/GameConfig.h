@@ -1,15 +1,10 @@
 #ifndef PLAYER_GAMECONFIG_H
 #define PLAYER_GAMECONFIG_H
 
-#include <string>
-
 #include <config.h>
 
 #include "VxMathDefines.h"
-
-#ifndef MAX_PATH
-#define MAX_PATH 260
-#endif
+#include "XString.h"
 
 class CmdlineParser;
 
@@ -117,12 +112,16 @@ public:
     void SetPath(PathCategory category, const char *path);
     bool ResetPath(PathCategory category = ePathCategoryCount);
     bool EnsureConfigPath();
+    void SetRuntimeBasePath(const char *path);
+    const char *GetRuntimeBasePath() const;
+    bool ResolvePath(PathCategory category, XString &outPath, bool trailing = false) const;
 
     void LoadFromIni(const char *filename = "");
     bool SaveToIni(const char *filename = "");
 
 private:
-    std::string m_Paths[ePathCategoryCount];
+    XString m_Paths[ePathCategoryCount];
+    XString m_RuntimeBasePath;
 
     // Auto-generated enum indices for loaded value snapshots
     enum {
@@ -139,7 +138,7 @@ private:
     struct FieldSnapshot
     {
         bool hasLoadedValue;
-        std::string loadedValue;
+        XString loadedValue;
     };
 
     FieldSnapshot m_FieldSnapshots[eLoadedSentinel];
@@ -147,12 +146,12 @@ private:
     unsigned long m_ConfigTimestampLow;
     unsigned long m_ConfigTimestampHigh;
     bool m_ConfigTimestampValid;
-    std::string m_LastConfigAbsolutePath;
+    XString m_LastConfigAbsolutePath;
 
     void ResetFieldSnapshots();
-    void StoreLoadedValue(int index, const std::string &value);
-    bool CanAcceptExternalChange(int index, const std::string &currentValue) const;
-    bool TryAcceptExternalValue(int index, const std::string &currentValue, const std::string &externalValue);
+    void StoreLoadedValue(int index, const XString &value);
+    bool CanAcceptExternalChange(int index, const XString &currentValue) const;
+    bool TryAcceptExternalValue(int index, const XString &currentValue, const XString &externalValue);
     void CaptureFieldValuesAsLoaded();
     template <typename TValue>
     void CaptureFieldValueAsLoaded(int index, const TValue &value);

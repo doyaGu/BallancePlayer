@@ -4,7 +4,15 @@
 #include <thread>
 #include <chrono>
 
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#endif
+
 #include "GameConfig.h"
+#include "IniFile.h"
 #include "Utils.h"
 
 #include "VxMathDefines.h"
@@ -169,18 +177,74 @@ TEST_F(GameConfigTest, PathManagement) {
 }
 
 TEST_F(GameConfigTest, EnsureConfigPathNormalizesStoredRelativePath) {
-    fs::path originalCwd = fs::current_path();
-    fs::current_path(testDir);
+    fs::path otherDir = testDir / "other";
+    fs::create_directories(otherDir);
 
-    CGameConfig config;
-    config.SetPath(eConfigPath, testIniPath.filename().string().c_str());
+    bool ensured = false;
+    {
+        ScopedCurrentDirectory scopedDir(otherDir);
 
-    bool ensured = config.EnsureConfigPath();
+        CGameConfig config;
+        config.SetRuntimeBasePath(testDir.string().c_str());
+        config.SetPath(eConfigPath, testIniPath.filename().string().c_str());
+        ensured = config.EnsureConfigPath();
 
-    fs::current_path(originalCwd);
-
+        EXPECT_EQ(fs::path(config.GetPath(eConfigPath)), fs::absolute(testIniPath));
+    }
     ASSERT_TRUE(ensured);
-    EXPECT_EQ(fs::path(config.GetPath(eConfigPath)), fs::absolute(testIniPath));
+}
+
+TEST_F(GameConfigTest, ResolvePathUsesRuntimeBaseInsteadOfCurrentDirectory) {
+    fs::path runtimeBase = testDir / "runtime";
+    fs::path otherDir = testDir / "other";
+    fs::create_directories(runtimeBase);
+    fs::create_directories(otherDir);
+
+    {
+        ScopedCurrentDirectory scopedDir(otherDir);
+
+        CGameConfig config;
+        config.SetRuntimeBasePath(runtimeBase.string().c_str());
+        config.SetPath(eLogPath, "Logs/Player.log");
+
+        XString resolved;
+        ASSERT_TRUE(config.ResolvePath(eLogPath, resolved));
+        EXPECT_EQ(fs::path(resolved.CStr()), runtimeBase / "Logs/Player.log");
+    }
+}
+
+TEST_F(GameConfigTest, StringFileDirectoryHandlesLongMixedSeparatorPaths) {
+    std::string longDir = "C:\\Ballance Runtime/Level Assets";
+    while (longDir.size() <= static_cast<size_t>(MAX_PATH) + 32)
+        longDir += "\\segment with spaces";
+
+    const std::string filePath = longDir + "/level file.nmo";
+
+    XString directory = utils::GetFileDirectory(filePath.c_str(), false);
+    XString directoryWithSeparator = utils::GetFileDirectory(filePath.c_str(), true);
+    EXPECT_EQ(std::string(directory.CStr()), longDir);
+    EXPECT_EQ(std::string(directoryWithSeparator.CStr()), longDir + "/");
+    EXPECT_GT(static_cast<size_t>(directoryWithSeparator.Length()), static_cast<size_t>(MAX_PATH));
+}
+
+TEST_F(GameConfigTest, GetAbsolutePathUsesLongCurrentDirectory) {
+    fs::path longDir = testDir / "runtime cwd";
+    while (longDir.string().size() <= static_cast<size_t>(MAX_PATH) + 32)
+        longDir /= "segment with spaces";
+
+    std::error_code error;
+    fs::create_directories(longDir, error);
+    if (error)
+        GTEST_SKIP() << "Long current directory is not supported by this filesystem: " << error.message();
+
+    char resolved[4096] = {0};
+    {
+        ScopedCurrentDirectory scopedDir(longDir);
+        ASSERT_TRUE(utils::GetAbsolutePath(resolved, sizeof(resolved), "relative file.txt", false));
+    }
+
+    EXPECT_EQ(fs::path(resolved), longDir / "relative file.txt");
+    EXPECT_GT(strlen(resolved), static_cast<size_t>(MAX_PATH));
 }
 
 // Test loading from INI file
@@ -278,6 +342,122 @@ TEST_F(GameConfigTest, MalformedIntegerValuesKeepDefaults) {
 
     EXPECT_EQ(config.width, PLAYER_DEFAULT_WIDTH);
     EXPECT_EQ(config.height, PLAYER_DEFAULT_HEIGHT);
+}
+
+TEST_F(GameConfigTest, MalformedBooleanValuesKeepDefaults) {
+    CreateTestIni("[Graphics]\nTextureCacheManagement=abc\nSortTransparentObjects=1x\n");
+
+    CGameConfig config;
+    config.LoadFromIni(testIniPath.string().c_str());
+
+    EXPECT_TRUE(config.textureCacheManagement);
+    EXPECT_TRUE(config.sortTransparentObjects);
+}
+
+TEST_F(GameConfigTest, IniFileBackendRoundTripsTypedValues) {
+    ASSERT_TRUE(utils::IniSetString("Startup", "PlayerName", "Ballance", testIniPath.string().c_str()));
+    ASSERT_TRUE(utils::IniSetInteger("Graphics", "Width", 1280, testIniPath.string().c_str()));
+    ASSERT_TRUE(utils::IniSetBoolean("Graphics", "FullScreen", true, testIniPath.string().c_str()));
+    ASSERT_TRUE(utils::IniSetPixelFormat("Graphics", "TextureVideoFormat", _16_RGB565, testIniPath.string().c_str()));
+
+    char playerName[64] = {};
+    int width = 0;
+    bool fullscreen = false;
+    VX_PIXELFORMAT textureFormat = UNKNOWN_PF;
+
+    EXPECT_TRUE(utils::IniGetString("Startup", "PlayerName", playerName, sizeof(playerName), testIniPath.string().c_str()));
+    EXPECT_STREQ(playerName, "Ballance");
+    EXPECT_TRUE(utils::IniGetInteger("Graphics", "Width", width, testIniPath.string().c_str()));
+    EXPECT_EQ(width, 1280);
+    EXPECT_TRUE(utils::IniGetBoolean("Graphics", "FullScreen", fullscreen, testIniPath.string().c_str()));
+    EXPECT_TRUE(fullscreen);
+    EXPECT_TRUE(utils::IniGetPixelFormat("Graphics", "TextureVideoFormat", textureFormat, testIniPath.string().c_str()));
+    EXPECT_EQ(textureFormat, _16_RGB565);
+}
+
+TEST_F(GameConfigTest, IniFileBackendPreservesCommentsAndUpdatesExistingKey) {
+    CreateTestIni(
+        "; leading comment\n"
+        "\n"
+        "[Graphics]\n"
+        "# width comment\n"
+        "Width = 800 ; inline width\n"
+        "Height = 600\n"
+        "\n"
+        "[Game]\n"
+        "Language = 1\n");
+
+    ASSERT_TRUE(utils::IniSetInteger("Graphics", "Width", 1024, testIniPath.string().c_str()));
+
+    std::string content = ReadFile(testIniPath);
+    EXPECT_NE(content.find("; leading comment"), std::string::npos);
+    EXPECT_NE(content.find("# width comment"), std::string::npos);
+    EXPECT_NE(content.find("Height = 600"), std::string::npos);
+    EXPECT_NE(content.find("[Game]"), std::string::npos);
+    EXPECT_EQ(content.find("Width", content.find("Width") + 1), std::string::npos);
+
+    int width = 0;
+    EXPECT_TRUE(utils::IniGetInteger("Graphics", "Width", width, testIniPath.string().c_str()));
+    EXPECT_EQ(width, 1024);
+}
+
+TEST_F(GameConfigTest, IniFileBackendUsesFirstDuplicateSection) {
+    CreateTestIni(
+        "[Graphics]\n"
+        "Width = 800\n"
+        "\n"
+        "[Graphics]\n"
+        "Width = 1024\n");
+
+    int width = 0;
+    ASSERT_TRUE(utils::IniGetInteger("Graphics", "Width", width, testIniPath.string().c_str()));
+    EXPECT_EQ(width, 800);
+
+    ASSERT_TRUE(utils::IniSetInteger("Graphics", "Width", 1280, testIniPath.string().c_str()));
+
+    std::string content = ReadFile(testIniPath);
+    EXPECT_NE(content.find("Width = 1280"), std::string::npos);
+    EXPECT_NE(content.find("Width = 1024"), std::string::npos);
+
+    width = 0;
+    ASSERT_TRUE(utils::IniGetInteger("Graphics", "Width", width, testIniPath.string().c_str()));
+    EXPECT_EQ(width, 1280);
+}
+
+TEST_F(GameConfigTest, IniFileBackendStripsInlineCommentsWhenReading) {
+    CreateTestIni("[Startup]\nPlayerName = Ballance ; inline comment\n");
+
+    char value[64] = {};
+    ASSERT_TRUE(utils::IniGetString("Startup", "PlayerName", value, sizeof(value), testIniPath.string().c_str()));
+    EXPECT_STREQ(value, "Ballance");
+}
+
+TEST_F(GameConfigTest, IniFileBackendKeepsUtf8ValuesAsBytes) {
+    const char *utf8Value = "\xE5\xB9\xB3\xE8\xA1\xA1\xE7\x90\x83";
+
+    ASSERT_TRUE(utils::IniSetString("Startup", "PlayerName", utf8Value, testIniPath.string().c_str()));
+
+    char value[64] = {};
+    ASSERT_TRUE(utils::IniGetString("Startup", "PlayerName", value, sizeof(value), testIniPath.string().c_str()));
+    EXPECT_STREQ(value, utf8Value);
+}
+
+TEST_F(GameConfigTest, IniFileParsesAndWritesThroughVxMathStrings) {
+    IniFile ini;
+    ASSERT_TRUE(ini.ParseFromString(
+        "; leading comment\n"
+        "[Graphics]\n"
+        "Width = 800 ; inline width\n"
+        "Height = 600\n"));
+
+    EXPECT_STREQ(ini.GetValue("graphics", "width").CStr(), "800");
+    ASSERT_TRUE(ini.SetValue("GRAPHICS", "Width", "1280"));
+
+    XString content = ini.WriteToString();
+    std::string text = content.CStr();
+    EXPECT_NE(text.find("; leading comment"), std::string::npos);
+    EXPECT_NE(text.find("Width = 1280 ; inline width"), std::string::npos);
+    EXPECT_NE(text.find("Height = 600"), std::string::npos);
 }
 
 // Test saving to INI file
@@ -401,18 +581,17 @@ TEST_F(GameConfigTest, SaveAfterLoadUsesResolvedConfigPathWhenCurrentDirectoryCh
     fs::path otherDir = testDir / "other";
     fs::create_directories(otherDir);
 
-    fs::path originalCwd = fs::current_path();
-    fs::current_path(testDir);
-
     CGameConfig config;
+    config.SetRuntimeBasePath(testDir.string().c_str());
     config.SetPath(eConfigPath, testIniPath.filename().string().c_str());
     config.LoadFromIni();
 
-    fs::current_path(otherDir);
-    config.width = 1280;
-    bool saved = config.SaveToIni();
-
-    fs::current_path(originalCwd);
+    bool saved = false;
+    {
+        ScopedCurrentDirectory scopedDir(otherDir);
+        config.width = 1280;
+        saved = config.SaveToIni();
+    }
 
     EXPECT_TRUE(saved);
 
@@ -427,18 +606,17 @@ TEST_F(GameConfigTest, ExplicitLoadUsingStoredConfigPathResolvesPathForLaterWrit
     fs::path otherDir = testDir / "other";
     fs::create_directories(otherDir);
 
-    fs::path originalCwd = fs::current_path();
-    fs::current_path(testDir);
-
     CGameConfig config;
+    config.SetRuntimeBasePath(testDir.string().c_str());
     config.SetPath(eConfigPath, testIniPath.filename().string().c_str());
     config.LoadFromIni(config.GetPath(eConfigPath));
 
-    fs::current_path(otherDir);
-    config.width = 1440;
-    bool saved = config.SaveToIni();
-
-    fs::current_path(originalCwd);
+    bool saved = false;
+    {
+        ScopedCurrentDirectory scopedDir(otherDir);
+        config.width = 1440;
+        saved = config.SaveToIni();
+    }
 
     ASSERT_TRUE(saved);
     EXPECT_EQ(fs::path(config.GetPath(eConfigPath)), fs::absolute(testIniPath));
@@ -589,14 +767,17 @@ Antialias=4
 }
 
 TEST_F(GameConfigTest, FlatLayoutUsesExecutableDirectoryAsRootPath) {
-    fs::path testDir = fs::temp_directory_path() / "gameconfig_flat_root";
-    fs::path cmoFile = testDir / "base.cmo";
-    fs::create_directories(testDir);
+    fs::path runtimeBase = testDir / "flat_root";
+    fs::path otherDir = testDir / "other";
+    fs::path cmoFile = runtimeBase / "base.cmo";
+    fs::create_directories(runtimeBase);
+    fs::create_directories(otherDir);
     std::ofstream(cmoFile.string()).close();
 
     {
-        ScopedCurrentDirectory scopedDir(testDir);
+        ScopedCurrentDirectory scopedDir(otherDir);
         CGameConfig config;
+        config.SetRuntimeBasePath(runtimeBase.string().c_str());
 
         EXPECT_STREQ(config.GetPath(eRootPath), ".\\");
         EXPECT_STREQ(config.GetPath(eDataPath), ".\\");
@@ -605,16 +786,19 @@ TEST_F(GameConfigTest, FlatLayoutUsesExecutableDirectoryAsRootPath) {
         EXPECT_STREQ(config.GetPath(eCmoPath), "base.cmo");
     }
 
-    fs::remove_all(testDir);
+    fs::remove_all(runtimeBase);
 }
 
 TEST_F(GameConfigTest, DefaultLayoutUsesParentDirectoryAsRootPath) {
-    fs::path testDir = fs::temp_directory_path() / "gameconfig_parent_root";
-    fs::create_directories(testDir);
+    fs::path runtimeBase = testDir / "parent_root";
+    fs::path otherDir = testDir / "other";
+    fs::create_directories(runtimeBase);
+    fs::create_directories(otherDir);
 
     {
-        ScopedCurrentDirectory scopedDir(testDir);
+        ScopedCurrentDirectory scopedDir(otherDir);
         CGameConfig config;
+        config.SetRuntimeBasePath(runtimeBase.string().c_str());
 
         EXPECT_STREQ(config.GetPath(eRootPath), "..\\");
         EXPECT_STREQ(config.GetPath(eDataPath), "..\\");
@@ -623,7 +807,7 @@ TEST_F(GameConfigTest, DefaultLayoutUsesParentDirectoryAsRootPath) {
         EXPECT_STREQ(config.GetPath(eCmoPath), "base.cmo");
     }
 
-    fs::remove_all(testDir);
+    fs::remove_all(runtimeBase);
 }
 
 // Test X-macro expansion correctness
