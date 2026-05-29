@@ -1,22 +1,22 @@
 #ifndef PLAYER_CMDLINEPARSER_H
 #define PLAYER_CMDLINEPARSER_H
 
-#include <string>
-#include <vector>
+#include "XClassArray.h"
+#include "XString.h"
 
 class CmdlineArg
 {
 public:
     CmdlineArg() : m_Values(NULL), m_Size(0), m_Jointed(false) {}
-    CmdlineArg(const std::string *values, int size, bool jointed = false) : m_Values(values), m_Size(size), m_Jointed(jointed) {}
+    CmdlineArg(const XString *values, int size, bool jointed = false) : m_Values(values), m_Size(size), m_Jointed(jointed) {}
 
-    bool GetValue(int i, std::string &value) const;
+    bool GetValue(int i, XString &value) const;
     bool GetValue(int i, long &value) const;
 
     int GetSize() const;
 
 private:
-    const std::string *m_Values;
+    const XString *m_Values;
     int m_Size;
     bool m_Jointed;
 };
@@ -36,7 +36,7 @@ public:
     void Reset();
 
 private:
-    std::vector<std::string> m_Args;
+    XClassArray<XString> m_Args;
     int m_Index;
 };
 

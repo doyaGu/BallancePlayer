@@ -1,6 +1,13 @@
 #include <gtest/gtest.h>
 #include <filesystem>
 
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <Windows.h>
+#endif
+
 #include "CmdlineParser.h"
 #include "GameConfig.h"
 #include "PlayerOptions.h"
@@ -196,21 +203,13 @@ TEST(PlayerOptionsTest, RootPathRecomputesImplicitDependentPaths) {
 
     playeroptions::ApplyPathOptions(config, parser);
 
-    char expected[MAX_PATH];
-    utils::ConcatPath(expected, MAX_PATH, testRoot.string().c_str(), "Plugins\\");
-    EXPECT_STREQ(config.GetPath(ePluginPath), expected);
-    utils::ConcatPath(expected, MAX_PATH, testRoot.string().c_str(), "RenderEngines\\");
-    EXPECT_STREQ(config.GetPath(eRenderEnginePath), expected);
-    utils::ConcatPath(expected, MAX_PATH, testRoot.string().c_str(), "Managers\\");
-    EXPECT_STREQ(config.GetPath(eManagerPath), expected);
-    utils::ConcatPath(expected, MAX_PATH, testRoot.string().c_str(), "BuildingBlocks\\");
-    EXPECT_STREQ(config.GetPath(eBuildingBlockPath), expected);
-    utils::ConcatPath(expected, MAX_PATH, testRoot.string().c_str(), "Sounds\\");
-    EXPECT_STREQ(config.GetPath(eSoundPath), expected);
-    utils::ConcatPath(expected, MAX_PATH, testRoot.string().c_str(), "Textures\\");
-    EXPECT_STREQ(config.GetPath(eBitmapPath), expected);
-    utils::ConcatPath(expected, MAX_PATH, testRoot.string().c_str(), "");
-    EXPECT_STREQ(config.GetPath(eDataPath), expected);
+    EXPECT_STREQ(config.GetPath(ePluginPath), utils::JoinPath(testRoot.string().c_str(), "Plugins\\", true).CStr());
+    EXPECT_STREQ(config.GetPath(eRenderEnginePath), utils::JoinPath(testRoot.string().c_str(), "RenderEngines\\", true).CStr());
+    EXPECT_STREQ(config.GetPath(eManagerPath), utils::JoinPath(testRoot.string().c_str(), "Managers\\", true).CStr());
+    EXPECT_STREQ(config.GetPath(eBuildingBlockPath), utils::JoinPath(testRoot.string().c_str(), "BuildingBlocks\\", true).CStr());
+    EXPECT_STREQ(config.GetPath(eSoundPath), utils::JoinPath(testRoot.string().c_str(), "Sounds\\", true).CStr());
+    EXPECT_STREQ(config.GetPath(eBitmapPath), utils::JoinPath(testRoot.string().c_str(), "Textures\\", true).CStr());
+    EXPECT_STREQ(config.GetPath(eDataPath), utils::JoinPath(testRoot.string().c_str(), "", true).CStr());
 
     fs::remove_all(testRoot);
 }
@@ -250,9 +249,7 @@ TEST(PlayerOptionsTest, ExplicitDependentPathOverridesRootPathDerivedPath) {
 
     EXPECT_STREQ(config.GetPath(ePluginPath), customPlugins.string().c_str());
 
-    char expected[MAX_PATH];
-    utils::ConcatPath(expected, MAX_PATH, testRoot.string().c_str(), "RenderEngines\\");
-    EXPECT_STREQ(config.GetPath(eRenderEnginePath), expected);
+    EXPECT_STREQ(config.GetPath(eRenderEnginePath), utils::JoinPath(testRoot.string().c_str(), "RenderEngines\\", true).CStr());
 
     fs::remove_all(testRoot);
     fs::remove_all(customPlugins);

@@ -46,14 +46,14 @@ namespace
                                 VX_PIXELFORMAT CGameConfig::*member)
     {
         CmdlineArg arg;
-        std::string value;
+        XString value;
         if (!longopt && shortopt == '\0')
             return false;
         if (!parser.Next(arg, longopt, shortopt, 1))
             return false;
 
         if (arg.GetValue(0, value))
-            config.*member = utils::String2PixelFormat(value.c_str(), 16);
+            config.*member = utils::String2PixelFormat(value.CStr(), 16);
         return true;
     }
 }
@@ -63,7 +63,7 @@ namespace playeroptions
     void ApplyPathOptions(CGameConfig &config, CmdlineParser &parser)
     {
         CmdlineArg arg;
-        std::string path;
+        XString path;
         bool explicitPaths[ePathCategoryCount] = { false };
 
         while (!parser.Done())
@@ -74,7 +74,7 @@ namespace playeroptions
             { \
                 if (arg.GetValue(0, path)) \
                 { \
-                    config.SetPath(category, path.c_str()); \
+                    config.SetPath(category, path.CStr()); \
                     explicitPaths[category] = true; \
                 } \
                 matched = true; \

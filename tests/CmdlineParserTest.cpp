@@ -2,12 +2,16 @@
 
 #include "CmdlineParser.h"
 
+static void ExpectXStringEq(const XString &value, const char *expected) {
+    EXPECT_STREQ(value.CStr(), expected);
+}
+
 TEST(CmdlineArgTest, DefaultConstructorHasNoValues) {
     CmdlineArg arg;
 
     EXPECT_EQ(arg.GetSize(), 0);
 
-    std::string stringValue;
+    XString stringValue;
     EXPECT_FALSE(arg.GetValue(0, stringValue));
 
     long longValue;
@@ -15,52 +19,52 @@ TEST(CmdlineArgTest, DefaultConstructorHasNoValues) {
 }
 
 TEST(CmdlineArgTest, ReadsIndexedValues) {
-    std::string values[3] = {"value1", "value2", "value3"};
+    XString values[3] = {"value1", "value2", "value3"};
     CmdlineArg arg(values, 3);
 
     EXPECT_EQ(arg.GetSize(), 3);
 
-    std::string value;
+    XString value;
     EXPECT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "value1");
+    ExpectXStringEq(value, "value1");
     EXPECT_TRUE(arg.GetValue(1, value));
-    EXPECT_EQ(value, "value2");
+    ExpectXStringEq(value, "value2");
     EXPECT_TRUE(arg.GetValue(2, value));
-    EXPECT_EQ(value, "value3");
+    ExpectXStringEq(value, "value3");
     EXPECT_FALSE(arg.GetValue(3, value));
 }
 
 TEST(CmdlineArgTest, RemovesQuotesFromValues) {
-    std::string values[3] = {"\"quoted value\"", "regular value", "\"another quoted\""};
+    XString values[3] = {"\"quoted value\"", "regular value", "\"another quoted\""};
     CmdlineArg arg(values, 3);
 
-    std::string value;
+    XString value;
     EXPECT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "quoted value");
+    ExpectXStringEq(value, "quoted value");
     EXPECT_TRUE(arg.GetValue(1, value));
-    EXPECT_EQ(value, "regular value");
+    ExpectXStringEq(value, "regular value");
     EXPECT_TRUE(arg.GetValue(2, value));
-    EXPECT_EQ(value, "another quoted");
+    ExpectXStringEq(value, "another quoted");
 }
 
 TEST(CmdlineArgTest, ReadsJointedValues) {
-    std::string values[1] = {"opt=value1;value2;\"quoted value\""};
+    XString values[1] = {"opt=value1;value2;\"quoted value\""};
     CmdlineArg arg(values, 3, true);
 
     EXPECT_EQ(arg.GetSize(), 3);
 
-    std::string value;
+    XString value;
     EXPECT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "value1");
+    ExpectXStringEq(value, "value1");
     EXPECT_TRUE(arg.GetValue(1, value));
-    EXPECT_EQ(value, "value2");
+    ExpectXStringEq(value, "value2");
     EXPECT_TRUE(arg.GetValue(2, value));
-    EXPECT_EQ(value, "quoted value");
+    ExpectXStringEq(value, "quoted value");
     EXPECT_FALSE(arg.GetValue(3, value));
 }
 
 TEST(CmdlineArgTest, ReadsLongValues) {
-    std::string values[3] = {"123", "-456", "not_a_number"};
+    XString values[3] = {"123", "-456", "not_a_number"};
     CmdlineArg arg(values, 3);
 
     long value;
@@ -72,10 +76,10 @@ TEST(CmdlineArgTest, ReadsLongValues) {
 }
 
 TEST(CmdlineArgTest, RejectsNegativeIndexes) {
-    std::string values[3] = {"value1", "value2", "value3"};
+    XString values[3] = {"value1", "value2", "value3"};
     CmdlineArg arg(values, 3);
 
-    std::string stringValue;
+    XString stringValue;
     EXPECT_FALSE(arg.GetValue(-1, stringValue));
 
     long longValue;
@@ -108,19 +112,19 @@ TEST(CmdlineParserTest, ReadsShortAndLongOptions) {
     CmdlineParser parser(7, argv);
 
     CmdlineArg arg;
-    std::string value;
+    XString value;
 
     ASSERT_TRUE(parser.Next(arg, NULL, 'a', 1));
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "value1");
+    ExpectXStringEq(value, "value1");
 
     ASSERT_TRUE(parser.Next(arg, NULL, 'b', 1));
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "value2");
+    ExpectXStringEq(value, "value2");
 
     ASSERT_TRUE(parser.Next(arg, "--long", '\0', 1));
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "value3");
+    ExpectXStringEq(value, "value3");
 
     EXPECT_TRUE(parser.Done());
 }
@@ -135,13 +139,13 @@ TEST(CmdlineParserTest, ReadsJointedOptionValues) {
     CmdlineArg arg;
     ASSERT_TRUE(parser.Next(arg, "--option", '\0', 0));
 
-    std::string value;
+    XString value;
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "value1");
+    ExpectXStringEq(value, "value1");
     ASSERT_TRUE(arg.GetValue(1, value));
-    EXPECT_EQ(value, "value2");
+    ExpectXStringEq(value, "value2");
     ASSERT_TRUE(arg.GetValue(2, value));
-    EXPECT_EQ(value, "value3");
+    ExpectXStringEq(value, "value3");
 
     EXPECT_TRUE(parser.Done());
 }
@@ -162,9 +166,9 @@ TEST(CmdlineParserTest, SkipAdvancesArgumentCursor) {
     CmdlineArg arg;
     ASSERT_TRUE(parser.Next(arg, NULL, 'b', 1));
 
-    std::string value;
+    XString value;
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "value2");
+    ExpectXStringEq(value, "value2");
     EXPECT_TRUE(parser.Done());
 }
 
@@ -186,9 +190,9 @@ TEST(CmdlineParserTest, ResetReturnsToFirstArgument) {
     CmdlineArg arg;
     ASSERT_TRUE(parser.Next(arg, NULL, 'a', 1));
 
-    std::string value;
+    XString value;
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "value1");
+    ExpectXStringEq(value, "value1");
 }
 
 TEST(CmdlineParserTest, HandlesNoArguments) {
@@ -216,13 +220,13 @@ TEST(CmdlineParserTest, ReadsFixedValueCount) {
     ASSERT_TRUE(parser.Next(arg, NULL, 'm', 3));
     EXPECT_EQ(arg.GetSize(), 3);
 
-    std::string value;
+    XString value;
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "val1");
+    ExpectXStringEq(value, "val1");
     ASSERT_TRUE(arg.GetValue(1, value));
-    EXPECT_EQ(value, "val2");
+    ExpectXStringEq(value, "val2");
     ASSERT_TRUE(arg.GetValue(2, value));
-    EXPECT_EQ(value, "val3");
+    ExpectXStringEq(value, "val3");
     EXPECT_FALSE(parser.Done());
 }
 
@@ -241,13 +245,13 @@ TEST(CmdlineParserTest, ReadsUnlimitedValuesUntilNextOption) {
     ASSERT_TRUE(parser.Next(arg, NULL, 'm', -1));
     EXPECT_EQ(arg.GetSize(), 3);
 
-    std::string value;
+    XString value;
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "val1");
+    ExpectXStringEq(value, "val1");
     ASSERT_TRUE(arg.GetValue(1, value));
-    EXPECT_EQ(value, "val2");
+    ExpectXStringEq(value, "val2");
     ASSERT_TRUE(arg.GetValue(2, value));
-    EXPECT_EQ(value, "val3");
+    ExpectXStringEq(value, "val3");
     EXPECT_FALSE(parser.Done());
 }
 
@@ -264,7 +268,7 @@ TEST(CmdlineParserTest, ReadsEmptyStringValues) {
     CmdlineArg arg;
     ASSERT_TRUE(parser.Next(arg, NULL, 'e', 1));
 
-    std::string value;
+    XString value;
     ASSERT_TRUE(arg.GetValue(0, value));
-    EXPECT_EQ(value, "");
+    ExpectXStringEq(value, "");
 }
