@@ -1160,7 +1160,7 @@ int CGamePlayer::ExecutePlayerCommand(InterfaceManager *manager, const TTPlayerC
         return 1;
 
     case TT_PLAYER_COMMAND_CMO_LOAD:
-        return OnLoadCMO(command.text) ? 1 : 0;
+        return OnLoadCMO(command.text.CStr()) ? 1 : 0;
 
     case TT_PLAYER_COMMAND_EXIT_TO_SYSTEM:
         OnExitToSystem();
