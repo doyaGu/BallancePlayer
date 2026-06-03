@@ -43,25 +43,10 @@ enum LogMode
   X_INT  ("Graphics", "BitsPerPixel",            bpp,                     PLAYER_DEFAULT_BPP, "--bpp",                                 'b') \
   X_INT  ("Graphics", "Width",                   width,                   PLAYER_DEFAULT_WIDTH, "--width",                              'w') \
   X_INT  ("Graphics", "Height",                  height,                  PLAYER_DEFAULT_HEIGHT, "--height",                            'h') \
-  X_INT  ("Graphics", "Antialias",               antialias,               0,                  "--antialias",                           '\0') \
-  X_INT  ("Graphics", "VertexCache",             vertexCache,             16,                 "--vertex-cache",                        '\0') \
   X_INT  ("Window",   "X",                       posX,                    2147483647,         "--position-x",                          'x') \
   X_INT  ("Window",   "Y",                       posY,                    2147483647,         "--position-y",                          'y') \
   X_INT  ("Game",     "Language",                langId,                  1,                  "--lang",                                'l') \
   X_BOOL ("Graphics", "FullScreen",              fullscreen,              false,              "--fullscreen",                          'f',  true) \
-  X_BOOL ("Graphics", "DisablePerspectiveCorrection", disablePerspectiveCorrection, false,     "--disable--perspective-correction",     '\0', true) \
-  X_BOOL ("Graphics", "ForceLinearFog",          forceLinearFog,          false,              "--force-linear-fog",                    '\0', true) \
-  X_BOOL ("Graphics", "ForceSoftware",           forceSoftware,           false,              "--force-software",                      '\0', true) \
-  X_BOOL ("Graphics", "DisableFilter",           disableFilter,           false,              "--disable-filter",                      '\0', true) \
-  X_BOOL ("Graphics", "EnsureVertexShader",      ensureVertexShader,      false,              "--ensure-vertex-shader",                '\0', true) \
-  X_BOOL ("Graphics", "UseIndexBuffers",         useIndexBuffers,         false,              "--use-index-buffers",                   '\0', true) \
-  X_BOOL ("Graphics", "DisableDithering",        disableDithering,        false,              "--disable-dithering",                   '\0', true) \
-  X_BOOL ("Graphics", "DisableMipmap",           disableMipmap,           false,              "--disable-mipmap",                      '\0', true) \
-  X_BOOL ("Graphics", "DisableSpecular",         disableSpecular,         false,              "--disable-specular",                    '\0', true) \
-  X_BOOL ("Graphics", "EnableScreenDump",        enableScreenDump,        false,              "--enable-screen-dump",                  '\0', true) \
-  X_BOOL ("Graphics", "EnableDebugMode",         enableDebugMode,         false,              "--enable-debug-mode",                   '\0', true) \
-  X_BOOL ("Graphics", "TextureCacheManagement",  textureCacheManagement,  true,               "--disable-texture-cache-management",    's',  false) \
-  X_BOOL ("Graphics", "SortTransparentObjects",  sortTransparentObjects,  true,               "--disable-sort-transparent-objects",    'o',  false) \
   X_BOOL ("Window",   "ChildWindowRendering",    childWindowRendering,    false,              "--child-window-rendering",              'C',  true) \
   X_BOOL ("Window",   "Borderless",              borderless,              false,              "--borderless",                          'c',  true) \
   X_BOOL ("Window",   "ClipCursor",              clipCursor,              false,              "--clip-cursor",                         '\0', true) \
@@ -72,9 +57,7 @@ enum LogMode
   X_BOOL ("Game",     "UnlockWidescreen",        unlockWidescreen,        false,              "--unlock-widescreen",                   '\0', true) \
   X_BOOL ("Game",     "UnlockHighResolution",    unlockHighResolution,    false,              "--unlock-high-resolution",              '\0', true) \
   X_BOOL ("Game",     "Debug",                   debug,                   false,              "--debug",                               'd',  true) \
-  X_BOOL ("Game",     "Rookie",                  rookie,                  false,              "--rookie",                              'r',  true) \
-  X_PF   ("Graphics", "TextureVideoFormat",      textureVideoFormat,      UNKNOWN_PF,         "--texture-video-format",                '\0') \
-  X_PF   ("Graphics", "SpriteVideoFormat",       spriteVideoFormat,       UNKNOWN_PF,         "--sprite-video-format",                 '\0')
+  X_BOOL ("Game",     "Rookie",                  rookie,                  false,              "--rookie",                              'r',  true)
 
 #define GAMECONFIG_PATH_FIELDS \
   X_PATH(eConfigPath,          "Player.ini",        "--config",               false) \
