@@ -67,25 +67,10 @@ TEST_F(GameConfigTest, DefaultConstructor) {
     EXPECT_EQ(config.bpp, PLAYER_DEFAULT_BPP);
     EXPECT_EQ(config.width, PLAYER_DEFAULT_WIDTH);
     EXPECT_EQ(config.height, PLAYER_DEFAULT_HEIGHT);
-    EXPECT_EQ(config.antialias, 0);
-    EXPECT_EQ(config.vertexCache, 16);
     EXPECT_EQ(config.posX, 2147483647);
     EXPECT_EQ(config.posY, 2147483647);
     EXPECT_EQ(config.langId, 1);
     EXPECT_FALSE(config.fullscreen);
-    EXPECT_FALSE(config.disablePerspectiveCorrection);
-    EXPECT_FALSE(config.forceLinearFog);
-    EXPECT_FALSE(config.forceSoftware);
-    EXPECT_FALSE(config.disableFilter);
-    EXPECT_FALSE(config.ensureVertexShader);
-    EXPECT_FALSE(config.useIndexBuffers);
-    EXPECT_FALSE(config.disableDithering);
-    EXPECT_FALSE(config.disableMipmap);
-    EXPECT_FALSE(config.disableSpecular);
-    EXPECT_FALSE(config.enableScreenDump);
-    EXPECT_FALSE(config.enableDebugMode);
-    EXPECT_TRUE(config.textureCacheManagement);
-    EXPECT_TRUE(config.sortTransparentObjects);
     EXPECT_FALSE(config.childWindowRendering);
     EXPECT_FALSE(config.borderless);
     EXPECT_FALSE(config.clipCursor);
@@ -95,8 +80,6 @@ TEST_F(GameConfigTest, DefaultConstructor) {
     EXPECT_FALSE(config.unlockFramerate);
     EXPECT_FALSE(config.unlockWidescreen);
     EXPECT_FALSE(config.unlockHighResolution);
-    EXPECT_EQ(config.textureVideoFormat, UNKNOWN_PF);
-    EXPECT_EQ(config.spriteVideoFormat, UNKNOWN_PF);
     
     // Test non-INI members
     EXPECT_EQ(config.screenMode, -1);
@@ -115,7 +98,6 @@ TEST_F(GameConfigTest, AssignmentOperator) {
     config1.width = 1920;
     config1.height = 1080;
     config1.fullscreen = true;
-    config1.antialias = 4;
     config1.screenMode = 2;
     config1.debug = true;
     config1.SetPath(eConfigPath, "custom_config.ini");
@@ -128,7 +110,6 @@ TEST_F(GameConfigTest, AssignmentOperator) {
     EXPECT_EQ(config2.width, 1920);
     EXPECT_EQ(config2.height, 1080);
     EXPECT_TRUE(config2.fullscreen);
-    EXPECT_EQ(config2.antialias, 4);
     EXPECT_EQ(config2.screenMode, 2);
     EXPECT_TRUE(config2.debug);
     EXPECT_STREQ(config2.GetPath(eConfigPath), "custom_config.ini");
@@ -197,12 +178,6 @@ BitsPerPixel=32
 Width=1920
 Height=1080
 FullScreen=1
-Antialias=4
-VertexCache=32
-DisablePerspectiveCorrection=1
-ForceLinearFog=1
-TextureVideoFormat=565
-SpriteVideoFormat=1555
 
 [Window]
 X=100
@@ -230,10 +205,6 @@ UnlockFramerate=1
     EXPECT_EQ(config.width, 1920);
     EXPECT_EQ(config.height, 1080);
     EXPECT_TRUE(config.fullscreen);
-    EXPECT_EQ(config.antialias, 4);
-    EXPECT_EQ(config.vertexCache, 32);
-    EXPECT_TRUE(config.disablePerspectiveCorrection);
-    EXPECT_TRUE(config.forceLinearFog);
     EXPECT_EQ(config.posX, 100);
     EXPECT_EQ(config.posY, 200);
     EXPECT_TRUE(config.borderless);
@@ -242,8 +213,6 @@ UnlockFramerate=1
     EXPECT_TRUE(config.skipOpening);
     EXPECT_TRUE(config.unlockFramerate);
     
-    // Test values not in INI keep defaults
-    EXPECT_FALSE(config.forceSoftware);
     EXPECT_EQ(config.driver, 2); // This was set
 }
 
@@ -291,7 +260,6 @@ TEST_F(GameConfigTest, SaveToIni) {
     config.width = 1600;
     config.height = 900;
     config.fullscreen = true;
-    config.antialias = 2;
     config.posX = 50;
     config.posY = 75;
     config.langId = 3;
@@ -322,7 +290,6 @@ TEST_F(GameConfigTest, SaveToIni) {
     EXPECT_EQ(config2.width, 1600);
     EXPECT_EQ(config2.height, 900);
     EXPECT_TRUE(config2.fullscreen);
-    EXPECT_EQ(config2.antialias, 2);
     EXPECT_EQ(config2.posX, 50);
     EXPECT_EQ(config2.posY, 75);
     EXPECT_EQ(config2.langId, 3);
@@ -501,8 +468,6 @@ Verbose=1
 [Graphics]
 Driver=1
 BitsPerPixel=16
-TextureVideoFormat=565
-SpriteVideoFormat=1555
 FullScreen=1
 )";
     
@@ -517,7 +482,6 @@ FullScreen=1
     EXPECT_EQ(config.driver, 1);         // X_INT
     EXPECT_EQ(config.bpp, 16);          // X_INT
     EXPECT_TRUE(config.fullscreen);      // X_BOOL
-    // X_PF types would need actual VX_PIXELFORMAT values to test properly
 }
 
 // Test empty INI file
@@ -560,7 +524,6 @@ BitsPerPixel=32
 Width=1920
 Height=1080
 FullScreen=1
-Antialias=4
 )";
     
     CreateTestIni(iniContent);
@@ -642,8 +605,6 @@ TEST_F(GameConfigTest, XMacroExpansion) {
     config.bpp = 32;
     config.width = 1920;
     config.height = 1080;
-    config.antialias = 4;
-    config.vertexCache = 16;
     config.posX = 100;
     config.posY = 200;
     config.langId = 1;
@@ -652,19 +613,6 @@ TEST_F(GameConfigTest, XMacroExpansion) {
     config.verbose = true;
     config.manualSetup = false;
     config.fullscreen = true;
-    config.disablePerspectiveCorrection = false;
-    config.forceLinearFog = true;
-    config.forceSoftware = false;
-    config.disableFilter = true;
-    config.ensureVertexShader = false;
-    config.useIndexBuffers = true;
-    config.disableDithering = false;
-    config.disableMipmap = true;
-    config.disableSpecular = false;
-    config.enableScreenDump = true;
-    config.enableDebugMode = false;
-    config.textureCacheManagement = true;
-    config.sortTransparentObjects = false;
     config.childWindowRendering = true;
     config.borderless = false;
     config.clipCursor = true;
@@ -674,10 +622,6 @@ TEST_F(GameConfigTest, XMacroExpansion) {
     config.unlockFramerate = true;
     config.unlockWidescreen = false;
     config.unlockHighResolution = true;
-    
-    // Test PF fields
-    config.textureVideoFormat = UNKNOWN_PF;
-    config.spriteVideoFormat = UNKNOWN_PF;
     
     // If we get here without compilation errors, the X-macro expansion worked
     SUCCEED();

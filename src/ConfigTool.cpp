@@ -54,13 +54,7 @@ const ControlTextMapping g_TextMappings[] = {
     {IDC_GROUP_STARTUP, IDS_GROUP_STARTUP}, {IDC_GROUP_GRAPHICS, IDS_GROUP_GRAPHICS},
     {IDC_GROUP_WINDOW, IDS_GROUP_WINDOW}, {IDC_GROUP_GAME, IDS_GROUP_GAME}, {IDC_GROUP_INTERFACE, IDS_GROUP_INTERFACE},
     {IDC_CHECK_VERBOSE, IDS_VERBOSE}, {IDC_CHECK_MANUALSETUP, IDS_MANUAL_SETUP}, {IDC_CHECK_FULLSCREEN, IDS_FULLSCREEN},
-    {IDC_CHECK_DISPERSPCORRECT, IDS_DISABLE_PERSP_CORRECT}, {IDC_CHECK_FORCELINEARFOG, IDS_FORCE_LINEAR_FOG},
-    {IDC_CHECK_FORCESOFTWARE, IDS_FORCE_SOFTWARE}, {IDC_CHECK_DISABLEFILTER, IDS_DISABLE_FILTER},
-    {IDC_CHECK_ENSUREVS, IDS_ENSURE_VS}, {IDC_CHECK_USEINDEXBUFFERS, IDS_USE_INDEX_BUFFERS},
-    {IDC_CHECK_DISABLEDITHER, IDS_DISABLE_DITHER}, {IDC_CHECK_DISABLEMIPMAP, IDS_DISABLE_MIPMAP},
-    {IDC_CHECK_DISABLESPECULAR, IDS_DISABLE_SPECULAR}, {IDC_CHECK_ENABLESCREENDUMP, IDS_ENABLE_SCREEN_DUMP},
-    {IDC_CHECK_ENABLEDEBUGMODE_GFX, IDS_ENABLE_DEBUG_GFX}, {IDC_CHECK_TEXCACHEMGMT, IDS_TEXTURE_CACHE_MGMT},
-    {IDC_CHECK_SORTTRANSPARENT, IDS_SORT_TRANSPARENT}, {IDC_CHECK_CHILDWINRENDER, IDS_CHILD_WINDOW_RENDER},
+    {IDC_CHECK_CHILDWINRENDER, IDS_CHILD_WINDOW_RENDER},
     {IDC_CHECK_BORDERLESS, IDS_BORDERLESS}, {IDC_CHECK_CLIPCURSOR, IDS_CLIP_CURSOR},
     {IDC_CHECK_ALWAYSHANDLEINPUT, IDS_ALWAYS_HANDLE_INPUT}, {IDC_CHECK_SKIPOPENING, IDS_SKIP_OPENING},
     {IDC_CHECK_APPLYHOTFIX, IDS_APPLY_HOTFIX}, {IDC_CHECK_UNLOCKFRAMERATE, IDS_UNLOCK_FRAMERATE},
@@ -75,8 +69,7 @@ typedef struct
 } LabelTextMapping;
 
 static const LabelTextMapping g_LabelMappings[] = {
-    {IDS_LOG_MODE}, {IDS_DRIVER_ID}, {IDS_BPP}, {IDS_WIDTH}, {IDS_HEIGHT}, {IDS_ANTIALIAS},
-    {IDS_VERTEX_CACHE}, {IDS_TEXTURE_VIDEO_FORMAT}, {IDS_SPRITE_VIDEO_FORMAT}, {IDS_POSITION_X},
+    {IDS_LOG_MODE}, {IDS_DRIVER_ID}, {IDS_BPP}, {IDS_WIDTH}, {IDS_HEIGHT}, {IDS_POSITION_X},
     {IDS_POSITION_Y}, {IDS_LANGUAGE}, {IDS_UI_LANGUAGE},
     {0} // Terminator
 };
@@ -88,44 +81,10 @@ typedef struct
 } LabelPosition;
 
 static const LabelPosition g_LabelPositions[] = {
-    {14, 20}, {235, 20}, {330, 20}, {235, 36}, {330, 36}, {235, 158}, {235, 227},
-    {235, 270}, {235, 286}, {14, 172}, {115, 172}, {14, 216}, {14, 350},
+    {14, 20}, {235, 20}, {330, 20}, {235, 36}, {330, 36}, {14, 172}, {115, 172},
+    {14, 216}, {14, 350},
     {0, 0} // Terminator
 };
-
-static const VX_PIXELFORMAT g_PixelFormatOptions[] = {
-    UNKNOWN_PF,
-    _32_ARGB8888,
-    _32_RGB888,
-    _24_RGB888,
-    _16_RGB565,
-    _16_RGB555,
-    _16_ARGB1555,
-    _16_ARGB4444,
-    _8_RGB332,
-    _8_ARGB2222,
-    _32_ABGR8888,
-    _32_RGBA8888,
-    _32_BGRA8888,
-    _32_BGR888,
-    _24_BGR888,
-    _16_BGR565,
-    _16_BGR555,
-    _16_ABGR1555,
-    _16_ABGR4444,
-    _DXT1,
-    _DXT2,
-    _DXT3,
-    _DXT4,
-    _DXT5,
-    _16_V8U8,
-    _32_V16U16,
-    _16_L6V5U5,
-    _32_X8L8V8U8
-};
-
-static void PopulatePixelFormatCombo(HWND hDlg, int ctrlID);
-static void SetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT value);
 
 // StringResource Implementation
 
@@ -351,11 +310,6 @@ static void UpdateDialogLanguage(HWND hDlg)
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_CHINESE));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_SETCURSEL, currentLang, 0);
 
-    // Pixel format combos show canonical names only. INI aliases like 565 remain readable,
-    // but the dialog normalizes them to names such as _16_RGB565.
-    PopulatePixelFormatCombo(hDlg, IDC_EDIT_TEXVIDFORMAT);
-    PopulatePixelFormatCombo(hDlg, IDC_EDIT_SPRVIDFORMAT);
-
     // Update static text labels (LTEXT) using position matching
     HWND hwndChild = ::GetWindow(hDlg, GW_CHILD);
     while (hwndChild)
@@ -514,64 +468,6 @@ static void SetConfigBoolControl(HWND hDlg, int ctrlID, bool value)
 static bool GetConfigBoolControl(HWND hDlg, int ctrlID)
 {
     return ::SendDlgItemMessage(hDlg, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED;
-}
-
-static void AddPixelFormatComboString(HWND hDlg, int ctrlID, VX_PIXELFORMAT value)
-{
-    const char *format = utils::PixelFormat2String(value);
-    TCHAR buffer[32];
-#ifdef UNICODE
-    utils::CharToWchar(format, buffer, 32);
-#else
-    strcpy(buffer, format);
-#endif
-    int index = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_ADDSTRING, 0, (LPARAM)buffer);
-    if (index != CB_ERR && index != CB_ERRSPACE)
-        ::SendDlgItemMessage(hDlg, ctrlID, CB_SETITEMDATA, index, (LPARAM)value);
-}
-
-static VX_PIXELFORMAT GetSelectedPixelFormat(HWND hDlg, int ctrlID, VX_PIXELFORMAT fallback)
-{
-    int sel = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCURSEL, 0, 0);
-    if (sel == CB_ERR)
-        return fallback;
-
-    LRESULT itemData = ::SendDlgItemMessage(hDlg, ctrlID, CB_GETITEMDATA, sel, 0);
-    if (itemData == CB_ERR)
-        return fallback;
-
-    return (VX_PIXELFORMAT)itemData;
-}
-
-static void PopulatePixelFormatCombo(HWND hDlg, int ctrlID)
-{
-    VX_PIXELFORMAT selected = GetSelectedPixelFormat(hDlg, ctrlID, UNKNOWN_PF);
-    ::SendDlgItemMessage(hDlg, ctrlID, CB_RESETCONTENT, 0, 0);
-
-    const int count = sizeof(g_PixelFormatOptions) / sizeof(g_PixelFormatOptions[0]);
-    for (int i = 0; i < count; ++i)
-        AddPixelFormatComboString(hDlg, ctrlID, g_PixelFormatOptions[i]);
-
-    SetConfigPixelFormatControl(hDlg, ctrlID, selected);
-}
-
-static void SetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT value)
-{
-    const int count = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCOUNT, 0, 0);
-    for (int i = 0; i < count; ++i)
-    {
-        if ((VX_PIXELFORMAT)::SendDlgItemMessage(hDlg, ctrlID, CB_GETITEMDATA, i, 0) == value)
-        {
-            ::SendDlgItemMessage(hDlg, ctrlID, CB_SETCURSEL, i, 0);
-            return;
-        }
-    }
-    ::SendDlgItemMessage(hDlg, ctrlID, CB_SETCURSEL, 0, 0);
-}
-
-static VX_PIXELFORMAT GetConfigPixelFormatControl(HWND hDlg, int ctrlID, VX_PIXELFORMAT fallback)
-{
-    return GetSelectedPixelFormat(hDlg, ctrlID, fallback);
 }
 
 static void LoadConfigToDialog(HWND hDlg, const CGameConfig &config)

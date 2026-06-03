@@ -31,7 +31,7 @@ const PathOptionCase kPathOptionCases[] = {
 }
 
 TEST(PlayerOptionsTest, AppliesConfigOptionsFromLongAndShortOptions) {
-    CmdlineParser parser("--verbose --width=800 --height 600 --disable-sort-transparent-objects -C");
+    CmdlineParser parser("--verbose --width=800 --height 600 --clip-cursor -C");
     CGameConfig config;
 
     playeroptions::ApplyConfigOptions(config, parser);
@@ -39,7 +39,7 @@ TEST(PlayerOptionsTest, AppliesConfigOptionsFromLongAndShortOptions) {
     EXPECT_TRUE(config.verbose);
     EXPECT_EQ(config.width, 800);
     EXPECT_EQ(config.height, 600);
-    EXPECT_FALSE(config.sortTransparentObjects);
+    EXPECT_TRUE(config.clipCursor);
     EXPECT_TRUE(config.childWindowRendering);
 }
 
@@ -261,7 +261,7 @@ TEST(PlayerOptionsTest, ExplicitDependentPathOverridesRootPathDerivedPath) {
 TEST(PlayerOptionsTest, ExposesMetadataForConfigAndPathOptions) {
     EXPECT_GT(playeroptions::GetConfigOptionCount(), 20);
     EXPECT_GT(playeroptions::GetPathOptionCount(), 5);
-    EXPECT_TRUE(playeroptions::HasConfigOption("--disable-sort-transparent-objects", 'o'));
+    EXPECT_TRUE(playeroptions::HasConfigOption("--clip-cursor", '\0'));
     EXPECT_TRUE(playeroptions::HasConfigOption("--child-window-rendering", 'C'));
     EXPECT_FALSE(playeroptions::HasConfigOption("--child-window-rendering", 's'));
     EXPECT_TRUE(playeroptions::HasPathOption("--log"));

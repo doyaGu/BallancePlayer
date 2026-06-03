@@ -16,7 +16,7 @@ static void Check(const char *name, bool passed)
 
 static void TestConfigOptions()
 {
-    CmdlineParser parser("--log=vc6-test.log --verbose --width=800 --height 600 --disable-sort-transparent-objects -C --position-x -25");
+    CmdlineParser parser("--log=vc6-test.log --verbose --width=800 --height 600 --clip-cursor -C --position-x -25");
     CGameConfig config;
 
     playeroptions::ApplyPathOptions(config, parser);
@@ -26,7 +26,7 @@ static void TestConfigOptions()
     Check("VC6 verbose", config.verbose);
     Check("VC6 width", config.width == 800);
     Check("VC6 height", config.height == 600);
-    Check("VC6 new sort short option", !config.sortTransparentObjects);
+    Check("VC6 clip cursor", config.clipCursor);
     Check("VC6 new child short option", config.childWindowRendering);
     Check("VC6 negative value", config.posX == -25);
 }

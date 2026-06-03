@@ -54,7 +54,7 @@ BEGIN
                     BS_AUTOCHECKBOX | WS_TABSTOP,14,35,198,10
     CONTROL         "Manual Setup Dialog on Start",IDC_CHECK_MANUALSETUP,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,48,198,10
-    GROUPBOX        "Graphics",IDC_GROUP_GRAPHICS,228,5,215,320
+    GROUPBOX        "Graphics",IDC_GROUP_GRAPHICS,228,5,215,60
     LTEXT           "Driver ID:",IDC_STATIC,235,20,40,8
     EDITTEXT        IDC_CONFIG_EDIT_DRIVER,280,18,40,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "BPP:",IDC_STATIC,330,20,20,8
@@ -66,47 +66,6 @@ BEGIN
     EDITTEXT        IDC_EDIT_HEIGHT,375,34,60,12,ES_AUTOHSCROLL | ES_NUMBER
     CONTROL         "Fullscreen",IDC_CHECK_FULLSCREEN,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,235,52,198,10
-    CONTROL         "Disable Perspective Correction",
-                    IDC_CHECK_DISPERSPCORRECT,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,235,65,198,10
-    CONTROL         "Force Linear Fog",IDC_CHECK_FORCELINEARFOG,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,235,78,198,10
-    CONTROL         "Force Software Rendering",IDC_CHECK_FORCESOFTWARE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,235,91,198,10
-    CONTROL         "Disable Texture Filtering",IDC_CHECK_DISABLEFILTER,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,235,104,198,10
-    CONTROL         "Ensure Vertex Shader Support",IDC_CHECK_ENSUREVS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,235,117,198,10
-    CONTROL         "Use Index Buffers",IDC_CHECK_USEINDEXBUFFERS,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,235,130,198,10
-    CONTROL         "Disable Dithering",IDC_CHECK_DISABLEDITHER,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,235,143,198,10
-    LTEXT           "Antialias Level:",IDC_STATIC,235,158,60,8
-    EDITTEXT        IDC_EDIT_ANTIALIAS,300,156,40,12,ES_AUTOHSCROLL |
-                    ES_NUMBER
-    CONTROL         "Disable Mipmaps",IDC_CHECK_DISABLEMIPMAP,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,235,173,198,10
-    CONTROL         "Disable Specular Highlights",IDC_CHECK_DISABLESPECULAR,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,235,186,198,10
-    CONTROL         "Enable Screen Dump (Ctrl+Alt+F10)",
-                    IDC_CHECK_ENABLESCREENDUMP,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,235,199,198,10
-    CONTROL         "Enable Graphics Debug (Ctrl+Alt+F11)",
-                    IDC_CHECK_ENABLEDEBUGMODE_GFX,"Button",BS_AUTOCHECKBOX |
-                    WS_TABSTOP,235,212,198,10
-    LTEXT           "Vertex Cache Size:",IDC_STATIC,235,227,70,8
-    EDITTEXT        IDC_EDIT_VERTEXCACHE,310,225,40,12,ES_AUTOHSCROLL |
-                    ES_NUMBER
-    CONTROL         "Texture Cache Management",IDC_CHECK_TEXCACHEMGMT,"Button",
-                    BS_AUTOCHECKBOX | WS_TABSTOP,235,242,198,10
-    CONTROL         "Sort Transparent Objects",IDC_CHECK_SORTTRANSPARENT,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,235,255,198,10
-    LTEXT           "Texture Video Format:",IDC_STATIC,235,270,85,8
-    COMBOBOX        IDC_EDIT_TEXVIDFORMAT,325,268,110,90,CBS_DROPDOWNLIST |
-                    WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Sprite Video Format:",IDC_STATIC,235,286,85,8
-    COMBOBOX        IDC_EDIT_SPRVIDFORMAT,325,284,110,90,CBS_DROPDOWNLIST |
-                    WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "Window",IDC_GROUP_WINDOW,7,70,215,85
     CONTROL         "Render in Child Window",IDC_CHECK_CHILDWINRENDER,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,14,85,198,10
@@ -184,27 +143,6 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    IDS_DISABLE_PERSP_CORRECT "Disable Perspective Correction"
-    IDS_FORCE_LINEAR_FOG    "Force Linear Fog"
-    IDS_FORCE_SOFTWARE      "Force Software Rendering"
-    IDS_DISABLE_FILTER      "Disable Texture Filtering"
-    IDS_ENSURE_VS           "Ensure Vertex Shader Support"
-    IDS_USE_INDEX_BUFFERS   "Use Index Buffers"
-    IDS_DISABLE_DITHER      "Disable Dithering"
-    IDS_ANTIALIAS           "Antialias Level:"
-    IDS_DISABLE_MIPMAP      "Disable Mipmaps"
-    IDS_DISABLE_SPECULAR    "Disable Specular Highlights"
-    IDS_ENABLE_SCREEN_DUMP  "Enable Screen Dump (Ctrl+Alt+F10)"
-    IDS_ENABLE_DEBUG_GFX    "Enable Graphics Debug (Ctrl+Alt+F11)"
-    IDS_VERTEX_CACHE        "Vertex Cache Size:"
-    IDS_TEXTURE_CACHE_MGMT  "Texture Cache Management"
-    IDS_SORT_TRANSPARENT    "Sort Transparent Objects"
-    IDS_TEXTURE_VIDEO_FORMAT "Texture Video Format:"
-END
-
-STRINGTABLE DISCARDABLE
-BEGIN
-    IDS_SPRITE_VIDEO_FORMAT "Sprite Video Format:"
     IDS_CHILD_WINDOW_RENDER "Render in Child Window"
     IDS_BORDERLESS          "Borderless Window"
     IDS_CLIP_CURSOR         "Clip Cursor to Window"
@@ -266,27 +204,10 @@ BEGIN
     IDS_CN_WIDTH            "宽度:"
     IDS_CN_HEIGHT           "高度:"
     IDS_CN_FULLSCREEN       "全屏模式"
-    IDS_CN_DISABLE_PERSP_CORRECT "禁用透视校正"
-    IDS_CN_FORCE_LINEAR_FOG "强制线性雾效"
-    IDS_CN_FORCE_SOFTWARE   "强制软件渲染"
-    IDS_CN_DISABLE_FILTER   "禁用纹理过滤"
-    IDS_CN_ENSURE_VS        "确保顶点着色器支持"
-    IDS_CN_USE_INDEX_BUFFERS "使用索引缓冲区"
-    IDS_CN_DISABLE_DITHER   "禁用抖动"
-    IDS_CN_ANTIALIAS        "抗锯齿级别:"
 END
 
 STRINGTABLE DISCARDABLE
 BEGIN
-    IDS_CN_DISABLE_MIPMAP   "禁用多级纹理"
-    IDS_CN_DISABLE_SPECULAR "禁用镜面高光"
-    IDS_CN_ENABLE_SCREEN_DUMP "启用屏幕转储 (Ctrl+Alt+F10)"
-    IDS_CN_ENABLE_DEBUG_GFX "启用图形调试 (Ctrl+Alt+F11)"
-    IDS_CN_VERTEX_CACHE     "顶点缓存大小:"
-    IDS_CN_TEXTURE_CACHE_MGMT "纹理缓存管理"
-    IDS_CN_SORT_TRANSPARENT "排序透明对象"
-    IDS_CN_TEXTURE_VIDEO_FORMAT "纹理视频格式:"
-    IDS_CN_SPRITE_VIDEO_FORMAT "精灵视频格式:"
     IDS_CN_CHILD_WINDOW_RENDER "在子窗口中渲染"
     IDS_CN_BORDERLESS       "无边框窗口"
     IDS_CN_CLIP_CURSOR      "限制鼠标在窗口内"
