@@ -60,29 +60,10 @@ const ControlTextMapping g_TextMappings[] = {
     {IDC_CHECK_APPLYHOTFIX, IDS_APPLY_HOTFIX}, {IDC_CHECK_UNLOCKFRAMERATE, IDS_UNLOCK_FRAMERATE},
     {IDC_CHECK_UNLOCKWIDESCREEN, IDS_UNLOCK_WIDESCREEN}, {IDC_CHECK_UNLOCKHIGHRES, IDS_UNLOCK_HIGHRES},
     {IDC_CHECK_DEBUG, IDS_DEBUG}, {IDC_CHECK_ROOKIE, IDS_ROOKIE},
-    {0, 0} // Terminator
-};
-
-typedef struct
-{
-    UINT strID;
-} LabelTextMapping;
-
-static const LabelTextMapping g_LabelMappings[] = {
-    {IDS_LOG_MODE}, {IDS_DRIVER_ID}, {IDS_BPP}, {IDS_WIDTH}, {IDS_HEIGHT}, {IDS_POSITION_X},
-    {IDS_POSITION_Y}, {IDS_LANGUAGE}, {IDS_UI_LANGUAGE},
-    {0} // Terminator
-};
-
-typedef struct
-{
-    int left;
-    int top;
-} LabelPosition;
-
-static const LabelPosition g_LabelPositions[] = {
-    {14, 20}, {235, 20}, {330, 20}, {235, 36}, {330, 36}, {14, 172}, {115, 172},
-    {14, 216}, {14, 350},
+    {IDC_LABEL_LOGMODE, IDS_LOG_MODE}, {IDC_LABEL_DRIVER, IDS_DRIVER_ID}, {IDC_LABEL_BPP, IDS_BPP},
+    {IDC_LABEL_WIDTH, IDS_WIDTH}, {IDC_LABEL_HEIGHT, IDS_HEIGHT}, {IDC_LABEL_POSX, IDS_POSITION_X},
+    {IDC_LABEL_POSY, IDS_POSITION_Y}, {IDC_LABEL_GAME_LANGUAGE, IDS_LANGUAGE},
+    {IDC_LABEL_UI_LANGUAGE, IDS_UI_LANGUAGE},
     {0, 0} // Terminator
 };
 
@@ -309,62 +290,6 @@ static void UpdateDialogLanguage(HWND hDlg)
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_ENGLISH));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_CHINESE));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_SETCURSEL, currentLang, 0);
-
-    // Update static text labels (LTEXT) using position matching
-    HWND hwndChild = ::GetWindow(hDlg, GW_CHILD);
-    while (hwndChild)
-    {
-        TCHAR className[32];
-        if (::GetClassName(hwndChild, className, sizeof(className) / sizeof(TCHAR)) && _tcscmp(className, TEXT("Static")) == 0)
-        {
-            DWORD ctrlId = ::GetDlgCtrlID(hwndChild);
-            bool isHandledByMapping = false;
-            for (int i = 0; g_TextMappings[i].ctrlID != 0; i++)
-            {
-                if (g_TextMappings[i].ctrlID == (int)ctrlId)
-                {
-                    isHandledByMapping = true;
-                    break;
-                }
-            }
-
-            // If it's an LTEXT label (unmapped Static control, not IDC_STATIC=-1), match by position
-            if (!isHandledByMapping && ctrlId == (DWORD)-1)
-            {
-                // Get the control's position in pixels relative to the dialog client area
-                RECT controlPixelRect;
-                ::GetWindowRect(hwndChild, &controlPixelRect);
-                ::MapWindowPoints(NULL, hDlg, (POINT *)&controlPixelRect, 2);
-
-                // Iterate through known DLU positions and convert each to pixels for comparison
-                for (int i = 0; g_LabelMappings[i].strID != 0; i++)
-                {
-                    // Create a RECT using the stored DLU coordinates from g_LabelPositions
-                    RECT labelDluRect;
-                    labelDluRect.left = g_LabelPositions[i].left;
-                    labelDluRect.top = g_LabelPositions[i].top;
-                    labelDluRect.right = g_LabelPositions[i].left + 1; // Minimal width DLU
-                    labelDluRect.bottom = g_LabelPositions[i].top + 1; // Minimal height DLU
-
-                    // Convert this DLU rect to pixel coordinates relative to the dialog
-                    RECT labelPixelRect = labelDluRect; // Copy structure
-                    if (::MapDialogRect(hDlg, &labelPixelRect))
-                    {
-                        // Conversion successful. Compare the TOP-LEFT pixel coordinates
-                        const int POSITION_TOLERANCE = 10;
-                        if (abs(controlPixelRect.left - labelPixelRect.left) <= POSITION_TOLERANCE &&
-                            abs(controlPixelRect.top - labelPixelRect.top) <= POSITION_TOLERANCE)
-                        {
-                            // Pixel positions match! Update the text
-                            ::SetWindowText(hwndChild, StringResource::GetString(g_LabelMappings[i].strID));
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        hwndChild = ::GetWindow(hwndChild, GW_HWNDNEXT);
-    }
 
     // Force redraw
     ::InvalidateRect(hDlg, NULL, TRUE);

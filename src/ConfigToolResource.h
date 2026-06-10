@@ -143,6 +143,15 @@
 #define IDC_GROUP_GAME                  2404
 #define IDC_GROUP_INTERFACE             2500
 #define IDC_COMBO_LANGUAGE              2501
+#define IDC_LABEL_LOGMODE               2601
+#define IDC_LABEL_DRIVER                2602
+#define IDC_LABEL_BPP                   2603
+#define IDC_LABEL_WIDTH                 2604
+#define IDC_LABEL_HEIGHT                2605
+#define IDC_LABEL_POSX                  2606
+#define IDC_LABEL_POSY                  2607
+#define IDC_LABEL_GAME_LANGUAGE         2608
+#define IDC_LABEL_UI_LANGUAGE           2609
 
 // Config dialog controls mapped by CGameConfig member name.
 #define IDC_CONFIG_logMode              IDC_COMBO_LOGMODE
