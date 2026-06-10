@@ -9,6 +9,10 @@
 #include "ConfigToolResource.h"
 #include "Utils.h"
 
+#ifndef TTF_TRANSPARENT
+#define TTF_TRANSPARENT 0x0100
+#endif
+
 // String Resource Management
 
 typedef enum
@@ -258,7 +262,7 @@ static bool BuildToolInfo(HWND hDlg, int index, TOOLINFO *toolInfo)
 
     ZeroMemory(toolInfo, sizeof(*toolInfo));
     toolInfo->cbSize = sizeof(*toolInfo);
-    toolInfo->uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+    toolInfo->uFlags = TTF_IDISHWND | TTF_SUBCLASS | TTF_TRANSPARENT;
     toolInfo->hwnd = hDlg;
     toolInfo->uId = (UINT)hwndCtrl;
     toolInfo->lpszText = g_ToolTipTexts[index];
