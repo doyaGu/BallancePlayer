@@ -45,8 +45,10 @@ static HWND g_hTooltip = NULL;
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
 typedef BOOL PLAYER_DIALOG_RESULT;
+typedef UINT TOOLINFO_ID;
 #else
 typedef INT_PTR PLAYER_DIALOG_RESULT;
+typedef UINT_PTR TOOLINFO_ID;
 #endif
 
 typedef struct
@@ -264,7 +266,7 @@ static bool BuildToolInfo(HWND hDlg, int index, TOOLINFO *toolInfo)
     toolInfo->cbSize = sizeof(*toolInfo);
     toolInfo->uFlags = TTF_IDISHWND | TTF_SUBCLASS | TTF_TRANSPARENT;
     toolInfo->hwnd = hDlg;
-    toolInfo->uId = (UINT)hwndCtrl;
+    toolInfo->uId = (TOOLINFO_ID)hwndCtrl;
     toolInfo->lpszText = g_ToolTipTexts[index];
     return true;
 }
@@ -656,7 +658,6 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
                 SaveDialogToConfig(hDlg, *pConfig); // Save UI state to config object
                 if (!SaveDialogConfig(hDlg, *pConfig))
                     return TRUE; // Keep dialog open so the user can retry or cancel
-                CleanupFonts();
                 ::EndDialog(hDlg, IDOK);
             }
             else
@@ -669,7 +670,6 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
             return TRUE; // Handled
 
         case IDCANCEL:
-            CleanupFonts();
             ::EndDialog(hDlg, IDCANCEL);
             return TRUE; // Handled
 
@@ -706,7 +706,6 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
     break; // End of WM_COMMAND
 
     case WM_CLOSE:
-        CleanupFonts();
         ::EndDialog(hDlg, IDCANCEL); // Treat close as Cancel
         return TRUE;                 // Handled
 
