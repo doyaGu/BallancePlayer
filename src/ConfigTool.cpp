@@ -2,6 +2,7 @@
 
 #include <commctrl.h>
 #include <string>
+#include <string.h>
 #include <tchar.h>
 
 #include "CmdlineParser.h"
@@ -24,8 +25,8 @@ typedef enum
 
 enum
 {
-    kStringResourceBufferCount = 8,
-    kStringResourceBufferLength = 4096
+    STRING_RESOURCE_BUFFER_COUNT = 8,
+    STRING_RESOURCE_BUFFER_LENGTH = 4096
 };
 
 class StringResource
@@ -40,14 +41,14 @@ public:
 private:
     static HINSTANCE m_hInstance;
     static UILanguage m_CurrentLanguage;
-    static TCHAR m_Buffers[kStringResourceBufferCount][kStringResourceBufferLength];
+    static TCHAR m_Buffers[STRING_RESOURCE_BUFFER_COUNT][STRING_RESOURCE_BUFFER_LENGTH];
     static int m_BufferIndex;
 
     static UINT MapToLanguageID(UINT resourceID);
 };
 
 static HFONT g_hFonts[LANG_UI_COUNT] = {NULL};
-static const int kChineseUIFontHeight = -14;
+static const int CHINESE_UI_FONT_HEIGHT = -14;
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
 typedef BOOL PLAYER_DIALOG_RESULT;
@@ -99,21 +100,21 @@ static const ControlTextMapping g_ToolTipMappings[] = {
 
 enum
 {
-    kToolTipCount = (sizeof(g_ToolTipMappings) / sizeof(g_ToolTipMappings[0])) - 1
+    TOOLTIP_COUNT = (sizeof(g_ToolTipMappings) / sizeof(g_ToolTipMappings[0])) - 1
 };
 
 typedef struct
 {
     CGameConfig *config;
     HWND tooltip;
-    TCHAR toolTipTexts[kToolTipCount][256];
+    TCHAR toolTipTexts[TOOLTIP_COUNT][256];
 } ConfigDialogState;
 
 // StringResource Implementation
 
 HINSTANCE StringResource::m_hInstance = NULL;
 UILanguage StringResource::m_CurrentLanguage = LANG_UI_ENGLISH;
-TCHAR StringResource::m_Buffers[kStringResourceBufferCount][kStringResourceBufferLength] = {{0}};
+TCHAR StringResource::m_Buffers[STRING_RESOURCE_BUFFER_COUNT][STRING_RESOURCE_BUFFER_LENGTH] = {{0}};
 int StringResource::m_BufferIndex = 0;
 
 bool StringResource::Initialize(HINSTANCE hInstance)
@@ -125,7 +126,7 @@ bool StringResource::Initialize(HINSTANCE hInstance)
 LPCTSTR StringResource::GetString(UINT resourceID)
 {
     TCHAR *buffer = m_Buffers[m_BufferIndex];
-    m_BufferIndex = (m_BufferIndex + 1) % kStringResourceBufferCount;
+    m_BufferIndex = (m_BufferIndex + 1) % STRING_RESOURCE_BUFFER_COUNT;
 
     if (!m_hInstance)
     {
@@ -136,14 +137,14 @@ LPCTSTR StringResource::GetString(UINT resourceID)
     UINT mappedID = MapToLanguageID(resourceID);
 
 #ifdef UNICODE
-    int len = ::LoadStringW(m_hInstance, mappedID, buffer, kStringResourceBufferLength - 1);
+    int len = ::LoadStringW(m_hInstance, mappedID, buffer, STRING_RESOURCE_BUFFER_LENGTH - 1);
 
     if (len <= 0)
     {
         if (m_CurrentLanguage != LANG_UI_ENGLISH && resourceID != mappedID)
         {
             mappedID = resourceID;
-            len = ::LoadStringW(m_hInstance, mappedID, buffer, kStringResourceBufferLength - 1);
+            len = ::LoadStringW(m_hInstance, mappedID, buffer, STRING_RESOURCE_BUFFER_LENGTH - 1);
         }
     }
 
@@ -153,14 +154,14 @@ LPCTSTR StringResource::GetString(UINT resourceID)
         len = (int)_tcslen(buffer);
     }
 #else
-    int len = ::LoadStringA(m_hInstance, mappedID, buffer, kStringResourceBufferLength - 1);
+    int len = ::LoadStringA(m_hInstance, mappedID, buffer, STRING_RESOURCE_BUFFER_LENGTH - 1);
 
     if (len <= 0)
     {
         if (m_CurrentLanguage != LANG_UI_ENGLISH && resourceID != mappedID)
         {
             mappedID = resourceID;
-            len = ::LoadStringA(m_hInstance, mappedID, buffer, kStringResourceBufferLength - 1);
+            len = ::LoadStringA(m_hInstance, mappedID, buffer, STRING_RESOURCE_BUFFER_LENGTH - 1);
         }
     }
 
@@ -236,25 +237,25 @@ static void InitializeFonts()
 
     // Create Chinese Font (SimSun preferred for compatibility, GB2312 charset)
     g_hFonts[LANG_UI_CHINESE] = ::CreateFont(
-        kChineseUIFontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        CHINESE_UI_FONT_HEIGHT, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
         GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("SimSun"));
 
     if (!g_hFonts[LANG_UI_CHINESE])
     {
-        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(kChineseUIFontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(CHINESE_UI_FONT_HEIGHT, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                                                  GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                                  DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("NSimSun"));
     }
     if (!g_hFonts[LANG_UI_CHINESE])
     {
-        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(kChineseUIFontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(CHINESE_UI_FONT_HEIGHT, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                                                  GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                                  DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Microsoft YaHei"));
     }
     if (!g_hFonts[LANG_UI_CHINESE])
     {
-        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(kChineseUIFontHeight, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
+        g_hFonts[LANG_UI_CHINESE] = ::CreateFont(CHINESE_UI_FONT_HEIGHT, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
                                                  GB2312_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
                                                  DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("MS Sans Serif"));
     }
@@ -302,7 +303,7 @@ static void UpdateToolTips(HWND hDlg, ConfigDialogState *state)
     if (!state || !state->tooltip)
         return;
 
-    for (int i = 0; i < kToolTipCount; i++)
+    for (int i = 0; i < TOOLTIP_COUNT; i++)
     {
         CopyToolTipText(state, i);
 
@@ -336,7 +337,7 @@ static void InitializeToolTips(HWND hDlg, ConfigDialogState *state)
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     ::SendMessage(state->tooltip, TTM_SETMAXTIPWIDTH, 0, 260);
 
-    for (int i = 0; i < kToolTipCount; i++)
+    for (int i = 0; i < TOOLTIP_COUNT; i++)
     {
         CopyToolTipText(state, i);
 
@@ -357,10 +358,51 @@ static void CleanupToolTips(ConfigDialogState *state)
     }
 }
 
+static void ResetComboBoxItems(HWND hDlg, int ctrlID)
+{
+    ::SendDlgItemMessage(hDlg, ctrlID, CB_RESETCONTENT, 0, 0);
+}
+
+static void AddComboBoxString(HWND hDlg, int ctrlID, LPCTSTR text)
+{
+    ::SendDlgItemMessage(hDlg, ctrlID, CB_ADDSTRING, 0, (LPARAM)text);
+}
+
+static void SetComboBoxSelection(HWND hDlg, int ctrlID, int selection, int count, int fallback)
+{
+    if (selection < 0 || selection >= count)
+        selection = fallback;
+    ::SendDlgItemMessage(hDlg, ctrlID, CB_SETCURSEL, selection, 0);
+}
+
+static void UpdateResourceComboBox(HWND hDlg, int ctrlID, const UINT *items, int count, int fallback)
+{
+    int selection = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCURSEL, 0, 0);
+
+    ResetComboBoxItems(hDlg, ctrlID);
+    for (int i = 0; i < count; i++)
+        AddComboBoxString(hDlg, ctrlID, StringResource::GetString(items[i]));
+
+    SetComboBoxSelection(hDlg, ctrlID, selection, count, fallback);
+}
+
+static void UpdateTextComboBox(HWND hDlg, int ctrlID, const LPCTSTR *items, int count, int fallback)
+{
+    int selection = (int)::SendDlgItemMessage(hDlg, ctrlID, CB_GETCURSEL, 0, 0);
+
+    ResetComboBoxItems(hDlg, ctrlID);
+    for (int i = 0; i < count; i++)
+        AddComboBoxString(hDlg, ctrlID, items[i]);
+
+    SetComboBoxSelection(hDlg, ctrlID, selection, count, fallback);
+}
+
 // Dialog Update Logic
 
 static void UpdateDialogLanguage(HWND hDlg, ConfigDialogState *state)
 {
+    int i;
+
     // Set the appropriate font for the current language
     HFONT hFont = NULL;
     UILanguage currentLang = StringResource::GetLanguage();
@@ -385,42 +427,25 @@ static void UpdateDialogLanguage(HWND hDlg, ConfigDialogState *state)
     ::SetWindowText(hDlg, StringResource::GetString(IDS_DIALOG_TITLE));
 
     // Set text for controls with explicit mappings (Buttons, Checkboxes, Group Boxes)
-    for (int i = 0; g_TextMappings[i].ctrlID != 0; i++)
+    for (i = 0; g_TextMappings[i].ctrlID != 0; i++)
     {
         ::SetDlgItemText(hDlg, g_TextMappings[i].ctrlID, StringResource::GetString(g_TextMappings[i].strID));
     }
 
-    // Update ComboBox items and retain selection
+    static const UINT logModeItems[] = {IDS_LOG_APPEND, IDS_LOG_OVERWRITE};
+    static const LPCTSTR bppItems[] = {TEXT("16"), TEXT("32")};
+    static const UINT gameLanguageItems[] = {
+        IDS_LANG_GERMAN, IDS_LANG_ENGLISH, IDS_LANG_SPANISH, IDS_LANG_ITALIAN, IDS_LANG_FRENCH};
+    static const UINT uiLanguageItems[] = {IDS_UI_ENGLISH, IDS_UI_CHINESE};
 
-    // Log Mode combo
-    int logModeSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_GETCURSEL, 0, 0);
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_RESETCONTENT, 0, 0);
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LOG_APPEND));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LOG_OVERWRITE));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LOGMODE, CB_SETCURSEL, (logModeSel == 0 || logModeSel == 1) ? logModeSel : 1, 0);
+    UpdateResourceComboBox(hDlg, IDC_COMBO_LOGMODE, logModeItems, sizeof(logModeItems) / sizeof(logModeItems[0]), 1);
+    UpdateTextComboBox(hDlg, IDC_COMBO_BPP, bppItems, sizeof(bppItems) / sizeof(bppItems[0]), 1);
+    UpdateResourceComboBox(hDlg, IDC_COMBO_LANG, gameLanguageItems, sizeof(gameLanguageItems) / sizeof(gameLanguageItems[0]), 1);
 
-    // BPP combo
-    int bppSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_GETCURSEL, 0, 0);
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_RESETCONTENT, 0, 0);
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_ADDSTRING, 0, (LPARAM)TEXT("16"));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_ADDSTRING, 0, (LPARAM)TEXT("32"));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_BPP, CB_SETCURSEL, (bppSel == 0 || bppSel == 1) ? bppSel : 1, 0);
-
-    // Game Language combo
-    int langGameSel = (int)::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_GETCURSEL, 0, 0);
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_RESETCONTENT, 0, 0);
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LANG_GERMAN));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LANG_ENGLISH));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LANG_SPANISH));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LANG_ITALIAN));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_LANG_FRENCH));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANG, CB_SETCURSEL, (langGameSel >= 0 && langGameSel <= 4) ? langGameSel : 1, 0);
-
-    // Interface Language combo
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_RESETCONTENT, 0, 0);
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_ENGLISH));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_CHINESE));
-    ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_SETCURSEL, currentLang, 0);
+    ResetComboBoxItems(hDlg, IDC_COMBO_LANGUAGE);
+    for (i = 0; i < (int)(sizeof(uiLanguageItems) / sizeof(uiLanguageItems[0])); i++)
+        AddComboBoxString(hDlg, IDC_COMBO_LANGUAGE, StringResource::GetString(uiLanguageItems[i]));
+    SetComboBoxSelection(hDlg, IDC_COMBO_LANGUAGE, currentLang, LANG_UI_COUNT, LANG_UI_ENGLISH);
 
     UpdateToolTips(hDlg, state);
 
@@ -528,6 +553,30 @@ static bool GetConfigBoolControl(HWND hDlg, int ctrlID)
     return ::SendDlgItemMessage(hDlg, ctrlID, BM_GETCHECK, 0, 0) == BST_CHECKED;
 }
 
+static bool ConfigPathToTChar(const char *iniPath, TCHAR *buffer, size_t size)
+{
+    if (!iniPath || iniPath[0] == '\0' || !buffer || size == 0)
+        return false;
+
+#ifdef UNICODE
+    if (utils::CharToWchar(iniPath, buffer, size) == 0)
+    {
+        buffer[0] = TEXT('\0');
+        return false;
+    }
+    buffer[size - 1] = TEXT('\0');
+#else
+    size_t len = strlen(iniPath);
+    if (len + 1 > size)
+    {
+        buffer[0] = TEXT('\0');
+        return false;
+    }
+    memcpy(buffer, iniPath, len + 1);
+#endif
+    return true;
+}
+
 static void LoadConfigToDialog(HWND hDlg, const CGameConfig &config)
 {
 #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
@@ -556,19 +605,12 @@ static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
 
 static void LoadUILanguageFromIni(const char *iniPath)
 {
-    if (!iniPath || *iniPath == '\0')
+    TCHAR tIniPath[MAX_PATH];
+    if (!ConfigPathToTChar(iniPath, tIniPath, MAX_PATH))
     {
         StringResource::SetLanguage(StringResource::DetectSystemLanguage());
         return;
     }
-
-    // Convert path to TCHAR
-    TCHAR tIniPath[MAX_PATH];
-#ifdef UNICODE
-    utils::CharToWchar(iniPath, tIniPath, MAX_PATH);
-#else
-    strcpy(tIniPath, iniPath);
-#endif
 
     int langId = (int)::GetPrivateProfileInt(TEXT("Interface"), TEXT("UILanguage"), -1, tIniPath);
 
@@ -584,19 +626,12 @@ static void LoadUILanguageFromIni(const char *iniPath)
 
 static bool SaveUILanguageToIni(const char *iniPath)
 {
-    if (!iniPath || *iniPath == '\0')
+    TCHAR tIniPath[MAX_PATH];
+    if (!ConfigPathToTChar(iniPath, tIniPath, MAX_PATH))
         return false;
 
     TCHAR buffer[16];
     _stprintf(buffer, TEXT("%d"), StringResource::GetLanguage());
-
-    // Convert path to TCHAR
-    TCHAR tIniPath[MAX_PATH];
-#ifdef UNICODE
-    utils::CharToWchar(iniPath, tIniPath, MAX_PATH);
-#else
-    strcpy(tIniPath, iniPath);
-#endif
 
     return ::WritePrivateProfileString(TEXT("Interface"), TEXT("UILanguage"), buffer, tIniPath) != 0;
 }
