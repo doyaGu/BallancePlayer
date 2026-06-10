@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <cstring>
 #include <chrono>
+#include <vector>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -96,19 +97,23 @@ TEST_F(UtilsTest, IsAbsolutePath) {
     EXPECT_TRUE(utils::IsAbsolutePath("C:\\test\\path"));
     EXPECT_TRUE(utils::IsAbsolutePath("D:\\another\\path"));
     EXPECT_TRUE(utils::IsAbsolutePath("Z:\\"));
+    EXPECT_TRUE(utils::IsAbsolutePath("C:/test/path"));
+    EXPECT_TRUE(utils::IsAbsolutePath("\\\\server\\share\\file.txt"));
 
     // Test relative paths
     EXPECT_FALSE(utils::IsAbsolutePath("relative\\path"));
     EXPECT_FALSE(utils::IsAbsolutePath("..\\parent"));
     EXPECT_FALSE(utils::IsAbsolutePath(".\\current"));
     EXPECT_FALSE(utils::IsAbsolutePath("file.txt"));
+    EXPECT_FALSE(utils::IsAbsolutePath("\\rooted\\on\\current\\drive"));
 
     // Test invalid/edge cases
     EXPECT_FALSE(utils::IsAbsolutePath(nullptr));
     EXPECT_FALSE(utils::IsAbsolutePath(""));
     EXPECT_FALSE(utils::IsAbsolutePath("C"));
-    EXPECT_TRUE(utils::IsAbsolutePath("C:")); // Actually returns true for drive letter with colon
+    EXPECT_FALSE(utils::IsAbsolutePath("C:"));
     EXPECT_FALSE(utils::IsAbsolutePath("123:\\test")); // Non-letter drive
+    EXPECT_FALSE(utils::IsAbsolutePath("\\\\"));
 }
 
 TEST_F(UtilsTest, GetAbsolutePath) {
@@ -133,6 +138,46 @@ TEST_F(UtilsTest, GetAbsolutePath) {
 
     EXPECT_TRUE(utils::GetAbsolutePath(buffer, MAX_PATH, "C:\\test\\", false));
     EXPECT_FALSE(utils::HasTrailingPathSeparator(buffer));
+
+    EXPECT_TRUE(utils::GetAbsolutePath(buffer, MAX_PATH, "C:\\", false));
+    EXPECT_STREQ(buffer, "C:\\");
+}
+
+TEST_F(UtilsTest, GetAbsolutePathSupportsExactSizedBuffer) {
+    char expected[MAX_PATH];
+    DWORD copied = ::GetFullPathNameA("relative\\path", MAX_PATH, expected, NULL);
+    ASSERT_GT(copied, 0u);
+    ASSERT_LT(copied, static_cast<DWORD>(MAX_PATH));
+
+    std::vector<char> buffer(static_cast<size_t>(copied) + 1);
+    EXPECT_TRUE(utils::GetAbsolutePath(buffer.data(), buffer.size(), "relative\\path"));
+    EXPECT_STREQ(buffer.data(), expected);
+
+    std::vector<char> tooSmall(static_cast<size_t>(copied));
+    EXPECT_FALSE(utils::GetAbsolutePath(tooSmall.data(), tooSmall.size(), "relative\\path"));
+}
+
+TEST_F(UtilsTest, GetAbsolutePathAddsTrailingSeparatorToResolvedRelativePath) {
+    char originalDir[MAX_PATH];
+    ASSERT_GT(utils::GetCurrentPath(originalDir, sizeof(originalDir)), 0);
+    ASSERT_TRUE(::SetCurrentDirectoryA(testDir.string().c_str()));
+
+    char buffer[MAX_PATH];
+    EXPECT_TRUE(utils::GetAbsolutePath(buffer, MAX_PATH, "relative", true));
+
+    std::string expected = testDir.string();
+    if (!utils::HasTrailingPathSeparator(expected.c_str()))
+        expected += "\\";
+    expected += "relative\\";
+    EXPECT_STREQ(buffer, expected.c_str());
+
+    ASSERT_TRUE(::SetCurrentDirectoryA(originalDir));
+}
+
+TEST_F(UtilsTest, GetAbsolutePathFailsWhenBufferIsTooSmall) {
+    char buffer[4] = {0};
+
+    EXPECT_FALSE(utils::GetAbsolutePath(buffer, sizeof(buffer), "relative\\path"));
 }
 
 TEST_F(UtilsTest, ConcatPath) {
@@ -147,6 +192,13 @@ TEST_F(UtilsTest, ConcatPath) {
     utils::ConcatPath(buffer, MAX_PATH, "C:\\base\\", "subdir");
     EXPECT_STREQ(buffer, "C:\\base\\subdir");
 
+    // Test with drive root path
+    utils::ConcatPath(buffer, MAX_PATH, "C:\\", "subdir");
+    EXPECT_STREQ(buffer, "C:\\subdir");
+
+    utils::ConcatPath(buffer, MAX_PATH, "C:\\base\\", nullptr);
+    EXPECT_STREQ(buffer, "C:\\base");
+
     // Test with null/empty path1
     utils::ConcatPath(buffer, MAX_PATH, nullptr, "path2");
     EXPECT_STREQ(buffer, "path2");
@@ -156,6 +208,18 @@ TEST_F(UtilsTest, ConcatPath) {
 
     // Test with null buffer
     EXPECT_EQ(utils::ConcatPath(nullptr, MAX_PATH, "path1", "path2"), nullptr);
+}
+
+TEST_F(UtilsTest, ConcatPathNullTerminatesTruncatedResults) {
+    char buffer[5] = {'x', 'x', 'x', 'x', 'x'};
+
+    EXPECT_EQ(utils::ConcatPath(buffer, sizeof(buffer), "abcdef", "long"), buffer);
+    EXPECT_EQ(buffer[sizeof(buffer) - 1], '\0');
+    EXPECT_STREQ(buffer, "abcd");
+
+    char oneByte[1] = {'x'};
+    EXPECT_EQ(utils::ConcatPath(oneByte, sizeof(oneByte), "abcdef", "long"), oneByte);
+    EXPECT_EQ(oneByte[0], '\0');
 }
 
 TEST_F(UtilsTest, FindLastPathSeparator) {
@@ -195,6 +259,14 @@ TEST_F(UtilsTest, GetFileDirectory) {
 
     EXPECT_TRUE(utils::GetFileDirectory(buffer, sizeof(buffer), "C:\\Games\\Ballance\\Bin\\Player.exe", false));
     EXPECT_STREQ(buffer, "C:\\Games\\Ballance\\Bin");
+
+    char rootDir[4];
+    EXPECT_TRUE(utils::GetFileDirectory(rootDir, sizeof(rootDir), "C:\\Player.exe"));
+    EXPECT_STREQ(rootDir, "C:\\");
+
+    char rootDirNoTrailing[3];
+    EXPECT_TRUE(utils::GetFileDirectory(rootDirNoTrailing, sizeof(rootDirNoTrailing), "C:\\Player.exe", false));
+    EXPECT_STREQ(rootDirNoTrailing, "C:");
 
     EXPECT_FALSE(utils::GetFileDirectory(buffer, sizeof(buffer), "Player.exe"));
     EXPECT_FALSE(utils::GetFileDirectory(nullptr, sizeof(buffer), "C:\\Player.exe"));
@@ -247,6 +319,14 @@ TEST_F(UtilsTest, RemoveTrailingPathSeparator) {
     char path3[] = "C:\\path";
     EXPECT_FALSE(utils::RemoveTrailingPathSeparator(path3));
     EXPECT_STREQ(path3, "C:\\path");
+
+    char root[] = "C:\\";
+    EXPECT_FALSE(utils::RemoveTrailingPathSeparator(root));
+    EXPECT_STREQ(root, "C:\\");
+
+    char slash[] = "\\";
+    EXPECT_FALSE(utils::RemoveTrailingPathSeparator(slash));
+    EXPECT_STREQ(slash, "\\");
 }
 
 // Character conversion tests
@@ -298,6 +378,10 @@ TEST_F(UtilsTest, CRC32) {
     unsigned int result4;
     utils::CRC32(testData, strlen(testData), 12345, &result4);
     EXPECT_NE(result1, result4);
+
+    unsigned int knownVector;
+    utils::CRC32("123456789", 9, 0, &knownVector);
+    EXPECT_EQ(knownVector, 0xCBF43926u);
 }
 
 // Pixel format conversion tests
@@ -316,6 +400,20 @@ TEST_F(UtilsTest, String2PixelFormat) {
     // Test unknown format
     EXPECT_EQ(utils::String2PixelFormat("_UNKNOWN_FORMAT", 15), UNKNOWN_PF);
     EXPECT_EQ(utils::String2PixelFormat("", 1), UNKNOWN_PF);
+    EXPECT_EQ(utils::String2PixelFormat(nullptr, 16), UNKNOWN_PF);
+    EXPECT_EQ(utils::String2PixelFormat("_16_", 4), UNKNOWN_PF);
+    EXPECT_EQ(utils::String2PixelFormat("_16_RGB565_EXTRA", strlen("_16_RGB565_EXTRA")), UNKNOWN_PF);
+    EXPECT_EQ(utils::String2PixelFormat("565_EXTRA", strlen("565_EXTRA")), UNKNOWN_PF);
+}
+
+TEST_F(UtilsTest, GetMonitorRectForNullWindowFallsBackToPrimaryMonitor) {
+    RECT rect = {-1, -1, -1, -1};
+
+    EXPECT_FALSE(utils::GetMonitorRectForWindow(NULL, rect));
+    EXPECT_EQ(rect.left, 0);
+    EXPECT_EQ(rect.top, 0);
+    EXPECT_EQ(rect.right, ::GetSystemMetrics(SM_CXSCREEN));
+    EXPECT_EQ(rect.bottom, ::GetSystemMetrics(SM_CYSCREEN));
 }
 
 TEST_F(UtilsTest, PixelFormat2String) {

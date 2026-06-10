@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
+#include <vector>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -106,14 +108,44 @@ namespace utils
         return ::GetCurrentDirectoryA(static_cast<DWORD>(size), buffer);
     }
 
+    static bool IsPathSeparator(char ch)
+    {
+        return ch == '\\' || ch == '/';
+    }
+
     bool IsAbsolutePath(const char *path)
     {
         if (!path || path[0] == '\0')
             return false;
 
-        if (strlen(path) < 2 || !isalpha(path[0]) || path[1] != ':')
-            return false;
+        if (isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':')
+            return IsPathSeparator(path[2]);
 
+        return IsPathSeparator(path[0]) && IsPathSeparator(path[1]) &&
+               path[2] != '\0' && !IsPathSeparator(path[2]);
+    }
+
+    static bool CanRemoveTrailingPathSeparator(const std::string &path)
+    {
+        if (path.length() <= 1)
+            return false;
+        if (!HasTrailingPathSeparator(path.c_str()))
+            return false;
+        if (path.length() == 3 && isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':')
+            return false;
+        return true;
+    }
+
+    static bool CopyPathToBuffer(char *buffer, size_t size, const std::string &path)
+    {
+        if (!buffer || size == 0)
+            return false;
+        if (path.length() + 1 > size)
+        {
+            buffer[0] = '\0';
+            return false;
+        }
+        memcpy(buffer, path.c_str(), path.length() + 1);
         return true;
     }
 
@@ -122,38 +154,31 @@ namespace utils
         if (!path || path[0] == '\0')
             return false;
 
-        if (!buffer)
+        if (!buffer || size == 0)
             return false;
 
-        size_t len;
-        if (IsAbsolutePath(path))
+        DWORD required = ::GetFullPathNameA(path, 0, NULL, NULL);
+        if (required == 0)
+            return false;
+
+        std::vector<char> pathBuffer(required);
+        DWORD copied = ::GetFullPathNameA(path, required, &pathBuffer[0], NULL);
+        if (copied == 0 || copied >= required)
+            return false;
+        std::string resolved(&pathBuffer[0], copied);
+
+        if (trailing)
         {
-            len = strlen(path);
-            strncpy(buffer, path, size);
+            if (!HasTrailingPathSeparator(resolved.c_str()))
+                resolved += "\\";
         }
         else
         {
-            size_t n = GetCurrentPath(buffer, size);
-            n = size - 1 - n;
-            strncat(buffer, "\\", n);
-            --n;
-            strncat(buffer, path, n);
-            len = strlen(path);
+            while (CanRemoveTrailingPathSeparator(resolved))
+                resolved.erase(resolved.length() - 1);
         }
 
-        if (trailing && !HasTrailingPathSeparator(path))
-        {
-            if (size > len + 2)
-            {
-                buffer[len] = '\\';
-                buffer[len + 1] = '\0';
-            }
-        }
-        else if (!trailing && HasTrailingPathSeparator(path))
-        {
-            buffer[len - 1] = '\0';
-        }
-        return true;
+        return CopyPathToBuffer(buffer, size, resolved);
     }
 
     bool GetFileDirectory(char *buffer, size_t size, const char *filename, bool trailing)
@@ -189,20 +214,35 @@ namespace utils
     {
         if (!buffer)
             return NULL;
+        if (size == 0)
+            return buffer;
 
+        std::string result;
         if (!path1 || path1[0] == '\0')
         {
-            strncpy(buffer, path2, size);
+            result = path2 ? path2 : "";
         }
-        else if (path2)
+        else
         {
-            strncpy(buffer, path1, size);
-            RemoveTrailingPathSeparator(buffer);
-            size_t len2 = strlen(path2);
-            size_t n = size - 1 - len2;
-            strncat(buffer, "\\", n);
-            --n;
-            strncat(buffer, path2, n);
+            result = path1;
+            while (CanRemoveTrailingPathSeparator(result))
+                result.erase(result.length() - 1);
+            if (path2)
+            {
+                if (!HasTrailingPathSeparator(result.c_str()))
+                    result += "\\";
+                result += path2;
+            }
+        }
+
+        if (result.length() + 1 > size)
+        {
+            memcpy(buffer, result.c_str(), size - 1);
+            buffer[size - 1] = '\0';
+        }
+        else
+        {
+            memcpy(buffer, result.c_str(), result.length() + 1);
         }
 
         return buffer;
@@ -224,12 +264,12 @@ namespace utils
             return false;
     
         size_t len = strlen(path);
-        return (path[len - 1] == '\\' || path[len - 1] == '/');
+        return IsPathSeparator(path[len - 1]);
     }
 
     bool RemoveTrailingPathSeparator(char *path)
     {
-        if (!HasTrailingPathSeparator(path))
+        if (!path || !CanRemoveTrailingPathSeparator(path))
             return false;
         path[strlen(path) - 1] = '\0';
         return true;
@@ -331,73 +371,89 @@ namespace utils
         *out = crc;
     }
 
+    static bool BoundedStringEquals(const char *str, const char *expected, size_t max)
+    {
+        if (!str || !expected || max == 0)
+            return false;
+
+        for (size_t i = 0; i < max; ++i)
+        {
+            if (str[i] != expected[i])
+                return false;
+            if (str[i] == '\0')
+                return true;
+        }
+
+        return expected[max] == '\0';
+    }
+
     VX_PIXELFORMAT String2PixelFormat(const char *str, size_t max)
     {
         if (!str || str[0] == '\0' || max == 0)
             return UNKNOWN_PF;
 
         VX_PIXELFORMAT format = UNKNOWN_PF;
-        if (strncmp(str, "565", max) == 0)
+        if (BoundedStringEquals(str, "565", max))
             format = _16_RGB565;
-        else if (strncmp(str, "555", max) == 0)
+        else if (BoundedStringEquals(str, "555", max))
             format = _16_RGB555;
-        else if (strncmp(str, "1555", max) == 0)
+        else if (BoundedStringEquals(str, "1555", max))
             format = _16_ARGB1555;
-        else if (strncmp(str, "4444", max) == 0)
+        else if (BoundedStringEquals(str, "4444", max))
             format = _16_ARGB4444;
-        else if (strncmp(str, "_32_ARGB8888", max) == 0)
+        else if (BoundedStringEquals(str, "_32_ARGB8888", max))
             format = _32_ARGB8888;
-        else if (strncmp(str, "_32_RGB888", max) == 0)
+        else if (BoundedStringEquals(str, "_32_RGB888", max))
             format = _32_RGB888;
-        else if (strncmp(str, "_24_RGB888", max) == 0)
+        else if (BoundedStringEquals(str, "_24_RGB888", max))
             format = _24_RGB888;
-        else if (strncmp(str, "_16_RGB565", max) == 0)
+        else if (BoundedStringEquals(str, "_16_RGB565", max))
             format = _16_RGB565;
-        else if (strncmp(str, "_16_RGB555", max) == 0)
+        else if (BoundedStringEquals(str, "_16_RGB555", max))
             format = _16_RGB555;
-        else if (strncmp(str, "_16_ARGB1555", max) == 0)
+        else if (BoundedStringEquals(str, "_16_ARGB1555", max))
             format = _16_ARGB1555;
-        else if (strncmp(str, "_16_ARGB4444", max) == 0)
+        else if (BoundedStringEquals(str, "_16_ARGB4444", max))
             format = _16_ARGB4444;
-        else if (strncmp(str, "_8_RGB332", max) == 0)
+        else if (BoundedStringEquals(str, "_8_RGB332", max))
             format = _8_RGB332;
-        else if (strncmp(str, "_8_ARGB2222", max) == 0)
+        else if (BoundedStringEquals(str, "_8_ARGB2222", max))
             format = _8_ARGB2222;
-        else if (strncmp(str, "_32_ABGR8888", max) == 0)
+        else if (BoundedStringEquals(str, "_32_ABGR8888", max))
             format = _32_ABGR8888;
-        else if (strncmp(str, "_32_RGBA8888", max) == 0)
+        else if (BoundedStringEquals(str, "_32_RGBA8888", max))
             format = _32_RGBA8888;
-        else if (strncmp(str, "_32_BGRA8888", max) == 0)
+        else if (BoundedStringEquals(str, "_32_BGRA8888", max))
             format = _32_BGRA8888;
-        else if (strncmp(str, "_32_BGR888", max) == 0)
+        else if (BoundedStringEquals(str, "_32_BGR888", max))
             format = _32_BGR888;
-        else if (strncmp(str, "_24_BGR888", max) == 0)
+        else if (BoundedStringEquals(str, "_24_BGR888", max))
             format = _24_BGR888;
-        else if (strncmp(str, "_16_BGR565", max) == 0)
+        else if (BoundedStringEquals(str, "_16_BGR565", max))
             format = _16_BGR565;
-        else if (strncmp(str, "_16_BGR555", max) == 0)
+        else if (BoundedStringEquals(str, "_16_BGR555", max))
             format = _16_BGR555;
-        else if (strncmp(str, "_16_ABGR1555", max) == 0)
+        else if (BoundedStringEquals(str, "_16_ABGR1555", max))
             format = _16_ABGR1555;
-        else if (strncmp(str, "_16_ABGR4444", max) == 0)
+        else if (BoundedStringEquals(str, "_16_ABGR4444", max))
             format = _16_ABGR4444;
-        else if (strncmp(str, "_DXT1", max) == 0)
+        else if (BoundedStringEquals(str, "_DXT1", max))
             format = _DXT1;
-        else if (strncmp(str, "_DXT2", max) == 0)
+        else if (BoundedStringEquals(str, "_DXT2", max))
             format = _DXT2;
-        else if (strncmp(str, "_DXT3", max) == 0)
+        else if (BoundedStringEquals(str, "_DXT3", max))
             format = _DXT3;
-        else if (strncmp(str, "_DXT4", max) == 0)
+        else if (BoundedStringEquals(str, "_DXT4", max))
             format = _DXT4;
-        else if (strncmp(str, "_DXT5", max) == 0)
+        else if (BoundedStringEquals(str, "_DXT5", max))
             format = _DXT5;
-        else if (strncmp(str, "_16_V8U8", max) == 0)
+        else if (BoundedStringEquals(str, "_16_V8U8", max))
             format = _16_V8U8;
-        else if (strncmp(str, "_32_V16U16", max) == 0)
+        else if (BoundedStringEquals(str, "_32_V16U16", max))
             format = _32_V16U16;
-        else if (strncmp(str, "_16_L6V5U5", max) == 0)
+        else if (BoundedStringEquals(str, "_16_L6V5U5", max))
             format = _16_L6V5U5;
-        else if (strncmp(str, "_32_X8L8V8U8", max) == 0)
+        else if (BoundedStringEquals(str, "_32_X8L8V8U8", max))
             format = _32_X8L8V8U8;
 
         return format;
