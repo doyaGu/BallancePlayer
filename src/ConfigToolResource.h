@@ -56,6 +56,28 @@
 #define IDS_WARN_CONFIG_TITLE           1068
 #define IDS_RESTART_REQUIRED            1069
 #define IDS_RESTART_REQUIRED_TITLE      1070
+#define IDS_TIP_LOGMODE                 1071
+#define IDS_TIP_VERBOSE                 1072
+#define IDS_TIP_MANUAL_SETUP            1073
+#define IDS_TIP_DRIVER                  1074
+#define IDS_TIP_BPP                     1075
+#define IDS_TIP_SIZE                    1076
+#define IDS_TIP_FULLSCREEN              1077
+#define IDS_TIP_CHILD_WINDOW_RENDER     1078
+#define IDS_TIP_BORDERLESS              1079
+#define IDS_TIP_CLIP_CURSOR             1080
+#define IDS_TIP_ALWAYS_HANDLE_INPUT     1081
+#define IDS_TIP_POSITION                1082
+#define IDS_TIP_GAME_LANGUAGE           1083
+#define IDS_TIP_SKIP_OPENING            1084
+#define IDS_TIP_APPLY_HOTFIX            1085
+#define IDS_TIP_UNLOCK_FRAMERATE        1086
+#define IDS_TIP_UNLOCK_WIDESCREEN       1087
+#define IDS_TIP_UNLOCK_HIGHRES          1088
+#define IDS_TIP_DEBUG                   1089
+#define IDS_TIP_ROOKIE                  1090
+#define IDS_TIP_UI_LANGUAGE             1091
+#define IDS_TIP_DEFAULTS                1092
 
 // Config tool string table IDs, Chinese (2000-2999)
 #define IDS_CN_DIALOG_TITLE             2000
@@ -109,6 +131,28 @@
 #define IDS_CN_WARN_CONFIG_TITLE        2068
 #define IDS_CN_RESTART_REQUIRED         2069
 #define IDS_CN_RESTART_REQUIRED_TITLE   2070
+#define IDS_CN_TIP_LOGMODE              2071
+#define IDS_CN_TIP_VERBOSE              2072
+#define IDS_CN_TIP_MANUAL_SETUP         2073
+#define IDS_CN_TIP_DRIVER               2074
+#define IDS_CN_TIP_BPP                  2075
+#define IDS_CN_TIP_SIZE                 2076
+#define IDS_CN_TIP_FULLSCREEN           2077
+#define IDS_CN_TIP_CHILD_WINDOW_RENDER  2078
+#define IDS_CN_TIP_BORDERLESS           2079
+#define IDS_CN_TIP_CLIP_CURSOR          2080
+#define IDS_CN_TIP_ALWAYS_HANDLE_INPUT  2081
+#define IDS_CN_TIP_POSITION             2082
+#define IDS_CN_TIP_GAME_LANGUAGE        2083
+#define IDS_CN_TIP_SKIP_OPENING         2084
+#define IDS_CN_TIP_APPLY_HOTFIX         2085
+#define IDS_CN_TIP_UNLOCK_FRAMERATE     2086
+#define IDS_CN_TIP_UNLOCK_WIDESCREEN    2087
+#define IDS_CN_TIP_UNLOCK_HIGHRES       2088
+#define IDS_CN_TIP_DEBUG                2089
+#define IDS_CN_TIP_ROOKIE               2090
+#define IDS_CN_TIP_UI_LANGUAGE          2091
+#define IDS_CN_TIP_DEFAULTS             2092
 
 // Config dialog controls
 #define IDC_BUTTON_DEFAULTS             2000

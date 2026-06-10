@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /machine:I386 /out:"Bin/ConfigTool.exe"
+# ADD LINK32 VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib /nologo /subsystem:windows /machine:I386 /out:"Bin/ConfigTool.exe"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "ConfigTool - Win32 Debug"
@@ -82,7 +82,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"Bin/ConfigTool.exe" /pdbtype:sept
+# ADD LINK32 VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib comctl32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"Bin/ConfigTool.exe" /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 

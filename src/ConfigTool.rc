@@ -248,6 +248,64 @@ END
 
 STRINGTABLE DISCARDABLE
 BEGIN
+    IDS_TIP_LOGMODE         "Choose whether Player.log is appended to or overwritten on startup."
+    IDS_TIP_VERBOSE         "Write more detailed diagnostic information to the log file."
+    IDS_TIP_MANUAL_SETUP    "Show the graphics setup dialog before starting the game."
+    IDS_TIP_DRIVER          "Select the Virtools render driver index to use."
+    IDS_TIP_BPP             "Select the display color depth for fullscreen modes."
+    IDS_TIP_SIZE            "Set the requested render resolution in pixels."
+    IDS_TIP_FULLSCREEN      "Run the game in fullscreen instead of windowed mode."
+    IDS_TIP_CHILD_WINDOW_RENDER "Render through the child window path used by embedded windows."
+    IDS_TIP_BORDERLESS      "Remove the normal window border when running windowed."
+    IDS_TIP_CLIP_CURSOR     "Keep the mouse cursor inside the game window."
+    IDS_TIP_ALWAYS_HANDLE_INPUT "Continue processing input while the game window is not focused."
+    IDS_TIP_POSITION        "Set the initial window position in screen pixels."
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDS_TIP_GAME_LANGUAGE   "Choose the game language ID written to Player.ini."
+    IDS_TIP_SKIP_OPENING    "Skip the opening animation when the game starts."
+    IDS_TIP_APPLY_HOTFIX    "Apply built-in script fixes before gameplay starts."
+    IDS_TIP_UNLOCK_FRAMERATE "Remove the original frame-rate cap."
+    IDS_TIP_UNLOCK_WIDESCREEN "Allow non-4:3 display modes."
+    IDS_TIP_UNLOCK_HIGHRES  "Allow resolutions wider than the original high-resolution limit."
+    IDS_TIP_DEBUG           "Enable Ballance's in-game debug mode."
+    IDS_TIP_ROOKIE          "Enable Ballance's in-game rookie mode."
+    IDS_TIP_UI_LANGUAGE     "Choose the language used by this configuration tool."
+    IDS_TIP_DEFAULTS        "Reset all options shown here to their default values."
+END
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDS_CN_TIP_LOGMODE      "选择启动时追加还是覆盖 Player.log。"
+    IDS_CN_TIP_VERBOSE      "向日志文件写入更详细的诊断信息。"
+    IDS_CN_TIP_MANUAL_SETUP "启动游戏前显示图形设置对话框。"
+    IDS_CN_TIP_DRIVER       "选择要使用的 Virtools 渲染驱动索引。"
+    IDS_CN_TIP_BPP          "选择全屏模式使用的显示色深。"
+    IDS_CN_TIP_SIZE         "设置请求的渲染分辨率，单位为像素。"
+    IDS_CN_TIP_FULLSCREEN   "以全屏模式运行游戏，而不是窗口模式。"
+    IDS_CN_TIP_CHILD_WINDOW_RENDER "使用嵌入窗口需要的子窗口渲染路径。"
+    IDS_CN_TIP_BORDERLESS   "窗口模式下移除普通窗口边框。"
+    IDS_CN_TIP_CLIP_CURSOR  "将鼠标光标限制在游戏窗口内。"
+    IDS_CN_TIP_ALWAYS_HANDLE_INPUT "游戏窗口未获得焦点时仍继续处理输入。"
+    IDS_CN_TIP_POSITION     "设置窗口初始位置，单位为屏幕像素。"
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+    IDS_CN_TIP_GAME_LANGUAGE "选择写入 Player.ini 的游戏语言 ID。"
+    IDS_CN_TIP_SKIP_OPENING "启动游戏时跳过开场动画。"
+    IDS_CN_TIP_APPLY_HOTFIX "进入游戏前应用内置脚本修复。"
+    IDS_CN_TIP_UNLOCK_FRAMERATE "移除原始帧率限制。"
+    IDS_CN_TIP_UNLOCK_WIDESCREEN "允许非 4:3 显示模式。"
+    IDS_CN_TIP_UNLOCK_HIGHRES "允许超过原始高分辨率限制的宽度。"
+    IDS_CN_TIP_DEBUG        "启用 Ballance 的游戏内调试模式。"
+    IDS_CN_TIP_ROOKIE       "启用 Ballance 的游戏内新手模式。"
+    IDS_CN_TIP_UI_LANGUAGE  "选择此配置工具使用的界面语言。"
+    IDS_CN_TIP_DEFAULTS     "将这里显示的所有选项重置为默认值。"
+END
+STRINGTABLE DISCARDABLE
+BEGIN
     IDS_RESTART_REQUIRED    "Configuration saved. Changes will take effect after restarting the game."
     IDS_RESTART_REQUIRED_TITLE "Restart Required"
     IDS_CN_RESTART_REQUIRED "配置已保存。更改将在重新启动游戏后生效。"

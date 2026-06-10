@@ -161,7 +161,7 @@ target_compile_definitions(ConfigTool PRIVATE
         CONFIGTOOL_STANDALONE
 )
 
-target_link_libraries(ConfigTool PRIVATE ${_player_vxmath_dep})
+target_link_libraries(ConfigTool PRIVATE ${_player_vxmath_dep} comctl32)
 
 target_include_directories(ConfigTool PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}"

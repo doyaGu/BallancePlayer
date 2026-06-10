@@ -1,5 +1,6 @@
 #include "ConfigTool.h"
 
+#include <commctrl.h>
 #include <string>
 #include <tchar.h>
 
@@ -36,6 +37,7 @@ private:
 
 static HFONT g_hFonts[LANG_UI_COUNT] = {NULL};
 static const int kChineseUIFontHeight = -14;
+static HWND g_hTooltip = NULL;
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
 typedef BOOL PLAYER_DIALOG_RESULT;
@@ -66,6 +68,28 @@ const ControlTextMapping g_TextMappings[] = {
     {IDC_LABEL_UI_LANGUAGE, IDS_UI_LANGUAGE},
     {0, 0} // Terminator
 };
+
+static const ControlTextMapping g_ToolTipMappings[] = {
+    {IDC_COMBO_LOGMODE, IDS_TIP_LOGMODE}, {IDC_CHECK_VERBOSE, IDS_TIP_VERBOSE},
+    {IDC_CHECK_MANUALSETUP, IDS_TIP_MANUAL_SETUP}, {IDC_CONFIG_EDIT_DRIVER, IDS_TIP_DRIVER},
+    {IDC_COMBO_BPP, IDS_TIP_BPP}, {IDC_EDIT_WIDTH, IDS_TIP_SIZE}, {IDC_EDIT_HEIGHT, IDS_TIP_SIZE},
+    {IDC_CHECK_FULLSCREEN, IDS_TIP_FULLSCREEN}, {IDC_CHECK_CHILDWINRENDER, IDS_TIP_CHILD_WINDOW_RENDER},
+    {IDC_CHECK_BORDERLESS, IDS_TIP_BORDERLESS}, {IDC_CHECK_CLIPCURSOR, IDS_TIP_CLIP_CURSOR},
+    {IDC_CHECK_ALWAYSHANDLEINPUT, IDS_TIP_ALWAYS_HANDLE_INPUT}, {IDC_EDIT_POSX, IDS_TIP_POSITION},
+    {IDC_EDIT_POSY, IDS_TIP_POSITION}, {IDC_COMBO_LANG, IDS_TIP_GAME_LANGUAGE},
+    {IDC_CHECK_SKIPOPENING, IDS_TIP_SKIP_OPENING}, {IDC_CHECK_APPLYHOTFIX, IDS_TIP_APPLY_HOTFIX},
+    {IDC_CHECK_UNLOCKFRAMERATE, IDS_TIP_UNLOCK_FRAMERATE}, {IDC_CHECK_UNLOCKWIDESCREEN, IDS_TIP_UNLOCK_WIDESCREEN},
+    {IDC_CHECK_UNLOCKHIGHRES, IDS_TIP_UNLOCK_HIGHRES}, {IDC_CHECK_DEBUG, IDS_TIP_DEBUG},
+    {IDC_CHECK_ROOKIE, IDS_TIP_ROOKIE}, {IDC_COMBO_LANGUAGE, IDS_TIP_UI_LANGUAGE},
+    {IDC_BUTTON_DEFAULTS, IDS_TIP_DEFAULTS},
+    {0, 0} // Terminator
+};
+
+enum
+{
+    kToolTipCount = (sizeof(g_ToolTipMappings) / sizeof(g_ToolTipMappings[0])) - 1
+};
+static TCHAR g_ToolTipTexts[kToolTipCount][256];
 
 // StringResource Implementation
 
@@ -226,6 +250,88 @@ static BOOL CALLBACK SetFontToChildProc(HWND hwnd, LPARAM lParam)
     return TRUE;
 }
 
+static bool BuildToolInfo(HWND hDlg, int index, TOOLINFO *toolInfo)
+{
+    HWND hwndCtrl = ::GetDlgItem(hDlg, g_ToolTipMappings[index].ctrlID);
+    if (!hwndCtrl)
+        return false;
+
+    ZeroMemory(toolInfo, sizeof(*toolInfo));
+    toolInfo->cbSize = sizeof(*toolInfo);
+    toolInfo->uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+    toolInfo->hwnd = hDlg;
+    toolInfo->uId = (UINT)hwndCtrl;
+    toolInfo->lpszText = g_ToolTipTexts[index];
+    return true;
+}
+
+static void CopyToolTipText(int index)
+{
+    _tcsncpy(g_ToolTipTexts[index], StringResource::GetString(g_ToolTipMappings[index].strID),
+             sizeof(g_ToolTipTexts[index]) / sizeof(g_ToolTipTexts[index][0]) - 1);
+    g_ToolTipTexts[index][sizeof(g_ToolTipTexts[index]) / sizeof(g_ToolTipTexts[index][0]) - 1] = TEXT('\0');
+}
+
+static void UpdateToolTips(HWND hDlg)
+{
+    if (!g_hTooltip)
+        return;
+
+    for (int i = 0; i < kToolTipCount; i++)
+    {
+        CopyToolTipText(i);
+
+        TOOLINFO toolInfo;
+        if (BuildToolInfo(hDlg, i, &toolInfo))
+        {
+            ::SendMessage(g_hTooltip, TTM_UPDATETIPTEXT, 0, (LPARAM)&toolInfo);
+        }
+    }
+}
+
+static void InitializeToolTips(HWND hDlg)
+{
+    if (g_hTooltip)
+        return;
+
+    INITCOMMONCONTROLSEX commonControls;
+    commonControls.dwSize = sizeof(commonControls);
+    commonControls.dwICC = ICC_WIN95_CLASSES;
+    if (!::InitCommonControlsEx(&commonControls))
+        ::InitCommonControls();
+
+    g_hTooltip = ::CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+                                  WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
+                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                  hDlg, NULL, NULL, NULL);
+    if (!g_hTooltip)
+        return;
+
+    ::SetWindowPos(g_hTooltip, HWND_TOPMOST, 0, 0, 0, 0,
+                   SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    ::SendMessage(g_hTooltip, TTM_SETMAXTIPWIDTH, 0, 260);
+
+    for (int i = 0; i < kToolTipCount; i++)
+    {
+        CopyToolTipText(i);
+
+        TOOLINFO toolInfo;
+        if (BuildToolInfo(hDlg, i, &toolInfo))
+        {
+            ::SendMessage(g_hTooltip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
+        }
+    }
+}
+
+static void CleanupToolTips()
+{
+    if (g_hTooltip)
+    {
+        ::DestroyWindow(g_hTooltip);
+        g_hTooltip = NULL;
+    }
+}
+
 // Dialog Update Logic
 
 static void UpdateDialogLanguage(HWND hDlg)
@@ -290,6 +396,8 @@ static void UpdateDialogLanguage(HWND hDlg)
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_ENGLISH));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_CHINESE));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_SETCURSEL, currentLang, 0);
+
+    UpdateToolTips(hDlg);
 
     // Force redraw
     ::InvalidateRect(hDlg, NULL, TRUE);
@@ -512,6 +620,7 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
     case WM_INITDIALOG:
     {
         InitializeFonts();
+        InitializeToolTips(hDlg);
         // Store the CGameConfig pointer passed via lParam
         ::SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
         pConfig = (CGameConfig *)lParam;
@@ -598,6 +707,7 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
         return TRUE;                 // Handled
 
     case WM_DESTROY:
+        CleanupToolTips();
         CleanupFonts(); // Final cleanup
         return TRUE;    // Handled
 
