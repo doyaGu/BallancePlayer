@@ -47,7 +47,7 @@ CFGDIR=Debug
 INTDIR=Debug\ConfigTool
 CPP_PROJ=/nologo /W3 /Gm /GX /ZI /Od $(LOCAL_INC) $(VIRTOOLS_INC) $(VC6_INC) /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_UNICODE" /D "CONFIGTOOL_STANDALONE" /FR"$(INTDIR)\\" /FD /GZ /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c
 RSC_PROJ=$(VC6_INC) $(LOCAL_INC) $(VIRTOOLS_INC) /l 0x409 /fo"$(INTDIR)\ConfigTool.res" /d "_DEBUG"
-LINK32_FLAGS=VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"$(OUTDIR)\ConfigTool.exe" /pdbtype:sept $(VC6_LIB) $(VIRTOOLS_LIB)
+LINK32_FLAGS=VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"$(OUTDIR)\ConfigTool.exe" /pdbtype:sept $(VC6_LIB) /libpath:"$(VC6_ROOT)\Lib\Debug" $(VIRTOOLS_LIB)
 !ENDIF
 
 ALL : "$(OUTDIR)\ConfigTool.exe"

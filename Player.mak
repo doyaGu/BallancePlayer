@@ -46,7 +46,7 @@ CFGDIR=Debug
 INTDIR=Debug\Player
 CPP_PROJ=/nologo /W3 /Gm /GX /ZI /Od $(LOCAL_INC) $(VIRTOOLS_INC) $(VC6_INC) /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "UNICODE" /D "_UNICODE" /FR"$(INTDIR)\\" /FD /GZ /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c
 RSC_PROJ=$(VC6_INC) $(LOCAL_INC) $(VIRTOOLS_INC) /l 0x409 /fo"$(INTDIR)\Player.res" /d "_DEBUG"
-LINK32_FLAGS=CK2.lib VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib delayimp.lib /nologo /subsystem:windows /debug /machine:I386 /out:"$(OUTDIR)\Player.exe" /pdbtype:sept /delayload:CK2.dll /delayload:VxMath.dll $(VC6_LIB) $(VIRTOOLS_LIB)
+LINK32_FLAGS=CK2.lib VxMath.lib kernel32.lib user32.lib gdi32.lib shell32.lib delayimp.lib /nologo /subsystem:windows /debug /machine:I386 /out:"$(OUTDIR)\Player.exe" /pdbtype:sept /delayload:CK2.dll /delayload:VxMath.dll $(VC6_LIB) /libpath:"$(VC6_ROOT)\Lib\Debug" $(VIRTOOLS_LIB)
 !ENDIF
 
 ALL : "$(OUTDIR)\Player.exe"
