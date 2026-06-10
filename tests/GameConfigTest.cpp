@@ -7,8 +7,6 @@
 #include "GameConfig.h"
 #include "Utils.h"
 
-#include "VxMathDefines.h"
-
 namespace fs = std::filesystem;
 
 class ScopedCurrentDirectory {
@@ -659,6 +657,6 @@ TEST_F(GameConfigTest, MemoryFootprint) {
     EXPECT_LT(configSize, 10240);
     
     // Should be at least the size of all the members
-    size_t minimumSize = sizeof(int) * 10 + sizeof(bool) * 25 + sizeof(VX_PIXELFORMAT) * 2;
+    size_t minimumSize = sizeof(int) * 10 + sizeof(bool) * 25;
     EXPECT_GE(configSize, minimumSize);
 }

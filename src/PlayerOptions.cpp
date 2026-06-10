@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "CmdlineParser.h"
-#include "Utils.h"
 
 namespace
 {
@@ -39,21 +38,6 @@ namespace
 
         if (arg.GetValue(0, value))
             config.*member = (int)value;
-        return true;
-    }
-
-    bool ApplyPixelFormatOption(CGameConfig &config, CmdlineParser &parser, const char *longopt, char shortopt,
-                                VX_PIXELFORMAT CGameConfig::*member)
-    {
-        CmdlineArg arg;
-        std::string value;
-        if (!longopt && shortopt == '\0')
-            return false;
-        if (!parser.Next(arg, longopt, shortopt, 1))
-            return false;
-
-        if (arg.GetValue(0, value))
-            config.*member = utils::String2PixelFormat(value.c_str(), 16);
         return true;
     }
 }
@@ -115,15 +99,9 @@ namespace playeroptions
                 matched = true; \
             if (matched) \
                 continue;
-#define X_PF(sec,key,member,def,cliLong,cliShort) \
-            if (ApplyPixelFormatOption(config, parser, cliLong, cliShort, &CGameConfig::member)) \
-                matched = true; \
-            if (matched) \
-                continue;
             GAMECONFIG_FIELDS
 #undef X_BOOL
 #undef X_INT
-#undef X_PF
 
             parser.Skip();
         }
@@ -142,11 +120,9 @@ namespace playeroptions
         int count = 0;
 #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) if (cliLong || cliShort != '\0') ++count;
 #define X_INT(sec,key,member,def,cliLong,cliShort) if (cliLong || cliShort != '\0') ++count;
-#define X_PF(sec,key,member,def,cliLong,cliShort) if (cliLong || cliShort != '\0') ++count;
         GAMECONFIG_FIELDS
 #undef X_BOOL
 #undef X_INT
-#undef X_PF
         return count;
     }
 
@@ -165,12 +141,9 @@ namespace playeroptions
         if ((OptionNameEquals(cliLong, longopt) || !longopt) && cliShort == shortopt) return true;
 #define X_INT(sec,key,member,def,cliLong,cliShort) \
         if ((OptionNameEquals(cliLong, longopt) || !longopt) && cliShort == shortopt) return true;
-#define X_PF(sec,key,member,def,cliLong,cliShort) \
-        if ((OptionNameEquals(cliLong, longopt) || !longopt) && cliShort == shortopt) return true;
         GAMECONFIG_FIELDS
 #undef X_BOOL
 #undef X_INT
-#undef X_PF
         return false;
     }
 

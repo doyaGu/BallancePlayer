@@ -11,7 +11,6 @@
 #include <Windows.h>
 
 #include "Utils.h"
-#include "VxMathDefines.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH 260
@@ -384,28 +383,6 @@ TEST_F(UtilsTest, CRC32) {
     EXPECT_EQ(knownVector, 0xCBF43926u);
 }
 
-// Pixel format conversion tests
-TEST_F(UtilsTest, String2PixelFormat) {
-    // Test known formats
-    EXPECT_EQ(utils::String2PixelFormat("_32_ARGB8888", 12), _32_ARGB8888);
-    EXPECT_EQ(utils::String2PixelFormat("_32_RGB888", 10), _32_RGB888);
-    EXPECT_EQ(utils::String2PixelFormat("_24_RGB888", 10), _24_RGB888);
-    EXPECT_EQ(utils::String2PixelFormat("_16_RGB565", 10), _16_RGB565);
-    EXPECT_EQ(utils::String2PixelFormat("_16_RGB555", 10), _16_RGB555);
-    EXPECT_EQ(utils::String2PixelFormat("565", 3), _16_RGB565);
-    EXPECT_EQ(utils::String2PixelFormat("1555", 4), _16_ARGB1555);
-    EXPECT_EQ(utils::String2PixelFormat("_DXT1", 5), _DXT1);
-    EXPECT_EQ(utils::String2PixelFormat("_DXT5", 5), _DXT5);
-
-    // Test unknown format
-    EXPECT_EQ(utils::String2PixelFormat("_UNKNOWN_FORMAT", 15), UNKNOWN_PF);
-    EXPECT_EQ(utils::String2PixelFormat("", 1), UNKNOWN_PF);
-    EXPECT_EQ(utils::String2PixelFormat(nullptr, 16), UNKNOWN_PF);
-    EXPECT_EQ(utils::String2PixelFormat("_16_", 4), UNKNOWN_PF);
-    EXPECT_EQ(utils::String2PixelFormat("_16_RGB565_EXTRA", strlen("_16_RGB565_EXTRA")), UNKNOWN_PF);
-    EXPECT_EQ(utils::String2PixelFormat("565_EXTRA", strlen("565_EXTRA")), UNKNOWN_PF);
-}
-
 TEST_F(UtilsTest, GetMonitorRectForNullWindowFallsBackToPrimaryMonitor) {
     RECT rect = {-1, -1, -1, -1};
 
@@ -414,35 +391,6 @@ TEST_F(UtilsTest, GetMonitorRectForNullWindowFallsBackToPrimaryMonitor) {
     EXPECT_EQ(rect.top, 0);
     EXPECT_EQ(rect.right, ::GetSystemMetrics(SM_CXSCREEN));
     EXPECT_EQ(rect.bottom, ::GetSystemMetrics(SM_CYSCREEN));
-}
-
-TEST_F(UtilsTest, PixelFormat2String) {
-    // Test known formats
-    EXPECT_STREQ(utils::PixelFormat2String(_32_ARGB8888), "_32_ARGB8888");
-    EXPECT_STREQ(utils::PixelFormat2String(_32_RGB888), "_32_RGB888");
-    EXPECT_STREQ(utils::PixelFormat2String(_24_RGB888), "_24_RGB888");
-    EXPECT_STREQ(utils::PixelFormat2String(_16_RGB565), "_16_RGB565");
-    EXPECT_STREQ(utils::PixelFormat2String(_16_RGB555), "_16_RGB555");
-    EXPECT_STREQ(utils::PixelFormat2String(_DXT1), "_DXT1");
-    EXPECT_STREQ(utils::PixelFormat2String(_DXT5), "_DXT5");
-
-    // Test unknown format
-    EXPECT_STREQ(utils::PixelFormat2String(UNKNOWN_PF), "UNKNOWN_PF");
-}
-
-TEST_F(UtilsTest, PixelFormatRoundTrip) {
-    // Test that conversion is symmetric
-    const VX_PIXELFORMAT formats[] = {
-        _32_ARGB8888, _32_RGB888, _24_RGB888, _16_RGB565, _16_RGB555,
-        _16_ARGB1555, _16_ARGB4444, _8_RGB332, _8_ARGB2222,
-        _DXT1, _DXT2, _DXT3, _DXT4, _DXT5
-    };
-
-    for (VX_PIXELFORMAT format : formats) {
-        const char* str = utils::PixelFormat2String(format);
-        VX_PIXELFORMAT converted = utils::String2PixelFormat(str, strlen(str));
-        EXPECT_EQ(format, converted) << "Failed for format: " << str;
-    }
 }
 
 // INI file operation tests
@@ -538,39 +486,6 @@ NonExistent=
     EXPECT_FALSE(utils::IniGetBoolean("Booleans", "NonExistent", value, testIniPath.string().c_str()));
 }
 
-TEST_F(UtilsTest, IniGetPixelFormat) {
-    CreateTestIni(R"(
-[Graphics]
-Format1=_32_ARGB8888
-Format2=_16_RGB565
-Format3=_DXT1
-InvalidFormat=_INVALID_FORMAT
-EmptyFormat=
-)");
-
-    VX_PIXELFORMAT value;
-
-    // Test successful retrieval
-    EXPECT_TRUE(utils::IniGetPixelFormat("Graphics", "Format1", value, testIniPath.string().c_str()));
-    EXPECT_EQ(value, _32_ARGB8888);
-
-    EXPECT_TRUE(utils::IniGetPixelFormat("Graphics", "Format2", value, testIniPath.string().c_str()));
-    EXPECT_EQ(value, _16_RGB565);
-
-    EXPECT_TRUE(utils::IniGetPixelFormat("Graphics", "Format3", value, testIniPath.string().c_str()));
-    EXPECT_EQ(value, _DXT1);
-
-    // Test invalid format (should still return true but with UNKNOWN_PF)
-    EXPECT_TRUE(utils::IniGetPixelFormat("Graphics", "InvalidFormat", value, testIniPath.string().c_str()));
-    EXPECT_EQ(value, UNKNOWN_PF);
-
-    // Test empty format
-    EXPECT_FALSE(utils::IniGetPixelFormat("Graphics", "EmptyFormat", value, testIniPath.string().c_str()));
-
-    // Test non-existent key
-    EXPECT_FALSE(utils::IniGetPixelFormat("Graphics", "NonExistent", value, testIniPath.string().c_str()));
-}
-
 TEST_F(UtilsTest, IniSetString) {
     // Test setting string values
     EXPECT_TRUE(utils::IniSetString("TestSection", "TestKey", "TestValue", testIniPath.string().c_str()));
@@ -615,20 +530,6 @@ TEST_F(UtilsTest, IniSetBoolean) {
     EXPECT_FALSE(value);
 }
 
-TEST_F(UtilsTest, IniSetPixelFormat) {
-    // Test setting pixel format values
-    EXPECT_TRUE(utils::IniSetPixelFormat("Graphics", "MainFormat", _32_ARGB8888, testIniPath.string().c_str()));
-    EXPECT_TRUE(utils::IniSetPixelFormat("Graphics", "BackupFormat", _16_RGB565, testIniPath.string().c_str()));
-
-    // Verify the values were set
-    VX_PIXELFORMAT value;
-    EXPECT_TRUE(utils::IniGetPixelFormat("Graphics", "MainFormat", value, testIniPath.string().c_str()));
-    EXPECT_EQ(value, _32_ARGB8888);
-
-    EXPECT_TRUE(utils::IniGetPixelFormat("Graphics", "BackupFormat", value, testIniPath.string().c_str()));
-    EXPECT_EQ(value, _16_RGB565);
-}
-
 // Integration tests
 TEST_F(UtilsTest, IniRoundTripOperations) {
     std::string testFile = testIniPath.string();
@@ -640,13 +541,11 @@ TEST_F(UtilsTest, IniRoundTripOperations) {
     EXPECT_TRUE(utils::IniSetString("Test", "StringValue", "Hello World", testFile.c_str()));
     EXPECT_TRUE(utils::IniSetInteger("Test", "IntValue", 42, testFile.c_str()));
     EXPECT_TRUE(utils::IniSetBoolean("Test", "BoolValue", true, testFile.c_str()));
-    EXPECT_TRUE(utils::IniSetPixelFormat("Test", "PixelValue", _32_ARGB8888, testFile.c_str()));
 
     // Read them back and verify
     char stringBuffer[256];
     int intValue;
     bool boolValue;
-    VX_PIXELFORMAT pixelValue;
 
     EXPECT_TRUE(utils::IniGetString("Test", "StringValue", stringBuffer, 256, testFile.c_str()));
     EXPECT_STREQ(stringBuffer, "Hello World");
@@ -656,9 +555,6 @@ TEST_F(UtilsTest, IniRoundTripOperations) {
 
     EXPECT_TRUE(utils::IniGetBoolean("Test", "BoolValue", boolValue, testFile.c_str()));
     EXPECT_TRUE(boolValue);
-
-    EXPECT_TRUE(utils::IniGetPixelFormat("Test", "PixelValue", pixelValue, testFile.c_str()));
-    EXPECT_EQ(pixelValue, _32_ARGB8888);
 }
 
 // Edge case and error handling tests

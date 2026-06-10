@@ -476,12 +476,9 @@ static void LoadConfigToDialog(HWND hDlg, const CGameConfig &config)
     SetConfigBoolControl(hDlg, IDC_CONFIG_##member, config.member);
 #define X_INT(sec,key,member,def,cliLong,cliShort) \
     SetConfigIntControl(hDlg, IDC_CONFIG_##member, config.member);
-#define X_PF(sec,key,member,def,cliLong,cliShort) \
-    SetConfigPixelFormatControl(hDlg, IDC_CONFIG_##member, config.member);
     GAMECONFIG_FIELDS
 #undef X_BOOL
 #undef X_INT
-#undef X_PF
 
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_SETCURSEL, StringResource::GetLanguage(), 0);
 }
@@ -492,12 +489,9 @@ static void SaveDialogToConfig(HWND hDlg, CGameConfig &config)
     config.member = GetConfigBoolControl(hDlg, IDC_CONFIG_##member);
 #define X_INT(sec,key,member,def,cliLong,cliShort) \
     config.member = GetConfigIntControl(hDlg, IDC_CONFIG_##member, config.member);
-#define X_PF(sec,key,member,def,cliLong,cliShort) \
-    config.member = GetConfigPixelFormatControl(hDlg, IDC_CONFIG_##member, config.member);
     GAMECONFIG_FIELDS
 #undef X_BOOL
 #undef X_INT
-#undef X_PF
 
     // UI Language is saved separately in SaveUILanguageToIni.
 }
