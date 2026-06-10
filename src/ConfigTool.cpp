@@ -41,7 +41,6 @@ private:
 
 static HFONT g_hFonts[LANG_UI_COUNT] = {NULL};
 static const int kChineseUIFontHeight = -14;
-static HWND g_hTooltip = NULL;
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1200)
 typedef BOOL PLAYER_DIALOG_RESULT;
@@ -95,7 +94,13 @@ enum
 {
     kToolTipCount = (sizeof(g_ToolTipMappings) / sizeof(g_ToolTipMappings[0])) - 1
 };
-static TCHAR g_ToolTipTexts[kToolTipCount][256];
+
+typedef struct
+{
+    CGameConfig *config;
+    HWND tooltip;
+    TCHAR toolTipTexts[kToolTipCount][256];
+} ConfigDialogState;
 
 // StringResource Implementation
 
@@ -256,8 +261,11 @@ static BOOL CALLBACK SetFontToChildProc(HWND hwnd, LPARAM lParam)
     return TRUE;
 }
 
-static bool BuildToolInfo(HWND hDlg, int index, TOOLINFO *toolInfo)
+static bool BuildToolInfo(HWND hDlg, ConfigDialogState *state, int index, TOOLINFO *toolInfo)
 {
+    if (!state)
+        return false;
+
     HWND hwndCtrl = ::GetDlgItem(hDlg, g_ToolTipMappings[index].ctrlID);
     if (!hwndCtrl)
         return false;
@@ -267,37 +275,37 @@ static bool BuildToolInfo(HWND hDlg, int index, TOOLINFO *toolInfo)
     toolInfo->uFlags = TTF_IDISHWND | TTF_SUBCLASS | TTF_TRANSPARENT;
     toolInfo->hwnd = hDlg;
     toolInfo->uId = (TOOLINFO_ID)hwndCtrl;
-    toolInfo->lpszText = g_ToolTipTexts[index];
+    toolInfo->lpszText = state->toolTipTexts[index];
     return true;
 }
 
-static void CopyToolTipText(int index)
+static void CopyToolTipText(ConfigDialogState *state, int index)
 {
-    _tcsncpy(g_ToolTipTexts[index], StringResource::GetString(g_ToolTipMappings[index].strID),
-             sizeof(g_ToolTipTexts[index]) / sizeof(g_ToolTipTexts[index][0]) - 1);
-    g_ToolTipTexts[index][sizeof(g_ToolTipTexts[index]) / sizeof(g_ToolTipTexts[index][0]) - 1] = TEXT('\0');
+    _tcsncpy(state->toolTipTexts[index], StringResource::GetString(g_ToolTipMappings[index].strID),
+             sizeof(state->toolTipTexts[index]) / sizeof(state->toolTipTexts[index][0]) - 1);
+    state->toolTipTexts[index][sizeof(state->toolTipTexts[index]) / sizeof(state->toolTipTexts[index][0]) - 1] = TEXT('\0');
 }
 
-static void UpdateToolTips(HWND hDlg)
+static void UpdateToolTips(HWND hDlg, ConfigDialogState *state)
 {
-    if (!g_hTooltip)
+    if (!state || !state->tooltip)
         return;
 
     for (int i = 0; i < kToolTipCount; i++)
     {
-        CopyToolTipText(i);
+        CopyToolTipText(state, i);
 
         TOOLINFO toolInfo;
-        if (BuildToolInfo(hDlg, i, &toolInfo))
+        if (BuildToolInfo(hDlg, state, i, &toolInfo))
         {
-            ::SendMessage(g_hTooltip, TTM_UPDATETIPTEXT, 0, (LPARAM)&toolInfo);
+            ::SendMessage(state->tooltip, TTM_UPDATETIPTEXT, 0, (LPARAM)&toolInfo);
         }
     }
 }
 
-static void InitializeToolTips(HWND hDlg)
+static void InitializeToolTips(HWND hDlg, ConfigDialogState *state)
 {
-    if (g_hTooltip)
+    if (!state || state->tooltip)
         return;
 
     INITCOMMONCONTROLSEX commonControls;
@@ -306,41 +314,41 @@ static void InitializeToolTips(HWND hDlg)
     if (!::InitCommonControlsEx(&commonControls))
         ::InitCommonControls();
 
-    g_hTooltip = ::CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
-                                  WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
-                                  CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                                  hDlg, NULL, NULL, NULL);
-    if (!g_hTooltip)
+    state->tooltip = ::CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, NULL,
+                                      WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
+                                      CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+                                      hDlg, NULL, NULL, NULL);
+    if (!state->tooltip)
         return;
 
-    ::SetWindowPos(g_hTooltip, HWND_TOPMOST, 0, 0, 0, 0,
+    ::SetWindowPos(state->tooltip, HWND_TOPMOST, 0, 0, 0, 0,
                    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    ::SendMessage(g_hTooltip, TTM_SETMAXTIPWIDTH, 0, 260);
+    ::SendMessage(state->tooltip, TTM_SETMAXTIPWIDTH, 0, 260);
 
     for (int i = 0; i < kToolTipCount; i++)
     {
-        CopyToolTipText(i);
+        CopyToolTipText(state, i);
 
         TOOLINFO toolInfo;
-        if (BuildToolInfo(hDlg, i, &toolInfo))
+        if (BuildToolInfo(hDlg, state, i, &toolInfo))
         {
-            ::SendMessage(g_hTooltip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
+            ::SendMessage(state->tooltip, TTM_ADDTOOL, 0, (LPARAM)&toolInfo);
         }
     }
 }
 
-static void CleanupToolTips()
+static void CleanupToolTips(ConfigDialogState *state)
 {
-    if (g_hTooltip)
+    if (state && state->tooltip)
     {
-        ::DestroyWindow(g_hTooltip);
-        g_hTooltip = NULL;
+        ::DestroyWindow(state->tooltip);
+        state->tooltip = NULL;
     }
 }
 
 // Dialog Update Logic
 
-static void UpdateDialogLanguage(HWND hDlg)
+static void UpdateDialogLanguage(HWND hDlg, ConfigDialogState *state)
 {
     // Set the appropriate font for the current language
     HFONT hFont = NULL;
@@ -403,7 +411,7 @@ static void UpdateDialogLanguage(HWND hDlg)
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_ADDSTRING, 0, (LPARAM)StringResource::GetString(IDS_UI_CHINESE));
     ::SendDlgItemMessage(hDlg, IDC_COMBO_LANGUAGE, CB_SETCURSEL, currentLang, 0);
 
-    UpdateToolTips(hDlg);
+    UpdateToolTips(hDlg, state);
 
     // Force redraw
     ::InvalidateRect(hDlg, NULL, TRUE);
@@ -614,11 +622,13 @@ typedef LONG LONG_PTR;
 
 PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    ConfigDialogState *state = NULL;
     CGameConfig *pConfig = NULL;
     if (message != WM_INITDIALOG)
     {
-        // Retrieve stored pointer after init
-        pConfig = (CGameConfig *)::GetWindowLongPtr(hDlg, GWLP_USERDATA);
+        state = (ConfigDialogState *)::GetWindowLongPtr(hDlg, GWLP_USERDATA);
+        if (state)
+            pConfig = state->config;
     }
 
     switch (message)
@@ -626,14 +636,14 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
     case WM_INITDIALOG:
     {
         InitializeFonts();
-        InitializeToolTips(hDlg);
-        // Store the CGameConfig pointer passed via lParam
+        state = (ConfigDialogState *)lParam;
         ::SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
-        pConfig = (CGameConfig *)lParam;
+        pConfig = state ? state->config : NULL;
+        InitializeToolTips(hDlg, state);
 
         if (pConfig)
         {
-            UpdateDialogLanguage(hDlg);         // Set initial language strings/fonts
+            UpdateDialogLanguage(hDlg, state);  // Set initial language strings/fonts
             LoadConfigToDialog(hDlg, *pConfig); // Load settings into controls
         }
         else
@@ -693,8 +703,8 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
                     if ((UILanguage)langSel != StringResource::GetLanguage())
                     {
                         StringResource::SetLanguage((UILanguage)langSel);
-                        InitializeFonts();          // Font might need recreation
-                        UpdateDialogLanguage(hDlg); // Update all UI text/fonts
+                        InitializeFonts();                 // Font might need recreation
+                        UpdateDialogLanguage(hDlg, state); // Update all UI text/fonts
                     }
                 }
             }
@@ -710,7 +720,7 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
         return TRUE;                 // Handled
 
     case WM_DESTROY:
-        CleanupToolTips();
+        CleanupToolTips(state);
         CleanupFonts(); // Final cleanup
         return TRUE;    // Handled
 
@@ -745,8 +755,12 @@ bool ShowConfigTool(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
         LoadUILanguageFromIni(configPath);
     }
 
+    ConfigDialogState dialogState;
+    ZeroMemory(&dialogState, sizeof(dialogState));
+    dialogState.config = &config;
+
     // Show the modal dialog
-    INT_PTR result = ::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_CONFIG), NULL, ConfigDlgProc, (LPARAM)&config);
+    INT_PTR result = ::DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_CONFIG), NULL, ConfigDlgProc, (LPARAM)&dialogState);
     if (result == IDOK)
         return true; // Success
     else if (result == -1)
