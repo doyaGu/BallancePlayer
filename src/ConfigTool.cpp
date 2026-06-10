@@ -22,6 +22,12 @@ typedef enum
     LANG_UI_COUNT
 } UILanguage;
 
+enum
+{
+    kStringResourceBufferCount = 8,
+    kStringResourceBufferLength = 4096
+};
+
 class StringResource
 {
 public:
@@ -34,7 +40,8 @@ public:
 private:
     static HINSTANCE m_hInstance;
     static UILanguage m_CurrentLanguage;
-    static TCHAR m_Buffer[4096];
+    static TCHAR m_Buffers[kStringResourceBufferCount][kStringResourceBufferLength];
+    static int m_BufferIndex;
 
     static UINT MapToLanguageID(UINT resourceID);
 };
@@ -106,7 +113,8 @@ typedef struct
 
 HINSTANCE StringResource::m_hInstance = NULL;
 UILanguage StringResource::m_CurrentLanguage = LANG_UI_ENGLISH;
-TCHAR StringResource::m_Buffer[4096] = {0};
+TCHAR StringResource::m_Buffers[kStringResourceBufferCount][kStringResourceBufferLength] = {{0}};
+int StringResource::m_BufferIndex = 0;
 
 bool StringResource::Initialize(HINSTANCE hInstance)
 {
@@ -116,52 +124,55 @@ bool StringResource::Initialize(HINSTANCE hInstance)
 
 LPCTSTR StringResource::GetString(UINT resourceID)
 {
+    TCHAR *buffer = m_Buffers[m_BufferIndex];
+    m_BufferIndex = (m_BufferIndex + 1) % kStringResourceBufferCount;
+
     if (!m_hInstance)
     {
-        _tcscpy(m_Buffer, TEXT("ERR: Uninitialized"));
-        return m_Buffer;
+        _tcscpy(buffer, TEXT("ERR: Uninitialized"));
+        return buffer;
     }
 
     UINT mappedID = MapToLanguageID(resourceID);
 
 #ifdef UNICODE
-    int len = ::LoadStringW(m_hInstance, mappedID, m_Buffer, sizeof(m_Buffer) / sizeof(TCHAR) - 1);
+    int len = ::LoadStringW(m_hInstance, mappedID, buffer, kStringResourceBufferLength - 1);
 
     if (len <= 0)
     {
         if (m_CurrentLanguage != LANG_UI_ENGLISH && resourceID != mappedID)
         {
             mappedID = resourceID;
-            len = ::LoadStringW(m_hInstance, mappedID, m_Buffer, sizeof(m_Buffer) / sizeof(TCHAR) - 1);
+            len = ::LoadStringW(m_hInstance, mappedID, buffer, kStringResourceBufferLength - 1);
         }
     }
 
     if (len <= 0)
     {
-        _stprintf(m_Buffer, TEXT("ERR: ID %u"), resourceID);
-        len = (int)_tcslen(m_Buffer);
+        _stprintf(buffer, TEXT("ERR: ID %u"), resourceID);
+        len = (int)_tcslen(buffer);
     }
 #else
-    int len = ::LoadStringA(m_hInstance, mappedID, m_Buffer, sizeof(m_Buffer) - 1);
+    int len = ::LoadStringA(m_hInstance, mappedID, buffer, kStringResourceBufferLength - 1);
 
     if (len <= 0)
     {
         if (m_CurrentLanguage != LANG_UI_ENGLISH && resourceID != mappedID)
         {
             mappedID = resourceID;
-            len = ::LoadStringA(m_hInstance, mappedID, m_Buffer, sizeof(m_Buffer) - 1);
+            len = ::LoadStringA(m_hInstance, mappedID, buffer, kStringResourceBufferLength - 1);
         }
     }
 
     if (len <= 0)
     {
-        sprintf(m_Buffer, "ERR: ID %u", resourceID);
-        len = (int)strlen(m_Buffer);
+        sprintf(buffer, "ERR: ID %u", resourceID);
+        len = (int)strlen(buffer);
     }
 #endif
 
-    m_Buffer[len] = TEXT('\0');
-    return m_Buffer;
+    buffer[len] = TEXT('\0');
+    return buffer;
 }
 
 UILanguage StringResource::GetLanguage()
