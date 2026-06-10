@@ -115,7 +115,7 @@ static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
         return false;
 
     outPath.erase();
-    bool updateStoredPath = false;
+    bool updateStoredPath = requestedPath[0] != '\0';
     const char *pathToResolve = requestedPath;
     if (requestedPath[0] == '\0')
     {
