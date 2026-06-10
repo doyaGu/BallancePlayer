@@ -636,20 +636,25 @@ static bool SaveUILanguageToIni(const char *iniPath)
     return ::WritePrivateProfileString(TEXT("Interface"), TEXT("UILanguage"), buffer, tIniPath) != 0;
 }
 
+static int ShowResourceMessage(HWND owner, UINT textID, UINT titleID, UINT type)
+{
+    LPCTSTR text = StringResource::GetString(textID);
+    LPCTSTR title = StringResource::GetString(titleID);
+    return ::MessageBox(owner, text, title, type);
+}
+
 static bool SaveDialogConfig(HWND hDlg, CGameConfig &config)
 {
     if (!config.SaveToIni())
     {
-        ::MessageBox(hDlg, StringResource::GetString(IDS_ERR_CANNOT_SAVE),
-                     StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
+        ShowResourceMessage(hDlg, IDS_ERR_CANNOT_SAVE, IDS_ERR_CONFIG_TITLE, MB_OK | MB_ICONERROR);
         return false;
     }
 
     const char *configPath = config.GetPath(eConfigPath);
     if (!SaveUILanguageToIni(configPath))
     {
-        ::MessageBox(hDlg, StringResource::GetString(IDS_ERR_CANNOT_SAVE),
-                     StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
+        ShowResourceMessage(hDlg, IDS_ERR_CANNOT_SAVE, IDS_ERR_CONFIG_TITLE, MB_OK | MB_ICONERROR);
         return false;
     }
 
@@ -666,13 +671,23 @@ typedef LONG LONG_PTR;
 #define SetWindowLongPtr SetWindowLong
 #endif
 
+static ConfigDialogState *GetDialogState(HWND hDlg)
+{
+    return (ConfigDialogState *)::GetWindowLongPtr(hDlg, GWLP_USERDATA);
+}
+
+static void SetDialogState(HWND hDlg, ConfigDialogState *state)
+{
+    ::SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)state);
+}
+
 PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     ConfigDialogState *state = NULL;
     CGameConfig *pConfig = NULL;
     if (message != WM_INITDIALOG)
     {
-        state = (ConfigDialogState *)::GetWindowLongPtr(hDlg, GWLP_USERDATA);
+        state = GetDialogState(hDlg);
         if (state)
             pConfig = state->config;
     }
@@ -683,7 +698,7 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
     {
         InitializeFonts();
         state = (ConfigDialogState *)lParam;
-        ::SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+        SetDialogState(hDlg, state);
         pConfig = state ? state->config : NULL;
         InitializeToolTips(hDlg, state);
 
@@ -695,7 +710,7 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
         else
         {
             // Error: No config object provided
-            ::MessageBox(hDlg, StringResource::GetString(IDS_ERR_NO_CONFIG), StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
+            ShowResourceMessage(hDlg, IDS_ERR_NO_CONFIG, IDS_ERR_CONFIG_TITLE, MB_OK | MB_ICONERROR);
             ::EndDialog(hDlg, IDCANCEL);
         }
         return TRUE; // Handled
@@ -719,8 +734,7 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
             else
             {
                 // Should not happen
-                ::MessageBox(hDlg, StringResource::GetString(IDS_ERR_CANNOT_SAVE),
-                             StringResource::GetString(IDS_ERR_CONFIG_TITLE), MB_OK | MB_ICONERROR);
+                ShowResourceMessage(hDlg, IDS_ERR_CANNOT_SAVE, IDS_ERR_CONFIG_TITLE, MB_OK | MB_ICONERROR);
                 ::EndDialog(hDlg, IDCANCEL);
             }
             return TRUE; // Handled
@@ -730,9 +744,8 @@ PLAYER_DIALOG_RESULT CALLBACK ConfigDlgProc(HWND hDlg, UINT message, WPARAM wPar
             return TRUE; // Handled
 
         case IDC_BUTTON_DEFAULTS:
-            if (pConfig && ::MessageBox(hDlg, StringResource::GetString(IDS_RESET_CONFIRM),
-                                        StringResource::GetString(IDS_RESET_TITLE),
-                                        MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES)
+            if (pConfig && ShowResourceMessage(hDlg, IDS_RESET_CONFIRM, IDS_RESET_TITLE,
+                                               MB_YESNO | MB_ICONQUESTION | MB_DEFBUTTON2) == IDYES)
             {
                 CGameConfig defaultConfig;
                 LoadConfigToDialog(hDlg, defaultConfig); // Load defaults into UI
@@ -786,7 +799,7 @@ bool ShowConfigTool(HINSTANCE hInstance, CGameConfig &config, bool loadIni)
 
     if (!config.EnsureConfigPath())
     {
-        ::MessageBox(NULL, StringResource::GetString(IDS_WARN_CONFIG_PATH), StringResource::GetString(IDS_WARN_CONFIG_TITLE), MB_OK | MB_ICONWARNING);
+        ShowResourceMessage(NULL, IDS_WARN_CONFIG_PATH, IDS_WARN_CONFIG_TITLE, MB_OK | MB_ICONWARNING);
         return false;
     }
 
