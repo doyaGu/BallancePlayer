@@ -19,11 +19,14 @@
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
 
+#define PROCESS_EXIT_TIMEOUT_MS 2000
+
 static HANDLE CreateNamedMutex();
 static void EnableDpiAwareness();
 static void UseExecutableDirectoryAsWorkingDirectory();
 static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config);
-static bool ForceExitOtherInstances(const TCHAR *exeName);
+static bool GetProcessExecutablePath(DWORD processId, TCHAR *exePath, size_t exePathSize);
+static bool ForceExitOtherInstances(const TCHAR *exePath, const TCHAR *exeName);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
@@ -49,7 +52,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
             int result = ::MessageBox(NULL, msg, TEXT("Warning"), MB_YESNO | MB_ICONQUESTION);
             if (result == IDYES)
             {
-                ForceExitOtherInstances(exeName);
+                ForceExitOtherInstances(exePath, exeName);
                 ::Sleep(100);
                 hMutex = CreateNamedMutex();
             }
@@ -149,7 +152,33 @@ static HANDLE CreateNamedMutex()
     return hMutex;
 }
 
-static bool ForceExitOtherInstances(const TCHAR *exeName)
+static bool GetProcessExecutablePath(DWORD processId, TCHAR *exePath, size_t exePathSize)
+{
+    if (!exePath || exePathSize == 0)
+        return false;
+
+    exePath[0] = TEXT('\0');
+
+    HANDLE hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, processId);
+    if (hSnapshot == INVALID_HANDLE_VALUE)
+        return false;
+
+    MODULEENTRY32 me32;
+    me32.dwSize = sizeof(MODULEENTRY32);
+
+    bool found = false;
+    if (::Module32First(hSnapshot, &me32))
+    {
+        _tcsncpy(exePath, me32.szExePath, exePathSize - 1);
+        exePath[exePathSize - 1] = TEXT('\0');
+        found = exePath[0] != TEXT('\0');
+    }
+
+    ::CloseHandle(hSnapshot);
+    return found;
+}
+
+static bool ForceExitOtherInstances(const TCHAR *exePath, const TCHAR *exeName)
 {
     DWORD currentPid = ::GetCurrentProcessId();
     HANDLE hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -168,19 +197,26 @@ static bool ForceExitOtherInstances(const TCHAR *exeName)
     bool terminatedAny = false;
     do
     {
-        if (pe32.th32ProcessID != currentPid)
+        if (pe32.th32ProcessID == currentPid)
+            continue;
+
+        if (_tcsicmp(pe32.szExeFile, exeName) != 0)
+            continue;
+
+        TCHAR processExePath[MAX_PATH];
+        if (!GetProcessExecutablePath(pe32.th32ProcessID, processExePath, ARRAY_NUM(processExePath)) ||
+            _tcsicmp(processExePath, exePath) != 0)
+            continue;
+
+        HANDLE hProcess = ::OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pe32.th32ProcessID);
+        if (hProcess)
         {
-            if (_tcsicmp(pe32.szExeFile, exeName) == 0)
+            if (::TerminateProcess(hProcess, 0) &&
+                ::WaitForSingleObject(hProcess, PROCESS_EXIT_TIMEOUT_MS) == WAIT_OBJECT_0)
             {
-                HANDLE hProcess = ::OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pe32.th32ProcessID);
-                if (hProcess)
-                {
-                    ::TerminateProcess(hProcess, 0);
-                    ::WaitForSingleObject(hProcess, 2000);
-                    ::CloseHandle(hProcess);
-                    terminatedAny = true;
-                }
+                terminatedAny = true;
             }
+            ::CloseHandle(hProcess);
         }
     } while (::Process32Next(hSnapshot, &pe32));
 
