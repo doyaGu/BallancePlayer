@@ -3,6 +3,9 @@
 #endif
 #include <Windows.h>
 #include <tchar.h>
+#include <TlHelp32.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "CmdlineParser.h"
 #include "GameConfig.h"
@@ -17,6 +20,7 @@ static HANDLE CreateNamedMutex();
 static void EnableDpiAwareness();
 static void UseExecutableDirectoryAsWorkingDirectory();
 static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config);
+static bool ForceExitOtherInstances(const char *exeName);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
@@ -27,8 +31,31 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
     HANDLE hMutex = CreateNamedMutex();
     if (!hMutex)
     {
-        ::MessageBox(NULL, TEXT("Another player is running!"), TEXT("Error"), MB_OK);
-        return -1;
+        char exePath[MAX_PATH];
+        if (::GetModuleFileNameA(NULL, exePath, MAX_PATH))
+        {
+            char filename[MAX_PATH];
+            char ext[MAX_PATH];
+            _splitpath(exePath, NULL, NULL, filename, ext);
+            char exeName[MAX_PATH];
+            _snprintf(exeName, MAX_PATH, "%s%s", filename, ext);
+
+            char msg[512];
+            _snprintf(msg, sizeof(msg), "Another game instance (%s) is running. Do you want to force exit it?", exeName);
+
+            int result = ::MessageBoxA(NULL, msg, "Warning", MB_YESNO | MB_ICONQUESTION);
+            if (result == IDYES)
+            {
+                ForceExitOtherInstances(exeName);
+                ::Sleep(100);
+                hMutex = CreateNamedMutex();
+            }
+        }
+
+        if (!hMutex)
+        {
+            return -1;
+        }
     }
 
     LockGuard guard(hMutex);
@@ -117,6 +144,45 @@ static HANDLE CreateNamedMutex()
     }
 
     return hMutex;
+}
+
+static bool ForceExitOtherInstances(const char *exeName)
+{
+    DWORD currentPid = ::GetCurrentProcessId();
+    HANDLE hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE)
+        return false;
+
+    PROCESSENTRY32 pe32;
+    pe32.dwSize = sizeof(PROCESSENTRY32);
+
+    if (!::Process32First(hSnapshot, &pe32))
+    {
+        ::CloseHandle(hSnapshot);
+        return false;
+    }
+
+    bool terminatedAny = false;
+    do
+    {
+        if (pe32.th32ProcessID != currentPid)
+        {
+            if (_stricmp(pe32.szExeFile, exeName) == 0)
+            {
+                HANDLE hProcess = ::OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pe32.th32ProcessID);
+                if (hProcess)
+                {
+                    ::TerminateProcess(hProcess, 0);
+                    ::WaitForSingleObject(hProcess, 2000);
+                    ::CloseHandle(hProcess);
+                    terminatedAny = true;
+                }
+            }
+        }
+    } while (::Process32Next(hSnapshot, &pe32));
+
+    ::CloseHandle(hSnapshot);
+    return terminatedAny;
 }
 
 static void UseExecutableDirectoryAsWorkingDirectory()
