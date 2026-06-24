@@ -16,11 +16,14 @@
 #include "Logger.h"
 #include "Utils.h"
 
+#define ARRAY_NUM(Array) \
+    (sizeof(Array) / sizeof(Array[0]))
+
 static HANDLE CreateNamedMutex();
 static void EnableDpiAwareness();
 static void UseExecutableDirectoryAsWorkingDirectory();
 static bool EnsurePersistentConfigReady(HINSTANCE hInstance, CGameConfig &config);
-static bool ForceExitOtherInstances(const char *exeName);
+static bool ForceExitOtherInstances(const TCHAR *exeName);
 
 int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
@@ -31,19 +34,19 @@ int APIENTRY _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
     HANDLE hMutex = CreateNamedMutex();
     if (!hMutex)
     {
-        char exePath[MAX_PATH];
-        if (::GetModuleFileNameA(NULL, exePath, MAX_PATH))
+        TCHAR exePath[MAX_PATH];
+        DWORD length = ::GetModuleFileName(NULL, exePath, ARRAY_NUM(exePath));
+        if (length > 0 && length < ARRAY_NUM(exePath))
         {
-            char filename[MAX_PATH];
-            char ext[MAX_PATH];
-            _splitpath(exePath, NULL, NULL, filename, ext);
-            char exeName[MAX_PATH];
-            _snprintf(exeName, MAX_PATH, "%s%s", filename, ext);
+            const TCHAR *exeName = _tcsrchr(exePath, TEXT('\\'));
+            exeName = exeName ? exeName + 1 : exePath;
 
-            char msg[512];
-            _snprintf(msg, sizeof(msg), "Another game instance (%s) is running. Do you want to force exit it?", exeName);
+            TCHAR msg[512];
+            _sntprintf(msg, ARRAY_NUM(msg),
+                       TEXT("Another game instance (%s) is running. Do you want to force exit it?"), exeName);
+            msg[ARRAY_NUM(msg) - 1] = TEXT('\0');
 
-            int result = ::MessageBoxA(NULL, msg, "Warning", MB_YESNO | MB_ICONQUESTION);
+            int result = ::MessageBox(NULL, msg, TEXT("Warning"), MB_YESNO | MB_ICONQUESTION);
             if (result == IDYES)
             {
                 ForceExitOtherInstances(exeName);
@@ -146,7 +149,7 @@ static HANDLE CreateNamedMutex()
     return hMutex;
 }
 
-static bool ForceExitOtherInstances(const char *exeName)
+static bool ForceExitOtherInstances(const TCHAR *exeName)
 {
     DWORD currentPid = ::GetCurrentProcessId();
     HANDLE hSnapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -167,7 +170,7 @@ static bool ForceExitOtherInstances(const char *exeName)
     {
         if (pe32.th32ProcessID != currentPid)
         {
-            if (_stricmp(pe32.szExeFile, exeName) == 0)
+            if (_tcsicmp(pe32.szExeFile, exeName) == 0)
             {
                 HANDLE hProcess = ::OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, FALSE, pe32.th32ProcessID);
                 if (hProcess)
