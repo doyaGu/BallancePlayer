@@ -139,7 +139,7 @@ static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
 static XString SerializeValue(int value)
 {
     char buffer[64];
-    sprintf(buffer, "%d", value);
+    snprintf(buffer, sizeof(buffer), "%d", value);
     return buffer;
 }
 

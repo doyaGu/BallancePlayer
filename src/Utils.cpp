@@ -689,7 +689,7 @@ namespace utils
     bool IniSetInteger(const char *section, const char *name, int value, const char *filename)
     {
         char buf[64];
-        sprintf(buf, "%d", value);
+        snprintf(buf, sizeof(buf), "%d", value);
         return IniSetValue(section, name, buf, filename);
     }
 
