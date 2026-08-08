@@ -140,8 +140,37 @@ target_include_directories(${PLAYER_NAME} PRIVATE
         "${_player_generated_dir}"
 )
 
+set(_player_runtime_dependency_args)
+set(_player_sdl_runtime_target "")
+if (TARGET SDL3::SDL3-shared)
+    set(_player_sdl_runtime_target SDL3::SDL3-shared)
+elseif (TARGET SDL3::SDL3)
+    get_target_property(_player_sdl_runtime_target SDL3::SDL3 ALIASED_TARGET)
+    if (NOT _player_sdl_runtime_target)
+        set(_player_sdl_runtime_target SDL3::SDL3)
+    endif ()
+    get_target_property(_player_sdl_target_type ${_player_sdl_runtime_target} TYPE)
+    if (NOT _player_sdl_target_type STREQUAL "SHARED_LIBRARY")
+        set(_player_sdl_runtime_target "")
+    endif ()
+endif ()
+
+if (_player_sdl_runtime_target)
+    # Package the linked SDL runtime through CMake's dependency resolver. The
+    # include/exclude pair keeps the install contract limited to SDL while
+    # allowing CMake to resolve package-manager symlinks correctly.
+    list(APPEND _player_runtime_dependency_args
+            RUNTIME_DEPENDENCIES
+            POST_INCLUDE_FILES "$<TARGET_FILE:${_player_sdl_runtime_target}>"
+            POST_EXCLUDE_REGEXES ".*"
+    )
+endif ()
+
 install(TARGETS ${PLAYER_NAME}
+        ${_player_runtime_dependency_args}
         RUNTIME DESTINATION Bin COMPONENT Runtime
+        LIBRARY DESTINATION Bin COMPONENT Runtime
+        FRAMEWORK DESTINATION Bin COMPONENT Runtime
 )
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")

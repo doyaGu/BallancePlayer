@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.21)
 
 if (DEFINED PLAYER_VERSION_OVERRIDE)
     set(BALLANCE_PLAYER_VERSION "${PLAYER_VERSION_OVERRIDE}")
