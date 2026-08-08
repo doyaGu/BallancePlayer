@@ -129,7 +129,7 @@ if (NOT TARGET CK2 OR NOT TARGET VxMath)
             FetchContent_Declare(
                     virtools_sdk
                     GIT_REPOSITORY https://github.com/doyaGu/Virtools-SDK-2.1.git
-                    GIT_TAG main
+                    GIT_TAG 175bcb12d829c687359b90615be53524cdba0132
             )
             message(STATUS "[BallancePlayer] Downloading Virtools SDK")
             FetchContent_MakeAvailable(virtools_sdk)
