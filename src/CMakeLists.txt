@@ -54,6 +54,7 @@ if (BALLANCE_BUILD_STATIC)
 endif ()
 
 add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
+target_compile_features(${PLAYER_NAME} PRIVATE cxx_std_17)
 
 set_target_properties(${PLAYER_NAME} PROPERTIES
         OUTPUT_NAME ${PLAYER_NAME}
