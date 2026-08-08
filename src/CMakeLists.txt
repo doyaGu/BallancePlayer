@@ -51,6 +51,65 @@ endif ()
 
 if (BALLANCE_BUILD_STATIC)
     list(APPEND PLAYER_SOURCES StaticPlugins.cpp)
+
+    include("${CMAKE_CURRENT_LIST_DIR}/../cmake/PlayerStaticModules.cmake")
+
+    set(PLAYER_STATIC_PLUGIN_DECLARATIONS "")
+    set(PLAYER_STATIC_PLUGIN_ENTRIES "")
+    foreach (_player_static_module IN LISTS PLAYER_STATIC_MODULES)
+        set(_player_static_module_prefix "PLAYER_STATIC_MODULE_${_player_static_module}")
+        set(_player_static_macro "${${_player_static_module_prefix}_COMPILE_DEFINITION}")
+        set(_player_static_name "${${_player_static_module_prefix}_DISPLAY_NAME}")
+        set(_player_static_info_count "${${_player_static_module_prefix}_GET_INFO_COUNT}")
+        set(_player_static_info "${${_player_static_module_prefix}_GET_INFO}")
+        set(_player_static_reader "${${_player_static_module_prefix}_GET_READER}")
+        set(_player_static_register "${${_player_static_module_prefix}_REGISTER_DECLARATIONS}")
+
+        if (${_player_static_module_prefix}_LINK_ONLY)
+            continue()
+        endif ()
+
+        string(APPEND PLAYER_STATIC_PLUGIN_DECLARATIONS
+                "#if defined(${_player_static_macro})\n")
+        if (_player_static_info_count)
+            string(APPEND PLAYER_STATIC_PLUGIN_DECLARATIONS
+                    "extern int ${_player_static_info_count}();\n")
+        endif ()
+        string(APPEND PLAYER_STATIC_PLUGIN_DECLARATIONS
+                "extern CKPluginInfo *${_player_static_info}(int);\n")
+        if (_player_static_reader)
+            string(APPEND PLAYER_STATIC_PLUGIN_DECLARATIONS
+                    "extern CKDataReader *${_player_static_reader}(int);\n")
+        endif ()
+        if (_player_static_register)
+            string(APPEND PLAYER_STATIC_PLUGIN_DECLARATIONS
+                    "extern void ${_player_static_register}(XObjectDeclarationArray *);\n")
+        endif ()
+        string(APPEND PLAYER_STATIC_PLUGIN_DECLARATIONS "#endif\n\n")
+
+        foreach (_callback IN ITEMS
+                _player_static_info_count
+                _player_static_info
+                _player_static_reader
+                _player_static_register)
+            if (NOT ${_callback})
+                set(${_callback}_value NULL)
+            else ()
+                set(${_callback}_value "${${_callback}}")
+            endif ()
+        endforeach ()
+
+        string(APPEND PLAYER_STATIC_PLUGIN_ENTRIES
+                "#if defined(${_player_static_macro})\n"
+                "    {\"${_player_static_name}\", ${_player_static_info_count_value}, ${_player_static_info_value}, ${_player_static_reader_value}, ${_player_static_register_value}},\n"
+                "#endif\n")
+    endforeach ()
+
+    configure_file(
+            "${CMAKE_CURRENT_LIST_DIR}/StaticPluginRegistry.generated.h.in"
+            "${_player_generated_dir}/StaticPluginRegistry.generated.h"
+            @ONLY
+    )
 endif ()
 
 add_executable(${PLAYER_NAME} ${PLAYER_HEADERS} ${PLAYER_SOURCES})
@@ -95,38 +154,17 @@ if (BALLANCE_BUILD_STATIC)
         set(_ballance_static_module_targets "${_ballance_static_module_targets}" PARENT_SCOPE)
     endfunction()
 
-    _player_add_static_module(CK2_3DStatic BALLANCE_STATIC_HAVE_CK2_3D TRUE)
-    _player_add_static_module(SdlInputManagerStatic BALLANCE_STATIC_HAVE_SDLINPUTMANAGER TRUE)
-    _player_add_static_module(SdlSoundManagerStatic BALLANCE_STATIC_HAVE_SDLSOUNDMANAGER TRUE)
-    _player_add_static_module(ParameterOperationsStatic BALLANCE_STATIC_HAVE_PARAMETEROPERATIONS TRUE)
-    _player_add_static_module(AVIReaderStatic BALLANCE_STATIC_HAVE_AVIREADER TRUE)
-    _player_add_static_module(ImageReaderStatic BALLANCE_STATIC_HAVE_IMAGEREADER TRUE)
-    _player_add_static_module(WavReaderStatic BALLANCE_STATIC_HAVE_WAVREADER TRUE)
-    _player_add_static_module(VirtoolsLoaderStatic BALLANCE_STATIC_HAVE_VIRTOOLSLOADER TRUE)
-    _player_add_static_module(3DTransStatic BALLANCE_STATIC_HAVE_3DTRANS FALSE)
-    _player_add_static_module(CamerasStatic BALLANCE_STATIC_HAVE_CAMERAS FALSE)
-    _player_add_static_module(CharactersStatic BALLANCE_STATIC_HAVE_CHARACTERS FALSE)
-    _player_add_static_module(CollisionStatic BALLANCE_STATIC_HAVE_COLLISION FALSE)
-    _player_add_static_module(ControllersStatic BALLANCE_STATIC_HAVE_CONTROLLERS FALSE)
-    _player_add_static_module(GridsStatic BALLANCE_STATIC_HAVE_GRIDS FALSE)
-    _player_add_static_module(InterfaceStatic BALLANCE_STATIC_HAVE_INTERFACE FALSE)
-    _player_add_static_module(LightsStatic BALLANCE_STATIC_HAVE_LIGHTS FALSE)
-    _player_add_static_module(LogicsStatic BALLANCE_STATIC_HAVE_LOGICS FALSE)
-    _player_add_static_module(MaterialsStatic BALLANCE_STATIC_HAVE_MATERIALS FALSE)
-    _player_add_static_module(MeshModifiersStatic BALLANCE_STATIC_HAVE_MESHMODIFIERS FALSE)
-    _player_add_static_module(MidiManagerStatic BALLANCE_STATIC_HAVE_MIDIMANAGER FALSE)
-    _player_add_static_module(NarrativesStatic BALLANCE_STATIC_HAVE_NARRATIVES FALSE)
-    _player_add_static_module(SoundsStatic BALLANCE_STATIC_HAVE_SOUNDS FALSE)
-    _player_add_static_module(VisualsStatic BALLANCE_STATIC_HAVE_VISUALS FALSE)
-    _player_add_static_module(WorldEnvironmentStatic BALLANCE_STATIC_HAVE_WORLDENVIRONMENT FALSE)
-    _player_add_static_module(BuildingBlocksAddons1Static BALLANCE_STATIC_HAVE_BUILDINGBLOCKSADDONS1 FALSE)
-    _player_add_static_module(physics_RTStatic BALLANCE_STATIC_HAVE_PHYSICS_RT FALSE)
-    _player_add_static_module(TT_DatabaseManager_RTStatic BALLANCE_STATIC_HAVE_TT_DATABASEMANAGER_RT FALSE)
-    _player_add_static_module(TT_Gravity_RTStatic BALLANCE_STATIC_HAVE_TT_GRAVITY_RT FALSE)
-    _player_add_static_module(TT_InterfaceManager_RTStatic BALLANCE_STATIC_HAVE_TT_INTERFACEMANAGER_RT FALSE)
-    _player_add_static_module(TT_ParticleSystems_RTStatic BALLANCE_STATIC_HAVE_TT_PARTICLESYSTEMS_RT FALSE)
-    _player_add_static_module(TT_Toolbox_RTStatic BALLANCE_STATIC_HAVE_TT_TOOLBOX_RT FALSE)
-    _player_add_static_module(CKBgfxRasterizerStatic BALLANCE_STATIC_HAVE_CKBGFXRASTERIZER TRUE)
+    foreach (_player_static_module IN LISTS PLAYER_STATIC_MODULES)
+        set(_player_static_module_prefix "PLAYER_STATIC_MODULE_${_player_static_module}")
+        set(_player_static_target "${${_player_static_module_prefix}_STATIC_TARGET}")
+        set(_player_static_macro "${${_player_static_module_prefix}_COMPILE_DEFINITION}")
+        set(_player_static_required "${${_player_static_module_prefix}_REQUIRED}")
+        _player_add_static_module(
+                "${_player_static_target}"
+                "${_player_static_macro}"
+                "${_player_static_required}"
+        )
+    endforeach ()
 
     if (NOT _ballance_static_module_targets)
         message(FATAL_ERROR "BALLANCE_BUILD_STATIC did not find any static module targets")

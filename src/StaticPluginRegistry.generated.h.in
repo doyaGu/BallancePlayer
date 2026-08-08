@@ -1,0 +1,3 @@
+@PLAYER_STATIC_PLUGIN_DECLARATIONS@
+static const StaticPlugin kStaticPlugins[] = {
+@PLAYER_STATIC_PLUGIN_ENTRIES@};
