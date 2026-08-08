@@ -4,6 +4,8 @@
 
 BallancePlayer is a modern, enhanced player for the game Ballance, developed by decompiling and improving the original version. It offers various new features and optimizations to deliver an improved gaming experience while maintaining compatibility with the original game.
 
+The cross-platform SDL3 instructions in this document describe the `sdl` branch.
+
 ## Features
 
 - Portable and ready to use, no configuration needed to start the game
@@ -16,61 +18,67 @@ BallancePlayer is a modern, enhanced player for the game Ballance, developed by 
 - In-game resolution switching support
 - Hotkeys for toggling fullscreen mode and closing the game
 - No registry modifications
-- No dependency on `Dsetup.dll`
-- Integrated `ResDll.dll` for seamless operation
+- Built-in replacements for the legacy `Dsetup.dll` and `ResDll.dll` launcher functionality
 - Fixes for bugs present in the original player
 - Various performance improvements
 
 ## System Requirements
 
-Supports the following Windows versions:
-- Windows XP
-- Windows Vista
-- Windows 7
-- Windows 8 / 8.1
-- Windows 10
-- Windows 11
+BallancePlayer is continuously built as part of the Ballanced runtime for:
+
+| Platform | Architectures |
+|----------|---------------|
+| Windows | x86, x64, ARM64 |
+| Linux | x64, ARM64 |
+| macOS | x64, ARM64 |
+
+The exact minimum OS version depends on the SDL3 package and compiler used for a release. The Ballanced root `CMakePresets.json` is the source of truth for the supported full-runtime matrix.
 
 ## Installation
 
-BallancePlayer supports both the original `Bin` layout and a flat layout.
+BallancePlayer supports both the original `Bin` layout and a flat layout. A Ballanced release archive contains a complete runtime tree, not only the Player executable.
 
 ### Original `Bin` layout
 
-1. Extract the provided package into the `Bin` directory of your game folder.
-2. Keep game assets such as `base.cmo`, `Database.tdb`, `Sounds`, `Textures`, and `3D Entities` in the game folder.
-3. Launch the game by running `Bin\Player.exe`. No need to set compatibility mode.
+1. Extract the Ballanced release archive into the game root. The archive already contains `Bin/`, `RenderEngines/`, `Managers/`, `Plugins/`, and `BuildingBlocks/`.
+2. Keep game assets such as `base.cmo`, `Database.tdb`, `Sounds`, `Textures`, and `3D Entities` in that root.
+3. Launch `Bin\Player.exe` on Windows or `Bin/Player` on Linux and macOS.
 
 ### Flat layout
 
-You may also place `Player.exe`, `base.cmo`, `Database.tdb`, asset folders, and runtime DLLs in the same directory. When `base.cmo` is found next to `Player.exe`, the default root path becomes the executable directory.
+You may also place `Player` (`Player.exe` on Windows), `base.cmo`, `Database.tdb`, asset folders, and all runtime modules in the same directory. When `base.cmo` is found next to the executable, the default root path becomes the executable directory.
 
 ## Building from Source
 
-### Prerequisites
+### Recommended: Ballanced superproject
 
-To build BallancePlayer, you’ll need the Virtools SDK, which can be obtained from [Virtools-SDK-2.1](https://github.com/doyaGu/Virtools-SDK-2.1). Set the `VIRTOOLS_SDK_PATH` environment variable to the path where the SDK is installed before starting the build process.
+Build through [Ballanced](https://github.com/doyaGu/Ballanced) for a complete, runnable runtime with pinned CK2, VxMath, renderer, manager, plugin, and Building Block revisions:
 
-### Building with CMake
+```bash
+git clone --recurse-submodules https://github.com/doyaGu/Ballanced.git
+cd Ballanced
+cmake --preset windows-x86-runtime # choose the preset for your host
+cmake --build --preset windows-x86-runtime-stage-release
+ctest --preset windows-x86-runtime-stage-release
+```
 
-1. **Install CMake**: Ensure CMake is installed on your system.
-2. **Navigate to Project Directory**: Open a console and navigate to the directory containing the BallancePlayer source code.
-3. **Generate Build Files**: Run the following command to generate Visual Studio project files for 32-bit architecture:
-   ```
-   cmake -B build -G "Visual Studio 17 2022" -A Win32
-   ```
-4. **Open in Visual Studio**: Navigate to the `build` directory and open the solution file `BallancePlayer.sln` in Visual Studio.
-5. **Build the Solution**: Use Visual Studio to compile the project.
+SDL3 must be discoverable by CMake. See the [Ballanced build guide](https://github.com/doyaGu/Ballanced/blob/sdl/BUILD.md) for Windows, Linux, and macOS presets.
 
-### Building with Visual Studio 6.0
+### Standalone CMake build
 
-1. **Install Visual Studio 6.0**: Ensure Visual Studio 6.0 is installed.
-2. **Set SDK paths**: Set `VC6_ROOT` to your Visual Studio 6.0 toolchain path, or pass it to `nmake`.
-3. **Build the Project**: Run `nmake /f Makefile CFG=Release VC6_ROOT=C:\Path\To\VC6` from the project root.
+BallancePlayer's checked-in presets currently cover Visual Studio 2022 on Windows x86 and x64:
 
-### Notes
+```powershell
+cmake --preset player-runtime-msvc-win32
+cmake --build --preset player-runtime-win32-release
+ctest --preset player-runtime-win32-release
+```
 
-The official release package is built with Visual Studio 6.0 for maximum compatibility with older systems.
+Manual CMake builds can be used on other hosts. In a Ballanced source checkout, sibling CK2, VxMath, RenderEngine, Managers, Plugins, and BuildingBlocks projects are detected automatically. If CK2/VxMath are unavailable locally, set `VIRTOOLS_SDK_PATH` or enable `VIRTOOLS_SDK_FETCH_FROM_GIT`.
+
+### Legacy Visual Studio 6 build
+
+The `Makefile` and `VC6_ROOT` flow remain for maintenance of the legacy Windows Player build. They are not used by the current cross-platform Ballanced SDL3 release workflow.
 
 ## Hotkeys
 
@@ -158,8 +166,8 @@ The `Player.ini` file contains several settings that control the behavior of the
 
 You can also use command-line options to customize game behavior:
 
-```bash
-Player.exe [OPTIONS]
+```text
+Player[.exe] [OPTIONS]
 ```
 - `--verbose`: Enable verbose logging.
 - `-m`, `--manual-setup`: Always show the setup dialog box at startup.
@@ -180,8 +188,8 @@ Player.exe [OPTIONS]
 - `-u`, `--unlock-framerate`: Unlock the frame rate limitation.
 - `--unlock-widescreen`: Unlock non-4:3 resolutions.
 - `--unlock-high-resolution`: Unlock resolutions higher than 1600x1200.
-- `d`, `--debug`: Enable in-game debug mode.
-- `r`, `--rookie`: Enable in-game rookie mode.
+- `-d`, `--debug`: Enable in-game debug mode.
+- `-r`, `--rookie`: Enable in-game rookie mode.
 
 ### Path Options
 
@@ -196,6 +204,10 @@ Player.exe [OPTIONS]
 - `--sound-path <dir>`: Set the sound directory.
 - `--bitmap-path <dir>`: Set the texture/bitmap directory.
 - `--data-path <dir>`: Set the data directory used to resolve relative composition files such as `base.cmo`.
+
+## Versioning
+
+BallancePlayer is versioned independently from Ballanced and the engine/module repositories. The four-part value in `VERSION` is used for build metadata; release notes may omit a trailing `.0`. A Ballanced release pins an exact Player commit and has its own release tag.
 
 ## Contact
 

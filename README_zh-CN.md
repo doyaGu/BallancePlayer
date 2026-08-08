@@ -4,6 +4,8 @@
 
 BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，通过反编译和改进原始版本开发而成。它在保持与原版游戏兼容的同时，提供了多项新功能和优化，带来更好的游戏体验。
 
+本文中的跨平台 SDL3 说明适用于 `sdl` 分支。
+
 ## 特点
 
 - 开箱即用，无需配置即可启动游戏
@@ -16,61 +18,67 @@ BallancePlayer 是为游戏《Ballance》设计的现代化增强版主程序，
 - 支持游戏内分辨率切换
 - 提供切换全屏模式和关闭游戏的快捷键
 - 无需修改注册表
-- 不依赖于 `Dsetup.dll`
-- 集成 `ResDll.dll`，便捷运行
+- 内置替代旧版 `Dsetup.dll` 和 `ResDll.dll` 启动器功能的实现
 - 修复了原版播放器中的一些问题
 - 提升了性能
 
 ## 系统要求
 
-支持以下 Windows 版本：
-- Windows XP
-- Windows Vista
-- Windows 7
-- Windows 8 / 8.1
-- Windows 10
-- Windows 11
+BallancePlayer 目前随 Ballanced 运行时持续构建以下目标：
+
+| 平台 | 架构 |
+|------|------|
+| Windows | x86、x64、ARM64 |
+| Linux | x64、ARM64 |
+| macOS | x64、ARM64 |
+
+最低操作系统版本取决于发布包使用的 SDL3 和编译器版本。Ballanced 根目录的 `CMakePresets.json` 是完整运行时支持矩阵的事实来源。
 
 ## 安装说明
 
-BallancePlayer 支持原版 `Bin` 布局和扁平布局。
+BallancePlayer 支持原版 `Bin` 布局和扁平布局。Ballanced 发布压缩包包含完整运行时目录，而不只是 Player 可执行文件。
 
 ### 原版 `Bin` 布局
 
-1. 将提供的压缩包解压至游戏文件夹中的 `Bin` 目录。
-2. 保持 `base.cmo`、`Database.tdb`、`Sounds`、`Textures`、`3D Entities` 等资源位于游戏文件夹。
-3. 运行 `Bin\Player.exe` 启动游戏，无需设置兼容模式。
+1. 将 Ballanced 发布压缩包解压到游戏根目录；压缩包已经包含 `Bin/`、`RenderEngines/`、`Managers/`、`Plugins/` 和 `BuildingBlocks/`。
+2. 保持 `base.cmo`、`Database.tdb`、`Sounds`、`Textures`、`3D Entities` 等资源位于该根目录。
+3. Windows 运行 `Bin\Player.exe`，Linux 和 macOS 运行 `Bin/Player`。
 
 ### 扁平布局
 
-也可以将 `Player.exe`、`base.cmo`、`Database.tdb`、资源文件夹和运行时 DLL 放在同一目录。若 `Player.exe` 旁存在 `base.cmo`，默认根路径会自动使用可执行文件所在目录。
+也可以将 `Player`（Windows 为 `Player.exe`）、`base.cmo`、`Database.tdb`、资源文件夹和全部运行时模块放在同一目录。若可执行文件旁存在 `base.cmo`，默认根路径会自动使用该目录。
 
 ## 从源码构建
 
-### 依赖项
+### 推荐：通过 Ballanced 总工程构建
 
-构建 BallancePlayer 需要 Virtools SDK，可以从 [Virtools-SDK-2.1](https://github.com/doyaGu/Virtools-SDK-2.1) 获取。在开始构建之前，请将环境变量 `VIRTOOLS_SDK_PATH` 设置为 SDK 的安装路径。
+通过 [Ballanced](https://github.com/doyaGu/Ballanced) 构建可以获得完整可运行的目录，并固定 CK2、VxMath、渲染器、管理器、插件和 Building Blocks 的兼容版本：
 
-### 使用 CMake 构建
+```bash
+git clone --recurse-submodules https://github.com/doyaGu/Ballanced.git
+cd Ballanced
+cmake --preset windows-x86-runtime # 请按主机选择 preset
+cmake --build --preset windows-x86-runtime-stage-release
+ctest --preset windows-x86-runtime-stage-release
+```
 
-1. **安装 CMake**：确保你的系统上已安装 CMake。
-2. **进入项目目录**：打开控制台，进入包含 BallancePlayer 源代码的目录。
-3. **生成构建文件**：运行以下命令生成 Visual Studio 项目文件：
-   ```
-   cmake -B build -G "Visual Studio 17 2022" -A Win32
-   ```
-4. **在 Visual Studio 中打开**：进入 `build` 目录，打开 `BallancePlayer.sln` 解决方案文件。
-5. **构建解决方案**：使用 Visual Studio 的构建工具编译项目。
+CMake 必须能找到 SDL3。Windows、Linux 和 macOS 的完整 preset 请参阅 [Ballanced 构建文档](https://github.com/doyaGu/Ballanced/blob/sdl/BUILD.md)。
 
-### 使用 Visual Studio 6.0 构建
+### 独立 CMake 构建
 
-1. **安装 Visual Studio 6.0**：确保已安装 Visual Studio 6.0。
-2. **设置 SDK 路径**：将 `VC6_ROOT` 设置为 Visual Studio 6.0 工具链路径，或在执行 `nmake` 时传入。
-3. **构建项目**：在项目根目录运行 `nmake /f Makefile CFG=Release VC6_ROOT=C:\Path\To\VC6`。
+BallancePlayer 自带的 preset 目前覆盖 Visual Studio 2022 的 Windows x86 和 x64：
 
-### 注意事项
+```powershell
+cmake --preset player-runtime-msvc-win32
+cmake --build --preset player-runtime-win32-release
+ctest --preset player-runtime-win32-release
+```
 
-官方发行版本为最大限度地提高兼容性，使用 Visual Studio 6.0 进行构建。
+其他平台可使用手动 CMake 配置。在 Ballanced 源码树内，构建会自动发现同级的 CK2、VxMath、RenderEngine、Managers、Plugins 和 BuildingBlocks；本地缺少 CK2/VxMath 时，可设置 `VIRTOOLS_SDK_PATH` 或启用 `VIRTOOLS_SDK_FETCH_FROM_GIT`。
+
+### 旧版 Visual Studio 6 构建
+
+`Makefile` 和 `VC6_ROOT` 流程仅用于维护旧版 Windows Player，不属于当前跨平台 Ballanced SDL3 发布流程。
 
 ## 快捷键
 
@@ -158,8 +166,8 @@ BallancePlayer 支持原版 `Bin` 布局和扁平布局。
 
 你还可以使用命令行选项来自定义游戏行为：
 
-```bash
-Player.exe [OPTIONS]
+```text
+Player[.exe] [OPTIONS]
 ```
 - `--verbose`：启用详细日志记录。
 - `-m`, `--manual-setup`：启动时总是显示设置对话框。
@@ -180,8 +188,8 @@ Player.exe [OPTIONS]
 - `-u`, `--unlock-framerate`：解除帧率限制。
 - `--unlock-widescreen`：解锁非 4:3 分辨率。
 - `--unlock-high-resolution`：解锁高于 1600x1200 的分辨率。
-- `d`, `--debug`：启用游戏内调试模式。
-- `r`, `--rookie`：启用游戏内新手模式。
+- `-d`, `--debug`：启用游戏内调试模式。
+- `-r`, `--rookie`：启用游戏内新手模式。
 
 ### 路径选项
 
@@ -196,6 +204,10 @@ Player.exe [OPTIONS]
 - `--sound-path <dir>`：设置声音目录。
 - `--bitmap-path <dir>`：设置贴图/位图目录。
 - `--data-path <dir>`：设置数据目录，用于解析 `base.cmo` 等相对 composition 文件。
+
+## 版本说明
+
+BallancePlayer 与 Ballanced 及各引擎/模块仓库分别独立版本化。`VERSION` 中的四段版本号用于构建元数据，发布说明可能省略末尾的 `.0`。Ballanced 发布会固定到一个明确的 Player 提交，并使用自己的发布标签。
 
 ## 联系方式
 
