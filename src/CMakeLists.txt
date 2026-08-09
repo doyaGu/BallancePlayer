@@ -194,14 +194,28 @@ elseif (TARGET SDL3::SDL3)
 endif ()
 
 if (_player_sdl_runtime_target)
-    # Package the linked SDL runtime through CMake's dependency resolver. The
-    # include/exclude pair keeps the install contract limited to SDL while
-    # allowing CMake to resolve package-manager symlinks correctly.
-    list(APPEND _player_runtime_dependency_args
-            RUNTIME_DEPENDENCIES
-            POST_INCLUDE_FILES "$<TARGET_FILE:${_player_sdl_runtime_target}>"
-            POST_EXCLUDE_REGEXES ".*"
-    )
+    if (APPLE)
+        # Resolve package-manager symlinks before staging the SDL dylib. The
+        # include/exclude pair keeps the dependency set limited to SDL itself.
+        list(APPEND _player_runtime_dependency_args
+                RUNTIME_DEPENDENCIES
+                POST_INCLUDE_FILES "$<TARGET_FILE:${_player_sdl_runtime_target}>"
+                POST_EXCLUDE_REGEXES ".*"
+        )
+    else ()
+        get_target_property(_player_sdl_runtime_imported ${_player_sdl_runtime_target} IMPORTED)
+        if (_player_sdl_runtime_imported)
+            install(IMPORTED_RUNTIME_ARTIFACTS ${_player_sdl_runtime_target}
+                    RUNTIME DESTINATION Bin COMPONENT Runtime
+                    LIBRARY DESTINATION Bin COMPONENT Runtime
+            )
+        else ()
+            install(TARGETS ${_player_sdl_runtime_target}
+                    RUNTIME DESTINATION Bin COMPONENT Runtime
+                    LIBRARY DESTINATION Bin COMPONENT Runtime
+            )
+        endif ()
+    endif ()
 endif ()
 
 install(TARGETS ${PLAYER_NAME}
