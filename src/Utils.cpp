@@ -168,9 +168,10 @@ namespace utils
             if (current.IsEmpty())
                 return false;
             XString resolved = JoinPath(current.CStr(), path, trailing);
-            if (resolved.Length() + 1 > size)
+            const size_t resolvedLength = static_cast<size_t>(resolved.Length());
+            if (resolvedLength + 1 > size)
                 return false;
-            memcpy(buffer, resolved.CStr(), resolved.Length() + 1);
+            memcpy(buffer, resolved.CStr(), resolvedLength + 1);
         }
 
         size_t len = strlen(buffer);
