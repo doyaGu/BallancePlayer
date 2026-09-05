@@ -408,12 +408,15 @@ bool CGamePlayer::Update()
     for (int i = 0; i < windowEventCount; ++i)
     {
         const SDL_Event &windowEvent = windowEvents[i];
+        if (!m_SdlWindow || windowEvent.window.windowID != SDL_GetWindowID(m_SdlWindow))
+            continue;
 
         switch (windowEvent.type)
         {
         case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
             return false;
         case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
             OnSize();
             break;
         case SDL_EVENT_WINDOW_MOVED:
@@ -548,7 +551,7 @@ bool CGamePlayer::InitWindow()
 
     m_Config.childWindowRendering = false;
 
-    SDL_WindowFlags flags = SDL_WINDOW_HIDDEN;
+    SDL_WindowFlags flags = SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE;
     if (m_Config.borderless)
         flags = (SDL_WindowFlags)(flags | SDL_WINDOW_BORDERLESS);
     if (m_Config.fullscreen)
@@ -1483,19 +1486,28 @@ void CGamePlayer::OnSize()
         CKRECT rc;
         if (VxGetClientRect(m_MainWindow, &rc))
         {
-            const int width = rc.right - rc.left;
-            const int height = rc.bottom - rc.top;
+            int width = rc.right - rc.left;
+            int height = rc.bottom - rc.top;
+            int windowWidth = width, windowHeight = height;
+            if (m_SdlWindow)
+            {
+                SDL_GetWindowSize(m_SdlWindow, &windowWidth, &windowHeight);
+                SDL_GetWindowSizeInPixels(m_SdlWindow, &width, &height);
+            }
             if (width > 0 && height > 0)
             {
                 if (!m_Config.fullscreen && !IsRenderFullscreen())
                 {
-                    m_Config.width = width;
-                    m_Config.height = height;
-                    if (m_RenderContext)
+                    m_Config.width = windowWidth;
+                    m_Config.height = windowHeight;
+                    if (m_RenderContext && (m_RenderContext->GetWidth() != width || m_RenderContext->GetHeight() != height))
                     {
                         CKERROR res = m_RenderContext->Resize(0, 0, width, height, VX_RESIZE_NOMOVE);
                         if (res != CK_OK)
                             CLogger::Get().Warn("Failed to resize render context: %d", res);
+                        else
+                            CLogger::Get().Debug("Render context resized to %dx%d pixels (window %dx%d)",
+                                                 width, height, windowWidth, windowHeight);
                     }
                 }
             }
