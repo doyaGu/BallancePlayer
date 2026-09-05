@@ -1,3 +1,12 @@
+# Player owns its module declarations in dynamic and static builds. Publish
+# the resolved names for integrators without exposing the option logic.
+include("${CMAKE_CURRENT_LIST_DIR}/../cmake/PlayerStaticModules.cmake")
+set(_player_runtime_modules "")
+foreach (_module IN LISTS PLAYER_STATIC_MODULES)
+    list(APPEND _player_runtime_modules "${PLAYER_STATIC_MODULE_${_module}_RUNTIME_TARGET}")
+endforeach ()
+set_property(GLOBAL PROPERTY PLAYER_RUNTIME_MODULES "${_player_runtime_modules}")
+
 # The default rasterizer follows the providers in this build. The generated
 # configuration header and the installed Player.ini share this value.
 if (TARGET CKSdlGpuRasterizer)
@@ -61,8 +70,6 @@ endif ()
 
 if (BALLANCE_BUILD_STATIC)
     list(APPEND PLAYER_SOURCES StaticPlugins.cpp)
-
-    include("${CMAKE_CURRENT_LIST_DIR}/../cmake/PlayerStaticModules.cmake")
 
     set(PLAYER_STATIC_PLUGIN_DECLARATIONS "")
     set(PLAYER_STATIC_PLUGIN_ENTRIES "")
