@@ -333,10 +333,20 @@ _player_declare_static_module(TT_Toolbox_RT
         GET_INFO CKGet_TT_Toolbox_PluginInfo
         REGISTER_DECLARATIONS Register_TT_Toolbox_BehaviorDeclarations
 )
-_player_declare_static_module(CKBgfxRasterizer
-        RUNTIME_TARGET CKBgfxRasterizer
-        STATIC_TARGET CKBgfxRasterizerStatic
-        COMPILE_DEFINITION BALLANCE_STATIC_HAVE_CKBGFXRASTERIZER
-        REQUIRED
-        LINK_ONLY
-)
+if (CKRE_BUILD_BGFX_RASTERIZER)
+    _player_declare_static_module(CKBgfxRasterizer
+            RUNTIME_TARGET CKBgfxRasterizer
+            STATIC_TARGET CKBgfxRasterizerStatic
+            COMPILE_DEFINITION BALLANCE_STATIC_HAVE_CKBGFXRASTERIZER
+            REQUIRED
+            LINK_ONLY
+    )
+endif ()
+if (NOT DEFINED CKRE_BUILD_SDL_GPU_RASTERIZER OR CKRE_BUILD_SDL_GPU_RASTERIZER)
+    _player_declare_static_module(CKSdlGpuRasterizer
+            RUNTIME_TARGET CKSdlGpuRasterizer
+            STATIC_TARGET CKSdlGpuRasterizerStatic
+            COMPILE_DEFINITION BALLANCE_STATIC_HAVE_CKSDLGPURASTERIZER
+            LINK_ONLY
+    )
+endif ()
