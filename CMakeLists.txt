@@ -55,7 +55,7 @@ if (PLAYER_IS_TOP_LEVEL)
 endif ()
 
 if (NOT TARGET SDL3::SDL3)
-    find_package(SDL3 CONFIG REQUIRED)
+    find_package(SDL3 3.4.8 CONFIG REQUIRED)
 endif ()
 
 # Use relative paths
