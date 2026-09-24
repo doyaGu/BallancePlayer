@@ -8,7 +8,8 @@ param(
     [string]$Vc6Root = "",
     [switch]$Draft,
     [switch]$Prerelease,
-    [switch]$SkipPackage
+    [switch]$SkipPackage,
+    [switch]$PrepareOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -52,8 +53,9 @@ function Get-ToolchainIds {
 
 $root = Split-Path -Parent $PSScriptRoot
 $version = Get-ProjectVersion -RootDir $root
+$releaseVersion = $version -replace '\.0$', ''
 if ([string]::IsNullOrWhiteSpace($Tag)) {
-    $Tag = "v$version"
+    $Tag = "v$releaseVersion"
 }
 
 $outputPath = Resolve-PathUnderRoot -RootDir $root -PathValue $OutputDir
@@ -81,11 +83,6 @@ foreach ($toolchainId in $toolchainIds) {
     $assets += $shaPath
 }
 
-$gh = Get-Command gh -ErrorAction SilentlyContinue
-if (-not $gh) {
-    throw "GitHub CLI 'gh' was not found. Install it or run scripts\package.ps1 for local packaging only."
-}
-
 $packageLines = @()
 foreach ($toolchainId in $toolchainIds) {
     if ($toolchainId -eq "vc6-x86") {
@@ -96,19 +93,36 @@ foreach ($toolchainId in $toolchainIds) {
 }
 
 $notesPath = Join-Path $outputPath "BallancePlayer-$version-release-notes.md"
+$preparedNotesPath = Join-Path $root "docs\releases\v$releaseVersion.md"
+if (Test-Path -LiteralPath $preparedNotesPath) {
+    $notesIntro = (Get-Content -LiteralPath $preparedNotesPath -Raw).TrimEnd()
+} else {
+    $notesIntro = "BallancePlayer $version"
+}
 @"
-BallancePlayer $version
+$notesIntro
 
 Attached packages:
 $($packageLines -join "`n")
 
 Each package contains:
 - Player.exe
+- ConfigTool.exe
 - README.md / README_zh-CN.md
 - LICENSE
 
 SHA256 checksum files are attached next to the packages.
 "@ | Set-Content -LiteralPath $notesPath -Encoding UTF8
+
+if ($PrepareOnly) {
+    Write-Host "Release assets and notes prepared for $Tag"
+    return
+}
+
+$gh = Get-Command gh -ErrorAction SilentlyContinue
+if (-not $gh) {
+    throw "GitHub CLI 'gh' was not found. Install it or run scripts\package.ps1 for local packaging only."
+}
 
 $releaseExists = $false
 & gh release view $Tag *> $null
@@ -119,7 +133,7 @@ if ($LASTEXITCODE -eq 0) {
 if ($releaseExists) {
     Invoke-Checked (@("gh", "release", "upload", $Tag) + $assets + @("--clobber"))
 } else {
-    $args = @("gh", "release", "create", $Tag) + $assets + @("--title", "BallancePlayer $version", "--notes-file", $notesPath)
+    $args = @("gh", "release", "create", $Tag) + $assets + @("--title", "BallancePlayer $releaseVersion", "--notes-file", $notesPath)
     if ($Draft) {
         $args += "--draft"
     }
