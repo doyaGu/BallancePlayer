@@ -2,10 +2,6 @@
 /build*/
 /dist*/
 /cmake-build-*/
-/Debug/
-/Release/
-/Bin/
-/src/PlayerVersion.vc6.rc
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
@@ -16,6 +12,3 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
-*.ncb
-*.opt
-*.plg

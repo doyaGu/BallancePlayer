@@ -76,10 +76,6 @@ ctest --preset player-runtime-win32-release
 
 其他平台可使用手动 CMake 配置。在 Ballanced 源码树内，构建会自动发现同级的 CK2、VxMath、RenderEngine、Managers、Plugins 和 BuildingBlocks；本地缺少 CK2/VxMath 时，可设置 `VIRTOOLS_SDK_PATH` 或启用 `VIRTOOLS_SDK_FETCH_FROM_GIT`。
 
-### 旧版 Visual Studio 6 构建
-
-`Makefile` 和 `VC6_ROOT` 流程仅用于维护旧版 Windows Player，不属于当前跨平台 Ballanced SDL3 发布流程。
-
 ## 快捷键
 
 - **[Alt] + [Enter]**：切换窗口模式和全屏模式。

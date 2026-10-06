@@ -1,11 +1,8 @@
 param(
-    [ValidateSet("All", "VC6", "MSVC2022")]
-    [string]$Toolchain = "All",
     [string]$Configuration = "Release",
     [string]$MsvcBuildDir = "build-msvc2022-x86",
     [string]$OutputDir = "dist",
     [string]$PackageName = "",
-    [string]$Vc6Root = "",
     [switch]$SkipBuild,
     [switch]$IncludePdb
 )
@@ -49,48 +46,6 @@ function Invoke-Checked {
     }
 }
 
-function Get-ToolchainIds {
-    param([string]$RequestedToolchain)
-
-    if ($RequestedToolchain -eq "All") {
-        return @("vc6-x86", "msvc2022-x86")
-    }
-    if ($RequestedToolchain -eq "VC6") {
-        return @("vc6-x86")
-    }
-    return @("msvc2022-x86")
-}
-
-function Build-VC6 {
-    param(
-        [string]$RootDir,
-        [string]$Vc6RootPath,
-        [string]$ConfigName
-    )
-
-    $effectiveVc6Root = $Vc6RootPath
-    if ([string]::IsNullOrWhiteSpace($effectiveVc6Root)) {
-        $effectiveVc6Root = $env:VC6_ROOT
-    }
-
-    $args = @("/nologo", "/f", "Makefile", "CFG=$ConfigName")
-    if (-not [string]::IsNullOrWhiteSpace($effectiveVc6Root)) {
-        $nmake = Join-Path $effectiveVc6Root "Bin\nmake.exe"
-        if (-not (Test-Path $nmake)) {
-            throw "VC6 nmake.exe not found: $nmake"
-        }
-        $args += "VC6_ROOT=$effectiveVc6Root"
-    } else {
-        $nmakeCommand = Get-Command nmake.exe -ErrorAction SilentlyContinue
-        if (-not $nmakeCommand) {
-            throw "VC6 nmake.exe not found. Set -Vc6Root, set VC6_ROOT, or run from a VC6 command prompt."
-        }
-        $nmake = $nmakeCommand.Source
-    }
-
-    Invoke-Checked (@($nmake) + $args) -WorkingDirectory $RootDir
-}
-
 function Build-MSVC2022 {
     param(
         [string]$RootDir,
@@ -104,19 +59,9 @@ function Build-MSVC2022 {
 
 function Get-BinaryDir {
     param(
-        [string]$RootDir,
-        [string]$ToolchainId,
         [string]$BuildPath,
         [string]$ConfigName
     )
-
-    if ($ToolchainId -eq "vc6-x86") {
-        $dir = Join-Path $RootDir "Bin"
-        if (Test-Path (Join-Path $dir "Player.exe")) {
-            return $dir
-        }
-        throw "Could not find VC6 Player.exe in $dir"
-    }
 
     $candidateDirs = @(
         (Join-Path (Join-Path $BuildPath "src") $ConfigName),
@@ -201,22 +146,11 @@ $root = Split-Path -Parent $PSScriptRoot
 $version = Get-ProjectVersion -RootDir $root
 $msvcBuildPath = Resolve-PathUnderRoot -RootDir $root -PathValue $MsvcBuildDir
 $outputPath = Resolve-PathUnderRoot -RootDir $root -PathValue $OutputDir
-$toolchainIds = Get-ToolchainIds -RequestedToolchain $Toolchain
 
-if (-not [string]::IsNullOrWhiteSpace($PackageName) -and $toolchainIds.Count -ne 1) {
-    throw "-PackageName can only be used when packaging one toolchain."
+if (-not $SkipBuild) {
+    Build-MSVC2022 -RootDir $root -BuildPath $msvcBuildPath -ConfigName $Configuration
 }
 
-foreach ($toolchainId in $toolchainIds) {
-    if (-not $SkipBuild) {
-        if ($toolchainId -eq "vc6-x86") {
-            Build-VC6 -RootDir $root -Vc6RootPath $Vc6Root -ConfigName $Configuration
-        } else {
-            Build-MSVC2022 -RootDir $root -BuildPath $msvcBuildPath -ConfigName $Configuration
-        }
-    }
-
-    $binaryDir = Get-BinaryDir -RootDir $root -ToolchainId $toolchainId -BuildPath $msvcBuildPath -ConfigName $Configuration
-    New-PlayerPackage -RootDir $root -Version $version -ToolchainId $toolchainId -BinaryDir $binaryDir `
-        -OutputPath $outputPath -ExplicitPackageName $PackageName -ShouldIncludePdb:$IncludePdb
-}
+$binaryDir = Get-BinaryDir -BuildPath $msvcBuildPath -ConfigName $Configuration
+New-PlayerPackage -RootDir $root -Version $version -ToolchainId "msvc2022-x86" -BinaryDir $binaryDir `
+    -OutputPath $outputPath -ExplicitPackageName $PackageName -ShouldIncludePdb:$IncludePdb

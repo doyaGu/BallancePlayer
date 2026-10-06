@@ -76,10 +76,6 @@ ctest --preset player-runtime-win32-release
 
 Manual CMake builds can be used on other hosts. In a Ballanced source checkout, sibling CK2, VxMath, RenderEngine, Managers, Plugins, and BuildingBlocks projects are detected automatically. If CK2/VxMath are unavailable locally, set `VIRTOOLS_SDK_PATH` or enable `VIRTOOLS_SDK_FETCH_FROM_GIT`.
 
-### Legacy Visual Studio 6 build
-
-The `Makefile` and `VC6_ROOT` flow remain for maintenance of the legacy Windows Player build. They are not used by the current cross-platform Ballanced SDL3 release workflow.
-
 ## Hotkeys
 
 - **[Alt] + [Enter]**: Switch between windowed and fullscreen mode.

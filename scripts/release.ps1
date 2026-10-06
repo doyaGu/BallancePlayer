@@ -1,11 +1,8 @@
 param(
-    [ValidateSet("All", "VC6", "MSVC2022")]
-    [string]$Toolchain = "All",
     [string]$Configuration = "Release",
     [string]$MsvcBuildDir = "build-msvc2022-x86",
     [string]$OutputDir = "dist",
     [string]$Tag = "",
-    [string]$Vc6Root = "",
     [switch]$Draft,
     [switch]$Prerelease,
     [switch]$SkipPackage
@@ -38,18 +35,6 @@ function Invoke-Checked {
     }
 }
 
-function Get-ToolchainIds {
-    param([string]$RequestedToolchain)
-
-    if ($RequestedToolchain -eq "All") {
-        return @("vc6-x86", "msvc2022-x86")
-    }
-    if ($RequestedToolchain -eq "VC6") {
-        return @("vc6-x86")
-    }
-    return @("msvc2022-x86")
-}
-
 $root = Split-Path -Parent $PSScriptRoot
 $version = Get-ProjectVersion -RootDir $root
 if ([string]::IsNullOrWhiteSpace($Tag)) {
@@ -57,42 +42,27 @@ if ([string]::IsNullOrWhiteSpace($Tag)) {
 }
 
 $outputPath = Resolve-PathUnderRoot -RootDir $root -PathValue $OutputDir
-$toolchainIds = Get-ToolchainIds -RequestedToolchain $Toolchain
 
 if (-not $SkipPackage) {
     $packageScript = Join-Path $PSScriptRoot "package.ps1"
     Invoke-Checked @("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $packageScript,
-        "-Toolchain", $Toolchain, "-Configuration", $Configuration, "-MsvcBuildDir", $MsvcBuildDir,
-        "-OutputDir", $OutputDir, "-Vc6Root", $Vc6Root)
+        "-Configuration", $Configuration, "-MsvcBuildDir", $MsvcBuildDir, "-OutputDir", $OutputDir)
 }
 
-$assets = @()
-foreach ($toolchainId in $toolchainIds) {
-    $packageName = "BallancePlayer-$version-$toolchainId"
-    $zipPath = Join-Path $outputPath "$packageName.zip"
-    $shaPath = "$zipPath.sha256"
-    if (-not (Test-Path $zipPath)) {
-        throw "Package not found: $zipPath"
-    }
-    if (-not (Test-Path $shaPath)) {
-        throw "Checksum not found: $shaPath"
-    }
-    $assets += $zipPath
-    $assets += $shaPath
+$packageName = "BallancePlayer-$version-msvc2022-x86"
+$zipPath = Join-Path $outputPath "$packageName.zip"
+$shaPath = "$zipPath.sha256"
+if (-not (Test-Path $zipPath)) {
+    throw "Package not found: $zipPath"
 }
+if (-not (Test-Path $shaPath)) {
+    throw "Checksum not found: $shaPath"
+}
+$assets = @($zipPath, $shaPath)
 
 $gh = Get-Command gh -ErrorAction SilentlyContinue
 if (-not $gh) {
     throw "GitHub CLI 'gh' was not found. Install it or run scripts\package.ps1 for local packaging only."
-}
-
-$packageLines = @()
-foreach ($toolchainId in $toolchainIds) {
-    if ($toolchainId -eq "vc6-x86") {
-        $packageLines += "- BallancePlayer-$version-vc6-x86.zip: Visual C++ 6.0 x86 build"
-    } else {
-        $packageLines += "- BallancePlayer-$version-msvc2022-x86.zip: MSVC 2022 x86 build"
-    }
 }
 
 $notesPath = Join-Path $outputPath "BallancePlayer-$version-release-notes.md"
@@ -100,7 +70,7 @@ $notesPath = Join-Path $outputPath "BallancePlayer-$version-release-notes.md"
 BallancePlayer $version
 
 Attached packages:
-$($packageLines -join "`n")
+- $packageName.zip: MSVC 2022 x86 build
 
 Each package contains:
 - Player.exe

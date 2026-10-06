@@ -188,12 +188,7 @@ static bool SetCompositionEnvironment(const char *resolvedFile)
     if (compositionDir.IsEmpty())
         return false;
 
-#if defined(_MSC_VER) && _MSC_VER < 1400
-    XString envBuf = "Gravity=";
-    envBuf += compositionDir;
-    if (_putenv(envBuf.CStr()) != 0)
-        return false;
-#elif defined(_WIN32)
+#if defined(_WIN32)
     if (_putenv_s("Gravity", compositionDir.CStr()) != 0)
         return false;
 #else
