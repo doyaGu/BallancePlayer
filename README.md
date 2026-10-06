@@ -216,13 +216,15 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 
 ## ChangeLog
 
-### v0.3.9 (2026-04-18)
+### v0.3.9 (2026-09-24)
 
 **New Features**
 
 - Added a built-in configuration dialog.
 - Added an in-game configuration entry through **[Alt] + [C]**. Saved changes take effect after restarting the game.
 - Player now opens the configuration dialog on startup when `Player.ini` is missing.
+- Added a standalone `ConfigTool.exe` with display-mode dropdowns and control tooltips.
+- Added multi-monitor support and a startup prompt for an already-running Player instance.
 
 **Bug Fixes**
 
@@ -236,11 +238,16 @@ If you have any bugs or requests, please open an issue in this repository: [Ball
 - Preserved in-session configuration edits when opening the configuration dialog during gameplay.
 - Report configuration save failures instead of silently ignoring them.
 - Accepted shorthand 16-bit pixel formats such as `RGB565` and `ARGB1555`.
+- Fixed fullscreen switching, screen-mode detection, and frame-rate unlocking.
+- Fixed explicit configuration load/save paths and other runtime path handling.
+- Fixed configuration tool tooltip lifetime issues and the VC6 Unicode instance prompt.
+- Limited forced exit of an existing instance to the matching executable path.
 
 **Changes**
 
 - Improved VC6 and Virtools SDK build compatibility.
 - Added release packaging support for VC6 and MSVC 2022 builds.
+- Added version information to `ConfigTool.exe` and CMake build presets.
 
 ### v0.3.8 (2025-09-25)
 
