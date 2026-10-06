@@ -207,6 +207,44 @@ TEST_F(GameConfigTest, StringFileDirectoryHandlesLongMixedSeparatorPaths) {
     EXPECT_GT(static_cast<size_t>(directoryWithSeparator.Length()), static_cast<size_t>(MAX_PATH));
 }
 
+TEST_F(GameConfigTest, PathUtilitiesKeepRootSeparators) {
+#if defined(_WIN32)
+    EXPECT_TRUE(utils::IsAbsolutePath("C:\\"));
+    EXPECT_TRUE(utils::IsAbsolutePath("C:/test/path"));
+    EXPECT_TRUE(utils::IsAbsolutePath("\\\\server\\share\\file.txt"));
+    EXPECT_FALSE(utils::IsAbsolutePath("C:"));
+    EXPECT_FALSE(utils::IsAbsolutePath("C:relative"));
+    EXPECT_FALSE(utils::IsAbsolutePath("\\rooted\\on\\current\\drive"));
+    EXPECT_FALSE(utils::IsAbsolutePath("\\\\"));
+
+    EXPECT_STREQ(utils::WithoutTrailingPathSeparator("C:\\").CStr(), "C:\\");
+    EXPECT_STREQ(utils::WithTrailingPathSeparator("C:\\").CStr(), "C:\\");
+    EXPECT_STREQ(utils::WithoutTrailingPathSeparator("C:\\base\\").CStr(), "C:\\base");
+    EXPECT_STREQ(utils::JoinPath("C:\\", "subdir").CStr(), "C:\\subdir");
+    EXPECT_STREQ(utils::ResolvePathAgainstBase("C:\\base", "C:\\", false).CStr(), "C:\\");
+#else
+    EXPECT_TRUE(utils::IsAbsolutePath("/"));
+    EXPECT_FALSE(utils::IsAbsolutePath("relative"));
+
+    EXPECT_STREQ(utils::WithoutTrailingPathSeparator("/").CStr(), "/");
+    EXPECT_STREQ(utils::WithTrailingPathSeparator("/").CStr(), "/");
+    EXPECT_STREQ(utils::WithoutTrailingPathSeparator("/base/").CStr(), "/base");
+    EXPECT_STREQ(utils::JoinPath("/", "subdir").CStr(), "/subdir");
+    EXPECT_STREQ(utils::ResolvePathAgainstBase("/base", "/", false).CStr(), "/");
+#endif
+}
+
+TEST_F(GameConfigTest, GetAbsolutePathFailsWithoutTruncating) {
+    fs::path absolute = testDir / "a file with a long enough name.ini";
+    char small[8] = {'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x'};
+
+    EXPECT_FALSE(utils::GetAbsolutePath(small, sizeof(small), absolute.string().c_str()));
+    EXPECT_STREQ(small, "");
+    EXPECT_FALSE(utils::GetAbsolutePath(small, sizeof(small), "relative\\path"));
+    EXPECT_STREQ(small, "");
+    EXPECT_FALSE(utils::GetAbsolutePath(small, 0, "relative"));
+}
+
 TEST_F(GameConfigTest, GetAbsolutePathUsesLongCurrentDirectory) {
     fs::path longDir = testDir / "runtime cwd";
     while (longDir.string().size() <= static_cast<size_t>(MAX_PATH) + 32)
@@ -619,7 +657,7 @@ TEST_F(GameConfigTest, PathHandling) {
     // Test absolute path
     config.LoadFromIni(testIniPath.string().c_str());
     
-    // The actual behavior depends on utils::IsAbsolutePath and utils::GetCurrentPath
+    // The actual behavior depends on utils::IsAbsolutePath and the current directory
     // This test mainly ensures no crashes occur with different path formats
 }
 

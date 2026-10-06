@@ -11,13 +11,9 @@ namespace utils
     bool FileOrDirectoryExists(const char *file);
     bool DirectoryExists(const char *dir);
 
-    size_t GetCurrentPath(char *buffer, size_t size);
-
     bool IsAbsolutePath(const char *path);
     bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing = false);
-    bool GetFileDirectory(char *buffer, size_t size, const char *filename, bool trailing = true);
 
-    char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2);
     XString GetExecutableDirectory();
     XString GetFileDirectory(const char *filename, bool trailing = true);
     XString JoinPath(const char *path1, const char *path2, bool trailing = false);
@@ -27,7 +23,6 @@ namespace utils
 
     const char *FindLastPathSeparator(const char *path);
     bool HasTrailingPathSeparator(const char *path);
-    bool RemoveTrailingPathSeparator(char *path);
 
     int CharToWchar(const char *charStr, wchar_t *wcharStr, size_t size);
     int WcharToChar(const wchar_t *wcharStr, char *charStr, size_t size);

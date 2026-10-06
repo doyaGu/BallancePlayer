@@ -37,6 +37,26 @@ namespace utils
 #endif
     }
 
+    static bool IsPathSeparator(char ch)
+    {
+        return ch == '\\' || ch == '/';
+    }
+
+    // A root keeps its separator: "/" and "C:\" name a directory, "" and
+    // "C:" do not.
+    static bool IsRootPath(const XString &path)
+    {
+        const int length = (int)path.Length();
+        if (length == 1)
+            return IsPathSeparator(path[0]);
+#if defined(_WIN32)
+        return length == 3 && isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':' &&
+               IsPathSeparator(path[2]);
+#else
+        return false;
+#endif
+    }
+
     static XString GetCurrentPathString()
     {
 #if defined(_WIN32)
@@ -125,25 +145,18 @@ namespace utils
 #endif
     }
 
-    size_t GetCurrentPath(char *buffer, size_t size)
-    {
-#if defined(_WIN32)
-        return ::GetCurrentDirectoryA(static_cast<DWORD>(size), buffer);
-#else
-        if (!buffer || size == 0)
-            return 0;
-        return getcwd(buffer, size) ? strlen(buffer) : 0;
-#endif
-    }
-
     bool IsAbsolutePath(const char *path)
     {
         if (!path || path[0] == '\0')
             return false;
 
 #if defined(_WIN32)
-        return (strlen(path) >= 2 && isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':') ||
-               (path[0] == '\\' && path[1] == '\\');
+        // "C:file" and "\file" depend on the current drive, so only drive roots
+        // and UNC paths count.
+        if (isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':')
+            return IsPathSeparator(path[2]);
+        return IsPathSeparator(path[0]) && IsPathSeparator(path[1]) &&
+               path[2] != '\0' && !IsPathSeparator(path[2]);
 #else
         return path[0] == '/';
 #endif
@@ -151,103 +164,33 @@ namespace utils
 
     bool GetAbsolutePath(char *buffer, size_t size, const char *path, bool trailing)
     {
+        if (!buffer || size == 0)
+            return false;
+
+        buffer[0] = '\0';
         if (!path || path[0] == '\0')
             return false;
 
-        if (!buffer)
-            return false;
-
-        if (IsAbsolutePath(path))
+        XString current;
+        if (!IsAbsolutePath(path))
         {
-            strncpy(buffer, path, size - 1);
-            buffer[size - 1] = '\0';
-        }
-        else
-        {
-            XString current = GetCurrentPathString();
+            current = GetCurrentPathString();
             if (current.IsEmpty())
                 return false;
-            XString resolved = JoinPath(current.CStr(), path, trailing);
-            const size_t resolvedLength = static_cast<size_t>(resolved.Length());
-            if (resolvedLength + 1 > size)
-                return false;
-            memcpy(buffer, resolved.CStr(), resolvedLength + 1);
         }
 
-        size_t len = strlen(buffer);
-        if (trailing && !HasTrailingPathSeparator(buffer))
-        {
-            if (size > len + 2)
-            {
-#if defined(_WIN32)
-                buffer[len] = '\\';
-#else
-                buffer[len] = '/';
-#endif
-                buffer[len + 1] = '\0';
-            }
-        }
-        else if (!trailing && HasTrailingPathSeparator(buffer))
-        {
-            buffer[len - 1] = '\0';
-        }
+        XString resolved = ResolvePathAgainstBase(current.CStr(), path, trailing);
+        const size_t length = static_cast<size_t>(resolved.Length());
+        if (length + 1 > size)
+            return false;
+        memcpy(buffer, resolved.CStr(), length + 1);
         return true;
-    }
-
-    bool GetFileDirectory(char *buffer, size_t size, const char *filename, bool trailing)
-    {
-        if (!buffer || size == 0 || !filename || filename[0] == '\0')
-            return false;
-
-        const char *lastSep = FindLastPathSeparator(filename);
-        if (!lastSep)
-            return false;
-
-        size_t len = static_cast<size_t>(lastSep - filename);
-        if (trailing)
-            ++len;
-
-        if (len + 1 > size)
-            return false;
-
-        memcpy(buffer, filename, len);
-        buffer[len] = '\0';
-        return true;
-    }
-
-    char *ConcatPath(char *buffer, size_t size, const char *path1, const char *path2)
-    {
-        if (!buffer)
-            return NULL;
-
-        if (!path1 || path1[0] == '\0')
-        {
-            strncpy(buffer, path2, size);
-            buffer[size - 1] = '\0';
-        }
-        else if (path2)
-        {
-            strncpy(buffer, path1, size);
-            buffer[size - 1] = '\0';
-            RemoveTrailingPathSeparator(buffer);
-            size_t len2 = strlen(path2);
-            size_t n = size - 1 - len2;
-#if defined(_WIN32)
-            strncat(buffer, "\\", n);
-#else
-            strncat(buffer, "/", n);
-#endif
-            --n;
-            strncat(buffer, path2, n);
-        }
-
-        return buffer;
     }
 
     XString WithTrailingPathSeparator(const char *path)
     {
         XString result = WithoutTrailingPathSeparator(path);
-        if (!result.IsEmpty())
+        if (!result.IsEmpty() && !IsRootPath(result))
             result += PreferredPathSeparator();
         return result;
     }
@@ -255,7 +198,7 @@ namespace utils
     XString WithoutTrailingPathSeparator(const char *path)
     {
         XString result = path ? path : "";
-        while (!result.IsEmpty() && (result[(int)result.Length() - 1] == '\\' || result[(int)result.Length() - 1] == '/'))
+        while (!result.IsEmpty() && !IsRootPath(result) && IsPathSeparator(result[(int)result.Length() - 1]))
             result.Cut(result.Length() - 1, 1);
         return result;
     }
@@ -291,14 +234,15 @@ namespace utils
 
         XString result = WithoutTrailingPathSeparator(path1);
         XString leaf = path2 ? path2 : "";
-        while (!leaf.IsEmpty() && (leaf[0] == '\\' || leaf[0] == '/'))
+        while (!leaf.IsEmpty() && IsPathSeparator(leaf[0]))
             leaf.Cut(0, 1);
 
         if (result.IsEmpty())
             result = leaf;
         else if (!leaf.IsEmpty())
         {
-            result += PreferredPathSeparator();
+            if (!IsRootPath(result))
+                result += PreferredPathSeparator();
             result += leaf;
         }
 
@@ -332,15 +276,7 @@ namespace utils
             return false;
     
         size_t len = strlen(path);
-        return (path[len - 1] == '\\' || path[len - 1] == '/');
-    }
-
-    bool RemoveTrailingPathSeparator(char *path)
-    {
-        if (!HasTrailingPathSeparator(path))
-            return false;
-        path[strlen(path) - 1] = '\0';
-        return true;
+        return IsPathSeparator(path[len - 1]);
     }
 
     int CharToWchar(const char *charStr, wchar_t *wcharStr, size_t size)
