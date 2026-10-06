@@ -34,17 +34,12 @@ namespace utils
 
     void CRC32(const void *key, size_t len, unsigned int seed, unsigned int *out);
 
-    VX_PIXELFORMAT String2PixelFormat(const char *str, size_t max);
-    const char *PixelFormat2String(VX_PIXELFORMAT format);
-
     bool IniGetString(const char *section, const char *name, char *str, size_t size, const char *filename);
     bool IniGetInteger(const char *section, const char *name, int &value, const char *filename);
     bool IniGetBoolean(const char *section, const char *name, bool &value, const char *filename);
-    bool IniGetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT &value, const char *filename);
     bool IniSetString(const char *section, const char *name, const char *str, const char *filename);
     bool IniSetInteger(const char *section, const char *name, int value, const char *filename);
     bool IniSetBoolean(const char *section, const char *name, bool value, const char *filename);
-    bool IniSetPixelFormat(const char *section, const char *name, VX_PIXELFORMAT value, const char *filename);
 
     // Returns the monitor bounds for the monitor nearest to the specified window.
     // Falls back to primary monitor metrics if multi-monitor APIs are unavailable.

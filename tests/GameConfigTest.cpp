@@ -15,8 +15,6 @@
 #include "IniFile.h"
 #include "Utils.h"
 
-#include "VxMathDefines.h"
-
 namespace fs = std::filesystem;
 
 class ScopedCurrentDirectory {
@@ -328,12 +326,10 @@ TEST_F(GameConfigTest, IniFileBackendRoundTripsTypedValues) {
     ASSERT_TRUE(utils::IniSetString("Startup", "PlayerName", "Ballance", testIniPath.string().c_str()));
     ASSERT_TRUE(utils::IniSetInteger("Graphics", "Width", 1280, testIniPath.string().c_str()));
     ASSERT_TRUE(utils::IniSetBoolean("Graphics", "FullScreen", true, testIniPath.string().c_str()));
-    ASSERT_TRUE(utils::IniSetPixelFormat("Graphics", "PixelFormat", _16_RGB565, testIniPath.string().c_str()));
 
     char playerName[64] = {};
     int width = 0;
     bool fullscreen = false;
-    VX_PIXELFORMAT textureFormat = UNKNOWN_PF;
 
     EXPECT_TRUE(utils::IniGetString("Startup", "PlayerName", playerName, sizeof(playerName), testIniPath.string().c_str()));
     EXPECT_STREQ(playerName, "Ballance");
@@ -341,8 +337,6 @@ TEST_F(GameConfigTest, IniFileBackendRoundTripsTypedValues) {
     EXPECT_EQ(width, 1280);
     EXPECT_TRUE(utils::IniGetBoolean("Graphics", "FullScreen", fullscreen, testIniPath.string().c_str()));
     EXPECT_TRUE(fullscreen);
-    EXPECT_TRUE(utils::IniGetPixelFormat("Graphics", "PixelFormat", textureFormat, testIniPath.string().c_str()));
-    EXPECT_EQ(textureFormat, _16_RGB565);
 }
 
 TEST_F(GameConfigTest, IniFileBackendPreservesCommentsAndUpdatesExistingKey) {
@@ -843,7 +837,7 @@ TEST_F(GameConfigTest, MemoryFootprint) {
     EXPECT_LT(configSize, 10240);
     
     // Should be at least the size of all the members
-    size_t minimumSize = sizeof(int) * 10 + sizeof(bool) * 25 + sizeof(VX_PIXELFORMAT) * 2;
+    size_t minimumSize = sizeof(int) * 10 + sizeof(bool) * 25;
     EXPECT_GE(configSize, minimumSize);
 }
 
