@@ -62,6 +62,12 @@ cmake --build --preset windows-x86-runtime-stage-release
 ctest --preset windows-x86-runtime-stage-release
 ```
 
+Release archives are created from that stage by the Ballanced superproject; BallancePlayer has no packaging of its own:
+
+```bash
+cmake -DSTAGE_ROOT=build/windows-x86-runtime/stage -DARCHIVE_PATH=dist/ballance-sdl-windows-x86-runtime.zip -P cmake/PackageStage.cmake
+```
+
 SDL3 must be discoverable by CMake. See the [Ballanced build guide](https://github.com/doyaGu/Ballanced/blob/sdl/BUILD.md) for Windows, Linux, and macOS presets.
 
 ### Standalone CMake build
@@ -74,7 +80,7 @@ cmake --build --preset player-runtime-win32-release
 ctest --preset player-runtime-win32-release
 ```
 
-Manual CMake builds can be used on other hosts. In a Ballanced source checkout, sibling CK2, VxMath, RenderEngine, Managers, Plugins, and BuildingBlocks projects are detected automatically. If CK2/VxMath are unavailable locally, set `VIRTOOLS_SDK_PATH` or enable `VIRTOOLS_SDK_FETCH_FROM_GIT`.
+Manual CMake builds can be used on other hosts. In a Ballanced source checkout, sibling CK2, VxMath, RenderEngine, Managers, Plugins, and BuildingBlocks projects are detected automatically. If CK2/VxMath are unavailable locally, set `VIRTOOLS_SDK_PATH` or enable `VIRTOOLS_SDK_FETCH_FROM_GIT`. Standalone builds are for development and tests; they do not produce release packages.
 
 ## Hotkeys
 

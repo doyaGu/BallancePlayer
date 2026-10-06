@@ -62,6 +62,12 @@ cmake --build --preset windows-x86-runtime-stage-release
 ctest --preset windows-x86-runtime-stage-release
 ```
 
+发布压缩包由 Ballanced 总工程从该 stage 目录打包，BallancePlayer 本身不提供打包流程：
+
+```bash
+cmake -DSTAGE_ROOT=build/windows-x86-runtime/stage -DARCHIVE_PATH=dist/ballance-sdl-windows-x86-runtime.zip -P cmake/PackageStage.cmake
+```
+
 CMake 必须能找到 SDL3。Windows、Linux 和 macOS 的完整 preset 请参阅 [Ballanced 构建文档](https://github.com/doyaGu/Ballanced/blob/sdl/BUILD.md)。
 
 ### 独立 CMake 构建
@@ -74,7 +80,7 @@ cmake --build --preset player-runtime-win32-release
 ctest --preset player-runtime-win32-release
 ```
 
-其他平台可使用手动 CMake 配置。在 Ballanced 源码树内，构建会自动发现同级的 CK2、VxMath、RenderEngine、Managers、Plugins 和 BuildingBlocks；本地缺少 CK2/VxMath 时，可设置 `VIRTOOLS_SDK_PATH` 或启用 `VIRTOOLS_SDK_FETCH_FROM_GIT`。
+其他平台可使用手动 CMake 配置。在 Ballanced 源码树内，构建会自动发现同级的 CK2、VxMath、RenderEngine、Managers、Plugins 和 BuildingBlocks；本地缺少 CK2/VxMath 时，可设置 `VIRTOOLS_SDK_PATH` 或启用 `VIRTOOLS_SDK_FETCH_FROM_GIT`。独立构建仅用于开发和测试，不生成发布包。
 
 ## 快捷键
 
