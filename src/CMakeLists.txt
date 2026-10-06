@@ -1,3 +1,13 @@
+# The default rasterizer follows the providers in this build. The generated
+# configuration header and the installed Player.ini share this value.
+if (TARGET CKSdlGpuRasterizer)
+    set(_player_default_rasterizer "sdlgpu")
+elseif (TARGET CKBgfxRasterizer)
+    set(_player_default_rasterizer "bgfx")
+else ()
+    set(_player_default_rasterizer "null")
+endif ()
+
 set(_player_generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 configure_file(

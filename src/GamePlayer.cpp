@@ -1,4 +1,5 @@
 ﻿#include "GamePlayer.h"
+#include "PlayerOptions.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -702,6 +703,26 @@ bool CGamePlayer::InitDriver()
     else
     {
         CLogger::Get().Debug("Found %d render drivers", driverCount);
+    }
+
+    if (!m_Config.rasterizer.IsEmpty())
+    {
+        m_Config.driver = -1;
+        for (int i = 0; i < driverCount; ++i)
+        {
+            VxDriverDesc *candidate = m_RenderManager->GetRenderDriverDescription(i);
+            if (candidate && m_Config.rasterizer.Compare(playeroptions::RasterizerNameForDriver(candidate->DriverDesc)) == 0)
+            {
+                m_Config.driver = i;
+                break;
+            }
+        }
+        if (m_Config.driver < 0)
+        {
+            CLogger::Get().Error("Requested rasterizer '%s' is unavailable.", m_Config.rasterizer.CStr());
+            return false;
+        }
+        CLogger::Get().Info("Selected rasterizer: %s (driver %d)", m_Config.rasterizer.CStr(), m_Config.driver);
     }
 
     if (m_Config.manualSetup)

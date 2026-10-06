@@ -72,6 +72,7 @@ TEST_F(GameConfigTest, DefaultConstructor) {
     EXPECT_FALSE(config.verbose);
     EXPECT_FALSE(config.manualSetup);
     EXPECT_EQ(config.driver, 0);
+    EXPECT_STREQ(config.rasterizer.CStr(), PLAYER_DEFAULT_RASTERIZER);
     EXPECT_EQ(config.bpp, PLAYER_DEFAULT_BPP);
     EXPECT_EQ(config.width, PLAYER_DEFAULT_WIDTH);
     EXPECT_EQ(config.height, PLAYER_DEFAULT_HEIGHT);
@@ -824,4 +825,30 @@ TEST_F(GameConfigTest, MemoryFootprint) {
     // Should be at least the size of all the members
     size_t minimumSize = sizeof(int) * 10 + sizeof(bool) * 25 + sizeof(VX_PIXELFORMAT) * 2;
     EXPECT_GE(configSize, minimumSize);
+}
+
+TEST_F(GameConfigTest, MissingSelectorsRetainBuildDefault) {
+    CreateTestIni("[Graphics]\nWidth=800\n");
+    CGameConfig config;
+    config.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_STREQ(config.rasterizer.CStr(), PLAYER_DEFAULT_RASTERIZER);
+}
+
+TEST_F(GameConfigTest, LegacyNumericSelectorOverridesBuildDefault) {
+    CreateTestIni("[Graphics]\nDriver=0\n");
+    CGameConfig config;
+    config.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_TRUE(config.rasterizer.IsEmpty());
+    EXPECT_EQ(config.driver, 0);
+    ASSERT_TRUE(config.SaveToIni(testIniPath.string().c_str()));
+    CGameConfig reloaded;
+    reloaded.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_TRUE(reloaded.rasterizer.IsEmpty());
+}
+
+TEST_F(GameConfigTest, NamedSelectorTakesPriorityOverLegacyDriver) {
+    CreateTestIni("[Graphics]\nRasterizer=bgfx\nDriver=0\n");
+    CGameConfig config;
+    config.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_STREQ(config.rasterizer.CStr(), "bgfx");
 }

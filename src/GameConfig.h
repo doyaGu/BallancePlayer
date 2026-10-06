@@ -35,10 +35,12 @@ enum LogMode
 //   X_BOOL(section, key, member, default, cli_long, cli_short, cli_value)
 //   X_INT(section, key, member, default, cli_long, cli_short)
 //   X_PF(section, key, member, default, cli_long, cli_short)
+//   X_STRING(section, key, member, default, cli_long, cli_short)
 #define GAMECONFIG_FIELDS \
   X_INT  ("Startup",  "LogMode",                 logMode,                 1,                  0,                                      '\0') \
   X_BOOL ("Startup",  "Verbose",                 verbose,                 false,              "--verbose",                             '\0', true) \
   X_BOOL ("Startup",  "ManualSetup",             manualSetup,             false,              "--manual-setup",                        'm',  true) \
+  X_STRING("Graphics", "Rasterizer",             rasterizer,              PLAYER_DEFAULT_RASTERIZER, "--rasterizer",                   '\0') \
   X_INT  ("Graphics", "Driver",                  driver,                  0,                  "--video-driver",                        'v') \
   X_INT  ("Graphics", "BitsPerPixel",            bpp,                     PLAYER_DEFAULT_BPP, "--bpp",                                 'b') \
   X_INT  ("Graphics", "Width",                   width,                   PLAYER_DEFAULT_WIDTH, "--width",                              'w') \
@@ -79,10 +81,12 @@ public:
     #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) bool member;
     #define X_INT(sec,key,member,def,cliLong,cliShort)  int  member;
     #define X_PF(sec,key,member,def,cliLong,cliShort)   VX_PIXELFORMAT member;
+    #define X_STRING(sec,key,member,def,cliLong,cliShort) XString member;
         GAMECONFIG_FIELDS
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
+    #undef X_STRING
 
     // Non-INI members (not persisted)
     int screenMode;
@@ -111,10 +115,12 @@ private:
         #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) eLoadedBool_##member,
         #define X_INT(sec,key,member,def,cliLong,cliShort)  eLoadedInt_##member,
         #define X_PF(sec,key,member,def,cliLong,cliShort)   eLoadedPixel_##member,
+        #define X_STRING(sec,key,member,def,cliLong,cliShort) eLoadedString_##member,
             GAMECONFIG_FIELDS
         #undef X_BOOL
         #undef X_INT
         #undef X_PF
+        #undef X_STRING
         eLoadedSentinel
     };
 
@@ -141,6 +147,7 @@ private:
     void MergeExternalFieldValue(const char *filename, const char *section, const char *key, bool &member, int index);
     void MergeExternalFieldValue(const char *filename, const char *section, const char *key, int &member, int index);
     void MergeExternalFieldValue(const char *filename, const char *section, const char *key, VX_PIXELFORMAT &member, int index);
+    void MergeExternalFieldValue(const char *filename, const char *section, const char *key, XString &member, int index);
     void MergeExternalChanges(const char *filename);
     void SetLastConfigAbsolutePath(const char *path);
     bool IsSameConfigPath(const char *path) const;

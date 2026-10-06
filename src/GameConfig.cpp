@@ -153,6 +153,20 @@ static XString SerializeValue(VX_PIXELFORMAT value)
     return utils::PixelFormat2String(value);
 }
 
+static XString SerializeValue(const XString &value)
+{
+    return value;
+}
+
+static bool ReadFieldValue(const char *section, const char *key, XString &value, const char *filename)
+{
+    char text[128] = {};
+    if (!utils::IniGetString(section, key, text, sizeof(text), filename))
+        return false;
+    value = text;
+    return true;
+}
+
 static bool ReadFieldValue(const char *section, const char *key, bool &value, const char *filename)
 {
     return utils::IniGetBoolean(section, key, value, filename);
@@ -182,10 +196,12 @@ CGameConfig::CGameConfig()
     #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) member = def;
     #define X_INT(sec,key,member,def,cliLong,cliShort)  member = def;
     #define X_PF(sec,key,member,def,cliLong,cliShort)   member = def;
+    #define X_STRING(sec,key,member,def,cliLong,cliShort)   member = def;
         GAMECONFIG_FIELDS
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
+    #undef X_STRING
 
     // Non-INI members
     screenMode = -1;
@@ -204,10 +220,12 @@ CGameConfig &CGameConfig::operator=(const CGameConfig &config)
     #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) member = config.member;
     #define X_INT(sec,key,member,def,cliLong,cliShort)  member = config.member;
     #define X_PF(sec,key,member,def,cliLong,cliShort)   member = config.member;
+    #define X_STRING(sec,key,member,def,cliLong,cliShort)   member = config.member;
         GAMECONFIG_FIELDS
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
+    #undef X_STRING
 
     // Non-INI members
     screenMode = config.screenMode;
@@ -354,6 +372,14 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     SetLastConfigAbsolutePath(filename);
 
+    // A legacy numeric selector is explicit, even when it selects driver zero.
+    // Files without either selector retain the build's default rasterizer.
+    XString configuredRasterizer;
+    int configuredDriver = 0;
+    if (!ReadFieldValue("Graphics", "Rasterizer", configuredRasterizer, filename) &&
+        ReadFieldValue("Graphics", "Driver", configuredDriver, filename))
+        rasterizer.Clear();
+
     // Auto-generated loading from master list
     #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) \
         LoadFieldValue(sec, key, member, filename);
@@ -363,12 +389,15 @@ void CGameConfig::LoadFromIni(const char *filename)
 
     #define X_PF(sec,key,member,def,cliLong,cliShort) \
         LoadFieldValue(sec, key, member, filename);
+    #define X_STRING(sec,key,member,def,cliLong,cliShort) \
+        LoadFieldValue(sec, key, member, filename);
 
         GAMECONFIG_FIELDS
 
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
+    #undef X_STRING
 
     CaptureFieldValuesAsLoaded();
 }
@@ -404,10 +433,13 @@ bool CGameConfig::SaveToIni(const char *filename)
         ok = utils::IniSetInteger(sec, key, member, filename) && ok;
     #define X_PF(sec,key,member,def,cliLong,cliShort) \
         ok = utils::IniSetPixelFormat(sec, key, member, filename) && ok;
+    #define X_STRING(sec,key,member,def,cliLong,cliShort) \
+        ok = utils::IniSetString(sec, key, member.CStr(), filename) && ok;
         GAMECONFIG_FIELDS
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
+    #undef X_STRING
 
     if (!ok)
         return false;
@@ -478,12 +510,15 @@ void CGameConfig::CaptureFieldValuesAsLoaded()
 
     #define X_PF(sec,key,member,def,cliLong,cliShort) \
         CaptureFieldValueAsLoaded(eLoadedPixel_##member, member);
+    #define X_STRING(sec,key,member,def,cliLong,cliShort) \
+        CaptureFieldValueAsLoaded(eLoadedString_##member, member);
 
         GAMECONFIG_FIELDS
 
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
+    #undef X_STRING
 }
 
 template <typename TValue>
@@ -525,6 +560,17 @@ void CGameConfig::MergeExternalFieldValue(const char *filename, const char *sect
         member = externalValue;
 }
 
+void CGameConfig::MergeExternalFieldValue(const char *filename, const char *section, const char *key,
+                                          XString &member, int index)
+{
+    XString externalValue;
+    if (!ReadFieldValue(section, key, externalValue, filename))
+        return;
+
+    if (TryAcceptExternalValue(index, SerializeValue(member), SerializeValue(externalValue)))
+        member = externalValue;
+}
+
 void CGameConfig::MergeExternalChanges(const char *filename)
 {
     // Auto-generated merging from master list
@@ -536,12 +582,15 @@ void CGameConfig::MergeExternalChanges(const char *filename)
 
     #define X_PF(sec,key,member,def,cliLong,cliShort) \
         MergeExternalFieldValue(filename, sec, key, member, eLoadedPixel_##member);
+    #define X_STRING(sec,key,member,def,cliLong,cliShort) \
+        MergeExternalFieldValue(filename, sec, key, member, eLoadedString_##member);
 
         GAMECONFIG_FIELDS
 
     #undef X_BOOL
     #undef X_INT
     #undef X_PF
+    #undef X_STRING
 }
 
 void CGameConfig::SetLastConfigAbsolutePath(const char *path)

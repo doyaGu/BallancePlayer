@@ -171,6 +171,7 @@ Player[.exe] [OPTIONS]
 ```
 - `--verbose`: Enable verbose logging.
 - `-m`, `--manual-setup`: Always show the setup dialog box at startup.
+- `--rasterizer <name>`: Select `sdlgpu`, `bgfx`, or `null`. SDL_gpu is the default when built; bgfx-only and NULL-only builds use their available provider. The compiled default and staged configuration use the same selection. A legacy INI containing only `Graphics.Driver` still selects that numeric driver. Command-line selection takes priority; combining `--rasterizer` with `--video-driver` is an error.
 - `-v <driver>`, `--video-driver <driver>`: Set the graphics card driver ID.
 - `-b <bpp>`, `--bpp <bpp>`: Set the bits per pixel (32 or 16).
 - `-w <width>`, `--width <width>`: Set the screen width.

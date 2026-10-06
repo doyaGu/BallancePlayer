@@ -1,6 +1,9 @@
 #include "PlayerOptions.h"
 
 #include <string.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <errno.h>
 
 #include "CmdlineParser.h"
 #include "Utils.h"
@@ -42,6 +45,21 @@ namespace
         return true;
     }
 
+    bool ApplyStringOption(CGameConfig &config, CmdlineParser &parser, const char *longopt, char shortopt,
+                           XString CGameConfig::*member)
+    {
+        CmdlineArg arg;
+        XString value;
+        if (!longopt && shortopt == '\0')
+            return false;
+        if (!parser.Next(arg, longopt, shortopt, 1))
+            return false;
+
+        if (arg.GetValue(0, value))
+            config.*member = value;
+        return true;
+    }
+
     bool ApplyPixelFormatOption(CGameConfig &config, CmdlineParser &parser, const char *longopt, char shortopt,
                                 VX_PIXELFORMAT CGameConfig::*member)
     {
@@ -55,6 +73,51 @@ namespace
         if (arg.GetValue(0, value))
             config.*member = utils::String2PixelFormat(value.CStr(), 16);
         return true;
+    }
+
+    bool IsDriverIndex(const XString &text)
+    {
+        if (text.IsEmpty())
+            return false;
+
+        errno = 0;
+        char *end = NULL;
+        const long value = strtol(text.CStr(), &end, 10);
+        return errno == 0 && *end == '\0' && value >= 0 && value <= INT_MAX;
+    }
+
+    // --rasterizer and --video-driver select the same driver and may not be
+    // combined. Both are validated before any option is applied.
+    bool CheckRasterizerSelectors(CmdlineParser &parser, bool &numeric)
+    {
+        bool named = false;
+        bool valid = true;
+        numeric = false;
+
+        while (!parser.Done())
+        {
+            CmdlineArg arg;
+            XString value;
+            if (parser.Next(arg, "--rasterizer", '\0', 1))
+            {
+                named = true;
+                if (!arg.GetValue(0, value) || !playeroptions::IsRasterizerName(value.CStr()))
+                    valid = false;
+            }
+            else if (parser.Next(arg, "--video-driver", 'v', 1))
+            {
+                numeric = true;
+                if (!arg.GetValue(0, value) || !IsDriverIndex(value))
+                    valid = false;
+            }
+            else
+            {
+                parser.Skip();
+            }
+        }
+
+        parser.Reset();
+        return valid && !(named && numeric);
     }
 }
 
@@ -99,8 +162,29 @@ namespace playeroptions
         }
     }
 
-    void ApplyConfigOptions(CGameConfig &config, CmdlineParser &parser)
+    bool IsRasterizerName(const char *name)
     {
+        return OptionNameEquals(name, "sdlgpu") || OptionNameEquals(name, "bgfx") || OptionNameEquals(name, "null");
+    }
+
+    const char *RasterizerNameForDriver(const char *description)
+    {
+        // Driver descriptions registered by the RenderEngine rasterizers.
+        if (OptionNameEquals(description, "SDL_gpu Driver"))
+            return "sdlgpu";
+        if (OptionNameEquals(description, "bgfx Driver"))
+            return "bgfx";
+        if (OptionNameEquals(description, "NULL Rasterizer"))
+            return "null";
+        return "";
+    }
+
+    bool ApplyConfigOptions(CGameConfig &config, CmdlineParser &parser)
+    {
+        bool numeric = false;
+        if (!CheckRasterizerSelectors(parser, numeric))
+            return false;
+
         while (!parser.Done())
         {
             bool matched = false;
@@ -120,21 +204,32 @@ namespace playeroptions
                 matched = true; \
             if (matched) \
                 continue;
+#define X_STRING(sec,key,member,def,cliLong,cliShort) \
+            if (ApplyStringOption(config, parser, cliLong, cliShort, &CGameConfig::member)) \
+                matched = true; \
+            if (matched) \
+                continue;
             GAMECONFIG_FIELDS
 #undef X_BOOL
 #undef X_INT
 #undef X_PF
+#undef X_STRING
 
             parser.Skip();
         }
 
         parser.Reset();
+
+        // A numeric driver on the command line overrides a configured name.
+        if (numeric)
+            config.rasterizer.Clear();
+        return config.rasterizer.IsEmpty() || IsRasterizerName(config.rasterizer.CStr());
     }
 
-    void ApplyRuntimeOptions(CGameConfig &config, CmdlineParser &parser)
+    bool ApplyRuntimeOptions(CGameConfig &config, CmdlineParser &parser)
     {
         ApplyPathOptions(config, parser);
-        ApplyConfigOptions(config, parser);
+        return ApplyConfigOptions(config, parser);
     }
 
     int GetConfigOptionCount()
@@ -143,10 +238,12 @@ namespace playeroptions
 #define X_BOOL(sec,key,member,def,cliLong,cliShort,cliValue) if (cliLong || cliShort != '\0') ++count;
 #define X_INT(sec,key,member,def,cliLong,cliShort) if (cliLong || cliShort != '\0') ++count;
 #define X_PF(sec,key,member,def,cliLong,cliShort) if (cliLong || cliShort != '\0') ++count;
+#define X_STRING(sec,key,member,def,cliLong,cliShort) if (cliLong || cliShort != '\0') ++count;
         GAMECONFIG_FIELDS
 #undef X_BOOL
 #undef X_INT
 #undef X_PF
+#undef X_STRING
         return count;
     }
 
@@ -167,10 +264,13 @@ namespace playeroptions
         if ((OptionNameEquals(cliLong, longopt) || !longopt) && cliShort == shortopt) return true;
 #define X_PF(sec,key,member,def,cliLong,cliShort) \
         if ((OptionNameEquals(cliLong, longopt) || !longopt) && cliShort == shortopt) return true;
+#define X_STRING(sec,key,member,def,cliLong,cliShort) \
+        if ((OptionNameEquals(cliLong, longopt) || !longopt) && cliShort == shortopt) return true;
         GAMECONFIG_FIELDS
 #undef X_BOOL
 #undef X_INT
 #undef X_PF
+#undef X_STRING
         return false;
     }
 

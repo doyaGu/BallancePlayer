@@ -27,7 +27,13 @@ int main(int argc, char **argv)
 
     persistentConfig.LoadFromIni();
     CGameConfig runtimeConfig = persistentConfig;
-    playeroptions::ApplyRuntimeOptions(runtimeConfig, parser);
+    if (!playeroptions::ApplyRuntimeOptions(runtimeConfig, parser))
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
+                     "Invalid rasterizer selection: use --rasterizer sdlgpu|bgfx|null or --video-driver N; "
+                     "the two selectors are mutually exclusive.");
+        return 2;
+    }
 
     bool overwrite = runtimeConfig.logMode != eLogAppend;
     XString logPath;

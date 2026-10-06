@@ -20,6 +20,7 @@ function(add_player_test test_name)
     target_compile_features(${test_name} PUBLIC cxx_std_17)
 
     target_include_directories(${test_name} PRIVATE
+            "${PROJECT_BINARY_DIR}/src/generated"
             "${PLAYER_INCLUDE_DIR}"
             "${PLAYER_SOURCE_DIR}"
     )
