@@ -97,43 +97,20 @@ static XString JoinConfigPath(const char *basePath, const char *relativePath)
     return utils::JoinPath(basePath, relativePath, true);
 }
 
+// An explicit path, the stored path or the default path, in that order. The
+// resolved path becomes the stored path so later saves target the same file.
 static bool ResolveConfigPath(const char *requestedPath, const char *storedPath,
-                              const char *basePath, XString &outPath, bool *shouldUpdateStoredPath)
+                              const char *basePath, XString &outPath)
 {
     if (!requestedPath)
         return false;
 
     outPath.Clear();
-    bool updateStoredPath = false;
-    const char *pathToResolve = requestedPath;
-    if (requestedPath[0] == '\0')
-    {
-        if (!storedPath || storedPath[0] == '\0')
-        {
-            if (!ResolveDefaultConfigPath(basePath, outPath))
-                return false;
-            updateStoredPath = true;
-        }
-        else
-        {
-            pathToResolve = storedPath;
-            updateStoredPath = true;
-        }
-    }
-
-    if (outPath.IsEmpty() && !ResolveAbsolutePath(pathToResolve, basePath, outPath))
-        return false;
-
-    if (!updateStoredPath && storedPath && storedPath[0] != '\0')
-    {
-        XString storedResolvedPath;
-        updateStoredPath = ResolveAbsolutePath(storedPath, basePath, storedResolvedPath) &&
-                           SamePathIgnoreCase(outPath.CStr(), storedResolvedPath.CStr());
-    }
-
-    if (shouldUpdateStoredPath)
-        *shouldUpdateStoredPath = updateStoredPath;
-    return true;
+    if (requestedPath[0] != '\0')
+        return ResolveAbsolutePath(requestedPath, basePath, outPath);
+    if (storedPath && storedPath[0] != '\0')
+        return ResolveAbsolutePath(storedPath, basePath, outPath);
+    return ResolveDefaultConfigPath(basePath, outPath);
 }
 
 static XString SerializeValue(int value)
@@ -339,7 +316,7 @@ bool CGameConfig::ResetPath(PathCategory category)
 bool CGameConfig::EnsureConfigPath()
 {
     XString path;
-    if (!ResolveConfigPath("", m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path, NULL))
+    if (!ResolveConfigPath("", m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path))
         return false;
 
     SetPath(eConfigPath, path.CStr());
@@ -349,16 +326,14 @@ bool CGameConfig::EnsureConfigPath()
 void CGameConfig::LoadFromIni(const char *filename)
 {
     XString path;
-    bool updateStoredPath = false;
-    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path, &updateStoredPath))
+    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path))
         return;
 
     filename = path.CStr();
     if (!utils::FileOrDirectoryExists(filename))
         return;
 
-    if (updateStoredPath)
-        SetPath(eConfigPath, filename);
+    SetPath(eConfigPath, filename);
 
     ResetFieldSnapshots();
 
@@ -405,13 +380,11 @@ void CGameConfig::LoadFromIni(const char *filename)
 bool CGameConfig::SaveToIni(const char *filename)
 {
     XString path;
-    bool updateStoredPath = false;
-    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path, &updateStoredPath))
+    if (!ResolveConfigPath(filename, m_Paths[eConfigPath].CStr(), m_RuntimeBasePath.CStr(), path))
         return false;
 
     filename = path.CStr();
-    if (updateStoredPath)
-        SetPath(eConfigPath, filename);
+    SetPath(eConfigPath, filename);
 
     bool shouldMerge = false;
     ConfigFileTime fileTime;

@@ -595,6 +595,26 @@ TEST_F(GameConfigTest, ExplicitLoadUsingStoredConfigPathResolvesPathForLaterWrit
     EXPECT_FALSE(fs::exists(otherDir / testIniPath.filename()));
 }
 
+TEST_F(GameConfigTest, ExplicitLoadPathBecomesDefaultSavePath) {
+    CreateTestIni("[Graphics]\nWidth=640\nHeight=480\n");
+    fs::path otherIniPath = testDir / "other.ini";
+
+    CGameConfig config;
+    config.SetPath(eConfigPath, otherIniPath.string().c_str());
+    config.LoadFromIni(testIniPath.string().c_str());
+
+    config.width = 1600;
+    bool saved = config.SaveToIni();
+
+    ASSERT_TRUE(saved);
+    EXPECT_EQ(fs::path(config.GetPath(eConfigPath)), fs::absolute(testIniPath));
+
+    CGameConfig savedConfig;
+    savedConfig.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_EQ(savedConfig.width, 1600);
+    EXPECT_FALSE(fs::exists(otherIniPath));
+}
+
 // Test relative vs absolute paths
 TEST_F(GameConfigTest, PathHandling) {
     CGameConfig config;
