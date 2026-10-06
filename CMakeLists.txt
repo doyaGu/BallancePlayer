@@ -232,7 +232,8 @@ set(PLAYER_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src" CACHE INTERNAL "")
 
 add_subdirectory(src)
 
-if (PLAYER_IS_TOP_LEVEL)
+option(PLAYER_BUILD_TESTS "Build Player configuration and option tests" ${PLAYER_IS_TOP_LEVEL})
+if (PLAYER_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif ()

@@ -35,6 +35,9 @@ function(add_player_test test_name)
 
     set_target_properties(${test_name} PROPERTIES FOLDER "Tests")
 
+    if (COMMAND ckre_copy_runtime_dependencies)
+        ckre_copy_runtime_dependencies(${test_name})
+    endif ()
     add_test(NAME ${test_name} COMMAND ${test_name})
 endfunction()
 
