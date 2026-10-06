@@ -1,0 +1,30 @@
+[Startup]
+LogMode = 1
+Verbose = 0
+ManualSetup = 0
+
+[Graphics]
+Rasterizer = @_player_default_rasterizer@
+Driver = 0
+BitsPerPixel = @PLAYER_SCREEN_BPP@
+Width = @PLAYER_SCREEN_WIDTH@
+Height = @PLAYER_SCREEN_HEIGHT@
+FullScreen = 0
+
+[Window]
+X = 2147483647
+Y = 2147483647
+ChildWindowRendering = 0
+Borderless = 0
+ClipCursor = 0
+AlwaysHandleInput = 0
+
+[Game]
+Language = 1
+SkipOpening = 0
+ApplyHotfix = 1
+UnlockFramerate = 0
+UnlockWidescreen = 0
+UnlockHighResolution = 0
+Debug = 0
+Rookie = 0

@@ -235,6 +235,13 @@ install(TARGETS ${PLAYER_NAME}
         FRAMEWORK DESTINATION Bin COMPONENT Runtime
 )
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Player.ini.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/Player.ini" @ONLY)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Player.ini"
+        DESTINATION Bin
+        COMPONENT Runtime
+)
+
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "Kakuty")
 set(CPACK_PACKAGE_VERSION "${PLAYER_VERSION}")
