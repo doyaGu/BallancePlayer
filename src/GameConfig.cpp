@@ -43,7 +43,15 @@ static bool GetLastWriteTime(const char *filename, ConfigFileTime &outTime)
     struct stat st;
     if (stat(filename, &st) != 0)
         return false;
-    unsigned long long value = static_cast<unsigned long long>(st.st_mtime);
+    // Nanoseconds: whole seconds would miss an external change made in the
+    // second the file was read.
+#if defined(__APPLE__)
+    const struct timespec &mtime = st.st_mtimespec;
+#else
+    const struct timespec &mtime = st.st_mtim;
+#endif
+    unsigned long long value = static_cast<unsigned long long>(mtime.tv_sec) * 1000000000ull +
+                               static_cast<unsigned long long>(mtime.tv_nsec);
     outTime.low = static_cast<unsigned long>(value & 0xffffffffu);
     outTime.high = static_cast<unsigned long>((value >> 32) & 0xffffffffu);
     return true;
