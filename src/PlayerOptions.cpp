@@ -149,7 +149,7 @@ namespace playeroptions
 
     bool IsRasterizerName(const char *name)
     {
-        return OptionNameEquals(name, "sdlgpu") || OptionNameEquals(name, "bgfx") || OptionNameEquals(name, "null");
+        return OptionNameEquals(name, "sdlgpu") || OptionNameEquals(name, "null");
     }
 
     const char *RasterizerNameForDriver(const char *description)
@@ -157,8 +157,6 @@ namespace playeroptions
         // Driver descriptions registered by the RenderEngine rasterizers.
         if (OptionNameEquals(description, "SDL_gpu Driver"))
             return "sdlgpu";
-        if (OptionNameEquals(description, "bgfx Driver"))
-            return "bgfx";
         if (OptionNameEquals(description, "NULL Rasterizer"))
             return "null";
         return "";

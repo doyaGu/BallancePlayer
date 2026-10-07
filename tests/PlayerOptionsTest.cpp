@@ -266,7 +266,7 @@ TEST(PlayerOptionsTest, ExposesMetadataForConfigAndPathOptions) {
 
 TEST(PlayerOptionsTest, NamedRasterizerOverridesConfig) {
     CGameConfig config;
-    config.rasterizer = "bgfx";
+    config.rasterizer = "null";
     config.driver = 7;
     CmdlineParser parser("--rasterizer sdlgpu");
     EXPECT_TRUE(playeroptions::ApplyConfigOptions(config, parser));
@@ -283,8 +283,9 @@ TEST(PlayerOptionsTest, NumericDriverOverridesNamedConfig) {
 }
 
 TEST(PlayerOptionsTest, RejectsConflictingAndInvalidRasterizerSelectors) {
-    for (const char *command : {"--rasterizer sdlgpu --video-driver 1", "-v 0 --rasterizer bgfx",
-                                 "--rasterizer unknown", "--rasterizer", "--video-driver", "--video-driver abc"}) {
+    for (const char *command : {"--rasterizer sdlgpu --video-driver 1", "-v 0 --rasterizer null",
+                                 "--rasterizer unknown", "--rasterizer bgfx", "--rasterizer", "--video-driver",
+                                 "--video-driver abc"}) {
         CGameConfig config;
         CmdlineParser parser(command);
         EXPECT_FALSE(playeroptions::ApplyConfigOptions(config, parser)) << command;
@@ -293,7 +294,7 @@ TEST(PlayerOptionsTest, RejectsConflictingAndInvalidRasterizerSelectors) {
 
 TEST(PlayerOptionsTest, StableRasterizerNamesMatchRegisteredDrivers) {
     EXPECT_STREQ(playeroptions::RasterizerNameForDriver("SDL_gpu Driver"), "sdlgpu");
-    EXPECT_STREQ(playeroptions::RasterizerNameForDriver("bgfx Driver"), "bgfx");
+    EXPECT_STREQ(playeroptions::RasterizerNameForDriver("bgfx Driver"), "");
     EXPECT_STREQ(playeroptions::RasterizerNameForDriver("NULL Rasterizer"), "null");
     EXPECT_STREQ(playeroptions::RasterizerNameForDriver("unrelated"), "");
 }

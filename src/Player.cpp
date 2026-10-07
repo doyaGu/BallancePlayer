@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     if (!playeroptions::ApplyRuntimeOptions(runtimeConfig, parser))
     {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION,
-                     "Invalid rasterizer selection: use --rasterizer sdlgpu|bgfx|null or --video-driver N; "
+                     "Invalid rasterizer selection: use --rasterizer sdlgpu|null or --video-driver N; "
                      "the two selectors are mutually exclusive.");
         return 2;
     }

@@ -899,8 +899,19 @@ TEST_F(GameConfigTest, LegacyNumericSelectorOverridesBuildDefault) {
 }
 
 TEST_F(GameConfigTest, NamedSelectorTakesPriorityOverLegacyDriver) {
-    CreateTestIni("[Graphics]\nRasterizer=bgfx\nDriver=0\n");
+    CreateTestIni("[Graphics]\nRasterizer=null\nDriver=0\n");
     CGameConfig config;
     config.LoadFromIni(testIniPath.string().c_str());
-    EXPECT_STREQ(config.rasterizer.CStr(), "bgfx");
+    EXPECT_STREQ(config.rasterizer.CStr(), "null");
+}
+
+TEST_F(GameConfigTest, RetiredBgfxSelectionUsesDefaultRasterizer) {
+    CreateTestIni("[Graphics]\nRasterizer=bgfx\n");
+    CGameConfig config;
+    config.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_STREQ(config.rasterizer.CStr(), PLAYER_DEFAULT_RASTERIZER);
+    ASSERT_TRUE(config.SaveToIni(testIniPath.string().c_str()));
+    CGameConfig reloaded;
+    reloaded.LoadFromIni(testIniPath.string().c_str());
+    EXPECT_STREQ(reloaded.rasterizer.CStr(), PLAYER_DEFAULT_RASTERIZER);
 }

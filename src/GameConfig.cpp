@@ -358,6 +358,11 @@ void CGameConfig::LoadFromIni(const char *filename)
     #undef X_STRING
 
     CaptureFieldValuesAsLoaded();
+
+    // The retired bgfx rasterizer selects the build's default; saving the
+    // configuration replaces it.
+    if (rasterizer.Compare("bgfx") == 0)
+        rasterizer = PLAYER_DEFAULT_RASTERIZER;
 }
 
 bool CGameConfig::SaveToIni(const char *filename)

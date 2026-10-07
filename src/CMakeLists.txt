@@ -11,8 +11,6 @@ set_property(GLOBAL PROPERTY PLAYER_RUNTIME_MODULES "${_player_runtime_modules}"
 # configuration header and the installed Player.ini share this value.
 if (TARGET CKSdlGpuRasterizer)
     set(_player_default_rasterizer "sdlgpu")
-elseif (TARGET CKBgfxRasterizer)
-    set(_player_default_rasterizer "bgfx")
 else ()
     set(_player_default_rasterizer "null")
 endif ()
