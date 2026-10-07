@@ -96,7 +96,7 @@ static XString GetDefaultRootPath(const char *basePath)
 {
     XString cmoPath = utils::ResolvePathAgainstBase(basePath, DefaultPaths[eCmoPath], false);
     if (!cmoPath.IsEmpty() && utils::FileOrDirectoryExists(cmoPath.CStr()))
-        return ".\\";
+        return utils::WithTrailingPathSeparator(".");
     return utils::WithTrailingPathSeparator(DefaultPaths[eRootPath]);
 }
 
