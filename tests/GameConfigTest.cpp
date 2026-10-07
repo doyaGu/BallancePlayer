@@ -10,6 +10,16 @@
 #endif
 #include <Windows.h>
 #endif
+// The legacy Windows limit the long-path cases exceed on every platform.
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
+// The separator of the default paths.
+#if defined(_WIN32)
+#define TEST_SEPARATOR "\\"
+#else
+#define TEST_SEPARATOR "/"
+#endif
 
 #include "GameConfig.h"
 #include "IniFile.h"
@@ -261,7 +271,8 @@ TEST_F(GameConfigTest, GetAbsolutePathUsesLongCurrentDirectory) {
         ASSERT_TRUE(utils::GetAbsolutePath(resolved, sizeof(resolved), "relative file.txt", false));
     }
 
-    EXPECT_EQ(fs::path(resolved), longDir / "relative file.txt");
+    // The current directory resolves symbolic links, as /var on macOS.
+    EXPECT_EQ(fs::weakly_canonical(fs::path(resolved)), fs::weakly_canonical(longDir / "relative file.txt"));
     EXPECT_GT(strlen(resolved), static_cast<size_t>(MAX_PATH));
 }
 
@@ -795,8 +806,8 @@ TEST_F(GameConfigTest, FlatLayoutUsesExecutableDirectoryAsRootPath) {
         CGameConfig config;
         config.SetRuntimeBasePath(runtimeBase.string().c_str());
 
-        EXPECT_STREQ(config.GetPath(eRootPath), ".\\");
-        EXPECT_STREQ(config.GetPath(eDataPath), ".\\");
+        EXPECT_STREQ(config.GetPath(eRootPath), "." TEST_SEPARATOR);
+        EXPECT_STREQ(config.GetPath(eDataPath), "." TEST_SEPARATOR);
         EXPECT_STREQ(config.GetPath(eConfigPath), "Player.ini");
         EXPECT_STREQ(config.GetPath(eLogPath), "Player.log");
         EXPECT_STREQ(config.GetPath(eCmoPath), "base.cmo");
@@ -816,8 +827,8 @@ TEST_F(GameConfigTest, DefaultLayoutUsesParentDirectoryAsRootPath) {
         CGameConfig config;
         config.SetRuntimeBasePath(runtimeBase.string().c_str());
 
-        EXPECT_STREQ(config.GetPath(eRootPath), "..\\");
-        EXPECT_STREQ(config.GetPath(eDataPath), "..\\");
+        EXPECT_STREQ(config.GetPath(eRootPath), ".." TEST_SEPARATOR);
+        EXPECT_STREQ(config.GetPath(eDataPath), ".." TEST_SEPARATOR);
         EXPECT_STREQ(config.GetPath(eConfigPath), "Player.ini");
         EXPECT_STREQ(config.GetPath(eLogPath), "Player.log");
         EXPECT_STREQ(config.GetPath(eCmoPath), "base.cmo");

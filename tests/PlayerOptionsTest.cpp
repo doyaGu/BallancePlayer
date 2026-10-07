@@ -7,6 +7,10 @@
 #endif
 #include <Windows.h>
 #endif
+// The legacy Windows limit the long-path cases exceed on every platform.
+#ifndef MAX_PATH
+#define MAX_PATH 260
+#endif
 
 #include "CmdlineParser.h"
 #include "GameConfig.h"
@@ -215,8 +219,10 @@ TEST(PlayerOptionsTest, RootPathRecomputesImplicitDependentPaths) {
 }
 
 TEST(PlayerOptionsTest, LongRootPathRecomputesImplicitDependentPathsWithoutTruncation) {
-    std::string longName(220, 'r');
-    fs::path testRoot = fs::temp_directory_path() / longName;
+    // The root fits in MAX_PATH; its Plugins directory does not.
+    const fs::path temp = fs::temp_directory_path();
+    std::string longName(static_cast<size_t>(MAX_PATH) - 8 - temp.string().size(), 'r');
+    fs::path testRoot = temp / longName;
     std::string rootString = testRoot.string();
     ASSERT_LT(rootString.size(), static_cast<size_t>(MAX_PATH));
 
@@ -226,7 +232,7 @@ TEST(PlayerOptionsTest, LongRootPathRecomputesImplicitDependentPathsWithoutTrunc
 
     playeroptions::ApplyPathOptions(config, parser);
 
-    std::string expectedPluginPath = rootString + "\\Plugins\\";
+    std::string expectedPluginPath = utils::JoinPath(rootString.c_str(), "Plugins\\", true).CStr();
     ASSERT_GT(expectedPluginPath.size(), static_cast<size_t>(MAX_PATH));
     EXPECT_STREQ(config.GetPath(ePluginPath), expectedPluginPath.c_str());
 }
