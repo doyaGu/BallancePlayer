@@ -392,17 +392,14 @@ bool CGamePlayer::Update()
 {
     DrainPlayerCommands();
 
-    SDL_PumpEvents();
-    SDL_Event event;
-    if (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_EVENT_QUIT, SDL_EVENT_QUIT) > 0)
-        return false;
-
-    SDL_Event windowEvents[16];
-    int windowEventCount = SDL_PeepEvents(windowEvents, 16, SDL_GETEVENT,
-                                          SDL_EVENT_WINDOW_FIRST, SDL_EVENT_WINDOW_LAST);
-    for (int i = 0; i < windowEventCount; ++i)
+    // Watches have already copied the input they need. Player owns draining
+    // every event, including text payloads, once per iteration.
+    SDL_Event windowEvent;
+    while (SDL_PollEvent(&windowEvent))
     {
-        const SDL_Event &windowEvent = windowEvents[i];
+        if (windowEvent.type == SDL_EVENT_QUIT) return false;
+        if (windowEvent.type < SDL_EVENT_WINDOW_FIRST || windowEvent.type > SDL_EVENT_WINDOW_LAST)
+            continue;
         if (!m_SdlWindow || windowEvent.window.windowID != SDL_GetWindowID(m_SdlWindow))
             continue;
 
