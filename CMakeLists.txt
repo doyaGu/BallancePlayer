@@ -61,7 +61,6 @@ endif ()
 # Use relative paths
 if (WIN32 AND PLAYER_IS_TOP_LEVEL)
     set(CMAKE_USE_RELATIVE_PATHS TRUE)
-    set(CMAKE_SUPPRESS_REGENERATION TRUE)
 endif ()
 
 if (PLAYER_IS_TOP_LEVEL)
