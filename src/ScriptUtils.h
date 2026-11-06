@@ -550,13 +550,13 @@ namespace scriptutils
     }
 
     template <>
-    CKParameterLocal *CreateLocalParameter<CKObject *>(CKBehavior *script, const char *name, CKObject *value, CKGUID type)
+    inline CKParameterLocal *CreateLocalParameter<CKObject *>(CKBehavior *script, const char *name, CKObject *value, CKGUID type)
     {
         return CreateLocalParameter(script, name, CKOBJID(value), type);
     }
 
     template <>
-    CKParameterLocal *CreateLocalParameter<const char *>(CKBehavior *script, const char *name, const char *value, CKGUID type)
+    inline CKParameterLocal *CreateLocalParameter<const char *>(CKBehavior *script, const char *name, const char *value, CKGUID type)
     {
         CKParameterLocal *param = CreateLocalParameter(script, name, type);
         param->SetStringValue(ToCKString(value));
@@ -592,13 +592,13 @@ namespace scriptutils
     }
 
     template <>
-    CKParameterLocal *GenerateInputParameter<CKObject *>(CKBehavior *script, CKBehavior *beh, int inPos, CKObject *value)
+    inline CKParameterLocal *GenerateInputParameter<CKObject *>(CKBehavior *script, CKBehavior *beh, int inPos, CKObject *value)
     {
         return GenerateInputParameter(script, beh, inPos, CKOBJID(value));
     }
 
     template <>
-    CKParameterLocal *GenerateInputParameter<const char *>(CKBehavior *script, CKBehavior *beh, int inPos, const char *value)
+    inline CKParameterLocal *GenerateInputParameter<const char *>(CKBehavior *script, CKBehavior *beh, int inPos, const char *value)
     {
         CKParameterLocal *param = GenerateInputParameter(script, beh, inPos);
         param->SetValue(value);
@@ -626,13 +626,13 @@ namespace scriptutils
     }
 
     template <>
-    CKParameterLocal *GenerateTargetParameter<CKObject *>(CKBehavior *script, CKBehavior *beh, CKObject *value)
+    inline CKParameterLocal *GenerateTargetParameter<CKObject *>(CKBehavior *script, CKBehavior *beh, CKObject *value)
     {
         return GenerateTargetParameter(script, beh, CKOBJID(value));
     }
 
     template <>
-    CKParameterLocal *GenerateTargetParameter<const char *>(CKBehavior *script, CKBehavior *beh, const char *value)
+    inline CKParameterLocal *GenerateTargetParameter<const char *>(CKBehavior *script, CKBehavior *beh, const char *value)
     {
         CKParameterLocal *param = GenerateTargetParameter(script, beh);
         param->SetValue(value);
