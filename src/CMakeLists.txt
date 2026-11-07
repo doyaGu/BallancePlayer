@@ -39,7 +39,6 @@ endif ()
 set(PLAYER_HEADERS
         StaticPlugins.h
         GamePlayer.h
-        RuntimeStartup.h
         GameConfig.h
         PlayerOptions.h
         PlayerSdlShortcuts.h

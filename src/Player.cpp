@@ -4,10 +4,10 @@
 #include "CmdlineParser.h"
 #include "GameConfig.h"
 #include "GamePlayer.h"
-#include "RuntimeStartup.h"
 #include "PlayerOptions.h"
 #include "Logger.h"
 #include "Utils.h"
+#include "VxMath.h"
 
 static bool EnsurePersistentConfigReady(CGameConfig &config);
 static void ShowErrorMessage(const char *text);
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     if (runtimeConfig.verbose)
         CLogger::Get().SetLevel(CLogger::LEVEL_DEBUG);
 
-    InitializePlayerArithmetic();
+    VxInitializeMathEnvironment();
     CGamePlayer player;
     if (!player.Init(runtimeConfig, persistentConfig))
     {
@@ -51,9 +51,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    // Render/manager initialization may change the precision word. Loading
-    // saved entity hierarchies has the original renderer's PC24 contract too.
-    InitializePlayerArithmetic();
+    VxInitializeMathEnvironment();
     CLogger::Get().Debug("Loading game composition: %s", runtimeConfig.GetPath(eCmoPath));
     if (!player.Load(runtimeConfig.GetPath(eCmoPath)))
     {

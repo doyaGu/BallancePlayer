@@ -64,10 +64,3 @@ add_player_test(CmdlineParserTest
         ${PLAYER_SOURCE_DIR}/CmdlineParser.cpp
         DEPENDENCIES VxMath
 )
-
-if (TARGET ivp_physics AND IVP_ENABLE_X87_EMULATION)
-    add_player_test(RuntimeStartupTest
-            SOURCES RuntimeStartupTest.cpp
-            DEPENDENCIES VxMath ivp_physics ivp_controller ivp_compact_builder)
-    target_compile_definitions(RuntimeStartupTest PRIVATE VX_SIMD_NONE=1)
-endif ()
