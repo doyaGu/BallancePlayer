@@ -64,3 +64,7 @@ add_player_test(CmdlineParserTest
         ${PLAYER_SOURCE_DIR}/CmdlineParser.cpp
         DEPENDENCIES VxMath
 )
+
+if (WIN32 AND MSVC)
+    target_sources(GameConfigTest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src/Player.manifest")
+endif ()

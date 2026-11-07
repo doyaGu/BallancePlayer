@@ -233,6 +233,10 @@ if (_player_sdl_runtime_target)
     endif ()
 endif ()
 
+if (WIN32 AND MSVC)
+    target_sources(${PLAYER_NAME} PRIVATE Player.manifest)
+endif ()
+
 install(TARGETS ${PLAYER_NAME}
         ${_player_runtime_dependency_args}
         RUNTIME DESTINATION Bin COMPONENT Runtime

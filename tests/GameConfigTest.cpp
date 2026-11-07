@@ -27,11 +27,20 @@
 
 namespace fs = std::filesystem;
 
+static fs::path NativeFilesystemPath(const fs::path &path) {
+#if defined(_WIN32)
+    const auto native = fs::absolute(path).wstring();
+    if (native.compare(0, 4, L"\\\\?\\") != 0)
+        return fs::path(L"\\\\?\\" + native);
+#endif
+    return path;
+}
+
 class ScopedCurrentDirectory {
 public:
     explicit ScopedCurrentDirectory(const fs::path& path)
         : m_Previous(fs::current_path()) {
-        fs::current_path(path);
+        fs::current_path(NativeFilesystemPath(path));
     }
 
     ~ScopedCurrentDirectory() {
@@ -51,7 +60,7 @@ protected:
     }
 
     void TearDown() override {
-        fs::remove_all(testDir);
+        fs::remove_all(NativeFilesystemPath(testDir));
     }
 
     void CreateTestIni(const std::string& content) {
@@ -261,9 +270,8 @@ TEST_F(GameConfigTest, GetAbsolutePathUsesLongCurrentDirectory) {
         longDir /= "segment with spaces";
 
     std::error_code error;
-    fs::create_directories(longDir, error);
-    if (error)
-        GTEST_SKIP() << "Long current directory is not supported by this filesystem: " << error.message();
+    fs::create_directories(NativeFilesystemPath(longDir), error);
+    ASSERT_FALSE(error) << "Failed to prepare long current directory: " << error.message();
 
     char resolved[4096] = {0};
     {
@@ -870,8 +878,26 @@ TEST_F(GameConfigTest, XMacroExpansion) {
     config.unlockFramerate = true;
     config.unlockWidescreen = false;
     config.unlockHighResolution = true;
-    // If we get here without compilation errors, the X-macro expansion worked
-    SUCCEED();
+    EXPECT_EQ(config.logMode, 1);
+    EXPECT_EQ(config.driver, 2);
+    EXPECT_EQ(config.bpp, 32);
+    EXPECT_EQ(config.width, 1920);
+    EXPECT_EQ(config.height, 1080);
+    EXPECT_EQ(config.posX, 100);
+    EXPECT_EQ(config.posY, 200);
+    EXPECT_EQ(config.langId, 1);
+    EXPECT_TRUE(config.verbose);
+    EXPECT_FALSE(config.manualSetup);
+    EXPECT_TRUE(config.fullscreen);
+    EXPECT_TRUE(config.childWindowRendering);
+    EXPECT_FALSE(config.borderless);
+    EXPECT_TRUE(config.clipCursor);
+    EXPECT_FALSE(config.alwaysHandleInput);
+    EXPECT_TRUE(config.skipOpening);
+    EXPECT_FALSE(config.applyHotfix);
+    EXPECT_TRUE(config.unlockFramerate);
+    EXPECT_FALSE(config.unlockWidescreen);
+    EXPECT_TRUE(config.unlockHighResolution);
 }
 
 // Test memory footprint
