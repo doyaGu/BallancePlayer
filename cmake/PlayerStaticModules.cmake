@@ -1,4 +1,4 @@
-# Declarative static-module contract for BallancePlayer.
+# Static plugin registration and link dependencies for BallancePlayer.
 #
 # This file is consumed both by Player and by the superproject's consistency
 # check. Keep module-specific build and registration metadata together here.
