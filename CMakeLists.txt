@@ -88,8 +88,14 @@ add_compile_definitions(
 # When BallancePlayer is built as part of the Ballanced superproject, CK2 and VxMath
 # are provided as regular CMake targets, so no external "Virtools SDK" is required.
 #
-# When built standalone, prefer the bundled sibling directories (../CK2, ../VxMath)
-# if present (this workspace layout), and fall back to the legacy external SDK flow.
+# Standalone builds prefer the sibling NeMo2 aggregator, then the former
+# component layout, and finally an explicitly configured external SDK.
+
+if ((NOT TARGET CK2 OR NOT TARGET VxMath) AND
+        EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../NeMo2/CMakeLists.txt")
+    set(NEMO_BUILD_STATIC "${BALLANCE_BUILD_STATIC}")
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../NeMo2" "${CMAKE_CURRENT_BINARY_DIR}/NeMo2")
+endif ()
 
 if (NOT TARGET CK2 OR NOT TARGET VxMath)
     if (NOT TARGET VxMath AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../VxMath/CMakeLists.txt")

@@ -80,7 +80,7 @@ cmake --build --preset player-runtime-win32-release
 ctest --preset player-runtime-win32-release
 ```
 
-Manual CMake builds can be used on other hosts. In a Ballanced source checkout, sibling CK2, VxMath, RenderEngine, Managers, Plugins, and BuildingBlocks projects are detected automatically. If CK2/VxMath are unavailable locally, set `VIRTOOLS_SDK_PATH` or enable `VIRTOOLS_SDK_FETCH_FROM_GIT`. Standalone builds are for development and tests; they do not produce release packages.
+Manual CMake builds can be used on other hosts. In a Ballanced source checkout, the sibling NeMo2 aggregator supplies the engine. The former sibling module layout is also supported. If CK2/VxMath are unavailable locally, set `VIRTOOLS_SDK_PATH` or enable `VIRTOOLS_SDK_FETCH_FROM_GIT`. Set `PLAYER_BUILDING_BLOCKS_INCLUDE_DIR` if the TT interface headers are outside either source layout. Standalone builds are for development and tests; they do not produce release packages.
 
 ## Hotkeys
 

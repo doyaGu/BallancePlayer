@@ -188,7 +188,24 @@ if (BALLANCE_BUILD_STATIC)
     target_link_libraries(${PLAYER_NAME} PRIVATE ${_ballance_static_module_targets})
 endif ()
 
+set(_player_building_block_hints)
+foreach (_interface_target IN ITEMS TT_InterfaceManager_RT TT_InterfaceManager_RTStatic)
+    if (TARGET ${_interface_target})
+        get_target_property(_interface_source ${_interface_target} SOURCE_DIR)
+        get_filename_component(_building_block_root "${_interface_source}" DIRECTORY)
+        list(APPEND _player_building_block_hints "${_building_block_root}")
+    endif ()
+endforeach ()
+find_path(PLAYER_BUILDING_BLOCKS_INCLUDE_DIR
+        NAMES TT_InterfaceManager_RT/InterfaceManager.h
+        HINTS ${_player_building_block_hints}
+              "${CMAKE_CURRENT_SOURCE_DIR}/../../NeMo2/Source/BuildingBlocks"
+              "${CMAKE_CURRENT_SOURCE_DIR}/../../BuildingBlocks"
+        DOC "BuildingBlocks source directory providing the TT player interface"
+        REQUIRED)
+
 target_include_directories(${PLAYER_NAME} PRIVATE
+        "${PLAYER_BUILDING_BLOCKS_INCLUDE_DIR}"
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${_player_generated_dir}"
 )

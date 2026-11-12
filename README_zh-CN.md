@@ -80,7 +80,7 @@ cmake --build --preset player-runtime-win32-release
 ctest --preset player-runtime-win32-release
 ```
 
-其他平台可使用手动 CMake 配置。在 Ballanced 源码树内，构建会自动发现同级的 CK2、VxMath、RenderEngine、Managers、Plugins 和 BuildingBlocks；本地缺少 CK2/VxMath 时，可设置 `VIRTOOLS_SDK_PATH` 或启用 `VIRTOOLS_SDK_FETCH_FROM_GIT`。独立构建仅用于开发和测试，不生成发布包。
+其他平台可使用手动 CMake 配置。在 Ballanced 源码树内，构建会自动发现同级的 NeMo2，引擎模块的旧版同级目录布局也继续支持；本地缺少 CK2/VxMath 时，可设置 `VIRTOOLS_SDK_PATH` 或启用 `VIRTOOLS_SDK_FETCH_FROM_GIT`。TT 接口头文件不在这两种源码布局内时，可设置 `PLAYER_BUILDING_BLOCKS_INCLUDE_DIR`。独立构建仅用于开发和测试，不生成发布包。
 
 ## 快捷键
 
