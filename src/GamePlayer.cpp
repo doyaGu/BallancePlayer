@@ -17,6 +17,7 @@
 #include "PlayerSdlShortcuts.h"
 #include "Utils.h"
 #include "InterfaceManager.h"
+#include "VxUserConfig.h"
 
 #define ARRAY_NUM(Array) \
     (sizeof(Array) / sizeof(Array[0]))
@@ -238,6 +239,10 @@ bool CGamePlayer::Init(const CGameConfig &runtimeConfig, const CGameConfig &pers
 {
     if (m_State != eInitial)
         return true;
+
+    // The application owns its persistent configuration identity and override.
+    if (!VxSetUserConfigProfile("Ballance", "BALLANCE_USER_CONFIG_HOME"))
+        return false;
 
     m_Config = runtimeConfig;
     m_PersistentConfig = persistentConfig;
@@ -811,7 +816,7 @@ bool CGamePlayer::FinishLoad(const char *filename, const char *resolvedFile)
             m_GameInfo = NULL;
         }
 
-        m_GameInfo = new CGameInfo;
+        m_GameInfo = new CGameInfo(im->GetDefaultRegistryPath());
         strcpy(m_GameInfo->path, ".");
         strcpy(m_GameInfo->fileName, filename);
         im->SetGameInfo(m_GameInfo);
@@ -1122,7 +1127,10 @@ bool CGamePlayer::SetupManagers()
 
     InterfaceManager *interfaceManager = InterfaceManager::GetManager(m_CKContext);
     if (interfaceManager)
+    {
+        interfaceManager->SetDefaultRegistryPath("\"Software\\\\Ballance\\\\Settings\"");
         interfaceManager->SetPlayerCommandHandler(&CGamePlayer::HandlePlayerCommand, this);
+    }
 
     return true;
 }

@@ -50,6 +50,11 @@ You may also place `Player` (`Player.exe` on Windows), `base.cmo`, `Database.tdb
 
 ## Building from Source
 
+Player selects its `Ballance` user configuration namespace and
+`BALLANCE_USER_CONFIG_HOME` environment override through NeMo2's configuration
+profile API. TT game info retains the existing `Software\\Ballance\\Settings`
+registry path. `Player.ini` and asset-relative saves keep their existing paths.
+
 ### Recommended: Ballanced superproject
 
 Build through [Ballanced](https://github.com/doyaGu/Ballanced) for a complete, runnable runtime with pinned CK2, VxMath, renderer, manager, plugin, and Building Block revisions:
