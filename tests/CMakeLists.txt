@@ -13,10 +13,13 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+add_custom_target(player_ci_tests)
+
 function(add_player_test test_name)
     cmake_parse_arguments(TEST "" "" "SOURCES;DEPENDENCIES" ${ARGN})
 
     add_executable(${test_name} ${TEST_SOURCES})
+    add_dependencies(player_ci_tests ${test_name})
     target_compile_features(${test_name} PUBLIC cxx_std_17)
 
     target_include_directories(${test_name} PRIVATE
